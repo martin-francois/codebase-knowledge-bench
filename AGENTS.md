@@ -175,3 +175,19 @@ for documentation separately.
 - Before finishing any task, perform a documentation-drift check: compare the requested behavior, the
   implementation, tests, `SPEC.md`, and this file. Fix discovered drift as part of the task rather than
   merely reporting it.
+
+## Commit and push after every prompt
+
+After fulfilling every user prompt, commit all task-related repository changes and push the current
+intended branch before replying. Verify that the remote branch resolves to the new local commit SHA.
+Do not leave completed changes only in the working tree.
+
+- Never create a merge commit and never force-push. Fetch first; if the remote advanced, rebase the
+  local work cleanly, rerun affected checks, then push.
+- Keep unrelated pre-existing user changes out of the commit. If safe separation is impossible, stop
+  and ask the user rather than committing someone else's work.
+- Use a concise commit message describing the prompt's completed outcome.
+- For a read-only question or a prompt that produces no repository change, do not create an empty
+  commit. Confirm the worktree has no task-related change and state that there was nothing to push.
+- A push is not complete until the remote SHA is verified. Report a push failure honestly and do not
+  claim the prompt is complete while its required commit remains local.
