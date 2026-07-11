@@ -1465,6 +1465,30 @@ class ResumeAndValidatorTest(unittest.TestCase):
 
 
 class ComplianceRegressionTest(unittest.TestCase):
+    def test_derived_output_transaction_restores_published_files_on_failure(self) -> None:
+        import benchmark_model
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            existing = root / "results.json"
+            new_file = root / "report.md"
+            existing.write_text("published", encoding="utf-8")
+            with benchmark_model.DerivedOutputTransaction([existing, new_file]):
+                benchmark_model.atomic_write_text(existing, "candidate")
+                benchmark_model.atomic_write_text(new_file, "candidate")
+            self.assertEqual("published", existing.read_text(encoding="utf-8"))
+            self.assertFalse(new_file.exists())
+
+    def test_derived_output_transaction_commits_validated_files(self) -> None:
+        import benchmark_model
+
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "results.json"
+            with benchmark_model.DerivedOutputTransaction([result]) as publication:
+                benchmark_model.atomic_write_text(result, "validated")
+                publication.commit()
+            self.assertEqual("validated", result.read_text(encoding="utf-8"))
+
     def test_configuration_precedence_cli_over_config_over_environment(self) -> None:
         import benchmark_config
 
