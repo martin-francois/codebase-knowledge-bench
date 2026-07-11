@@ -901,7 +901,28 @@ def qualification_summary(
     nonbaseline = selected_variants - {"baseline-none"}
     exclusions: dict[str, set[str]] = {}
     trust_errors: list[str] = []
-    issue_rows = {str(record.get("issue_id")): record for record in records}
+    issue_rows = {
+        str(record.get("issue_id")): record
+        for record in records
+        if record.get("returncode") == 0
+        and record.get("validation_returncode") == 0
+        and Path(str(record.get("results_json") or "")).is_file()
+    }
+    selected_run_ids = {str(record.get("run_id")) for record in issue_rows.values()}
+    selected_records: list[dict[str, Any]] = []
+    diagnostic_attempts: list[dict[str, Any]] = []
+    for source in records:
+        record = dict(source)
+        if str(record.get("run_id")) not in selected_run_ids:
+            record["diagnostic_only"] = True
+            record["diagnostic_reason"] = "superseded or failed smoke qualification attempt"
+            diagnostic_attempts.append(record)
+            continue
+        checkpoint = Path(str(record.get("execution_root") or "")) / "pre-solve-smoke-checkpoint"
+        if checkpoint.is_dir():
+            record["checkpoint"] = str(checkpoint)
+        issue_rows[str(record.get("issue_id"))] = record
+        selected_records.append(record)
     summary_rows = []
     for issue in ISSUES_TO_RUN:
         record = issue_rows.get(issue.issue_id)
@@ -954,7 +975,8 @@ def qualification_summary(
             )
     payload = {
         "completed": len(issue_rows) == len(ISSUES_TO_RUN),
-        "records": records,
+        "records": selected_records,
+        "diagnostic_attempts": diagnostic_attempts,
         "variant_outcomes": summary_rows,
         "prequalified_exclusions_by_issue": {
             issue: sorted(variants) for issue, variants in exclusions.items()
@@ -2534,7 +2556,15 @@ def write_suite_outputs(
             suite_dir, suite_id, issue_preflights, run_records
         )
         if returncode == 0:
+            (suite_dir / "suite-validation-failure.log").unlink(missing_ok=True)
             publication.commit()
+        else:
+            validator_log = suite_dir / "suite-validator.log"
+            if validator_log.is_file():
+                (suite_dir / "suite-validation-failure.log").write_text(
+                    validator_log.read_text(encoding="utf-8", errors="replace"),
+                    encoding="utf-8",
+                )
         return returncode
 
 
@@ -3032,7 +3062,12 @@ def main() -> None:
                 finalize_partial_infrastructure_snapshot(suite_dir, partial_attempt)
             if resume_after_smoke:
                 for qualification in qualification_records:
-                    if qualification.get("issue_id") == issue.issue_id:
+                    if (
+                        qualification.get("issue_id") == issue.issue_id
+                        and qualification.get("validation_returncode") == 0
+                        and Path(str(qualification.get("execution_root") or "")).resolve()
+                        == Path(record["execution_root"]).resolve()
+                    ):
                         qualification["checkpoint"] = str(
                             Path(record["execution_root"]) / "pre-solve-smoke-checkpoint"
                         )
