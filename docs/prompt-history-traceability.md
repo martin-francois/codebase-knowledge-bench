@@ -23,7 +23,7 @@ All units are classified and checked. Phase 2 must replace each normative row's 
 | Conflict | Resolution | Evidence |
 | --- | --- | --- |
 | Nested `.codex-benchmark/` source versus root-level source | Root-level active source is current; old nested paths survive only as historical/runtime examples. | Later prompts P087 and P093. |
-| `gpt-5.5` medium versus `gpt-5.6-sol` low | Canonical suite uses exact `gpt-5.6-sol`, low reasoning, and `--yolo`; unavailable model blocks the canonical suite. | P042-P044 and P054-P055 supersede P008/P011. |
+| `gpt-5.5` medium versus `gpt-5.6-sol` low versus high | Canonical suite uses exact `gpt-5.6-sol`, high reasoning, and configurable YOLO mode defaulting true; unavailable model blocks the canonical suite. | P110 supersedes the older low-reasoning requirement from P042-P055. |
 | TrueCourse in candidate matrix versus Java incompatibility | Keep a generic candidate/adapter record, but explicitly exclude TrueCourse from the canonical Symphony Trello Java suite. | P058 supersedes P050/P054 for this suite. |
 | All-or-nothing rank eligibility versus graded operational ranking | Completed, trust-valid evaluated implementations remain in the primary ranking regardless of correctness or tool usefulness. | P074 and P080 supersede P044/P054/P068. |
 | Tool usefulness as primary gate versus attribution only | Useful focused issue-specific output controls only `tool_effect_eligible`; ineffective but valid tool behavior remains operational evidence. | P074 and P080. |
@@ -2506,3 +2506,6 @@ Post-reconstruction additions after P108: `transient-question` +1, `normative-cu
 | [x] | `P109.U004` | 109 | Make these README rules durable in AGENTS.md. | `normative-current` | Durable coding-agent workflow requirement. | Future agents preserve information priority, linear reading, simple English, and single-source examples. | AGENTS.md - README order and language | Implemented and regression checked |
 
 Post-reconstruction additions after P109: `normative-current` +4. No added source unit is unchecked or unclassified.
+| [x] | `P110.U001` | 110 | Replace low as the default reasoning level with high everywhere consistently in the code. | `normative-current` | Latest explicit model-setting instruction supersedes earlier low-reasoning defaults. | Canonical and built-in reasoning defaults, preflight, execution, suite naming, validation, fixtures, examples, and active docs use high. | SPEC.md - Configuration and canonical suite (`CFG-003`, `CAN-002`); active source and profiles | Implemented with model-preflight regression coverage and active-default scan |
+
+Post-reconstruction additions after P110: `normative-current` +1. Earlier source text remains preserved as superseded historical evidence; no added source unit is unchecked or unclassified.
