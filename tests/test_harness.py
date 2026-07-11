@@ -1516,6 +1516,23 @@ class ResumeAndValidatorTest(unittest.TestCase):
 
 
 class ComplianceRegressionTest(unittest.TestCase):
+    def test_readme_links_single_annotated_custom_suite_example(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        example = (ROOT / "examples" / "custom-suite.toml").read_text(encoding="utf-8")
+        self.assertIn("examples/custom-suite.toml", readme)
+        self.assertNotIn("[[issues]]", readme)
+        for explanation in (
+            "Directory for generated suites",
+            "Maximum child solve duration",
+            "Always include baseline-none",
+            "Exact commit immediately before",
+            "Exact commit containing the trusted implementation",
+            "Focused command that grades the direct behavior",
+            "Broader command that grades edge cases",
+            "Test files copied from the reference commit",
+        ):
+            self.assertIn(explanation, example)
+
     def test_security_document_states_network_isolation_limit(self):
         security = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
         self.assertNotIn("intentionally blocks web access", security)

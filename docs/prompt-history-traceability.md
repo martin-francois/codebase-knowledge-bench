@@ -2492,3 +2492,7 @@ Post-reconstruction additions after P105: `normative-current` +1. No added sourc
 | [x] | `P106.U002` | 106 | Mention the configurable YOLO behavior in the README. | `normative-current` | Durable user-documentation requirement. | README documents default, opt-out controls, precedence, application scope, and evidence persistence. | README.md - Benchmark your own repository | Enforced by configuration and documentation regression coverage |
 
 Post-reconstruction additions after P106: `normative-current` +2. No added source unit is unchecked or unclassified.
+| [x] | `P107.U001` | 107 | Do not duplicate the example TOML content in README. | `normative-current` | Durable single-source documentation requirement. | README links to the authoritative runnable example without embedding its issue matrix. | SPEC.md - Distribution (`DST-002C`); README.md | Enforced by `test_readme_links_single_annotated_custom_suite_example` |
+| [x] | `P107.U002` | 107 | Add comments above each non-intuitive example TOML key explaining what it configures and how to set it. | `normative-current` | Durable example-usability requirement. | Non-obvious execution, fairness, grading, and artifact controls have adjacent guidance. | examples/custom-suite.toml | Enforced by annotated-example regression coverage |
+
+Post-reconstruction additions after P107: `normative-current` +2. No added source unit is unchecked or unclassified.
