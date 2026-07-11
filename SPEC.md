@@ -567,6 +567,15 @@ parameters.
 contribution/security/support/conduct/CI material where present, and avoids invented
 licensing. External readiness blockers are documented.
 
+`DST-002A` README MUST be written for a first-time benchmark user with no prior repository
+context. It MUST lead from purpose and cost expectations through prerequisites, a minimal default
+run, custom repository/challenge configuration, execution, artifacts, interpretation, safety, and
+troubleshooting. Commands presented as the normal path MUST be directly runnable and MUST distinguish
+the cheap validation profile from the expensive full suite. Contributor-only source layout,
+development checks, implementation workflow, fixture maintenance, Git policy, and publication
+readiness belong in `CONTRIBUTING.md`, not the user onboarding path. README MAY link to `SPEC.md` and
+`SCORING-MODEL.md` for advanced details without requiring them for a first run.
+
 `DST-003` Git uses focused commits, never merge commits or force pushes. Remote advances are
 integrated by rebase followed by affected validation.
 

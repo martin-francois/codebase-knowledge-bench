@@ -1518,6 +1518,34 @@ class ComplianceRegressionTest(unittest.TestCase):
         positions = [agents.index(text) for text in required_order]
         self.assertEqual(sorted(positions), positions)
 
+    def test_readme_is_user_first_and_contributor_material_is_separate(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        user_sections = [
+            "## Before you run it",
+            "## Quick start with the included suite",
+            "## Benchmark your own repository",
+            "## What the benchmark does",
+            "## Find your results",
+            "## Interpret the report",
+            "## Troubleshooting",
+        ]
+        positions = [readme.index(section) for section in user_sections]
+        self.assertEqual(sorted(positions), positions)
+        for contributor_only in (
+            "## Source layout",
+            "## Required change workflow",
+            "## Local development checks",
+            "## Git and review",
+            "## Publication and release readiness",
+            "python3 tests/test_harness.py -v",
+        ):
+            self.assertNotIn(contributor_only, readme)
+            self.assertIn(contributor_only, contributing)
+        self.assertIn("./scripts/run_strict_suite.sh validation", readme)
+        self.assertIn("python3 scripts/run_benchmark_suite.py --config", readme)
+        self.assertIn("suite-report.md", readme)
+
     def test_configuration_embeds_custom_issue_matrix(self) -> None:
         import benchmark_config
 
