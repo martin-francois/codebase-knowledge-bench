@@ -2,7 +2,7 @@
 
 ## Authority and scope
 
-Read `spec.md` before changing benchmark behavior. `spec.md` is the normative,
+Read `SPEC.md` before changing benchmark behavior. `SPEC.md` is the normative,
 implementation-independent contract; `docs/prompt-history-traceability.md` records why
 that contract exists. If an intentionally approved behavior change conflicts with the
 specification, update the specification and traceability in the same commit. Never edit
@@ -79,7 +79,7 @@ reference file list. Child runs must never receive the issue URL, reference comm
 tests, future history, or solution metadata. Natural-language errors must be asserted by
 category, required guidance, side effects, and behavior rather than one historical phrase.
 
-Update the suite plan, schema/validator fixtures, README examples, `spec.md`, and
+Update the suite plan, schema/validator fixtures, README examples, `SPEC.md`, and
 traceability together. Add an end-to-end fixture without committing generated run output.
 
 ## Scoring changes
@@ -119,7 +119,7 @@ include an older `suite-bundle.zip`, including any under `resume-history/`.
 ## Required testing
 
 Behavior changes require focused unit fixtures plus relevant end-to-end fixture coverage.
-Maintain the ten trust/integration/correctness cases in `spec.md`, the issue `#486`
+Maintain the ten trust/integration/correctness cases in `SPEC.md`, the issue `#486`
 acceptance fixture, issue `#488` semantic contract, duplicate-basename/hash-seed replay,
 broad-versus-focused context, suite-row mutation, plan-based recomputation, archive
 recursion, secret exclusion, root-path, and report consistency tests.
@@ -145,3 +145,33 @@ Keep README commands accurate, links valid, GitHub metadata truthful, the reposi
 private until the owner publishes it, and existing license/security/contribution files
 coherent. Document external blockers rather than fabricating compliance. No generated
 benchmark evidence or secret may enter a release artifact.
+# Automatic specification and agent-guidance upkeep
+
+Treat every user prompt as potential requirements evidence. Before implementing a request, determine
+whether it changes intended benchmark behavior, data contracts, scoring, commands, configuration,
+safety controls, repository workflow, or future-agent instructions. Do not wait for the user to ask
+for documentation separately.
+
+- If a prompt changes intended product behavior or introduces, removes, clarifies, or supersedes a
+  requirement, update `SPEC.md` in the same change as the implementation. Use normative language,
+  preserve stable requirement IDs where possible, add acceptance criteria and edge cases, and record
+  explicit supersession rather than silently deleting history.
+- If a prompt changes how coding agents should work in this repository, update this `AGENTS.md` in the
+  same change. Keep instructions repository-specific, executable, and consistent with `SPEC.md`.
+- If a prompt changes both behavior and agent workflow, update both files. Neither code nor tests are
+  complete until their governing documentation agrees.
+- Update `docs/prompt-history-traceability.md` when new prompt evidence materially changes or
+  supersedes a requirement. Add stable source-unit IDs, classification, destination, implementation
+  evidence, and verification status; never rewrite prior source evidence as though it never existed.
+- Update `docs/spec-compliance.md`, schemas, fixtures, README, and scoring documentation whenever the
+  affected requirement is represented there. Machine-readable outputs and narrative documentation
+  MUST use the same terminology and semantics.
+- Purely transient questions, status requests, typo corrections, and one-time operations do not need
+  new normative specification text unless they reveal a durable requirement. Record the distinction
+  when it could otherwise be ambiguous.
+- A later user instruction supersedes an earlier conflicting instruction. Preserve the conflict and
+  resolution in traceability, then update the active specification and agent guidance to the surviving
+  rule.
+- Before finishing any task, perform a documentation-drift check: compare the requested behavior, the
+  implementation, tests, `SPEC.md`, and this file. Fix discovered drift as part of the task rather than
+  merely reporting it.
