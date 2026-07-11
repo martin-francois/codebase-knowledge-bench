@@ -327,35 +327,51 @@ def run(
     input_text: str | None = None,
 ) -> CommandResult:
     started = time.monotonic()
+    process = subprocess.Popen(
+        cmd,
+        cwd=cwd,
+        env=env,
+        stdin=subprocess.PIPE if input_text is not None else None,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=isinstance(cmd, str),
+        start_new_session=True,
+    )
     try:
-        completed = subprocess.run(
-            cmd,
-            cwd=cwd,
-            env=env,
-            input=input_text,
-            text=True,
-            capture_output=True,
-            timeout=timeout,
-            shell=isinstance(cmd, str),
-        )
+        stdout, stderr = process.communicate(input=input_text, timeout=timeout)
         return CommandResult(
             command=cmd,
             cwd=str(cwd),
-            returncode=completed.returncode,
-            stdout=completed.stdout,
-            stderr=completed.stderr,
+            returncode=process.returncode,
+            stdout=stdout,
+            stderr=stderr,
             seconds=time.monotonic() - started,
         )
-    except subprocess.TimeoutExpired as exc:
+    except subprocess.TimeoutExpired:
+        terminate_process_session(process.pid)
+        try:
+            stdout, stderr = process.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            stdout, stderr = process.communicate()
         return CommandResult(
             command=cmd,
             cwd=str(cwd),
             returncode=124,
-            stdout=exc.stdout or "",
-            stderr=exc.stderr or "",
+            stdout=stdout or "",
+            stderr=stderr or "",
             seconds=time.monotonic() - started,
             timed_out=True,
         )
+    except BaseException:
+        terminate_process_session(process.pid)
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        raise
 
 
 def log_command(path: Path, result: CommandResult) -> None:

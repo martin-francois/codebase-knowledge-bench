@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 import zipfile
 from contextlib import ExitStack
@@ -36,6 +37,22 @@ recompute = load_script("benchmark_recompute_fixture", "recompute_results.py")
 
 
 class RetryPolicyTest(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix", "process-session cleanup is POSIX-specific")
+    def test_command_timeout_reaps_spawned_descendants(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            pid_file = Path(tmp) / "child.pid"
+            result = runner.run(
+                ["/bin/sh", "-c", f"sleep 30 & echo $! > {pid_file}; wait"],
+                timeout=0.2,
+            )
+            child_pid = int(pid_file.read_text(encoding="utf-8"))
+            deadline = time.monotonic() + 2
+            while Path(f"/proc/{child_pid}").exists() and time.monotonic() < deadline:
+                time.sleep(0.05)
+        self.assertTrue(result.timed_out)
+        self.assertEqual(124, result.returncode)
+        self.assertFalse(Path(f"/proc/{child_pid}").exists())
+
     def test_verification_does_not_retry_assertion_failure(self) -> None:
         failure = runner.CommandResult("test", ".", 1, "", "assertion failed", 0.1, False)
         with (
