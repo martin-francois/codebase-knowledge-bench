@@ -137,14 +137,6 @@ homepage's arbitrary project-folder input and keeps this Java coding benchmark o
 documented no-key structural AST path. No code is uploaded. The official read-only `hook-check` hook
 is retained with its launcher rewritten to the isolated installed binary; update hooks are forbidden.
 
-### TrueCourse
-
-Source: <https://github.com/truecourse-ai/truecourse>
-
-The current homepage lists JavaScript/TypeScript, Python, and C# support, not Java. This candidate is
-excluded as incompatible with this Java repository rather than being allowed to fall back to normal
-Codex search. Evidence is retained in `tool-eligibility/truecourse-java-incompatibility.md`.
-
 ## Common safety deviations
 
 - No original history, remotes, sibling repositories, raw issue URL, or reference implementation is
