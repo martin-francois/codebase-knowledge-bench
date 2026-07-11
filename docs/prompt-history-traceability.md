@@ -2488,3 +2488,7 @@ Post-reconstruction additions after P104: `normative-current` +2. No added sourc
 | [x] | `P105.U001` | 105 | The SECURITY.md claim that the harness intentionally blocks child web access is not accurate. | `normative-current` | Durable security-documentation accuracy requirement. | Security documentation distinguishes blocked command paths from unavailable hard network denial and records reduced confidence. | SPEC.md - Distribution (`DST-002B`); SECURITY.md | Implemented with `test_security_document_states_network_isolation_limit` |
 
 Post-reconstruction additions after P105: `normative-current` +1. No added source unit is unchecked or unclassified.
+| [x] | `P106.U001` | 106 | Make YOLO configurable while defaulting it to true. | `normative-current` | Durable child-execution configuration requirement. | Config, environment, and CLI can disable or enable YOLO; true remains the canonical and built-in default. | SPEC.md - Configuration (`CFG-003A`); README.md | Implemented across config, preflight, suite plans, child commands, validation, and tests |
+| [x] | `P106.U002` | 106 | Mention the configurable YOLO behavior in the README. | `normative-current` | Durable user-documentation requirement. | README documents default, opt-out controls, precedence, application scope, and evidence persistence. | README.md - Benchmark your own repository | Enforced by configuration and documentation regression coverage |
+
+Post-reconstruction additions after P106: `normative-current` +2. No added source unit is unchecked or unclassified.
