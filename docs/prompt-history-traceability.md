@@ -2496,3 +2496,7 @@ Post-reconstruction additions after P106: `normative-current` +2. No added sourc
 | [x] | `P107.U002` | 107 | Add comments above each non-intuitive example TOML key explaining what it configures and how to set it. | `normative-current` | Durable example-usability requirement. | Non-obvious execution, fairness, grading, and artifact controls have adjacent guidance. | examples/custom-suite.toml | Enforced by annotated-example regression coverage |
 
 Post-reconstruction additions after P107: `normative-current` +2. No added source unit is unchecked or unclassified.
+| [x] | `P108.U001` | 108 | Is `[benchmark].issues` specific to preflight? | `transient-question` | Clarification question whose durable documentation gap is captured in P108.U002. | It selects challenges for the complete suite, not only preflight. | README.md - Define challenges versus select challenges | Answered and documented |
+| [x] | `P108.U002` | 108 | Explain in more detail how issue selection and JSON issue matrices are used. | `normative-current` | Durable configuration-usability requirement. | Documentation separates definition from filtering and covers identifiers, scope, examples, errors, paths, and precedence. | SPEC.md - Configuration (`CFG-005D`); README.md | Enforced by `test_readme_distinguishes_issue_definition_selection_and_matrix_files` |
+
+Post-reconstruction additions after P108: `transient-question` +1, `normative-current` +1. No added source unit is unchecked or unclassified.

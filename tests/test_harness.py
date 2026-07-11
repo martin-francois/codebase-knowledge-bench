@@ -1516,11 +1516,31 @@ class ResumeAndValidatorTest(unittest.TestCase):
 
 
 class ComplianceRegressionTest(unittest.TestCase):
+    def test_readme_distinguishes_issue_definition_selection_and_matrix_files(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        for contract in (
+            "Define challenges versus select challenges",
+            "Top-level `[[issues]]` entries",
+            "`[benchmark].issues` selects a subset",
+            "complete suite: preflight, every treatment and repetition",
+            "--issues issue-123,456",
+            "BENCH_ISSUES=issue-123,456",
+            "complete challenge objects in a",
+            "JSON array using the same fields",
+            "--issue-matrix-file /absolute/path/to/issues.json",
+            "explicit `--issue-matrix-file` overrides",
+            "matrix defines challenges, not",
+        ):
+            self.assertIn(contract, readme)
+
     def test_readme_links_single_annotated_custom_suite_example(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         example = (ROOT / "examples" / "custom-suite.toml").read_text(encoding="utf-8")
         self.assertIn("examples/custom-suite.toml", readme)
-        self.assertNotIn("[[issues]]", readme)
+        self.assertNotIn(
+            '```toml\n[benchmark]\ntarget_repo_url = "https://github.com/your-org/your-repository.git"',
+            readme,
+        )
         for explanation in (
             "Directory for generated suites",
             "Maximum child solve duration",
