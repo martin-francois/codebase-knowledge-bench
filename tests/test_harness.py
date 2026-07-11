@@ -1529,6 +1529,56 @@ class ComplianceRegressionTest(unittest.TestCase):
             }.issubset(required)
         )
 
+    def test_schema_validation_rejects_wrong_types_constants_and_bounds(self) -> None:
+        import benchmark_model
+
+        row = {
+            "variant": "serena",
+            "trust_valid": True,
+            "workflow_rank_eligible": True,
+            "tool_integration_applicable": True,
+            "tool_integration_valid": True,
+            "tool_effect_eligible": True,
+            "implementation_evaluated": True,
+            "artifact_integrity_valid": True,
+            "treatment_failure_before_implementation": False,
+            "full_correctness_pass": True,
+            "correctness_score": 100.0,
+            "issue_contract_score": 50.0,
+            "reference_conformance_score": 20.0,
+            "common_tests_passed": True,
+            "primary_reference_pass_fraction": 1.0,
+            "extended_reference_pass_fraction": 1.0,
+            "qualitative_correctness_score": 15.0,
+            "tool_integration_reason": "focused context",
+            "exclusion_reason": None,
+            "jsonl_parse_valid": True,
+            "malformed_jsonl_count": 0,
+            "malformed_jsonl_lines": [],
+        }
+        provenance = benchmark_model.model_provenance()
+        data = {
+            "metadata": {},
+            "variants": [row],
+            "scoring_model": {
+                "version": provenance["scoring_model_version"],
+                **provenance,
+            },
+        }
+        errors: list[str] = []
+        validator.validate_required_schema_fields(
+            data, "execution-results.schema.json", "variants", errors
+        )
+        self.assertEqual([], errors)
+        data["variants"][0]["trust_valid"] = "true"
+        data["variants"][0]["correctness_score"] = 101
+        data["scoring_model"]["classification_model_version"] = "wrong"
+        validator.validate_required_schema_fields(
+            data, "execution-results.schema.json", "variants", errors
+        )
+        self.assertTrue(any("trust_valid" in error and "expected type" in error for error in errors))
+        self.assertTrue(any("correctness_score" in error and "maximum" in error for error in errors))
+        self.assertTrue(any("classification_model_version" in error and "constant" in error for error in errors))
     def test_model_provenance_is_complete_and_matches_focused_context_rules(self) -> None:
         import benchmark_model
 
