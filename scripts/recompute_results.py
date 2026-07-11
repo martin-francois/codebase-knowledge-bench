@@ -177,7 +177,7 @@ def main() -> None:
     module.score_variants(metrics_by_run, variants, ref_patch)
     for variant in variants:
         (variant.run_dir / "metrics.json").write_text(
-            json.dumps(metrics_by_run[variant.run_id], indent=2),
+            module.canonical_json(metrics_by_run[variant.run_id]),
             encoding="utf-8",
         )
     module.write_results(

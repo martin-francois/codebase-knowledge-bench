@@ -1542,6 +1542,16 @@ class ComplianceRegressionTest(unittest.TestCase):
         self.assertEqual(benchmark_model.FOCUSED_CONTEXT_LIMITS, provenance["focused_context_limits"])
         self.assertEqual(2, provenance["display_decimal_places"])
 
+    def test_display_rounding_and_json_serialization_are_canonical(self) -> None:
+        import benchmark_model
+
+        self.assertEqual("1.23", benchmark_model.format_display_value(1.234))
+        self.assertEqual("1.20, 2.35", benchmark_model.format_display_value([1.2, 2.345]))
+        first = benchmark_model.canonical_json({"z": 1, "a": {"y": 2, "b": 3}})
+        second = benchmark_model.canonical_json({"a": {"b": 3, "y": 2}, "z": 1})
+        self.assertEqual(first, second)
+        self.assertLess(first.index('"a"'), first.index('"z"'))
+
     def test_adapter_registry_covers_every_treatment_without_scoring_policy(self) -> None:
         import tool_adapters
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import json
 import shutil
 import tempfile
 from pathlib import Path
@@ -31,6 +32,23 @@ def model_provenance() -> dict[str, Any]:
         "focused_context_limits": dict(FOCUSED_CONTEXT_LIMITS),
         "display_decimal_places": DISPLAY_DECIMAL_PLACES,
     }
+
+
+def canonical_json(value: Any, *, trailing_newline: bool = False) -> str:
+    text = json.dumps(value, indent=2, sort_keys=True, ensure_ascii=True)
+    return text + "\n" if trailing_newline else text
+
+
+def format_display_value(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, float):
+        return f"{value:.{DISPLAY_DECIMAL_PLACES}f}"
+    if isinstance(value, list):
+        return ", ".join(format_display_value(item) for item in value)
+    if isinstance(value, dict):
+        return json.dumps(value, sort_keys=True, ensure_ascii=True)
+    return str(value)
 
 
 def workflow_rank_eligible(row: dict[str, Any]) -> bool:
