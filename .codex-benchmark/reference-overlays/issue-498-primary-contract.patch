@@ -1,0 +1,14 @@
+diff --git a/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java b/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
+--- a/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
++++ b/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
+@@ -1316,9 +1316,7 @@ final class LocalSetupTest extends LocalSetupFixtureSupport {
+                 .doesNotContain(
+                         "in_progress_state:",
+                         "- \"In Progress\"",
+-                        "list_name \"In Progress\"",
+-                        "- No in-progress list:",
+-                        "work currently running in Codex");
++                        "list_name \"In Progress\"");
+         assertThatWorkflow(workflow)
+                 .hasNoGithubFlow()
+                 .doesNotHaveMerging()
