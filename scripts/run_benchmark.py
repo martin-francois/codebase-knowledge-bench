@@ -5704,7 +5704,11 @@ def prepare_resumed_smoke_execution() -> tuple[list[Variant], dict[str, Any], di
     return variants, meta, issue, base_ok
 
 
-PARTIAL_RESUME_STATUSES = {"model_service_unavailable", "pre_solve_gate_aborted"}
+PARTIAL_RESUME_STATUSES = {
+    "model_service_unavailable",
+    "pre_solve_gate_aborted",
+    "smoke_only_not_ranked",
+}
 PARTIAL_RESUME_SOLVE_FILES = {
     "anti-leak-audit.md",
     "changed-files.txt",
@@ -5801,7 +5805,7 @@ def archive_partial_execution_attempt() -> Path:
     marker = {
         "source_execution": str(RUN_ROOT),
         "snapshot_execution_id": archive_id,
-        "reason": "exact requested model service became unavailable during a partial execution",
+        "reason": "partial execution evidence preserved before safe continuation",
         "excluded_from_treatment_ranking": True,
     }
     (archive_root / "infrastructure-snapshot.json").write_text(
