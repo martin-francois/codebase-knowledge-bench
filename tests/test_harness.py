@@ -693,6 +693,42 @@ class CorrectnessScoringTest(unittest.TestCase):
 
 
 class SharedInstallTest(unittest.TestCase):
+    def test_serena_cache_reuses_dependencies_but_not_project_workspaces(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            variant = runner.Variant("run-001", "serena", root / "repo", root / "run")
+            variant.repo.mkdir(parents=True)
+            variant.run_dir.mkdir(parents=True)
+            shared = root / "shared" / "EclipseJDTLS"
+            (shared / "vscode-java").mkdir(parents=True)
+            (shared / "vscode-java" / "server.jar").write_text("binary", encoding="utf-8")
+            (shared / "workspaces" / "prior-run").mkdir(parents=True)
+            setup_log = root / "setup.log"
+            with mock.patch.object(runner, "TOOL_CACHE", root / "tool-cache"):
+                reused = runner.seed_serena_language_server_cache(variant, shared, setup_log)
+                local = runner.tool_home(variant) / ".serena/language_servers/static/EclipseJDTLS"
+            self.assertEqual(["vscode-java"], reused)
+            self.assertTrue((local / "vscode-java").is_symlink())
+            self.assertFalse((local / "workspaces").exists())
+            self.assertIn("REUSED_SERENA_LANGUAGE_SERVER_CACHE", setup_log.read_text())
+
+    def test_serena_cache_publication_excludes_project_workspaces(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            variant = runner.Variant("run-001", "serena", root / "repo", root / "run")
+            local = root / "tool-cache/run-001/home/.serena/language_servers/static/EclipseJDTLS"
+            (local / "intellicode").mkdir(parents=True)
+            (local / "intellicode" / "extension.jar").write_text("binary", encoding="utf-8")
+            (local / "workspaces" / "current-run").mkdir(parents=True)
+            shared = root / "shared" / "EclipseJDTLS"
+            setup_log = root / "setup.log"
+            with mock.patch.object(runner, "TOOL_CACHE", root / "tool-cache"):
+                published = runner.publish_serena_language_server_cache(variant, shared, setup_log)
+            self.assertEqual(["intellicode"], published)
+            self.assertTrue((shared / "intellicode/extension.jar").is_file())
+            self.assertFalse((shared / "workspaces").exists())
+            self.assertIn("PUBLISHED_SERENA_LANGUAGE_SERVER_CACHE", setup_log.read_text())
+
     def test_sverklo_provisions_node24_when_host_runtime_is_older(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

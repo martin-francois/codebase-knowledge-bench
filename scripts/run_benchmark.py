@@ -1820,6 +1820,58 @@ def setup_jcodemunch(v: Variant, setup_log: Path, version_file: Path, config_fil
     )
 
 
+def serena_language_server_cache(version_text: str) -> Path:
+    match = re.search(r"Serena\s+([A-Za-z0-9._-]+)", version_text)
+    version = match.group(1) if match else "unknown"
+    return SHARED_INSTALL_ROOT / "serena" / "language-server-cache" / version / "EclipseJDTLS"
+
+
+def seed_serena_language_server_cache(v: Variant, shared: Path, setup_log: Path) -> list[str]:
+    if not shared.is_dir():
+        return []
+    local = tool_home(v) / ".serena" / "language_servers" / "static" / "EclipseJDTLS"
+    local.mkdir(parents=True, exist_ok=True)
+    reused: list[str] = []
+    for source in sorted(shared.iterdir(), key=lambda path: path.name):
+        if source.name == "workspaces" or not source.is_dir():
+            continue
+        target = local / source.name
+        if target.exists() or target.is_symlink():
+            continue
+        target.symlink_to(source, target_is_directory=True)
+        reused.append(source.name)
+    if reused:
+        with setup_log.open("a", encoding="utf-8") as fh:
+            fh.write(f"REUSED_SERENA_LANGUAGE_SERVER_CACHE versioned=true entries={','.join(reused)}\n")
+    return reused
+
+
+def publish_serena_language_server_cache(v: Variant, shared: Path, setup_log: Path) -> list[str]:
+    local = tool_home(v) / ".serena" / "language_servers" / "static" / "EclipseJDTLS"
+    if not local.is_dir():
+        return []
+    shared.mkdir(parents=True, exist_ok=True)
+    published: list[str] = []
+    for source in sorted(local.iterdir(), key=lambda path: path.name):
+        if source.name == "workspaces" or source.is_symlink() or not source.is_dir():
+            continue
+        target = shared / source.name
+        if target.exists():
+            continue
+        temporary = shared / f".{source.name}.tmp-{os.getpid()}"
+        shutil.rmtree(temporary, ignore_errors=True)
+        shutil.copytree(source, temporary, symlinks=True)
+        try:
+            temporary.rename(target)
+            published.append(source.name)
+        except FileExistsError:
+            shutil.rmtree(temporary, ignore_errors=True)
+    if published:
+        with setup_log.open("a", encoding="utf-8") as fh:
+            fh.write(f"PUBLISHED_SERENA_LANGUAGE_SERVER_CACHE versioned=true entries={','.join(published)}\n")
+    return published
+
+
 def setup_serena(v: Variant, setup_log: Path, version_file: Path, config_file: Path) -> None:
     env = setup_environment(v)
     uv = shutil.which("uv", path=env.get("PATH"))
@@ -1832,12 +1884,15 @@ def setup_serena(v: Variant, setup_log: Path, version_file: Path, config_file: P
     env = setup_environment(v, [cli.parent])
     res = run([str(cli), "--version"], cwd=v.repo, timeout=60, env=env)
     log_command(setup_log, res)
-    version_file.write_text(res.stdout + res.stderr, encoding="utf-8")
+    version_text = res.stdout + res.stderr
+    version_file.write_text(version_text, encoding="utf-8")
     for args in (["init"], ["setup", "codex"]):
         res = run([str(cli), *args], cwd=v.repo, timeout=180, env=env)
         log_command(setup_log, res)
         if res.returncode != 0:
             raise RuntimeError(f"serena {' '.join(args)} failed")
+    dependency_cache = serena_language_server_cache(version_text)
+    reused_dependencies = seed_serena_language_server_cache(v, dependency_cache, setup_log)
     # Keep the setup command's documented Codex semantics while replacing any network launcher
     # with the already-installed binary required by the benchmark's network-free solve phase.
     replace_codex_mcp(
@@ -1872,13 +1927,16 @@ def setup_serena(v: Variant, setup_log: Path, version_file: Path, config_file: P
     log_command(setup_log, res)
     if res.returncode != 0:
         raise RuntimeError("serena project creation/indexing failed")
+    published_dependencies = publish_serena_language_server_cache(v, dependency_cache, setup_log)
     removed = sanitize_update_hooks(v, setup_log)
     config_file.write_text(
         codex_config_snapshot(
             v,
             "Official setup: uv tool install -p 3.13; serena init; serena setup codex; project "
             "create --index. The documented Codex context/project-from-cwd launch is retained with "
-            f"the preinstalled absolute binary. Safety-only update hooks removed: {len(removed)}.",
+            "the preinstalled absolute binary. Version-matched immutable language-server cache "
+            f"reused: {reused_dependencies or 'none'}; published: {published_dependencies or 'none'}. "
+            f"Safety-only update hooks removed: {len(removed)}.",
         ),
         encoding="utf-8",
     )
