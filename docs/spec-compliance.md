@@ -122,6 +122,7 @@ This Phase 2 audit maps every stable normative requirement in [SPEC.md](../SPEC.
 | `ACC-017` | Prompt traceability is checked and implementation evidence is filled. | `docs/prompt-history-traceability.md`; this matrix | unchecked-unit and requirement-ID audits | conforming | None | No normative requirement or traceability unit remains unchecked |
 | `ACC-018` | Relevant local checks pass without a full expensive benchmark rerun. | source and tests | Python compile, shell syntax, schemas, 58 tests, diff check | conforming | None | No child solve was launched |
 | `ACC-019` | Derivation, versioning, adapter boundaries, display precision, and read-only audit behavior are explicit and synchronized with agent guidance. | `scripts/benchmark_model.py`; `scripts/tool_adapters.py`; `AGENTS.md`; `SPEC.md` | provenance, adapter-neutrality, canonical-format, and audit fixtures | conforming | None | Executable contracts and documentation agree |
+| `ACC-020` | Users can supply an external target and validated issue/reference-commit matrix without changing canonical source. | `scripts/benchmark_config.py`; `scripts/run_benchmark_suite.py`; `examples/custom-suite.toml`; `README.md`; `SPEC.md` | embedded-matrix, normalization, unsafe-path, and duplicate-number fixtures | conforming | None | Custom definitions are preflighted and persisted in `suite-plan.json` |
 
 ## Mandatory defect disposition
 
