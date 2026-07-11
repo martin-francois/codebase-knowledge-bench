@@ -1016,6 +1016,32 @@ def reusable_completed_run_keys(records: list[dict[str, Any]]) -> set[tuple[str,
     }
 
 
+def partition_coordinator_handoff_failures(
+    records: list[dict[str, Any]], attempts: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    retained: list[dict[str, Any]] = []
+    known = {str(record.get("run_id")) for record in attempts}
+    for record in records:
+        result_path = Path(str(record.get("results_json") or ""))
+        failed_before_evidence = record.get("returncode") != 0 and not result_path.is_file()
+        if not failed_before_evidence:
+            retained.append(record)
+            continue
+        diagnostic = {
+            **record,
+            "excluded_from_ranking": True,
+            "infrastructure_failure_kind": "coordinator_handoff_before_results",
+            "exclusion_reason": (
+                "coordinator handoff failed before results.json evidence was produced"
+            ),
+        }
+        run_id = str(record.get("run_id"))
+        if run_id not in known:
+            attempts.append(diagnostic)
+            known.add(run_id)
+    return retained, attempts
+
+
 def extract_git_archive(ref: str, dest: Path) -> None:
     if dest.exists():
         shutil.rmtree(dest)
@@ -2645,6 +2671,9 @@ def prepare_resumed_suite(
     run_records = read_run_records(suite_dir)
     retained_records: list[dict[str, Any]] = []
     infrastructure_attempts = read_jsonl_records(suite_dir / "infrastructure-attempts.jsonl")
+    run_records, infrastructure_attempts = partition_coordinator_handoff_failures(
+        run_records, infrastructure_attempts
+    )
     completed_keys: set[tuple[str, int]] = set()
     for record in run_records:
         refresh_run_record_counts(record)
@@ -2734,7 +2763,8 @@ def prepare_resumed_suite(
         "Partial suite outputs were preserved under "
         f"`{history_dir}`. Every retained execution passed the current strict validator. Any "
         "execution interrupted by exact-model service availability was moved to "
-        "`infrastructure-attempts.jsonl`. A partially completed execution resumes from its "
+        "`infrastructure-attempts.jsonl`. Coordinator handoffs that failed before producing "
+        "result evidence were also retained there as diagnostics. A partially completed execution resumes from its "
         "preserved setup/smoke state and reruns only interrupted or deferred arms; an execution "
         "with no completed implementation continues under a fresh execution ID. Fully completed, "
         "currently validated execution artifacts left unrecorded by a stopped coordinator were "

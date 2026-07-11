@@ -1508,6 +1508,34 @@ class ResumeAndValidatorTest(unittest.TestCase):
             completed = suite.reusable_completed_run_keys(records)
         self.assertEqual({("issue-488", 1)}, completed)
 
+    def test_failed_handoff_without_results_becomes_infrastructure_diagnostic(self) -> None:
+        record = {
+            "run_id": "suite-issue-498-rep-001",
+            "issue_id": "issue-498",
+            "repetition": 1,
+            "returncode": 1,
+            "validation_returncode": 1,
+            "results_json": "/definitely/missing/results.json",
+            "log": "/preserved/solve.log",
+        }
+        retained, attempts = suite.partition_coordinator_handoff_failures([record], [])
+        self.assertEqual([], retained)
+        self.assertEqual(1, len(attempts))
+        self.assertEqual("/preserved/solve.log", attempts[0]["log"])
+        self.assertEqual(
+            "coordinator_handoff_before_results",
+            attempts[0]["infrastructure_failure_kind"],
+        )
+
+    def test_failed_attempt_with_results_still_requires_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "results.json"
+            result.write_text("{}\n", encoding="utf-8")
+            record = {"run_id": "attempt", "returncode": 1, "results_json": str(result)}
+            retained, attempts = suite.partition_coordinator_handoff_failures([record], [])
+        self.assertEqual([record], retained)
+        self.assertEqual([], attempts)
+
     def test_zero_correctness_does_not_block_resume(self) -> None:
         record = {
             "validation_returncode": 0,
