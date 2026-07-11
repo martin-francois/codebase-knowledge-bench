@@ -1465,6 +1465,13 @@ class ResumeAndValidatorTest(unittest.TestCase):
 
 
 class ComplianceRegressionTest(unittest.TestCase):
+    def test_security_document_states_network_isolation_limit(self):
+        security = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
+        self.assertNotIn("intentionally blocks web access", security)
+        self.assertIn("do not prove hard network denial", security)
+        self.assertIn("`network_disabled=false`", security)
+        self.assertIn("medium anti-leak confidence", security)
+
     def test_derived_output_transaction_restores_published_files_on_failure(self) -> None:
         import benchmark_model
 

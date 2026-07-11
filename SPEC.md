@@ -576,6 +576,13 @@ development checks, implementation workflow, fixture maintenance, Git policy, an
 readiness belong in `CONTRIBUTING.md`, not the user onboarding path. README MAY link to `SPEC.md` and
 `SCORING-MODEL.md` for advanced details without requiring them for a first run.
 
+`DST-002B` Security documentation MUST distinguish command-level blocking from proven
+OS-level network denial. It MUST state that blocking common web clients, GitHub clients, and
+remote Git subcommands does not prevent arbitrary network-capable code from connecting. While
+hard denial is unavailable, documentation and artifacts MUST record `network_disabled=false`
+and reduced anti-leak confidence, and MUST NOT claim categorically that child web or network
+access is blocked.
+
 `DST-003` Git uses focused commits, never merge commits or force pushes. Remote advances are
 integrated by rebase followed by affected validation.
 

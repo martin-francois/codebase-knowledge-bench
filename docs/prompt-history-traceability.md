@@ -2485,3 +2485,6 @@ Post-reconstruction additions after P103: `normative-current` +2. No added sourc
 | [x] | `P104.U002` | 104 | Move content relevant only to contributors into CONTRIBUTING.md. | `normative-current` | Durable audience-separation requirement. | Source layout, development checks, change workflow, Git policy, and publication readiness live in CONTRIBUTING.md. | SPEC.md - Distribution (`DST-002A`); CONTRIBUTING.md | Enforced by the user/contributor documentation regression test |
 
 Post-reconstruction additions after P104: `normative-current` +2. No added source unit is unchecked or unclassified.
+| [x] | `P105.U001` | 105 | The SECURITY.md claim that the harness intentionally blocks child web access is not accurate. | `normative-current` | Durable security-documentation accuracy requirement. | Security documentation distinguishes blocked command paths from unavailable hard network denial and records reduced confidence. | SPEC.md - Distribution (`DST-002B`); SECURITY.md | Implemented with `test_security_document_states_network_isolation_limit` |
+
+Post-reconstruction additions after P105: `normative-current` +1. No added source unit is unchecked or unclassified.
