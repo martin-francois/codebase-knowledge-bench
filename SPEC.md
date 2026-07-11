@@ -663,6 +663,10 @@ cautious recommendations.
 `RPT-003` A fallback-dominant operational winner is valid but not a tool-effect win.
 TrueCourse's Java exclusion survives plan, results, report, and recomputation.
 
+`RPT-004` Report completion denominators and limitation prose MUST derive issue and repetition
+counts from the preserved suite plan. They MUST NOT use ambient defaults or hard-coded canonical
+matrix sizes when reporting a custom or partial configured matrix.
+
 ## 27. Distribution and GitHub metadata
 
 `DST-001` README and GitHub description explain the independent-evidence gap and practical

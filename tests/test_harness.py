@@ -2121,6 +2121,29 @@ class ComplianceRegressionTest(unittest.TestCase):
             self.assertEqual(["issue-486", "issue-498", "issue-488"], [row["issue_id"] for row in matrix])
             self.assertEqual(str(profile), os.environ["BENCH_ISSUE_MATRIX_SOURCE"])
 
+    def test_suite_conclusion_uses_preserved_plan_matrix_size(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            suite_dir = Path(tmp)
+            (suite_dir / "suite-plan.json").write_text(
+                json.dumps(
+                    {
+                        "repetitions": 1,
+                        "issues_selected": [{"issue_id": "issue-a"}, {"issue_id": "issue-b"}],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            conclusion = suite.suite_conclusion(
+                suite_dir,
+                [],
+                {"aggregate_ranking": [], "tool_effect_ranking": []},
+            )
+
+            self.assertIn("- Completed executions: `0` of `2`.", conclusion)
+            coordinator = (ROOT / "scripts/run_benchmark_suite.py").read_text(encoding="utf-8")
+            self.assertNotIn("three issues and three repetitions", coordinator)
+
     def test_canonical_profile_has_no_hard_coded_issue_registry_in_coordinator(self) -> None:
         import benchmark_config
 
