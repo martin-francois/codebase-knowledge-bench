@@ -1,24 +1,24 @@
 # Benchmark workspace artifacts (runtime outputs)
-.codex-benchmark/executions/
-.codex-benchmark/runs/
-.codex-benchmark/sealed-repos/
-.codex-benchmark/suites/
-.codex-benchmark/export/
-.codex-benchmark/raw-issue/
-.codex-benchmark/tool-cache/
-.codex-benchmark/report-assets/
-.codex-benchmark/diagnostics/
-.codex-benchmark/audits/
-.codex-benchmark/audit-results/
-.codex-benchmark/benchmarks/
-.codex-benchmark/archive/
-.codex-benchmark/maven-cache/
-.codex-benchmark/anti-leak-bin/
-.codex-benchmark/.mcp.json
-.codex-benchmark/.codex/
-.codex-benchmark/test-output/
-.codex-benchmark/*-bundle.zip
-.codex-benchmark/*-report.md
+executions/
+runs/
+sealed-repos/
+suites/
+export/
+raw-issue/
+tool-cache/
+report-assets/
+diagnostics/
+audits/
+audit-results/
+benchmarks/
+archive/
+maven-cache/
+anti-leak-bin/
+.mcp.json
+.codex/
+test-output/
+*-bundle.zip
+*-report.md
 
 # Environment snapshots and local state
 .env
@@ -29,4 +29,3 @@
 *.pyc
 *.pyo
 __pycache__/
-

@@ -527,8 +527,12 @@ def validate_execution(path: Path) -> list[str]:
                     fail(errors, f"execution issue snapshot hash does not match source record for {name}")
         if snapshot_record.get("mode") == "reused_sanitized_snapshot":
             source_raw = snapshot_record.get("source_execution")
-            source = (root.parents[2] / str(source_raw)).resolve() if source_raw else None
             executions_root = root.parent.resolve()
+            source = (
+                (executions_root / Path(str(source_raw)).name).resolve()
+                if source_raw
+                else None
+            )
             if source is None or not source.is_relative_to(executions_root) or source == root.resolve():
                 fail(errors, "reused issue snapshot source escapes the execution root collection")
             elif not source.is_dir():
