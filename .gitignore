@@ -19,6 +19,8 @@ anti-leak-bin/
 test-output/
 *-bundle.zip
 *-report.md
+latest-*.txt
+.codebase-knowledge-graph-benchmark-output/
 
 # Environment snapshots and local state
 .env

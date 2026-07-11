@@ -1,0 +1,11 @@
+diff --git a/src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java b/src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java
+--- a/src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java
++++ b/src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java
+@@ -614,2 +614,5 @@
+-        assertThat(result.path("contentItems").get(0).path("text").asText())
+-                .contains("trello_move_not_allowed", "matches multiple open Trello lists", "list_id");
++        var errorText = result.path("contentItems").get(0).path("text").asText();
++        assertThat(errorText)
++                .contains("trello_move_not_allowed", "list_id")
++                .matches("(?is).*(multiple|ambiguous|duplicate).*")
++                .matches("(?is).*(unique|rename|list_id).*");

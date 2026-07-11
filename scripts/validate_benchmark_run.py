@@ -34,6 +34,8 @@ AGGREGATE_STAT_KEYS = {"count", "min", "max", "mean", "median", "pstdev", "pvari
 NUMERIC_AGGREGATE_FIELDS = {
     "overall_score",
     "correctness_score",
+    "issue_contract_score",
+    "reference_conformance_score",
     "qualitative_correctness_score",
     "primary_reference_pass_fraction",
     "extended_reference_pass_fraction",
@@ -82,6 +84,30 @@ EXPORT_SECRET_PATTERNS = {
 
 def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def validate_required_schema_fields(
+    data: dict[str, Any], schema_name: str, collection: str | None, errors: list[str]
+) -> None:
+    schema_path = Path(__file__).resolve().parents[1] / "schemas" / schema_name
+    if not schema_path.is_file():
+        fail(errors, f"missing schema: {schema_path}")
+        return
+    schema = load_json(schema_path)
+    for key in schema.get("required", []):
+        if key not in data:
+            fail(errors, f"schema {schema_name}: missing required field {key}")
+    if collection:
+        item_required = (
+            schema.get("properties", {})
+            .get(collection, {})
+            .get("items", {})
+            .get("required", [])
+        )
+        for index, row in enumerate(data.get(collection, [])):
+            for key in item_required:
+                if key not in row:
+                    fail(errors, f"schema {schema_name}: {collection}[{index}] missing {key}")
 
 
 def jsonl_usage(path: Path) -> dict[str, float | int]:
@@ -462,11 +488,14 @@ def validate_execution(path: Path) -> list[str]:
     if not results_path.exists():
         return [f"{results_path}: missing results.json"]
     results = load_json(results_path)
+    validate_required_schema_fields(
+        results, "execution-results.schema.json", "variants", errors
+    )
     verification_path = root / "verification.json"
     verification = load_json(verification_path) if verification_path.exists() else {}
     smoke_only = bool(verification.get("smoke_only"))
     scoring_model = results.get("scoring_model", {})
-    if not smoke_only and scoring_model.get("version") != "operational-workflow-tool-effect-v3":
+    if not smoke_only and scoring_model.get("version") != "operational-workflow-tool-effect-v4":
         fail(errors, "execution does not declare the corrected validity/integration/correctness scoring model")
     variants = results.get("variants", [])
     by_run = {row.get("run_id"): row for row in variants}
@@ -788,6 +817,12 @@ def validate_execution(path: Path) -> list[str]:
         measured = graded_correctness_score(
             {**row, "qualitative_correctness_score": qualitative}
         )
+        expected_issue_contract = 50 * float(row.get("primary_reference_pass_fraction") or 0)
+        expected_reference_conformance = 20 * float(row.get("extended_reference_pass_fraction") or 0)
+        if not math.isclose(float(row.get("issue_contract_score") or 0), expected_issue_contract, rel_tol=0, abs_tol=1e-9):
+            fail(errors, f"{run_id}/{variant}: issue_contract_score does not match primary behavior fraction")
+        if not math.isclose(float(row.get("reference_conformance_score") or 0), expected_reference_conformance, rel_tol=0, abs_tol=1e-9):
+            fail(errors, f"{run_id}/{variant}: reference_conformance_score does not match extended behavior fraction")
         if not math.isclose(
             float(row.get("diagnostic_implementation_correctness_score") or 0),
             measured,
@@ -841,10 +876,31 @@ def validate_execution(path: Path) -> list[str]:
         )
         if bool(row.get("tool_integration_valid")) != expected_integration:
             fail(errors, f"{run_id}/{variant}: tool_integration_valid does not match useful solve context evidence")
+        if variant == "baseline-none" and row.get("tool_integration_applicable") is not False:
+            fail(errors, f"{run_id}/{variant}: baseline tool integration must be non-applicable")
+        if expected_integration:
+            relevance = row.get("solve_tool_relevance") or {}
+            accepted = int(relevance.get("accepted_context_items") or 0)
+            rejected = int(relevance.get("rejected_context_items") or 0)
+            returned = int(relevance.get("returned_context_items") or 0)
+            traversed = int(relevance.get("graph_traversal_nodes") or 0)
+            if not (
+                relevance.get("focused_context") is True
+                and accepted > 0
+                and returned <= 40
+                and rejected <= 4 * accepted
+                and traversed <= 400
+            ):
+                fail(errors, f"{run_id}/{variant}: integration-valid output is not focused and bounded")
         if expected_rank_eligible and row.get("exclusion_reason"):
             fail(errors, f"{run_id}/{variant}: rank-eligible implementation has exclusion_reason")
-        if not expected_rank_eligible and not row.get("exclusion_reason"):
+        expected_treatment_failure = bool(row.get("treatment_failure_before_implementation"))
+        if not expected_rank_eligible and not expected_treatment_failure and not row.get("exclusion_reason"):
             fail(errors, f"{run_id}/{variant}: invalid trust/evaluation evidence lacks exclusion_reason")
+        if expected_treatment_failure and row.get("exclusion_reason"):
+            fail(errors, f"{run_id}/{variant}: genuine treatment failure misuses exclusion_reason")
+        if expected_treatment_failure and not row.get("failure_reason"):
+            fail(errors, f"{run_id}/{variant}: genuine treatment failure lacks failure_reason")
         if not row.get("tool_integration_reason"):
             fail(errors, f"{run_id}/{variant}: missing tool_integration_reason")
         actual_execution_calls = sum(
@@ -891,10 +947,10 @@ def validate_execution(path: Path) -> list[str]:
         if bool(row.get("fallback_only")) != expected_fallback_only:
             fail(errors, f"{run_id}/{variant}: fallback_only does not match useful and fallback calls")
         if row.get("first_relevant_context_source") not in {
-            "none",
             "intended-tool",
-            "local-search",
-            "fallback-local-search",
+            "fallback-discovery",
+            "already-known-location",
+            "other",
         }:
             fail(errors, f"{run_id}/{variant}: invalid first_relevant_context_source")
     issue_url = None
@@ -913,8 +969,12 @@ def validate_suite(path: Path) -> list[str]:
     if not suite_results.exists():
         return [f"{suite_results}: missing suite-results.json"]
     data = load_json(suite_results)
+    validate_required_schema_fields(data, "suite-results.schema.json", None, errors)
+    plan_path = suite_dir / "suite-plan.json"
+    if plan_path.is_file() and data.get("suite_plan") != load_json(plan_path):
+        fail(errors, "suite_results suite_plan differs from preserved suite-plan.json")
     validate_suite_derived_rows(data, errors)
-    if data.get("scoring_model", {}).get("version") != "operational-workflow-tool-effect-v3":
+    if data.get("scoring_model", {}).get("version") != "operational-workflow-tool-effect-v4":
         fail(errors, "suite does not declare the corrected validity/integration/correctness model")
     plan_path = suite_dir / "suite-plan.json"
     if not plan_path.is_file():
@@ -1118,7 +1178,12 @@ def validate_suite(path: Path) -> list[str]:
             if not data.get("partial_or_interrupted") and runs != expected_execution_count:
                 fail(errors, f"aggregate-ranked variant {variant} has {runs} outcomes, expected {expected_execution_count}")
             expected_correctness_rate = correct / workflow_evidence if workflow_evidence else 0.0
-            expected_integration_rate = integrated / valid_evidence if valid_evidence else 0.0
+            integration_denominator = int(
+                row.get("tool_integration_applicable_denominator") or 0
+            )
+            expected_integration_rate = (
+                integrated / integration_denominator if integration_denominator else None
+            )
             if not math.isclose(
                 float(row.get("full_correctness_pass_rate") or 0),
                 expected_correctness_rate,
@@ -1126,11 +1191,18 @@ def validate_suite(path: Path) -> list[str]:
                 abs_tol=1e-12,
             ):
                 fail(errors, f"aggregate-ranked variant {variant} has an incorrect full-correctness pass rate")
-            if not math.isclose(
-                float(row.get("integration_reliability_rate") or 0),
-                expected_integration_rate,
-                rel_tol=0,
-                abs_tol=1e-12,
+            actual_integration_rate = row.get("integration_reliability_rate")
+            if (
+                expected_integration_rate is None
+                and actual_integration_rate is not None
+            ) or (
+                expected_integration_rate is not None
+                and not math.isclose(
+                    float(actual_integration_rate or 0),
+                    expected_integration_rate,
+                    rel_tol=0,
+                    abs_tol=1e-12,
+                )
             ):
                 fail(errors, f"aggregate-ranked variant {variant} has an incorrect integration reliability rate")
             if row.get("correctness_score", {}).get("count") != workflow_evidence:
@@ -1138,7 +1210,22 @@ def validate_suite(path: Path) -> list[str]:
             for field in ("effective_tokens", "solve_wall_seconds", "total_tool_calls"):
                 if row.get(field, {}).get("count") != rankable:
                     fail(errors, f"aggregate-ranked variant {variant} {field} is not restricted to rank-valid implementation runs")
-            expected_correctness = float(row.get("correctness_score", {}).get("mean") or 0)
+            source_rows = [
+                source
+                for source in data.get("variant_rows", [])
+                if source.get("variant") == variant
+                and source.get("trust_valid")
+                and (
+                    source.get("workflow_rank_eligible")
+                    or source.get("treatment_failure_before_implementation")
+                )
+            ]
+            expected_correctness = (
+                sum(float(source.get("correctness_score") or 0) for source in source_rows)
+                / len(source_rows)
+                if source_rows
+                else 0.0
+            )
             if not math.isclose(
                 float(row.get("expected_workflow_correctness") or 0),
                 expected_correctness,

@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile Python and shell
+        run: |
+          python3 -m py_compile scripts/*.py tests/test_harness.py
+          bash -n scripts/run_strict_suite.sh
+      - name: Run deterministic harness tests
+        run: python3 tests/test_harness.py -v
