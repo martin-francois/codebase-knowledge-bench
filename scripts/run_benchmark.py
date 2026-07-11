@@ -2283,6 +2283,8 @@ def external_sandbox_cmd(v: Variant, command: list[str]) -> list[str]:
     for path in [Path("/root"), Path("/tmp"), Path("/var/tmp")]:
         if path.exists():
             cmd.extend(["--tmpfs", str(path)])
+            if path in {Path("/tmp"), Path("/var/tmp")}:
+                cmd.extend(["--chmod", "1777", str(path)])
     for directory in sorted(directories, key=lambda path: (len(path.parts), str(path))):
         if directory not in masked_roots:
             cmd.extend(["--dir", str(directory)])
