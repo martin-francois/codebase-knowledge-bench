@@ -191,3 +191,52 @@ Do not leave completed changes only in the working tree.
   commit. Confirm the worktree has no task-related change and state that there was nothing to push.
 - A push is not complete until the remote SHA is verified. Report a push failure honestly and do not
   claim the prompt is complete while its required commit remains local.
+
+## Derivation and implementation quality
+
+- Keep source-of-truth derivation centralized in small, pure, separately testable functions. Validators
+  MUST reconstruct from source evidence or invoke the same pure primitives with independent inputs;
+  they MUST NOT trust stored summaries merely because aggregates are self-consistent.
+- Keep treatment-specific parsing and setup behavior in adapters. Keep trust gates, eligibility,
+  correctness, scoring, aggregation, and reporting treatment-neutral.
+- Treat JSONL, subprocess output, tool output, paths, archives, and preserved result files as untrusted
+  input. Reject malformed or ambiguous input explicitly, preserve unknown JSONL event types, and add
+  concise suite/execution/run/treatment context when chaining parse, subprocess, or I/O failures.
+- Prefer the Python standard library for JSONL, statistics, paths, hashing, archives, and configuration
+  when it remains clear and testable. Do not add dependencies for functionality already implemented
+  safely by the standard library.
+- Persist scoring and classification versions, focus thresholds, seeds, cohort identities,
+  denominators, and full-precision values. Sort at every serialization and comparison boundary; never
+  depend on locale, filesystem order, dictionary/set iteration, or Python hash order.
+- Use JSON for new suite manifests, registries, schemas, and machine-readable configuration unless an
+  external tool requires another format. Write derived replacements to a safe temporary path and
+  replace atomically only after validation; raw evidence is never an atomic-replacement target.
+- Avoid broad exception handlers. If one is required at an orchestration boundary, classify the
+  failure, preserve diagnostics, and never suppress an error that changes trust, ranking, scoring,
+  artifact integrity, or validator outcome.
+
+## Validation ladder
+
+Use the cheapest sufficient checks first and stop at the highest level needed by the change:
+
+1. Syntax, import, shell, schema, and static path/secret checks.
+2. Narrow unit and fixture tests for the changed parser, classifier, score, adapter, or report.
+3. Full local harness tests, mutation tests, cross-hash-seed replay, archive tests, and deterministic
+   recomputation fixtures.
+4. Non-mutating adapter health or smoke only when static fixtures cannot validate an integration.
+5. Child solve runs only when a concrete integration defect cannot be validated any other way.
+
+Before finishing, rerun stale-rule searches for changed concepts, compare schemas/results/reports/docs,
+inspect `git diff --check`, `git diff --stat`, and the complete diff, and verify that no runtime output,
+target checkout, cache, raw issue, bundle, credential, or secret is staged. State any check that could
+not be performed; never infer a pass.
+
+## Read-only compliance audits
+
+When the user requests an evidence-based audit rather than a repair, keep the task read-only unless the
+prompt explicitly authorizes fixes. Do not launch child solves, rewrite preserved evidence, regenerate
+over existing derived outputs, alter sealed repositories, or silently repair findings. Use exit codes,
+raw artifacts, deterministic recomputation in a safe temporary location, independent calculations,
+mutation probes, and report/data comparison. Return `PASS` only when all material behavior is proven,
+`FAIL` for a confirmed material defect, and `INCONCLUSIVE` only when required evidence is genuinely
+missing or corrupt.

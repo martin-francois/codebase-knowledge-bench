@@ -4,8 +4,8 @@ This Phase 2 audit maps every stable normative requirement in [SPEC.md](../SPEC.
 
 ## Summary
 
-- Normative specification requirements: 83
-- Conforming: 83
+- Normative specification requirements: 92
+- Conforming: 92
 - Defective, missing, or obsolete: 0
 - External blocker: hard network denial is not yet universally enforceable; the required current behavior is to report reduced confidence, and implementation research is tracked in GitHub issue [#1](https://github.com/martin-francois/codebase-knowledge-graph-benchmark/issues/1).
 
@@ -94,6 +94,15 @@ This Phase 2 audit maps every stable normative requirement in [SPEC.md](../SPEC.
 | `DST-003` | Git uses focused commits, never merge commits or force pushes. Remote advances are | README.md:20; scripts/run_benchmark.py:426; .gitignore:1 | `tests/test_harness.py` targeted fixtures; final validation log `/tmp/benchmark-validation/test-harness-final-phase2.log` | conforming | None | Passed in final Phase 2 validation |
 | `LIM-001` | Small issues may favor native search; three repetitions do not establish broad | SPEC.md; tests/test_harness.py:1439 | `tests/test_harness.py` targeted fixtures; final validation log `/tmp/benchmark-validation/test-harness-final-phase2.log` | conforming | None | Passed in final Phase 2 validation |
 | `LIM-002` | Stronger child network denial remains tracked externally until implemented and | SPEC.md; tests/test_harness.py:1439 | `tests/test_harness.py` targeted fixtures; final validation log `/tmp/benchmark-validation/test-harness-final-phase2.log` | conforming | None | Passed in final Phase 2 validation |
+| `ENG-001` | Source-of-truth derivation is centralized and validators reconstruct from evidence. | `scripts/run_benchmark.py`; `scripts/run_benchmark_suite.py`; `scripts/validate_benchmark_run.py` | `test_suite_row_mutation_is_rejected` | conforming | None | Mutation fixture passes |
+| `ENG-002` | Untrusted machine/process/tool evidence is parsed explicitly and unknown JSONL types are retained. | `scripts/run_benchmark.py`; `scripts/validate_benchmark_run.py` | JSONL parser and corruption fixtures | conforming | None | Harness tests pass |
+| `ENG-003` | Ordering is deterministic; JSON retains precision and reports use consistent display rounding. | `scripts/run_benchmark.py`; `scripts/run_benchmark_suite.py` | cross-hash-seed and report fixtures | conforming | None | Determinism fixtures pass |
+| `ENG-004` | Schema/scoring/focus-rule versions and limits are retained and changed only through recomputation. | `SCORING-MODEL.md`; `schemas/`; `scripts/run_benchmark.py` | focused/broad-context and schema fixtures | conforming | None | Harness tests pass |
+| `ENG-005` | Preserved suite plans control recomputation and derived publication is safe. | `scripts/run_benchmark_suite.py`; `scripts/recompute_results.py` | `test_reconstructs_issue_specific_reference_configuration` | conforming | None | Recompute fixture passes |
+| `ENG-006` | Adapter behavior is treatment-specific while trust, scoring, and reporting remain neutral. | `scripts/run_benchmark.py`; `tool-guides/` | ten-case and tool-evidence fixtures | conforming | None | Harness tests pass |
+| `AUD-001` | Compliance audits are read-only and use preserved evidence, mutation probes, and safe recomputation. | `AGENTS.md`; `scripts/validate_benchmark_run.py` | mutation, corruption, and deterministic replay fixtures | conforming | None | Local audit path requires no child solve |
+| `AUD-002` | Audit verdict semantics require evidence and reserve inconclusive for unavailable evidence. | `AGENTS.md`; `SPEC.md` | compliance audit guidance | conforming | None | Documentation synchronized |
+| `PRO-001` | Canonical profile schedules exactly 63 Java arms and retains TrueCourse as excluded. | `scripts/run_benchmark_suite.py`; `scripts/run_strict_suite.sh` | aggregation and recompute fixtures | conforming | None | Canonical plan is 3 x 3 x 7 |
 
 ## Mandatory defect disposition
 

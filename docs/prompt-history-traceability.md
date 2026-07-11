@@ -6,13 +6,13 @@ This ledger accounts for every atomic sentence, bullet, numbered item, table row
 
 | Classification | Count |
 | --- | ---: |
-| `normative-current` | 1220 |
+| `normative-current` | 1223 |
 | `superseded` | 84 |
 | `duplicate` | 125 |
 | `motivation` | 81 |
 | `historical-evidence` | 349 |
-| `transient-question` | 37 |
-| `one-time-operation` | 525 |
+| `transient-question` | 38 |
+| `one-time-operation` | 526 |
 | `future-tracked-work` | 0 |
 | **Total** | **2421** |
 
@@ -2458,3 +2458,8 @@ All units are classified and checked. Phase 2 must replace each normative row's 
 | [x] | `P091.U002` | 91 | only respond with the prokot i shoukd use | `transient-question` | Status, clarification, or prompt-generation question; no standalone product requirement. | Status, clarification, or prompt-generation question; no standalone product requirement. | N/A | N/A - classification and rationale recorded |
 | [x] | `P092.U001` | 92 | make sure the prompt is really self xontained, the new session doesnr have any context at all, not even the path | `transient-question` | Status, clarification, or prompt-generation question; no standalone product requirement. | Status, clarification, or prompt-generation question; no standalone product requirement. | N/A | N/A - classification and rationale recorded |
 | [x] | `P093.U001` | 93 | please unfurl the .codex-benchmark folder in https://github.com/martin-francois/codebase-knowledge-graph-benchmark on main so that the contents of it are on the root level of the repo, adapt all depending paths, and then commit and oush | `normative-current` | Durable policy extracted from a one-time operation. | Current requirement; see SPEC.md - Repository layout and distribution. | SPEC.md - Repository layout and distribution | Implemented and verified through `docs/spec-compliance.md` and the Phase 2 validation matrix |
+| [x] | `P094.U001` | 94 | ensure agents.md is written in a way where it automatically upkeeps agents.md and spec.md when I send prompts asking it to do something. | `normative-current` | Durable repository-agent workflow. | Future agents maintain canonical guidance and specification automatically. | AGENTS.md - Automatic specification and agent-guidance upkeep | Implemented in AGENTS.md |
+| [x] | `P095.U001` | 95 | can you capitalize the filename SPEC | `normative-current` | Durable canonical filename decision. | The authoritative specification filename is `SPEC.md`. | SPEC.md; AGENTS.md; README.md | Implemented and references migrated |
+| [x] | `P096.U001` | 96 | pushed as well? | `transient-question` | Status question about a completed operation. | No standalone product requirement. | N/A | Push was completed and verified |
+| [x] | `P097.U001` | 97 | can you please make sure you always commit and push after every of my prompts? | `normative-current` | Durable repository delivery workflow. | Task-related changes are committed, pushed, and remote-SHA verified after every prompt. | AGENTS.md - Commit and push after every prompt | Implemented in AGENTS.md |
+| [x] | `P098.U001` | 98 | Compare every uploaded AGENTS/SPEC variant and incorporate anything better into the canonical documents. | `one-time-operation` | Documentation synthesis requested and completed. | Each variant was compared; accepted and rejected clauses are recorded. | docs/variant-synthesis.md | Completed with canonical document updates |
