@@ -628,6 +628,39 @@ class CorrectnessScoringTest(unittest.TestCase):
 
 
 class SharedInstallTest(unittest.TestCase):
+    def test_sverklo_provisions_node24_when_host_runtime_is_older(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            node_bin = root / "node24" / "node_modules" / ".bin"
+            setup_log = root / "tool-setup.log"
+            variant = runner.Variant("run-001", "sverklo", root / "repo", root / "run")
+
+            def fake_run(args, **kwargs):
+                command = [str(part) for part in args]
+                env = kwargs.get("env", {})
+                if command[:2] == ["npm", "install"]:
+                    node_bin.mkdir(parents=True)
+                    node = node_bin / "node"
+                    node.write_text("#!/bin/sh\n", encoding="utf-8")
+                    node.chmod(0o755)
+                    return runner.CommandResult("npm install", str(root), 0, "", "", 1.0)
+                if command[:2] == ["node", "-p"]:
+                    major = "24\n" if str(node_bin) in env.get("PATH", "") else "22\n"
+                    return runner.CommandResult("node -p", str(root), 0, major, "", 0.1)
+                raise AssertionError(command)
+
+            with (
+                mock.patch.object(runner, "NODE24_BIN", node_bin),
+                mock.patch.object(runner, "TOOL_CACHE", root / "tool-cache"),
+                mock.patch.object(runner, "SHARED_INSTALL_ROOT", root / "shared-installs"),
+                mock.patch.object(runner, "run", side_effect=fake_run),
+            ):
+                env = runner.ensure_sverklo_node_runtime(variant, setup_log)
+
+            self.assertEqual(str(node_bin), env["PATH"].split(":")[0])
+            self.assertTrue((node_bin / "node").is_file())
+            self.assertGreater(variant.install_seconds, 0)
+
     def test_pinned_python_install_is_reused_without_install_command(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
