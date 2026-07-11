@@ -1838,7 +1838,7 @@ def seed_serena_language_server_cache(v: Variant, shared: Path, setup_log: Path)
         target = local / source.name
         if target.exists() or target.is_symlink():
             continue
-        target.symlink_to(source, target_is_directory=True)
+        shutil.copytree(source, target, symlinks=True)
         reused.append(source.name)
     if reused:
         with setup_log.open("a", encoding="utf-8") as fh:

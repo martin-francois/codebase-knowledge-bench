@@ -693,7 +693,7 @@ class CorrectnessScoringTest(unittest.TestCase):
 
 
 class SharedInstallTest(unittest.TestCase):
-    def test_serena_cache_reuses_dependencies_but_not_project_workspaces(self) -> None:
+    def test_serena_cache_reuses_writable_dependencies_but_not_project_workspaces(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             variant = runner.Variant("run-001", "serena", root / "repo", root / "run")
@@ -708,7 +708,9 @@ class SharedInstallTest(unittest.TestCase):
                 reused = runner.seed_serena_language_server_cache(variant, shared, setup_log)
                 local = runner.tool_home(variant) / ".serena/language_servers/static/EclipseJDTLS"
             self.assertEqual(["vscode-java"], reused)
-            self.assertTrue((local / "vscode-java").is_symlink())
+            self.assertFalse((local / "vscode-java").is_symlink())
+            (local / "vscode-java/server.jar").write_text("runtime mutation", encoding="utf-8")
+            self.assertEqual("binary", (shared / "vscode-java/server.jar").read_text(encoding="utf-8"))
             self.assertFalse((local / "workspaces").exists())
             self.assertIn("REUSED_SERENA_LANGUAGE_SERVER_CACHE", setup_log.read_text())
 
