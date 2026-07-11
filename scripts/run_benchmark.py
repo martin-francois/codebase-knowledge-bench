@@ -3561,6 +3561,26 @@ def parse_jsonl(path: Path) -> dict[str, Any]:
     return metrics
 
 
+def ensure_jsonl_integrity_evidence(metrics: dict[str, Any], path: Path) -> None:
+    """Populate required parse evidence when a non-solve stage created the row."""
+    if all(
+        key in metrics
+        for key in (
+            "jsonl_parse_valid",
+            "malformed_jsonl_count",
+            "malformed_jsonl_lines",
+        )
+    ):
+        return
+    parsed = parse_jsonl(path)
+    for key in (
+        "jsonl_parse_valid",
+        "malformed_jsonl_count",
+        "malformed_jsonl_lines",
+    ):
+        metrics.setdefault(key, parsed[key])
+
+
 def find_keys(obj: Any):
     if isinstance(obj, dict):
         for k, v in obj.items():
@@ -4376,6 +4396,7 @@ def score_variants(metrics_by_run: dict[str, dict[str, Any]], variants: list[Var
 
     for v in variants:
         m = metrics_by_run[v.run_id]
+        ensure_jsonl_integrity_evidence(m, v.run_dir / "run.jsonl")
         ensure_correctness_evidence(m)
         m.update(solve_context_usage(v, v.run_dir / "run.jsonl"))
         smoke_access = (
