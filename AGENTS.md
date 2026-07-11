@@ -157,6 +157,18 @@ whether it changes intended benchmark behavior, data contracts, scoring, command
 safety controls, repository workflow, or future-agent instructions. Do not wait for the user to ask
 for documentation separately.
 
+For every durable behavior change, work in this order:
+
+1. Normalize the prompt into an explicit, testable `SPEC.md` requirement before editing behavior.
+2. Implement the smallest change that satisfies that requirement without weakening existing gates.
+3. Add or update focused regression tests that fail against the old behavior and pass with the change.
+4. Synchronize README, schemas, traceability, compliance evidence, and `AGENTS.md` where applicable.
+5. Run the cheapest sufficient validation and only then commit and push.
+
+Do not treat implementation without regression coverage as complete. If a requirement cannot be
+tested automatically, document why and add the strongest deterministic static or fixture-backed
+contract check available.
+
 - If a prompt changes intended product behavior or introduces, removes, clarifies, or supersedes a
   requirement, update `SPEC.md` in the same change as the implementation. Use normative language,
   preserve stable requirement IDs where possible, add acceptance criteria and edge cases, and record

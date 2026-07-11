@@ -31,6 +31,15 @@ one suite, or permission to upload private code.
 limit. Target clone URL, issue matrix, variants, repetitions, commands, and output root
 MUST be configurable. Extra child solves MUST NOT be launched merely for reassurance.
 
+`SCP-003` Durable behavior changes requested through user prompts MUST follow a
+specification-first workflow. The agent MUST first normalize the surviving requirement
+into `SPEC.md`, then implement the behavior, then add or update focused regression tests
+that fail without the implementation and protect the requirement from recurrence. The
+specification, implementation, tests, user-facing documentation, schemas, and traceability
+evidence MUST agree before the change is complete. Purely transient questions and one-time
+operations that do not alter durable behavior do not require a synthetic product requirement
+or regression test.
+
 ## 3. Terminology and conceptual model
 
 `MOD-001` A **suite** is a planned issue/repetition/treatment matrix. An **execution** is one

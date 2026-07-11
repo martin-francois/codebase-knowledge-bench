@@ -1502,6 +1502,22 @@ class ComplianceRegressionTest(unittest.TestCase):
                 self.assertEqual("cli-model", os.environ["BENCH_MODEL"])
                 self.assertEqual("2", os.environ["BENCH_REPETITIONS"])
 
+    def test_repository_requires_spec_first_changes_with_regression_coverage(self) -> None:
+        spec = (ROOT / "SPEC.md").read_text(encoding="utf-8")
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("`SCP-003`", spec)
+        self.assertIn("specification-first", spec)
+        self.assertIn("focused regression tests", spec)
+        required_order = [
+            "Normalize the prompt into an explicit, testable `SPEC.md` requirement",
+            "Implement the smallest change",
+            "Add or update focused regression tests",
+            "Synchronize README, schemas, traceability, compliance evidence",
+            "Run the cheapest sufficient validation",
+        ]
+        positions = [agents.index(text) for text in required_order]
+        self.assertEqual(sorted(positions), positions)
+
     def test_configuration_embeds_custom_issue_matrix(self) -> None:
         import benchmark_config
 
