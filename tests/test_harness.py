@@ -1516,19 +1516,44 @@ class ResumeAndValidatorTest(unittest.TestCase):
 
 
 class ComplianceRegressionTest(unittest.TestCase):
+    def test_readme_orders_early_user_information_and_agents_preserve_it(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        headings = (
+            "## Before you run it",
+            "## Quick start with the included suite",
+            "## Benchmark your own repository",
+            "## Find your results",
+            "## Interpret the report",
+            "## What the benchmark does",
+            "## Security and privacy",
+            "## Common configuration controls",
+            "## Troubleshooting",
+            "## Need help?",
+        )
+        positions = [readme.index(heading) for heading in headings]
+        self.assertEqual(positions, sorted(positions))
+        early = readme[: readme.index("## Quick start with the included suite")]
+        for warning in ("63 implementation attempts", "YOLO mode is enabled by default", "does not prove"):
+            self.assertIn(warning, early)
+        self.assertIn("When it finishes, open the path stored in", readme)
+        self.assertIn("## README order and language", agents)
+        self.assertIn("simple international English", agents)
+        self.assertIn("Do not make readers scroll back", agents)
+
     def test_readme_distinguishes_issue_definition_selection_and_matrix_files(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         for contract in (
-            "Define challenges versus select challenges",
+            "Define and select challenges",
             "Top-level `[[issues]]` entries",
-            "`[benchmark].issues` selects a subset",
-            "complete suite: preflight, every treatment and repetition",
+            "`[benchmark].issues` selects which defined challenges",
+            "selection applies to preflight, every workflow and repetition",
             "--issues issue-123,456",
             "BENCH_ISSUES=issue-123,456",
             "complete challenge objects in a",
-            "JSON array using the same fields",
+            "JSON array. Use the same fields",
             "--issue-matrix-file /absolute/path/to/issues.json",
-            "explicit `--issue-matrix-file` overrides",
+            "command-line matrix overrides",
             "matrix defines challenges, not",
         ):
             self.assertIn(contract, readme)
@@ -1620,9 +1645,9 @@ class ComplianceRegressionTest(unittest.TestCase):
             "## Before you run it",
             "## Quick start with the included suite",
             "## Benchmark your own repository",
-            "## What the benchmark does",
             "## Find your results",
             "## Interpret the report",
+            "## What the benchmark does",
             "## Troubleshooting",
         ]
         positions = [readme.index(section) for section in user_sections]

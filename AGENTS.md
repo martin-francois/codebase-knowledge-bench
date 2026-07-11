@@ -152,6 +152,24 @@ Keep README commands accurate, links valid, GitHub metadata truthful, the reposi
 private until the owner publishes it, and existing license/security/contribution files
 coherent. Document external blockers rather than fabricating compliance. No generated
 benchmark evidence or secret may enter a release artifact.
+
+## README order and language
+
+Write README for a first-time user who reads from top to bottom and may stop early. Put the most
+widely needed facts first: what the project does, expected cost, prerequisites, the cheapest safe
+first run, custom use, and where to find results. Put interpretation before implementation detail.
+Keep contributor workflow in `CONTRIBUTING.md`.
+
+Do not make readers scroll back to complete a step. Define a term, path, or setting before using it.
+After each main run command, state what happens next and which result file to open. Keep one
+authoritative configuration example in `examples/custom-suite.toml`; link to it instead of copying it
+into README.
+
+Use simple international English. Prefer short sentences, common words, concrete verbs, and lists.
+Developer terms are allowed when they are useful, but define benchmark-specific terms on first use.
+Avoid idioms, jokes, marketing language, unexplained abbreviations, and long sentences with several
+conditions. When README changes, test its heading order and key early warnings, not only the presence
+of isolated phrases.
 # Automatic specification and agent-guidance upkeep
 
 Treat every user prompt as potential requirements evidence. Before implementing a request, determine

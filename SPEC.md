@@ -607,6 +607,15 @@ should choose its value. Comments MUST distinguish base from reference commits, 
 issue-contract and extended tests, withheld reference files, solve mode, repetitions, treatments,
 timeouts, and generated-output location.
 
+`DST-002D` README MUST put the information needed by the largest number of users first. Its default
+order is purpose and cost warning, prerequisites, cheapest safe first run, custom-suite path, result
+location, interpretation, internal lifecycle, safety details, configuration reference,
+troubleshooting, and support. A section MUST introduce a term or path before relying on it, and run
+instructions MUST state the next file to open without requiring the reader to search an earlier
+section. Use short sentences, common words, concrete verbs, and defined developer terms so a reader
+with limited English can follow the document from top to bottom. Avoid idioms, decorative language,
+unexplained abbreviations, and long paragraphs that combine unrelated decisions.
+
 `DST-003` Git uses focused commits, never merge commits or force pushes. Remote advances are
 integrated by rebase followed by affected validation.
 
