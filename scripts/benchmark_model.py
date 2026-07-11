@@ -12,7 +12,7 @@ from typing import Any
 
 SCHEMA_VERSION = "1.0.0"
 SCORING_MODEL_VERSION = "operational-workflow-tool-effect-v4"
-CLASSIFICATION_MODEL_VERSION = "focused-context-v1"
+CLASSIFICATION_MODEL_VERSION = "focused-context-v2"
 DISPLAY_DECIMAL_PLACES = 2
 
 FOCUSED_CONTEXT_LIMITS: dict[str, int] = {

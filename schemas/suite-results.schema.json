@@ -81,7 +81,7 @@
         "version": {"const": "operational-workflow-tool-effect-v4"},
         "schema_version": {"const": "1.0.0"},
         "scoring_model_version": {"const": "operational-workflow-tool-effect-v4"},
-        "classification_model_version": {"const": "focused-context-v1"},
+        "classification_model_version": {"const": "focused-context-v2"},
         "display_decimal_places": {"const": 2},
         "focused_context_limits": {
           "type": "object",
