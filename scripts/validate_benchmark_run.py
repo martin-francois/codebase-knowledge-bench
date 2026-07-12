@@ -47,14 +47,14 @@ EXCLUDED_STATUSES = {
 AGGREGATE_STAT_KEYS = {"count", "min", "max", "mean", "median", "pstdev", "pvariance"}
 NUMERIC_AGGREGATE_FIELDS = {
     "overall_score",
-    "correctness_score",
+    "operational_correctness_score",
     "issue_contract_score",
     "common_regression_score",
     "patch_quality_score",
     "patch_review_points",
     "reference_conformance_score",
     "issue_contract_pass_fraction",
-    "extended_reference_pass_fraction",
+    "reference_conformance_pass_fraction",
     "common_regression_pass_fraction",
     "normalized_efficiency_score",
     "modeled_weighted_token_load",
@@ -282,9 +282,9 @@ def independent_test_fraction(command: str, exit_code: int | None, path: Path) -
 
 
 def rank_evidence_valid(row: dict[str, Any]) -> bool:
-    from benchmark_model import workflow_rank_eligible
+    from benchmark_model import operational_rank_eligible
 
-    return workflow_rank_eligible(row)
+    return operational_rank_eligible(row)
 
 
 def graded_correctness_score(row: dict[str, Any]) -> float:
@@ -787,15 +787,17 @@ def validate_execution(path: Path) -> list[str]:
             if scoring_model.get(key) != expected:
                 fail(errors, f"execution scoring_model has incorrect or missing {key}")
     variants = results.get("variants", [])
-    schema_v3 = scoring_model.get("schema_version") == "3.0.0"
+    current_schema = scoring_model.get("schema_version") == "3.0.0"
+    if not current_schema:
+        fail(errors, "unsupported result schema; update evidence to schema 3.0.0 in place")
+        return errors
     matrix: list[dict[str, Any]] = []
     matrix_path = root / "inputs" / "correctness-preflight-matrix.json"
-    if schema_v3:
-        if not matrix_path.is_file():
-            fail(errors, "schema-v3 execution is missing inputs/correctness-preflight-matrix.json")
-        else:
-            matrix_payload = load_json(matrix_path)
-            matrix = matrix_payload.get("cases", []) if isinstance(matrix_payload, dict) else matrix_payload
+    if not matrix_path.is_file():
+        fail(errors, "current-schema execution is missing inputs/correctness-preflight-matrix.json")
+    else:
+        matrix_payload = load_json(matrix_path)
+        matrix = matrix_payload.get("cases", []) if isinstance(matrix_payload, dict) else matrix_payload
     by_run = {row.get("run_id"): row for row in variants}
     ranked_ids = results.get("ranked_valid_run_ids", [])
     if not smoke_only and results.get("workflow_ranked_run_ids") != ranked_ids:
@@ -954,12 +956,12 @@ def validate_execution(path: Path) -> list[str]:
         variant = row.get("variant")
         if row.get("status") in INVALID_STATUSES or not row.get("trust_valid"):
             fail(errors, f"{run_id}/{variant}: ranked despite status {row.get('status')}")
-        if not row.get("workflow_rank_eligible"):
-            fail(errors, f"{run_id}/{variant}: ranked without workflow_rank_eligible=true")
+        if not row.get("operational_rank_eligible"):
+            fail(errors, f"{run_id}/{variant}: ranked without operational_rank_eligible=true")
         if not row.get("trust_valid"):
             fail(errors, f"{run_id}/{variant}: ranked without trust_valid=true")
-        if not row.get("workflow_rank_eligible"):
-            fail(errors, f"{run_id}/{variant}: ranked without workflow_rank_eligible=true")
+        if not row.get("operational_rank_eligible"):
+            fail(errors, f"{run_id}/{variant}: ranked without operational_rank_eligible=true")
         if not row.get("implementation_evaluated"):
             fail(errors, f"{run_id}/{variant}: ranked without implementation_evaluated=true")
         if row.get("exclusion_reason"):
@@ -970,9 +972,9 @@ def validate_execution(path: Path) -> list[str]:
         if not isinstance(normalized_efficiency, (int, float)) or not 0 <= float(normalized_efficiency) <= 100:
             fail(errors, f"{run_id}/{variant}: normalized efficiency is outside 0..100")
         expected_overall = (
-            0.90 * float(row.get("correctness_score") or 0)
+            0.90 * float(row.get("operational_correctness_score") or 0)
             + 0.10
-            * (float(row.get("correctness_score") or 0) / 100)
+            * (float(row.get("operational_correctness_score") or 0) / 100)
             * float(normalized_efficiency or 0)
         )
         if not math.isclose(float(row.get("overall_score") or 0), expected_overall, rel_tol=0, abs_tol=1e-9):
@@ -1052,236 +1054,24 @@ def validate_execution(path: Path) -> list[str]:
         variant = row.get("variant")
         if row.get("status") in INVALID_STATUSES and run_id not in invalid_ids:
             fail(errors, f"{run_id}/{variant}: invalid status missing from invalid_run_ids")
-        if (not row.get("workflow_rank_eligible")) and row.get("status") not in INVALID_STATUSES and run_id not in excluded_ids:
+        if (not row.get("operational_rank_eligible")) and row.get("status") not in INVALID_STATUSES and run_id not in excluded_ids:
             fail(errors, f"{run_id}/{variant}: excluded row missing from excluded_run_ids")
         if row.get("rank") is not None and run_id not in ranked_ids:
             fail(errors, f"{run_id}/{variant}: rank set but run id not in ranked_valid_run_ids")
-        if not schema_v3:
-            expected_full_pass = bool(
-                row.get("test_exit_code") == 0
-                and row.get("reference_test_exit_code") == 0
-                and (
-                    row.get("reference_extended_test_exit_code") == 0
-                    if row.get("reference_extended_test_command")
-                    else True
-                )
-                and not row.get("no_patch")
-            )
-            if row.get("full_reference_conformance_pass") is not expected_full_pass:
-                fail(errors, f"{run_id}/{variant}: full_reference_conformance_pass does not match test artifacts")
-        if "tests_passed" in row or "primary_correctness_passed" in row or "full_correctness_pass" in row:
-            fail(errors, f"{run_id}/{variant}: schema-v1 ambiguous correctness field is present")
-        if row.get("reference_extended_test_command"):
-            exit_code = row.get("reference_extended_test_exit_code")
-            if exit_code is not None:
-                expected_extended = exit_code == 0
-                if row.get("reference_extended_tests_passed") is not expected_extended:
-                    fail(errors, f"{run_id}/{variant}: extended reference result does not match its exit code")
+        obsolete_fields = {
+            "legacy", "workflow_rank_eligible", "correctness_score",
+            "extended_reference_pass_fraction", "extended_reference_full_pass",
+            "tool_integration_eligible", "fallback_search_used", "tests_passed",
+            "primary_correctness_passed", "full_correctness_pass",
+        }
+        if obsolete_fields.intersection(row):
+            fail(errors, f"{run_id}/{variant}: obsolete ambiguous correctness field is present")
         try:
             run_dir = variant_run_dir(root, str(run_id))
         except ValueError as exc:
             fail(errors, str(exc))
             continue
-        if schema_v3:
-            validate_v3_variant(row, run_dir, matrix, errors)
-            continue
-        fraction_specs = (
-            (
-                "common_regression_pass_fraction",
-                str(row.get("test_command") or ""),
-                row.get("test_exit_code"),
-                run_dir / "test.log",
-            ),
-            (
-                "issue_contract_pass_fraction",
-                str(row.get("reference_test_command") or ""),
-                row.get("reference_test_exit_code"),
-                run_dir / "reference-test.log",
-            ),
-            (
-                "extended_reference_pass_fraction",
-                str(row.get("reference_extended_test_command") or ""),
-                row.get("reference_extended_test_exit_code"),
-                run_dir / "reference-extended-test.log",
-            ),
-        )
-        for key, command, exit_code, log_path in fraction_specs:
-            actual = row.get(key)
-            if not isinstance(actual, (int, float)) or not 0 <= float(actual) <= 1:
-                fail(errors, f"{run_id}/{variant}: {key} is not a fraction from 0 to 1")
-                continue
-            expected = independent_test_fraction(command, exit_code, log_path)
-            if not math.isclose(float(actual), expected, rel_tol=0, abs_tol=1e-9):
-                fail(errors, f"{run_id}/{variant}: {key} does not match test log and exit code")
-        patch_review = row.get("patch_review_points")
-        if not isinstance(patch_review, (int, float)) or not 0 <= float(patch_review) <= 15:
-            fail(errors, f"{run_id}/{variant}: patch_review_points is outside 0..15")
-            patch_review = 0
-        measured = graded_correctness_score({**row, "patch_review_points": patch_review})
-        expected_issue_contract = 60 * float(row.get("issue_contract_pass_fraction") or 0)
-        expected_common = 20 * float(row.get("common_regression_pass_fraction") or 0)
-        expected_patch = 20 * float(patch_review) / 15
-        expected_reference_conformance = 20 * float(row.get("extended_reference_pass_fraction") or 0)
-        if not math.isclose(float(row.get("issue_contract_score") or 0), expected_issue_contract, rel_tol=0, abs_tol=1e-9):
-            fail(errors, f"{run_id}/{variant}: issue_contract_score does not match primary behavior fraction")
-        if not math.isclose(float(row.get("reference_conformance_score") or 0), expected_reference_conformance, rel_tol=0, abs_tol=1e-9):
-            fail(errors, f"{run_id}/{variant}: reference_conformance_score does not match extended behavior fraction")
-        if not math.isclose(float(row.get("common_regression_score") or 0), expected_common, rel_tol=0, abs_tol=1e-9):
-            fail(errors, f"{run_id}/{variant}: common_regression_score does not match common behavior fraction")
-        if not math.isclose(float(row.get("patch_quality_score") or 0), expected_patch, rel_tol=0, abs_tol=1e-9):
-            fail(errors, f"{run_id}/{variant}: patch_quality_score does not match review points")
-        if not math.isclose(
-            float(row.get("diagnostic_implementation_correctness_score") or 0),
-            measured,
-            rel_tol=0,
-            abs_tol=1e-9,
-        ):
-            fail(errors, f"{run_id}/{variant}: correctness does not follow the schema-v2 60/20/20 formula")
-        expected_implementation = bool(
-            float(row.get("solve_wall_seconds") or 0) > 0
-            and (run_dir / "run.jsonl").is_file()
-            and (run_dir / "test.log").is_file()
-            and (run_dir / "reference-test.log").is_file()
-            and (
-                not row.get("reference_extended_test_command")
-                or (run_dir / "reference-extended-test.log").is_file()
-            )
-        )
-        if bool(row.get("implementation_evaluated")) != expected_implementation:
-            fail(errors, f"{run_id}/{variant}: implementation_evaluated does not match execution artifacts")
-        malformed_solve = malformed_jsonl_lines(run_dir / "run.jsonl")
-        if row.get("malformed_jsonl_lines") != malformed_solve:
-            fail(errors, f"{run_id}/{variant}: malformed solve JSONL evidence does not match raw run.jsonl")
-        if int(row.get("malformed_jsonl_count") or 0) != len(malformed_solve):
-            fail(errors, f"{run_id}/{variant}: malformed_jsonl_count does not match raw run.jsonl")
-        if bool(row.get("jsonl_parse_valid")) != (not malformed_solve):
-            fail(errors, f"{run_id}/{variant}: jsonl_parse_valid does not match raw run.jsonl")
-        malformed_smoke = malformed_jsonl_lines(run_dir / "tool-smoke.jsonl")
-        if row.get("tool_smoke_malformed_jsonl_lines", []) != malformed_smoke:
-            fail(errors, f"{run_id}/{variant}: malformed smoke JSONL evidence does not match raw tool-smoke.jsonl")
-        expected_artifact_integrity = bool(
-            not (float(row.get("solve_wall_seconds") or 0) > 0 or (run_dir / "run.jsonl").is_file())
-            or (expected_implementation and not malformed_solve)
-        )
-        if bool(row.get("artifact_integrity_valid")) != expected_artifact_integrity:
-            fail(errors, f"{run_id}/{variant}: artifact_integrity_valid does not match parseable required evidence")
-        expected_rank_eligible = bool(row.get("trust_valid") and expected_implementation)
-        if bool(row.get("workflow_rank_eligible")) != expected_rank_eligible:
-            fail(errors, f"{run_id}/{variant}: workflow_rank_eligible disagrees with trust and implementation evidence")
-        expected_tool_effect = bool(
-            variant != "baseline-none"
-            and row.get("trust_valid")
-            and row.get("integration_operational")
-            and row.get("tool_invoked_successfully")
-            and row.get("context_issue_relevant")
-            and row.get("context_focused")
-            and row.get("context_bounded")
-            and row.get("context_useful")
-        )
-        if bool(row.get("tool_effect_eligible")) != expected_tool_effect:
-            fail(errors, f"{run_id}/{variant}: tool_effect_eligible does not require attributable issue-specific context")
-        expected_score = measured if expected_implementation else 0.0
-        if not math.isclose(float(row.get("correctness_score") or 0), expected_score, rel_tol=0, abs_tol=1e-9):
-            fail(errors, f"{run_id}/{variant}: correctness_score does not match validity-aware graded correctness")
-        expected_integration = bool(
-            variant != "baseline-none"
-            and row.get("integration_operational")
-            and row.get("context_issue_relevant")
-        )
-        if bool(row.get("tool_integration_valid")) != expected_integration:
-            fail(errors, f"{run_id}/{variant}: tool_integration_valid does not match useful solve context evidence")
-        if variant == "baseline-none" and row.get("tool_integration_applicable") is not False:
-            fail(errors, f"{run_id}/{variant}: baseline tool integration must be non-applicable")
-        relevance = row.get("solve_tool_relevance") or {}
-        if relevance:
-            focused_calls = [
-                call
-                for call in relevance.get("call_relevance") or []
-                if isinstance(call, dict) and call.get("focused_context") is True
-            ]
-            issue_specific_calls, focused_call_count = context_call_counts(
-                relevance.get("call_relevance") or []
-            )
-            if int(relevance.get("focused_call_count") or 0) != focused_call_count:
-                fail(errors, f"{run_id}/{variant}: focused call count disagrees with per-call relevance evidence")
-            if int(row.get("successful_issue_specific_tool_calls") or 0) != issue_specific_calls:
-                fail(errors, f"{run_id}/{variant}: issue-specific call count disagrees with returned context evidence")
-            for call in focused_calls:
-                accepted = int(call.get("accepted_context_items") or 0)
-                rejected = int(call.get("rejected_context_items") or 0)
-                returned = int(call.get("returned_context_items") or 0)
-                traversed = int(call.get("graph_traversal_nodes") or 0)
-                if not (
-                    accepted > 0
-                    and returned <= 40
-                    and rejected <= 4 * accepted
-                    and traversed <= 400
-                ):
-                    fail(errors, f"{run_id}/{variant}: integration-valid call is not focused and bounded")
-            if row.get("tool_effect_eligible") and not focused_calls:
-                fail(errors, f"{run_id}/{variant}: integration-valid record has no focused call evidence")
-        if expected_rank_eligible and row.get("exclusion_reason"):
-            fail(errors, f"{run_id}/{variant}: rank-eligible implementation has exclusion_reason")
-        expected_treatment_failure = bool(row.get("treatment_failure_before_implementation"))
-        if not expected_rank_eligible and not expected_treatment_failure and not row.get("exclusion_reason"):
-            fail(errors, f"{run_id}/{variant}: invalid trust/evaluation evidence lacks exclusion_reason")
-        if expected_treatment_failure and row.get("exclusion_reason"):
-            fail(errors, f"{run_id}/{variant}: genuine treatment failure misuses exclusion_reason")
-        if expected_treatment_failure and not row.get("failure_reason"):
-            fail(errors, f"{run_id}/{variant}: genuine treatment failure lacks failure_reason")
-        if not row.get("tool_integration_reason"):
-            fail(errors, f"{run_id}/{variant}: missing tool_integration_reason")
-        actual_execution_calls = sum(
-            int(row.get(key) or 0)
-            for key in (
-                "attempted_shell_command_calls",
-                "attempted_mcp_tool_calls",
-                "attempted_web_search_calls",
-            )
-        )
-        if int(row.get("actual_execution_calls") or 0) != actual_execution_calls:
-            fail(errors, f"{run_id}/{variant}: actual execution calls omit attempted JSONL events")
-        intended = int(row.get("intended_tool_attempts") or 0)
-        successful = int(row.get("successful_tool_calls_count") or 0)
-        useful = 1 if row.get("context_useful") else 0
-        issue_specific = int(row.get("successful_issue_specific_tool_calls") or 0)
-        failed = int(row.get("failed_tool_calls_count") or 0)
-        local_search = int(row.get("local_search_calls") or 0)
-        fallback = int(row.get("fallback_search_calls") or 0)
-        substitute = int(row.get("substitute_local_search_discovery_calls") or 0)
-        discovery = int(row.get("context_discovery_calls") or 0)
-        if intended != successful + failed:
-            fail(errors, f"{run_id}/{variant}: intended tool attempts do not equal successful plus failed calls")
-        if issue_specific > successful:
-            fail(errors, f"{run_id}/{variant}: issue-specific intended calls exceed successful intended calls")
-        if discovery != intended + local_search:
-            fail(errors, f"{run_id}/{variant}: context discovery calls omit intended or local search calls")
-        if variant == "baseline-none" and fallback != 0:
-            fail(errors, f"{run_id}/{variant}: baseline local search was mislabeled as fallback")
-        if variant != "baseline-none" and fallback != local_search:
-            fail(errors, f"{run_id}/{variant}: non-baseline fallback count does not match local code search calls")
-        if substitute != local_search:
-            fail(errors, f"{run_id}/{variant}: substitute discovery count does not match focused local discovery")
-        expected_attempt_share = intended / discovery if discovery else 0.0
-        expected_useful_rate = useful / intended if intended else 0.0
-        expected_fallback_share = fallback / discovery if discovery else 0.0
-        for key, expected in (
-            ("intended_tool_attempt_share", expected_attempt_share),
-            ("useful_tool_call_rate", expected_useful_rate),
-            ("fallback_discovery_share", expected_fallback_share),
-        ):
-            if not math.isclose(float(row.get(key) or 0), expected, rel_tol=0, abs_tol=1e-12):
-                fail(errors, f"{run_id}/{variant}: {key} does not match executed context calls")
-        expected_fallback_only = bool(variant != "baseline-none" and fallback > 0 and useful == 0)
-        if bool(row.get("fallback_only")) != expected_fallback_only:
-            fail(errors, f"{run_id}/{variant}: fallback_only does not match useful and fallback calls")
-        if row.get("first_relevant_context_source") not in {
-            "intended-tool",
-            "fallback-discovery",
-            "already-known-location",
-            "other",
-        }:
-            fail(errors, f"{run_id}/{variant}: invalid first_relevant_context_source")
+        validate_v3_variant(row, run_dir, matrix, errors)
     issue_url = None
     issue = results.get("issue")
     if isinstance(issue, dict):
@@ -1461,14 +1251,6 @@ def validate_suite(path: Path) -> list[str]:
                     fail(errors, f"{record.get('issue_id')}: qualification execution did not validate")
                 checkpoint_text = str(record.get("checkpoint") or "")
                 if not checkpoint_text:
-                    if record.get("historical_recomputed_qualification"):
-                        lineage_path = suite_dir / "recompute-lineage.json"
-                        lineage = load_json(lineage_path) if lineage_path.is_file() else {}
-                        if lineage.get("child_solves_rerun") is not False:
-                            fail(errors, f"{record.get('issue_id')}: historical qualification lacks no-rerun lineage")
-                        if not re.fullmatch(r"[0-9a-f]{64}", str(record.get("source_checkpoint_manifest_sha256") or "")):
-                            fail(errors, f"{record.get('issue_id')}: historical qualification lacks checkpoint manifest hash")
-                        continue
                     if not data.get("partial_or_interrupted"):
                         fail(errors, f"{record.get('issue_id')}: qualification checkpoint is missing")
                     continue
@@ -1546,7 +1328,7 @@ def validate_suite(path: Path) -> list[str]:
             runs = int(row.get("runs") or 0)
             correct = int(row.get("full_reference_conformance_passes") or 0)
             integrated = int(row.get("tool_integration_valid") or 0)
-            rankable = int(row.get("workflow_rank_eligible") or 0)
+            rankable = int(row.get("operational_rank_eligible") or 0)
             valid_evidence = int(row.get("valid_scheduled_evidence") or 0)
             workflow_evidence = int(row.get("workflow_eligible_denominator") or 0)
             if int(row.get("scheduled_denominator") or 0) != runs:
@@ -1585,7 +1367,7 @@ def validate_suite(path: Path) -> list[str]:
                 )
             ):
                 fail(errors, f"aggregate-ranked variant {variant} has an incorrect integration reliability rate")
-            if row.get("correctness_score", {}).get("count") != workflow_evidence:
+            if row.get("operational_correctness_score", {}).get("count") != workflow_evidence:
                 fail(errors, f"aggregate-ranked variant {variant} correctness is not restricted to workflow-eligible outcomes")
             for field in ("modeled_weighted_token_load", "solve_wall_seconds", "total_tool_calls"):
                 if row.get(field, {}).get("count") != rankable:
@@ -1596,12 +1378,12 @@ def validate_suite(path: Path) -> list[str]:
                 if source.get("variant") == variant
                 and source.get("trust_valid")
                 and (
-                    source.get("workflow_rank_eligible")
+                    source.get("operational_rank_eligible")
                     or source.get("treatment_failure_before_implementation")
                 )
             ]
             expected_correctness = (
-                sum(float(source.get("correctness_score") or 0) for source in source_rows)
+                sum(float(source.get("operational_correctness_score") or 0) for source in source_rows)
                 / len(source_rows)
                 if source_rows
                 else 0.0
