@@ -13,6 +13,7 @@ import importlib.util
 import os
 import subprocess
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
@@ -193,6 +194,25 @@ with tempfile.TemporaryDirectory() as tmp:
         self.assertEqual("Progress: 34% | Remaining: 1h 25m | Rep: 1/3 | Task: 2/3 (#498) | Serena (4/7)", plain)
         self.assertTrue(render_line(snapshot, interactive=True).startswith("⠋ Progress:"))
         self.assertNotIn("\x1b", plain)
+
+    def test_default_progress_stream_is_stderr(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, stream = Path(tmp), io.StringIO()
+            with mock.patch("benchmark_progress.sys.stderr", stream):
+                reporter = ProgressReporter(
+                    root / "suite",
+                    "suite",
+                    [{"issue_id": "#8"}],
+                    ["serena"],
+                    1,
+                    history_path=root / "history.json",
+                    interactive=False,
+                    plain_interval_seconds=0,
+                )
+                self.assertIs(reporter.stream, stream)
+                reporter.consume({"stage": "setup", "status": "active", "issue": "#8", "variant": "serena"})
+                reporter.close()
+            self.assertIn("Progress:", stream.getvalue())
 
     def test_plain_output_repeats_during_a_long_stage(self):
         with tempfile.TemporaryDirectory() as tmp:
