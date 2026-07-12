@@ -107,13 +107,18 @@ def main() -> int:
         "".join(json.dumps(record, sort_keys=True) + "\n" for record in recomputed_records),
         encoding="utf-8",
     )
+    recompute_trees = {
+        str(item.get("recompute_harness_effective_tree_sha256")) for item in lineage
+    }
+    if len(recompute_trees) != 1:
+        raise SystemExit(f"recomputed executions used different effective source trees: {sorted(recompute_trees)}")
     suite_lineage = {
         "schema_version": "3.0.0",
         "recomputed_at": datetime.now(timezone.utc).isoformat(),
         "source_suite_id": source.name,
         "source_execution_ids": [item.get("source_execution_id") for item in lineage],
         "source_schema_versions": sorted({str(item.get("source_schema_version")) for item in lineage}),
-        "recompute_harness_effective_tree_sha256": model_provenance()["effective_source_tree_sha256"],
+        "recompute_harness_effective_tree_sha256": next(iter(recompute_trees)),
         "role_source_provenance": model_provenance()["roles"],
         "execution_lineage": lineage,
         "child_solves_rerun": False,

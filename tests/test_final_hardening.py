@@ -130,8 +130,10 @@ class InvocationEligibilityAndAttributionTest(unittest.TestCase):
         source = (ROOT / "scripts/recompute_results.py").read_text(encoding="utf-8")
         self.assertIn("source_raw = source_root / relative", source)
         self.assertNotIn("source_raw = source / relative", source)
+        self.assertIn('recompute_source["effective_source_tree_sha256"]', source)
         suite_source = (ROOT / "scripts/recompute_suite.py").read_text(encoding="utf-8")
         self.assertIn('model_provenance()["roles"]', suite_source)
+        self.assertIn("len(recompute_trees) != 1", suite_source)
 
     def test_compound_graphify_commands_are_detected(self):
         commands = [

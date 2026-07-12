@@ -359,7 +359,6 @@ def main() -> None:
     )
     harness_root = Path(__file__).resolve().parents[1]
     provenance = module.model_provenance()
-    harness_tree = provenance["effective_source_tree_sha256"]
     recomputed_namespace = run_root / "recomputed-derived"
     recomputed_namespace.mkdir(parents=True, exist_ok=True)
     recompute_source = module.create_harness_source_archive(
@@ -371,7 +370,7 @@ def main() -> None:
         "original_harness_effective_tree_sha256": str(
             results.get("metadata", {}).get("harness_effective_tree_sha256") or "unknown"
         ),
-        "recompute_harness_effective_tree_sha256": harness_tree,
+        "recompute_harness_effective_tree_sha256": recompute_source["effective_source_tree_sha256"],
         "recompute_reason": ["matched-decision-fix", "task-viability-fix", "call-lifecycle-fix", "detached-publication-fix"],
         "recomputed_at": datetime.now(timezone.utc).isoformat(),
         "source_execution_id": source_root.name,
