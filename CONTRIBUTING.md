@@ -39,12 +39,11 @@ From the repository root:
 ```bash
 python3 -m py_compile scripts/*.py tests/test_harness.py
 python3 tests/test_harness.py -v
-bash -n scripts/run_strict_suite.sh
 git diff --check
 ```
 
 Use fixture-backed tests for scoring, aggregation, reporting, validation, archive, and recomputation
-changes. Run `./scripts/run_strict_suite.sh validation` only when a real child integration check is
+changes. Run a one-issue, one-repetition TOML only when a real child integration check is
 necessary. Do not run the full suite for reassurance.
 
 ## Contribution scope

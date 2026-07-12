@@ -27,7 +27,13 @@ from sequential_lock import LOCK_FD_ENV, default_lock_path, sequential_timing_lo
 
 BENCH = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = BENCH / "configs" / "default.toml"
-apply_configuration(default_config=DEFAULT_CONFIG)
+try:
+    RESOLVED_CONFIGURATION = apply_configuration(
+        argv=sys.argv[1:] if __name__ == "__main__" else [],
+        default_config=DEFAULT_CONFIG,
+    )
+except ValueError as error:
+    raise SystemExit(str(error)) from error
 STAGE_POLICY = StagePolicy.from_environment()
 
 
@@ -112,12 +118,7 @@ def safe_repo_relative_path(value: Any, field: str) -> str:
 def issue_spec_from_mapping(row: Any, base_dir: Path) -> IssueSpec:
     if not isinstance(row, dict):
         raise ValueError("each issue matrix entry must be an object/table")
-    aliases = {
-        "id": "issue_id",
-        "number": "issue_number",
-        "url": "issue_url",
-    }
-    normalized = {aliases.get(key, key): value for key, value in row.items()}
+    normalized = dict(row)
     allowed = {field.name for field in IssueSpec.__dataclass_fields__.values()}
     unknown = sorted(set(normalized) - allowed)
     if unknown:
@@ -203,26 +204,15 @@ def parse_issue_matrix(rows: Any, base_dir: Path) -> tuple[IssueSpec, ...]:
 
 def configured_issues() -> tuple[tuple[IssueSpec, ...], str]:
     raw_json = os.environ.get("BENCH_ISSUE_MATRIX_JSON", "").strip()
-    matrix_file_raw = os.environ.get("BENCH_ISSUE_MATRIX_FILE", "").strip()
-    if raw_json and matrix_file_raw:
-        raise SystemExit("Set only one of BENCH_ISSUE_MATRIX_JSON and BENCH_ISSUE_MATRIX_FILE")
     if raw_json:
         base_dir = Path(
             os.environ.get("BENCH_ISSUE_MATRIX_BASE_DIR", str(BENCH))
         ).expanduser().resolve()
         try:
-            source = os.environ.get("BENCH_ISSUE_MATRIX_SOURCE", "environment-json")
+            source = os.environ["BENCH_ISSUE_MATRIX_SOURCE"]
             return parse_issue_matrix(json.loads(raw_json), base_dir), source
         except (json.JSONDecodeError, ValueError) as exc:
             raise SystemExit(f"Invalid custom issue matrix: {exc}") from exc
-    if matrix_file_raw:
-        matrix_file = Path(matrix_file_raw).expanduser().resolve()
-        try:
-            payload = json.loads(matrix_file.read_text(encoding="utf-8"))
-            rows = payload.get("issues") if isinstance(payload, dict) else payload
-            return parse_issue_matrix(rows, matrix_file.parent), str(matrix_file)
-        except (OSError, json.JSONDecodeError, ValueError) as exc:
-            raise SystemExit(f"Invalid BENCH_ISSUE_MATRIX_FILE: {exc}") from exc
     raise SystemExit("No issue matrix configured")
 
 
@@ -277,19 +267,13 @@ def github_repo_slug(value: str) -> str | None:
 
 
 def ensure_target_checkout() -> None:
-    custom_matrix_with_default_target = (
-        ISSUE_MATRIX_SOURCE != str(DEFAULT_CONFIG)
-        and os.environ.get("BENCH_TARGET_REPO_FROM_IMPLICIT_PROFILE") == "true"
-    )
-    if not (TARGET_REPO_URL or TARGET_REPO_PATH_RAW) or custom_matrix_with_default_target:
-        raise SystemExit(
-            "A custom issue matrix requires BENCH_TARGET_REPO_URL or BENCH_TARGET_REPO_PATH"
-        )
+    if not (TARGET_REPO_URL or TARGET_REPO_PATH_RAW):
+        raise SystemExit("The suite TOML requires target_repo_url or target_repo_path")
     if TARGET_REPO_URL:
         try:
             validate_target_repo_url(TARGET_REPO_URL)
         except ValueError as exc:
-            raise SystemExit(f"Invalid BENCH_TARGET_REPO_URL: {exc}") from exc
+            raise SystemExit(f"Invalid target_repo_url: {exc}") from exc
     if ROOT.exists():
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
@@ -312,7 +296,7 @@ def ensure_target_checkout() -> None:
             stderr=subprocess.PIPE,
         )
         if clone.returncode != 0:
-            raise SystemExit("Unable to clone BENCH_TARGET_REPO_URL; inspect authentication and URL")
+            raise SystemExit("Unable to clone target_repo_url; inspect authentication and URL")
     target_identity = TARGET_REPO_URL
     if not target_identity:
         remote = subprocess.run(
@@ -332,7 +316,7 @@ def ensure_target_checkout() -> None:
             if issue_slug != target_slug:
                 raise SystemExit(
                     f"{issue.issue_id} belongs to {issue_slug}, not target {target_slug}; "
-                    "set BENCH_ALLOW_FOREIGN_ISSUE=true only when intentional"
+                    "set allow_foreign_issue = true in the suite TOML only when intentional"
                 )
 
 
@@ -2931,6 +2915,8 @@ def _main() -> None:
                 "issues": [asdict(issue) for issue in ISSUES],
                 "issues_selected": [asdict(issue) for issue in ISSUES_TO_RUN],
                 "issue_matrix_source": ISSUE_MATRIX_SOURCE,
+                "configuration_source": os.environ["BENCH_CONFIG_SOURCE"],
+                "resolved_configuration": RESOLVED_CONFIGURATION,
                 "variants": os.environ.get("BENCH_VARIANTS", "all candidates"),
                 "excluded_tools": excluded_tools(),
                 "issue_preflight_reuse_from": PREFLIGHT_REUSE_FROM or None,

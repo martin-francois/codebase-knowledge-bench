@@ -975,7 +975,6 @@ class ModelPreflightTest(unittest.TestCase):
             ROOT / "scripts" / "run_benchmark_suite.py",
             ROOT / "scripts" / "run_model_preflight.py",
             ROOT / "scripts" / "validate_benchmark_run.py",
-            ROOT / "scripts" / "run_strict_suite.sh",
             ROOT / "configs" / "default.toml",
             ROOT / "examples" / "custom-suite.toml",
         ):
@@ -1079,14 +1078,22 @@ class ModelPreflightTest(unittest.TestCase):
 
     def test_yolo_configuration_defaults_true_and_supports_opt_out(self) -> None:
         with mock.patch.dict(os.environ, {}, clear=True):
-            benchmark_config.apply_configuration([])
+            benchmark_config.apply_configuration([], default_config=ROOT / "configs" / "default.toml")
             self.assertEqual("true", os.environ["BENCH_YOLO"])
-        with mock.patch.dict(os.environ, {}, clear=True):
-            benchmark_config.apply_configuration(["--no-yolo"])
-            self.assertEqual("false", os.environ["BENCH_YOLO"])
-        with mock.patch.dict(os.environ, {}, clear=True):
-            benchmark_config.apply_configuration(["--yolo"])
-            self.assertEqual("true", os.environ["BENCH_YOLO"])
+        with tempfile.TemporaryDirectory() as tmp:
+            config = Path(tmp) / "suite.toml"
+            config.write_text(
+                (ROOT / "configs" / "default.toml").read_text(encoding="utf-8").replace(
+                    "yolo = true", "yolo = false"
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.dict(os.environ, {}, clear=True):
+                benchmark_config.apply_configuration([str(config)])
+                self.assertEqual("false", os.environ["BENCH_YOLO"])
+        for flag in ("--yolo", "--no-yolo"):
+            with self.assertRaisesRegex(ValueError, "usage"):
+                benchmark_config.apply_configuration([flag])
 
 
 class AggregationTest(unittest.TestCase):
@@ -1949,7 +1956,7 @@ class ComplianceRegressionTest(unittest.TestCase):
             "## Interpret the report",
             "## What the benchmark does",
             "## Security and privacy",
-            "## Common configuration controls",
+            "## Configuration reference",
             "## Troubleshooting",
             "## Need help?",
         )
@@ -1963,22 +1970,18 @@ class ComplianceRegressionTest(unittest.TestCase):
         self.assertIn("simple international English", agents)
         self.assertIn("Do not make readers scroll back", agents)
 
-    def test_readme_distinguishes_issue_definition_selection_and_matrix_files(self):
+    def test_readme_documents_toml_issue_definition_and_selection_only(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         for contract in (
             "Define and select challenges",
             "Top-level `[[issues]]` entries",
-            "`[benchmark].issues` selects which defined challenges",
+            "`[benchmark].selected_issues` selects which defined challenges",
             "selection applies to preflight, every workflow and repetition",
-            "--issues issue-123,456",
-            "BENCH_ISSUES=issue-123,456",
-            "complete challenge objects in a",
-            "JSON array. Use the same fields",
-            "--issue-matrix-file /absolute/path/to/issues.json",
-            "command-line matrix overrides",
-            "matrix defines challenges, not",
+            "JSON configuration and separate issue-matrix files are not supported",
         ):
             self.assertIn(contract, readme)
+        self.assertNotIn("--issues", readme)
+        self.assertNotIn("BENCH_ISSUES", readme)
 
     def test_readme_links_single_annotated_custom_suite_example(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -2031,18 +2034,53 @@ class ComplianceRegressionTest(unittest.TestCase):
                 publication.commit()
             self.assertEqual("validated", result.read_text(encoding="utf-8"))
 
-    def test_configuration_precedence_cli_over_config_over_environment(self) -> None:
+    def test_configuration_is_toml_only_and_ignores_ambient_values(self) -> None:
         import benchmark_config
 
         with tempfile.TemporaryDirectory() as tmp:
             config = Path(tmp) / "benchmark.toml"
-            config.write_text('[benchmark]\nmodel = "config-model"\nrepetitions = 2\n', encoding="utf-8")
-            with mock.patch.dict(os.environ, {"BENCH_MODEL": "environment-model"}, clear=False):
-                benchmark_config.apply_configuration(
-                    ["--config", str(config), "--model", "cli-model"]
-                )
-                self.assertEqual("cli-model", os.environ["BENCH_MODEL"])
+            config.write_text(
+                '[benchmark]\nmodel = "config-model"\nrepetitions = 2\n'
+                '[[issues]]\nissue_id="i"\n', encoding="utf-8"
+            )
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "BENCH_MODEL": "environment-model",
+                    "BENCH_ALLOW_OVERWRITE": "unsupported-ambient-value",
+                },
+                clear=False,
+            ):
+                benchmark_config.apply_configuration([str(config)])
+                self.assertEqual("config-model", os.environ["BENCH_MODEL"])
                 self.assertEqual("2", os.environ["BENCH_REPETITIONS"])
+                self.assertNotIn("BENCH_ALLOW_OVERWRITE", os.environ)
+            for arguments in (["--config", str(config)], [str(config), str(config)]):
+                with self.assertRaisesRegex(ValueError, "usage"):
+                    benchmark_config.apply_configuration(arguments)
+            json_config = Path(tmp) / "benchmark.json"
+            json_config.write_text("{}", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, r"\.toml"):
+                benchmark_config.apply_configuration([str(json_config)])
+            unknown = Path(tmp) / "unknown.toml"
+            unknown.write_text(
+                '[benchmark]\nunknown_setting = true\n[[issues]]\nissue_id = "i"\n',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "unknown benchmark configuration fields"):
+                benchmark_config.apply_configuration([str(unknown)])
+
+    def test_custom_suite_example_lists_every_public_parameter(self) -> None:
+        import benchmark_config
+
+        example = (ROOT / "examples" / "custom-suite.toml").read_text(encoding="utf-8")
+        for key in benchmark_config.FIELDS:
+            if key == "excluded_tools":
+                self.assertIn("[[benchmark.excluded_tools]]", example)
+            else:
+                self.assertIn(f"{key} =", example)
+        self.assertIn("# optional: Human explanation", example)
+        self.assertIn("# optional: Reference overlay", example)
 
     def test_repository_requires_spec_first_changes_with_regression_coverage(self) -> None:
         spec = (ROOT / "SPEC.md").read_text(encoding="utf-8")
@@ -2084,8 +2122,10 @@ class ComplianceRegressionTest(unittest.TestCase):
         ):
             self.assertNotIn(contributor_only, readme)
             self.assertIn(contributor_only, contributing)
-        self.assertIn("./scripts/run_strict_suite.sh validation", readme)
-        self.assertIn("python3 scripts/run_benchmark_suite.py --config", readme)
+        self.assertIn("python3 scripts/run_benchmark_suite.py", readme)
+        self.assertIn("python3 scripts/run_benchmark_suite.py /absolute/path/to/my-suite.toml", readme)
+        self.assertNotIn("run_strict_suite.sh", readme)
+        self.assertNotIn("--config", readme)
         self.assertIn("suite-report.md", readme)
 
     def test_configuration_embeds_custom_issue_matrix(self) -> None:
@@ -2095,8 +2135,8 @@ class ComplianceRegressionTest(unittest.TestCase):
             config = Path(tmp) / "benchmark.toml"
             config.write_text(
                 '[benchmark]\ntarget_repo_url = "https://github.com/acme/project.git"\n'
-                '[[issues]]\nid = "issue-7"\nnumber = 7\n'
-                'url = "https://github.com/acme/project/issues/7"\n'
+                '[[issues]]\nissue_id = "issue-7"\nissue_number = 7\n'
+                'issue_url = "https://github.com/acme/project/issues/7"\n'
                 'base_ref = "1111111111111111111111111111111111111111"\n'
                 'reference_commit = "2222222222222222222222222222222222222222"\n'
                 'test_command = "test"\nreference_test_command = "primary"\n'
@@ -2105,12 +2145,12 @@ class ComplianceRegressionTest(unittest.TestCase):
                 encoding="utf-8",
             )
             with mock.patch.dict(os.environ, {}, clear=True):
-                benchmark_config.apply_configuration(["--config", str(config)])
+                benchmark_config.apply_configuration([str(config)])
                 matrix = json.loads(os.environ["BENCH_ISSUE_MATRIX_JSON"])
-                self.assertEqual("issue-7", matrix[0]["id"])
+                self.assertEqual("issue-7", matrix[0]["issue_id"])
                 self.assertEqual(str(Path(tmp)), os.environ["BENCH_ISSUE_MATRIX_BASE_DIR"])
 
-    def test_implicit_canonical_profile_uses_generic_matrix_and_lowest_precedence(self) -> None:
+    def test_default_toml_overrides_ambient_configuration(self) -> None:
         import benchmark_config
 
         profile = ROOT / "configs/default.toml"
@@ -2120,8 +2160,8 @@ class ComplianceRegressionTest(unittest.TestCase):
             clear=True,
         ):
             benchmark_config.apply_configuration([], default_config=profile)
-            self.assertEqual("environment-model", os.environ["BENCH_MODEL"])
-            self.assertEqual("https://github.com/acme/repo.git", os.environ["BENCH_TARGET_REPO_URL"])
+            self.assertEqual("gpt-5.6-sol", os.environ["BENCH_MODEL"])
+            self.assertEqual("https://github.com/martin-francois/symphony-trello.git", os.environ["BENCH_TARGET_REPO_URL"])
             matrix = json.loads(os.environ["BENCH_ISSUE_MATRIX_JSON"])
             self.assertEqual(["issue-486", "issue-498", "issue-488"], [row["issue_id"] for row in matrix])
             self.assertEqual(str(profile), os.environ["BENCH_ISSUE_MATRIX_SOURCE"])
@@ -2215,9 +2255,9 @@ class ComplianceRegressionTest(unittest.TestCase):
 
     def test_custom_issue_matrix_is_normalized_and_rejects_unsafe_paths(self) -> None:
         valid = {
-            "id": "issue-7",
-            "number": 7,
-            "url": "https://github.com/acme/project/issues/7",
+            "issue_id": "issue-7",
+            "issue_number": 7,
+            "issue_url": "https://github.com/acme/project/issues/7",
             "base_ref": "1" * 40,
             "reference_commit": "2" * 40,
             "test_command": "test",
@@ -2234,9 +2274,9 @@ class ComplianceRegressionTest(unittest.TestCase):
 
     def test_custom_issue_matrix_rejects_duplicate_numbers(self) -> None:
         first = {
-            "id": "issue-7",
-            "number": 7,
-            "url": "https://github.com/acme/project/issues/7",
+            "issue_id": "issue-7",
+            "issue_number": 7,
+            "issue_url": "https://github.com/acme/project/issues/7",
             "base_ref": "1" * 40,
             "reference_commit": "2" * 40,
             "test_command": "test",
@@ -2244,7 +2284,7 @@ class ComplianceRegressionTest(unittest.TestCase):
             "reference_extended_test_command": "extended",
             "reference_test_files": ["tests/Issue7Test.java"],
         }
-        second = dict(first, id="other-7")
+        second = dict(first, issue_id="other-7")
         with self.assertRaisesRegex(ValueError, "duplicate issue_number"):
             suite.parse_issue_matrix([first, second], ROOT)
 
