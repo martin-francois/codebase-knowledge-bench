@@ -1235,7 +1235,7 @@ def validate_suite(path: Path) -> list[str]:
                 fail(errors, f"{run_id}: coordinator-handoff diagnostic log is missing")
             continue
         if failure_kind == "stale_qualification_checkpoint_before_solve":
-            errors.extend(validate_stale_checkpoint_diagnostic(attempt, root))
+            errors.extend(validate_stale_checkpoint_diagnostic(attempt, suite_dir))
             continue
         if int(attempt.get("model_service_unavailable_variant_count") or 0) < 1:
             fail(errors, f"{run_id}: infrastructure attempt lacks model-service failure evidence")

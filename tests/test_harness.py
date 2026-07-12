@@ -1454,6 +1454,12 @@ class ResumeAndValidatorTest(unittest.TestCase):
                 validator.validate_stale_checkpoint_diagnostic(attempts[0], root),
             )
 
+    def test_suite_validator_uses_suite_root_for_stale_checkpoint_diagnostic(self) -> None:
+        source = (SCRIPTS / "validate_benchmark_run.py").read_text(encoding="utf-8")
+        self.assertIn(
+            "validate_stale_checkpoint_diagnostic(attempt, suite_dir)", source
+        )
+
     def test_stale_qualification_harness_commit_is_not_reused(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
