@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 import tomllib
@@ -156,6 +157,7 @@ def read_config(path: Path) -> dict[str, Any]:
         if key in section and (
             isinstance(section[key], bool)
             or not isinstance(section[key], (int, float))
+            or not math.isfinite(section[key])
             or section[key] <= 0
         ):
             raise ValueError(f"benchmark {key} must be a positive number")
@@ -171,7 +173,10 @@ def read_config(path: Path) -> dict[str, Any]:
     target_url = section.get("target_repo_url")
     if isinstance(target_url, str):
         parsed_target = urlsplit(target_url)
-        if parsed_target.username is not None or parsed_target.password is not None:
+        if parsed_target.password is not None or (
+            parsed_target.scheme in {"http", "https"}
+            and parsed_target.username is not None
+        ):
             raise ValueError(
                 "benchmark target_repo_url must not contain embedded credentials; "
                 "use a Git credential helper"

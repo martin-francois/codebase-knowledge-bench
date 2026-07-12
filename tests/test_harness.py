@@ -2075,6 +2075,8 @@ class ComplianceRegressionTest(unittest.TestCase):
                 ("preflight_retries", "-1"),
                 ("stage_retries", "4"),
                 ("timeout_seconds", '"slow"'),
+                ("stage_monitor_interval_seconds", "inf"),
+                ("stage_idle_warning_seconds", "nan"),
             ):
                 invalid = Path(tmp) / f"invalid-{field}.toml"
                 invalid.write_text(
@@ -2092,6 +2094,18 @@ class ComplianceRegressionTest(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "must not contain embedded credentials"):
                 benchmark_config.apply_configuration([str(credentials)])
+
+            ssh_config = Path(tmp) / "ssh.toml"
+            ssh_config.write_text(
+                '[benchmark]\ntarget_repo_url = "ssh://git@github.com/acme/repo.git"\n'
+                '[[issues]]\nissue_id = "i"\n',
+                encoding="utf-8",
+            )
+            resolved = benchmark_config.apply_configuration([str(ssh_config)])
+            self.assertEqual(
+                "ssh://git@github.com/acme/repo.git",
+                resolved["target_repo_url"],
+            )
 
     def test_internal_report_import_preserves_custom_suite_settings(self) -> None:
         matrix = [
