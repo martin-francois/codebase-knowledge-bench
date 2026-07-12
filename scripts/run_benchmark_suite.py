@@ -27,13 +27,20 @@ from sequential_lock import LOCK_FD_ENV, default_lock_path, sequential_timing_lo
 
 BENCH = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = BENCH / "configs" / "default.toml"
-try:
-    RESOLVED_CONFIGURATION = apply_configuration(
-        argv=sys.argv[1:] if __name__ == "__main__" else [],
-        default_config=DEFAULT_CONFIG,
-    )
-except ValueError as error:
-    raise SystemExit(str(error)) from error
+if __name__ == "__main__":
+    try:
+        RESOLVED_CONFIGURATION = apply_configuration(
+            argv=sys.argv[1:],
+            default_config=DEFAULT_CONFIG,
+        )
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
+elif os.environ.get("BENCH_INTERNAL_PRESERVE_CONFIGURATION") == "true":
+    # Internal report rendering imports this module with the suite's normalized
+    # private process environment. It must not replace that state with defaults.
+    RESOLVED_CONFIGURATION = {}
+else:
+    RESOLVED_CONFIGURATION = apply_configuration(argv=[], default_config=DEFAULT_CONFIG)
 STAGE_POLICY = StagePolicy.from_environment()
 
 
