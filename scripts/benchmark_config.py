@@ -102,6 +102,15 @@ def scalar(value: Any) -> str:
     return str(value)
 
 
+def _is_finite_number(value: Any) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
 def _encode_exclusions(value: Any) -> str:
     if not isinstance(value, list) or not all(isinstance(row, dict) for row in value):
         raise ValueError("benchmark excluded_tools must be an array of {tool, reason} tables")
@@ -155,9 +164,7 @@ def read_config(path: Path) -> dict[str, Any]:
         raise ValueError("benchmark stage_retries must not exceed 3")
     for key in POSITIVE_NUMBER_FIELDS:
         if key in section and (
-            isinstance(section[key], bool)
-            or not isinstance(section[key], (int, float))
-            or not math.isfinite(section[key])
+            not _is_finite_number(section[key])
             or section[key] <= 0
         ):
             raise ValueError(f"benchmark {key} must be a positive number")

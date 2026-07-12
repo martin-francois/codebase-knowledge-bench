@@ -2077,6 +2077,7 @@ class ComplianceRegressionTest(unittest.TestCase):
                 ("timeout_seconds", '"slow"'),
                 ("stage_monitor_interval_seconds", "inf"),
                 ("stage_idle_warning_seconds", "nan"),
+                ("stage_idle_termination_seconds", "9" * 1000),
             ):
                 invalid = Path(tmp) / f"invalid-{field}.toml"
                 invalid.write_text(
