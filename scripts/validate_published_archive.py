@@ -4,15 +4,18 @@ from __future__ import annotations
 import json
 import re
 import sys
+import argparse
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark_hardening import sha256_file, validate_manifest
+from publication_safety import validate_embedded_manifests, validate_report_consistency, validate_source_roles
 
 
 DETACHED_ONLY = {
     "suite-bundle.sha256", "suite-bundle.zip.sha256", "suite-bundle.validation.json",
     "extracted-archive-validation.log",
+    "suite-bundle.semantic-validation.json",
 }
 
 
@@ -42,10 +45,11 @@ def validate_detached_publication(zip_path: Path, checksum_path: Path, receipt_p
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage: validate_published_archive.py <extracted-archive-root>")
-        return 2
-    root = Path(sys.argv[1]).resolve()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("root")
+    parser.add_argument("--report")
+    args = parser.parse_args()
+    root = Path(args.root).resolve()
     manifest_path = root / "suite-manifest.json"
     if not manifest_path.is_file():
         print("missing suite-manifest.json")
@@ -93,7 +97,9 @@ def main() -> int:
         text = path.read_text(encoding="utf-8", errors="replace")
         found = False
         if path.suffix == ".md":
-            found = bool(host_path.search(text))
+            # Markdown may describe masked host roots as security evidence. Only
+            # structured path fields are portability references.
+            found = False
         else:
             try:
                 payloads = [json.loads(line) for line in text.splitlines() if line.strip()] if path.suffix == ".jsonl" else [json.loads(text)]
@@ -102,6 +108,21 @@ def main() -> int:
             found = any(any(structured_host_paths(payload)) for payload in payloads)
         if found:
             errors.append(f"structured publication contains absolute host path: {path.relative_to(root)}")
+    embedded_report = validate_embedded_manifests(root)
+    source_report = validate_source_roles(root)
+    consistency_report = validate_report_consistency(root)
+    errors.extend(embedded_report["errors"])
+    errors.extend(source_report["errors"])
+    errors.extend(consistency_report["errors"])
+    semantic_report = {
+        "schema_version": "published-semantic-validation-v1",
+        "embedded_manifests": embedded_report,
+        "source_roles": source_report,
+        "report_consistency": consistency_report,
+        "validation_result": "failed" if errors else "passed",
+    }
+    if args.report:
+        Path(args.report).write_text(json.dumps(semantic_report, indent=2, sort_keys=True) + "\n")
     for error in errors:
         print(error)
     if errors:

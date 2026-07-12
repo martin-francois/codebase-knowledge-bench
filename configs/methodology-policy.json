@@ -4,6 +4,12 @@
     "pilot_descriptive_leader_enabled": false,
     "pilot_dispersion_label": "across_task_dispersion"
   },
+  "repeated_analysis": {
+    "schema_version": "repeated-analysis-v1",
+    "seed": 20260713,
+    "resamples": 10000,
+    "rank_stability_threshold": 0.8
+  },
   "attribution": {
     "strict_required_dimensions": [
       "tool_operational",

@@ -272,7 +272,10 @@ class InvocationEligibilityAndAttributionTest(unittest.TestCase):
     def test_publication_validator_rejects_structured_host_path(self):
         validator_source = (ROOT / "scripts/validate_published_archive.py").read_text(encoding="utf-8")
         self.assertIn("structured publication contains absolute host path", validator_source)
-        self.assertIn('"/home/server"', (ROOT / "scripts/run_benchmark_suite.py").read_text(encoding="utf-8"))
+        publisher_source = (ROOT / "scripts/run_benchmark_suite.py").read_text(encoding="utf-8")
+        self.assertNotIn('(\"/run\", \"$RUN_ROOT\")', publisher_source)
+        self.assertNotIn('(\"/home/server\", \"$HOME\")', publisher_source)
+        self.assertIn("sanitize_payload", publisher_source)
 
 
 if __name__ == "__main__":

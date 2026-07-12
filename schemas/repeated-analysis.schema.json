@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "repeated-analysis.schema.json",
+  "title": "Repeated matched operational analysis",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema_version", "seed", "resample_count", "analysis_mode", "outcome", "treatments"],
+  "properties": {
+    "schema_version": {"const": "repeated-analysis-v1"},
+    "seed": {"type": "integer"},
+    "resample_count": {"type": "integer", "minimum": 1},
+    "analysis_mode": {"enum": ["pilot_only", "repeated_inference"]},
+    "statistically_supported_operational_winner": {"type": ["string", "null"]},
+    "outcome": {"type": "string"},
+    "treatments": {"type": "object"}
+  }
+}

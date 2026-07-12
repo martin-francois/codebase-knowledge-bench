@@ -38,6 +38,8 @@ from benchmark_hardening import (
     validate_taxonomy_matrix,
 )
 from benchmark_progress import EVENT_PREFIX, ProgressReporter
+from publication_safety import sanitize_payload
+from repeated_analysis import analyze_repeated
 
 
 ACTIVE_PROGRESS_REPORTER: ProgressReporter | None = None
@@ -1707,7 +1709,12 @@ def load_variant_records(run_records: list[dict[str, Any]]) -> list[dict[str, An
         if not path.exists():
             continue
         data = json.loads(path.read_text(encoding="utf-8"))
-        ranked = {run_id: rank for rank, run_id in enumerate(data.get("ranked_valid_run_ids", []), 1)}
+        operational_ranks = {
+            run_id: rank for rank, run_id in enumerate(data.get("operational_ranked_run_ids", []), 1)
+        }
+        descriptive_ranks = {
+            run_id: rank for rank, run_id in enumerate(data.get("descriptive_composite_order_run_ids", []), 1)
+        }
         for metric in data.get("variants", []):
             row = dict(metric)
             row["suite_run_id"] = run["run_id"]
@@ -1718,7 +1725,8 @@ def load_variant_records(run_records: list[dict[str, Any]]) -> list[dict[str, An
             row["benchmark_report"] = str(Path(run["execution_root"]) / "benchmark-report.md")
             row["results_json"] = run["results_json"]
             row["issue_rationale"] = issue_by_id[run["issue_id"]].rationale
-            row["rank_in_execution"] = ranked.get(row.get("run_id"))
+            row["operational_rank"] = operational_ranks.get(row.get("run_id"))
+            row["descriptive_composite_rank"] = descriptive_ranks.get(row.get("run_id"))
             row["trust_valid"] = bool(row.get("trust_valid"))
             row["implementation_evaluated"] = bool(row.get("implementation_evaluated"))
             from benchmark_model import tool_effect_eligible, operational_rank_eligible
@@ -2027,7 +2035,14 @@ def aggregate(variant_rows: list[dict[str, Any]]) -> dict[str, Any]:
         ),
     )
     for idx, row in enumerate(ranking, 1):
-        row["aggregate_rank"] = idx
+        row["descriptive_composite_rank"] = idx
+        row["operational_rank"] = None
+    successful_ranking = [
+        row for row in ranking
+        if int(row.get("operational_viability_counts", {}).get("successful") or 0) > 0
+    ]
+    for idx, row in enumerate(successful_ranking, 1):
+        row["operational_rank"] = idx
 
     tool_effect_candidates = [
         row
@@ -2108,6 +2123,12 @@ def aggregate(variant_rows: list[dict[str, Any]]) -> dict[str, Any]:
             }
         )
     matched = matched_operational_comparisons(variant_rows, METHODOLOGY_POLICY)
+    repeated = analyze_repeated(
+        variant_rows,
+        METHODOLOGY_POLICY,
+        seed=int(METHODOLOGY_POLICY.get("repeated_analysis", {}).get("seed", 20260713)),
+        resamples=int(METHODOLOGY_POLICY.get("repeated_analysis", {}).get("resamples", 10000)),
+    )
     return {
         "ranking_basis": (
             "primary operational workflow ranking over trust-valid completed implementations: "
@@ -2122,6 +2143,7 @@ def aggregate(variant_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "tool_effect_excluded": tool_effect_excluded,
         "balanced_tool_effect": balanced_effect,
         "matched_operational_comparisons": matched,
+        "repeated_analysis": repeated,
         "operational_conclusion": authoritative_operational_conclusion(
             variant_rows, {"matched_operational_comparisons": matched},
             max((int(row.get("repetition") or 1) for row in variant_rows), default=1),
@@ -2258,14 +2280,19 @@ def write_report(suite_dir: Path, suite_id: str, run_records: list[dict[str, Any
         f"Operational scope: solve-only provisioned cost; warm workflow is reported separately. Thresholds: `{json.dumps(METHODOLOGY_POLICY['operational_comparison'], sort_keys=True)}`.", "",
         table(matched.get("blocks", []), ["issue_id", "repetition", "variant", "decision", "viability_decision", "operational_correctness_score", "modeled_weighted_token_load", "solve_wall_seconds"]), "",
         "## 4. Repeated Paired Inference", "",
-        "Unavailable in pilot-only mode." if repetitions < 3 else "See machine-readable matched inference.", "",
+        (
+            "Unavailable in pilot-only mode; no inferential winner is permitted."
+            if aggregates.get("repeated_analysis", {}).get("analysis_mode") == "pilot_only"
+            else "Machine conclusion: `" + str(aggregates.get("repeated_analysis", {}).get("outcome"))
+            + "`; supported treatment: `" + str(aggregates.get("repeated_analysis", {}).get("statistically_supported_operational_winner")) + "`."
+        ), "",
         "## 5. Operational Pareto Frontier and Tie Bands", "",
         f"Pareto frontier: `{matched.get('pareto_frontier', [])}`; tie band: `{matched.get('tie_band_points')}` points.", "",
         "## 6. Strict Direct Attribution", "", table(attribution_rows, list(attribution_rows[0]) if attribution_rows else []), "",
         "## 7. Operational Cost Scopes", "", table(cost_rows, list(cost_rows[0]) if cost_rows else []), "",
         "## 8. Secondary Descriptive Scalar Ordering", "",
         "This ordering is `secondary_descriptive_only`; it is not the primary operational conclusion.", "",
-        table(aggregates.get("aggregate_ranking", []), ["aggregate_rank", "variant", "aggregate_overall_score", "expected_workflow_correctness"]), "",
+        table(aggregates.get("aggregate_ranking", []), ["operational_rank", "descriptive_composite_rank", "variant", "aggregate_overall_score", "expected_workflow_correctness"]), "",
         "## 9. Diagnostics", "",
         "Native discovery after successful intended-tool use is allowed and retains its measured cost. Baseline requires completed trust-valid evaluated evidence; non-baseline treatments additionally require at least one successful intended-tool solve invocation. Tool focus, boundedness, and direct usefulness are attribution dimensions, not operational eligibility gates.", "",
     ]
@@ -2289,25 +2316,23 @@ def write_zip(suite_dir: Path) -> None:
             raise RuntimeError(f"unsafe suite archive path: {archive_path}")
         raw_evidence_names = {
             "run.jsonl", "tool-invocations-solve.jsonl", "issue-sanitized.json",
-            "issue-sanitized.md", "issue-raw.json", "issue-raw.md",
+            "issue-sanitized.md", "issue-raw.json", "issue-raw.md", "run.stderr",
+            "child-final-message.txt", "test.log", "reference-test.log",
+            "reference-extended-test.log", "tool-setup.log", "tool-index.log",
         }
-        if archive_path.suffix in {".json", ".jsonl", ".md"} and archive_path.name not in raw_evidence_names:
-            try:
-                public_text = payload.decode("utf-8")
-            except UnicodeDecodeError:
-                pass
-            else:
-                replacements = (
-                    (str(suite_dir), "$RUN_ROOT"),
-                    (str(suite_dir.parent), "$OUTPUT_ROOT"),
-                    (str(BENCH), "$HARNESS_ROOT"),
-                    ("/home/server", "$HOME"),
-                    ("/root", "$HOME"),
-                    ("/run", "$RUN_ROOT"),
-                )
-                for host_path, placeholder in replacements:
-                    public_text = public_text.replace(host_path, placeholder)
-                payload = public_text.encode("utf-8")
+        if archive_path.suffix in {".json", ".jsonl", ".md", ".txt", ".log"} and archive_path.name not in raw_evidence_names:
+            payload = sanitize_payload(
+                payload,
+                archive_path.suffix,
+                {
+                    str(suite_dir): "$RUN_ROOT",
+                    str(suite_dir.parent): "$OUTPUT_ROOT",
+                    str(OUTPUT_ROOT): "$OUTPUT_ROOT",
+                    str(BENCH): "$HARNESS_ROOT",
+                    str(Path.home()): "$HOME",
+                    str(default_lock_path().parent): "$LOCK_ROOT",
+                },
+            )
         archived.add(name)
         zf.writestr(name, payload)
         required = bool(payload) or archive_path.suffix in {
@@ -2329,7 +2354,7 @@ def write_zip(suite_dir: Path) -> None:
 
     detached_names = {
         "suite-bundle.sha256", "suite-bundle.zip.sha256", "suite-bundle.validation.json",
-        "extracted-archive-validation.log",
+        "suite-bundle.semantic-validation.json", "extracted-archive-validation.log",
     }
     suite_manifest: dict[str, Any] = {}
     with zipfile.ZipFile(temporary_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -2370,7 +2395,6 @@ def write_zip(suite_dir: Path) -> None:
             execution_files = {
                 execution_root / "results.json": True,
                 execution_root / "benchmark-report.md": True,
-                execution_root / "review-manifest.json": True,
                 execution_root / "export" / "benchmark-bundle.zip": True,
             }
             review_manifest = execution_root / "review-manifest.json"
@@ -2393,6 +2417,8 @@ def write_zip(suite_dir: Path) -> None:
             for path, required in execution_files.items():
                 if path.is_file():
                     relative = path.relative_to(execution_root)
+                    if relative.name == "review-manifest.json":
+                        continue
                     payload = (
                         sanitized_archive.read(relative.as_posix())
                         if sanitized_archive and relative.as_posix() in sanitized_names
@@ -2404,6 +2430,45 @@ def write_zip(suite_dir: Path) -> None:
                     )
             if sanitized_archive:
                 sanitized_archive.close()
+        for run_id in sorted(seen_execution_ids):
+            execution_prefix = f"executions/{run_id}"
+            namespace_roots = [
+                f"{execution_prefix}/original-derived",
+                f"{execution_prefix}/recomputed-derived",
+            ]
+            for manifest_root in namespace_roots:
+                namespace_entries = [
+                    {**entry, "path": entry["path"][len(manifest_root) + 1:]}
+                    for entry in entries
+                    if entry["path"].startswith(manifest_root + "/")
+                    and not entry["path"].endswith("/review-manifest.json")
+                ]
+                if namespace_entries:
+                    add_bytes(
+                        zf, Path(manifest_root) / "review-manifest.json",
+                        (json.dumps({"schema_version": MANIFEST_SCHEMA_VERSION, "manifest_root": ".",
+                                     "entries": namespace_entries}, indent=2, sort_keys=True) + "\n").encode(),
+                        "published-review-manifest-v1", True,
+                    )
+            execution_entries = [
+                {**entry, "path": entry["path"][len(execution_prefix) + 1:]}
+                for entry in entries
+                if entry["path"].startswith(execution_prefix + "/")
+                and entry["path"] != f"{execution_prefix}/review-manifest.json"
+            ]
+            add_bytes(
+                zf, Path(execution_prefix) / "review-manifest.json",
+                (json.dumps({"schema_version": MANIFEST_SCHEMA_VERSION, "manifest_root": ".",
+                             "entries": execution_entries}, indent=2, sort_keys=True) + "\n").encode(),
+                "published-review-manifest-v1", True,
+            )
+        add_bytes(
+            zf,
+            Path("REPRODUCE.md"),
+            (BENCH / "REPRODUCE.md").read_bytes(),
+            "reproduction-guide-v1",
+            True,
+        )
         entries.sort(key=lambda entry: entry["path"])
         digest = sha256_bytes(
             json.dumps(entries, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -2419,24 +2484,31 @@ def write_zip(suite_dir: Path) -> None:
         )
     os.replace(temporary_zip, zip_path)
     extracted_manifest: dict[str, Any] = {}
+    semantic_report: dict[str, Any] = {}
     with tempfile.TemporaryDirectory(prefix="benchmark-published-") as tmp:
         extracted = Path(tmp)
+        semantic_report_path = extracted.parent / "semantic-validation.json"
         with zipfile.ZipFile(zip_path) as archive:
             archive.extractall(extracted)
         extracted_manifest = json.loads((extracted / "suite-manifest.json").read_text(encoding="utf-8"))
         validation = subprocess.run(
-            [sys.executable, str(BENCH / "scripts" / "validate_published_archive.py"), str(extracted)],
+            [sys.executable, str(BENCH / "scripts" / "validate_published_archive.py"), str(extracted),
+             "--report", str(semantic_report_path)],
             cwd=BENCH,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             timeout=300,
         )
+        if semantic_report_path.is_file():
+            semantic_report = json.loads(semantic_report_path.read_text(encoding="utf-8"))
     if validation.returncode != 0:
         zip_path.unlink(missing_ok=True)
         raise RuntimeError("published archive failed extracted validation: " + validation.stdout[-2000:])
     archive_sha = hashlib.sha256(zip_path.read_bytes()).hexdigest()
     atomic_write_text(suite_dir / "suite-bundle.zip.sha256", f"{archive_sha}  suite-bundle.zip\n")
+    semantic_bytes = (json.dumps(semantic_report, indent=2, sort_keys=True) + "\n").encode()
+    (suite_dir / "suite-bundle.semantic-validation.json").write_bytes(semantic_bytes)
     receipt = {
         "schema_version": "detached-publication-v1",
         "archive_sha256": archive_sha,
@@ -2447,6 +2519,9 @@ def write_zip(suite_dir: Path) -> None:
             (BENCH / "scripts" / "validate_published_archive.py").read_bytes()
         ).hexdigest(),
         "validator_version": "published-archive-v2",
+        "semantic_validation_sha256": hashlib.sha256(semantic_bytes).hexdigest(),
+        "embedded_manifest_count": len(semantic_report.get("embedded_manifests", {}).get("manifests", [])),
+        "source_role_count": len(semantic_report.get("source_roles", {}).get("roles", [])),
         "validated_at": stamp(),
         "validation_result": "passed",
     }

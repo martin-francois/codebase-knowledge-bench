@@ -806,6 +806,8 @@ class CorrectnessScoringTest(unittest.TestCase):
             "variant": "graphify",
             "status": "tool_unavailable_in_child",
             "operational_rank_eligible": True,
+            "operational_rank": 1,
+            "descriptive_composite_rank": 1,
             "tool_integration_valid": False,
             "successful_tool_calls": [],
             "failed_tool_calls": [],
@@ -1334,7 +1336,8 @@ class SuiteEvidenceMutationTest(unittest.TestCase):
             results_json.write_text(
                 json.dumps(
                     {
-                        "ranked_valid_run_ids": ["run-001"],
+                        "operational_ranked_run_ids": ["run-001"],
+                        "descriptive_composite_order_run_ids": ["run-001"],
                         "variants": [
                             {
                                 "run_id": "run-001",
@@ -1342,6 +1345,9 @@ class SuiteEvidenceMutationTest(unittest.TestCase):
                                 "trust_valid": True,
                                 "implementation_evaluated": True,
                                 "operational_rank_eligible": True,
+                                "task_success": True,
+                                "operational_rank": 1,
+                                "descriptive_composite_rank": 1,
                                 "tool_integration_valid": False,
                                 "tool_effect_eligible": False,
                                 "operational_correctness_score": 40.0,
@@ -2648,6 +2654,8 @@ class ComplianceRegressionTest(unittest.TestCase):
             "trust_valid": True,
             "treatment_adherent": True,
             "operational_rank_eligible": True,
+            "operational_rank": 1,
+            "descriptive_composite_rank": 1,
             "implementation_evaluated": True,
             "implementation_produced": True,
             "workflow_completed": True,
