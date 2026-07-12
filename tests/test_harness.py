@@ -1400,6 +1400,55 @@ class SuiteEvidenceMutationTest(unittest.TestCase):
 
 
 class ResumeAndValidatorTest(unittest.TestCase):
+    def test_issue_specific_and_focused_call_counts_are_independent(self) -> None:
+        issue_specific, focused = runner.context_call_counts(
+            [
+                {"accepted_context_items": 2, "focused_context": False},
+                {"accepted_context_items": 1, "focused_context": True},
+                {"accepted_context_items": 0, "focused_context": False},
+            ]
+        )
+
+        self.assertEqual(2, issue_specific)
+        self.assertEqual(1, focused)
+
+        metrics = {
+            "intended_tool_attempts": 4,
+            "context_useful": True,
+            "solve_tool_relevance": {
+                "call_relevance": [
+                    {"accepted_context_items": 2, "focused_context": False},
+                    {"accepted_context_items": 1, "focused_context": True},
+                ]
+            },
+        }
+        runner.apply_context_call_metrics(metrics)
+        self.assertEqual(2, metrics["successful_issue_specific_tool_calls"])
+        self.assertEqual(1, metrics["successful_focused_tool_calls"])
+        self.assertEqual(0.25, metrics["useful_tool_call_rate"])
+
+    def test_baseline_empty_smoke_jsonl_is_optional_but_tool_smoke_is_required(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            baseline = root / "runs" / "run-001" / "tool-smoke.jsonl"
+            tool = root / "runs" / "run-002" / "tool-smoke.jsonl"
+            baseline.parent.mkdir(parents=True)
+            tool.parent.mkdir(parents=True)
+            baseline.write_bytes(b"")
+            tool.write_bytes(b"")
+            baseline_variant = mock.Mock(run_id="run-001", runnable=True)
+            baseline_variant.name = "baseline-none"
+            tool_variant = mock.Mock(run_id="run-002", runnable=True)
+            tool_variant.name = "serena"
+            variants = [baseline_variant, tool_variant]
+
+            optional = runner.manifest_optional_empty_paths(
+                [baseline, tool], variants, root
+            )
+
+        self.assertIn("runs/run-001/tool-smoke.jsonl", optional)
+        self.assertNotIn("runs/run-002/tool-smoke.jsonl", optional)
+
     def test_corrupt_export_is_reported_as_validation_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
