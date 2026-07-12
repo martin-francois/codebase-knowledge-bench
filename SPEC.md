@@ -950,9 +950,10 @@ External inputs are copied under `inputs/`; exported paths are relative. Manifes
 path, SHA-256, bytes, media type, required, producer, and schema version plus a root digest. Missing,
 mismatched, stale, absolute, or unexpected zero-byte required artifacts fail validation.
 
-`ISO-003` Child Codex uses the least sufficient permission mode, normally `workspace-write` without
-YOLO. Broader bypass requires a preserved lower-permission canary failure. User/repository hooks are
-disabled or proven absent; `--dangerously-bypass-hook-trust` is not a default. Dependency caches are
+`ISO-003` Child Codex uses the configured YOLO mode inside the sealed Bubblewrap boundary. YOLO
+defaults to enabled for canonical comparability, and users MAY opt out with `yolo=false` when they
+prefer standard approval mode. User/repository hooks are disabled or proven absent;
+`--dangerously-bypass-hook-trust` is not a separate default. Dependency caches are
 pinned, prewarmed, hashed, and isolated; host homes, original checkout, siblings, and references are
 inaccessible.
 
