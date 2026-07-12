@@ -17,6 +17,7 @@ from repeated_analysis import analyze_repeated
 
 
 POLICY = json.loads((ROOT / "configs" / "methodology-policy.json").read_text())
+GOLDEN = json.loads((ROOT / "tests" / "fixtures" / "repeated-analysis-expected.json").read_text())
 
 
 def row(issue: str, repetition: int, variant: str, correctness: float, tokens: float, seconds: float,
@@ -111,19 +112,23 @@ class RepeatedAnalysisTest(unittest.TestCase):
         first = analyze_repeated(rows, POLICY, seed=7, resamples=400)
         second = analyze_repeated(reversed(rows), POLICY, seed=7, resamples=400)
         self.assertEqual(first, second)
-        self.assertEqual("graphify", first["statistically_supported_operational_winner"])
+        self.assertEqual(GOLDEN["cases"]["consistent_win"]["statistically_supported_operational_winner"],
+                         first["statistically_supported_operational_winner"])
 
     def test_consistent_loss_is_inconclusive(self):
         result = analyze_repeated(self.fixture(lambda _i, _r: (70, 1200, 120, True)), POLICY, resamples=200)
-        self.assertIsNone(result["statistically_supported_operational_winner"])
+        self.assertEqual(GOLDEN["cases"]["consistent_loss"]["statistically_supported_operational_winner"],
+                         result["statistically_supported_operational_winner"])
 
     def test_equal_correctness_clear_token_savings(self):
         result = analyze_repeated(self.fixture(lambda _i, _r: (80, 700, 100, True)), POLICY, resamples=200)
-        self.assertEqual("graphify", result["statistically_supported_operational_winner"])
+        self.assertEqual(GOLDEN["cases"]["equal_correctness_clear_token_savings"]["statistically_supported_operational_winner"],
+                         result["statistically_supported_operational_winner"])
 
     def test_low_tokens_failed_correctness_cannot_win(self):
         result = analyze_repeated(self.fixture(lambda _i, _r: (20, 100, 20, False)), POLICY, resamples=200)
-        self.assertIsNone(result["statistically_supported_operational_winner"])
+        self.assertEqual(GOLDEN["cases"]["lower_tokens_failed_correctness"]["statistically_supported_operational_winner"],
+                         result["statistically_supported_operational_winner"])
 
     def test_cross_issue_heterogeneity_and_zero_variance_are_explicit(self):
         result = analyze_repeated(self.fixture(lambda issue, _r: ((100 if issue == 0 else 60), 900, 100, True)),
@@ -145,8 +150,10 @@ class RepeatedAnalysisTest(unittest.TestCase):
 
     def test_fewer_than_three_repetitions_is_pilot_only(self):
         result = analyze_repeated(self.fixture(lambda _i, _r: (100, 500, 50, True), repetitions=2), POLICY, resamples=100)
-        self.assertEqual("pilot_only", result["analysis_mode"])
-        self.assertIsNone(result["statistically_supported_operational_winner"])
+        expected = GOLDEN["cases"]["fewer_than_three_repetitions"]
+        self.assertEqual(expected["analysis_mode"], result["analysis_mode"])
+        self.assertEqual(expected["statistically_supported_operational_winner"],
+                         result["statistically_supported_operational_winner"])
 
 
 class LeakageClassifierTest(unittest.TestCase):

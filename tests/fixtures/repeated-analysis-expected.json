@@ -1,0 +1,41 @@
+{
+  "schema_version": "repeated-analysis-golden-v1",
+  "seed": 7,
+  "cases": {
+    "consistent_win": {
+      "analysis_mode": "repeated_inference",
+      "statistically_supported_operational_winner": "graphify"
+    },
+    "consistent_loss": {
+      "statistically_supported_operational_winner": null
+    },
+    "equal_correctness_clear_token_savings": {
+      "statistically_supported_operational_winner": "graphify"
+    },
+    "lower_tokens_failed_correctness": {
+      "statistically_supported_operational_winner": null
+    },
+    "strong_cross_issue_heterogeneity": {
+      "heterogeneity_positive": true
+    },
+    "zero_variance": {
+      "standardized_effect_unavailable_reason": "zero_delta_variance"
+    },
+    "one_timeout": {
+      "timeout_exclusion_reduces_block_count": true
+    },
+    "missing_ineligible_block": {
+      "matched_block_count_less_than_scheduled": true
+    },
+    "rank_instability": {
+      "statistically_supported_operational_winner": null
+    },
+    "pareto_tie": {
+      "pareto_probability_present": true
+    },
+    "fewer_than_three_repetitions": {
+      "analysis_mode": "pilot_only",
+      "statistically_supported_operational_winner": null
+    }
+  }
+}
