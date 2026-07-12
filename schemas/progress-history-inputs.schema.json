@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "history_schema_version",
+    "estimator_version",
+    "fingerprint_version",
+    "history_path",
+    "minimum_samples",
+    "stages",
+    "events"
+  ],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "history_schema_version": {"const": "1"},
+    "estimator_version": {"type": "string"},
+    "fingerprint_version": {"type": "string"},
+    "history_path": {"type": "string", "pattern": "^[^/\\\\]+$"},
+    "minimum_samples": {"type": "integer", "minimum": 1},
+    "stages": {"type": "object"},
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "timestamp",
+          "stage",
+          "status",
+          "estimate_source",
+          "sample_count",
+          "selected_observation_ids"
+        ],
+        "properties": {
+          "timestamp": {"type": "string"},
+          "run_id": {"type": ["string", "null"]},
+          "stage": {"type": "string"},
+          "status": {"type": "string"},
+          "cohort": {"type": ["string", "null"]},
+          "cohort_inputs": {"type": ["object", "null"]},
+          "estimate_source": {"type": "string"},
+          "sample_count": {"type": "integer", "minimum": 0},
+          "selected_observation_ids": {
+            "type": "array",
+            "items": {"type": "string"},
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

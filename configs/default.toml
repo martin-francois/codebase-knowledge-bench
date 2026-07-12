@@ -18,6 +18,10 @@ stage_monitor_interval_seconds = 30
 stage_idle_warning_seconds = 300
 stage_terminate_on_idle = false
 stage_idle_termination_seconds = 1800
+progress_enabled = true
+progress_history_enabled = true
+progress_interval_seconds = 30
+progress_min_samples = 1
 variants = [
   "baseline-none",
   "sverklo",

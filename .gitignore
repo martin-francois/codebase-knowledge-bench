@@ -31,3 +31,4 @@ latest-*.txt
 *.pyc
 *.pyo
 __pycache__/
+progress-history.json*
