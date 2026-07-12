@@ -2521,3 +2521,7 @@ The `P113` requirements are implemented by the shared supervisor in `scripts/sta
 
 Post-reconstruction additions after P114: `normative-current` +1. No added source unit is unchecked or unclassified.
 Issue #3 implementation evidence: `scripts/sequential_lock.py` enforces one user-scoped machine-local timing owner; suite children inherit the locked descriptor through `scripts/run_benchmark_suite.py`; standalone executions acquire it in `scripts/run_benchmark.py`; `tests/test_sequential_lock.py` proves contention waiting, inherited ownership, fail-closed descriptors, and provenance without child solves.
+
+| [x] | `P115.U001` | 115 | Accept only no argument for default.toml or one TOML path; move every public setting into TOML and remove compatibility, flags, environment configuration, JSON/matrix indirection, and unused surface. | `normative-current` | Explicit issue #2 requirement supersedes mixed CLI/config/environment precedence. | `SPEC.md` - TOML-only invocation (`CFG-010` through `CFG-013`) | Specification mapped; implementation evidence follows in issue #2 commit. |
+
+Post-reconstruction additions after P115: `normative-current` +1. No added source unit is unchecked or unclassified.
