@@ -1,0 +1,26 @@
+:root { font-family: Georgia, "Times New Roman", serif; color: #17211e; background: #f4f0e5; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; background: radial-gradient(circle at 88% 8%, #bed8cc 0, transparent 28rem), repeating-linear-gradient(90deg, transparent 0 47px, rgba(23,33,30,.035) 48px), #f4f0e5; }
+main { width: min(1180px, calc(100% - 2rem)); margin: auto; padding: 3rem 0 5rem; }
+header { max-width: 850px; border-left: 8px solid #d27d2d; padding-left: 1.4rem; margin-bottom: 2rem; }
+.eyebrow { font-family: ui-monospace, monospace; text-transform: uppercase; letter-spacing: .14em; font-size: .75rem; }
+h1 { font-size: clamp(2.6rem, 8vw, 6.5rem); line-height: .88; margin: .3rem 0 1rem; max-width: 9ch; }
+h2 { font-size: clamp(1.5rem, 3vw, 2.3rem); }
+.lede { font-size: 1.18rem; line-height: 1.5; max-width: 65ch; }
+.status { display: inline-block; background: #17211e; color: #fff; padding: .55rem .8rem; font-family: ui-monospace, monospace; }
+.controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; padding: 1rem; background: rgba(255,255,255,.74); border: 1px solid #87998f; box-shadow: 7px 7px 0 #17211e; }
+.controls label, fieldset { display: grid; gap: .4rem; font-family: ui-monospace, monospace; border: 0; margin: 0; padding: 0; }
+button, select, input { font: inherit; }
+button, select { padding: .55rem .7rem; border: 2px solid #17211e; background: #fff; }
+button[aria-pressed="true"] { background: #007f73; color: #fff; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 4px solid #d27d2d; outline-offset: 2px; }
+section { margin-top: 2.5rem; }
+.chart { width: 100%; min-height: 450px; background: rgba(255,255,255,.72); padding: 1rem; border: 1px solid #87998f; }
+.note { font-family: ui-monospace, monospace; font-size: .85rem; }
+.table-wrap { overflow-x: auto; border: 1px solid #17211e; background: #fff; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: .7rem; border-bottom: 1px solid #bec8c3; text-align: right; }
+th:first-child { text-align: left; }
+thead { background: #17211e; color: #fff; }
+@media (max-width: 650px) { main { width: min(100% - 1rem, 1180px); padding-top: 1rem; } .controls { display: grid; } h1 { font-size: 3.2rem; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

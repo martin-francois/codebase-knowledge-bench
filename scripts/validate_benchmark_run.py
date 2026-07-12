@@ -1089,6 +1089,7 @@ def validate_execution(path: Path) -> list[str]:
 
 def validate_suite(path: Path) -> list[str]:
     from benchmark_model import model_provenance
+    from dashboard import validate_dashboard
 
     suite_dir = path
     root = suite_dir
@@ -1107,8 +1108,13 @@ def validate_suite(path: Path) -> list[str]:
     if primary_statement and primary_statement not in report:
         fail(errors, "suite report conclusion disagrees with machine-readable matched policy")
     if all(not row.get("task_success") for row in data.get("variant_rows", [])):
-        if "No successful implementation; no operational winner" not in report:
-            fail(errors, "all-failed suite report does not suppress the operational winner")
+        required = (
+            "No workflow fully solved",
+            "No single preference-independent overall winner",
+        )
+        for phrase in required:
+            if phrase.lower() not in report.lower():
+                fail(errors, f"all-incomplete suite report omits: {phrase}")
     if data.get("analysis_policy", {}).get("scalar_composite_role") != "secondary_descriptive_only":
         fail(errors, "aggregate scalar is not labeled secondary_descriptive_only")
     policy = data.get("analysis_policy")
@@ -1469,6 +1475,8 @@ def validate_suite(path: Path) -> list[str]:
             if [row.get("variant") for row in effect_ranking] != [row.get("variant") for row in expected_effect_order]:
                 fail(errors, "secondary tool-effect ranking order is inconsistent")
     validate_suite_export(suite_dir, data, errors)
+    if data.get("aggregates", {}).get("operational_tradeoffs") is not None:
+        validate_dashboard(suite_dir, data, errors)
     return errors
 
 

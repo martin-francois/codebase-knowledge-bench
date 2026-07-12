@@ -2548,3 +2548,20 @@ Post-reconstruction additions after P117: `normative-current` +1. No added sourc
 | [x] | `P118.U010` | 118 | Do not run a fresh canary or full three-repetition suite during this task. | `normative-current` | Explicit token-discipline constraint. | `SPEC.md` `RUN-001`; agent validation ladder | Only fixture tests and deterministic recomputation were run. |
 
 Post-reconstruction additions after P118: `normative-current` +9, `one-time-operation` +1. No added source unit is unchecked or unclassified.
+## Prompt P119: preference-sensitive analysis and dashboard
+
+| Source ID | Normalized source text | Classification | Destination | Status | Implementation evidence |
+| --- | --- | --- | --- | --- | --- |
+| P119.U001 | Preserve operational treatment and strict direct attribution as separate questions. | normative-current | SPEC.md, section 35 | [x] | `operational_tradeoffs.py`; existing attribution object |
+| P119.U002 | Separate absolute correctness from relative operational desirability, including incomplete matched implementations. | normative-current | SPEC.md, TRD-001 | [x] | `absolute_quality`; `relative_to_matched_baseline` |
+| P119.U003 | Report continuous effects, thresholds, and a configurable correctness-loss grid. | normative-current | SPEC.md, TRD-002 through TRD-003 | [x] | `configs/methodology-policy.json`; sensitivity fixtures |
+| P119.U004 | Use paired non-inferiority and issue-aware hierarchical resampling. | normative-current | SPEC.md, TRD-004 | [x] | deterministic bootstrap fixtures |
+| P119.U005 | Make exact and tolerance-aware Pareto analysis primary and scalar scores secondary. | normative-current | SPEC.md, TRD-005 | [x] | frontier and dominance implementation |
+| P119.U006 | Publish break-even metrics and preference profiles. | normative-current | SPEC.md, TRD-006 | [x] | break-even and profile analysis |
+| P119.U007 | Build a self-contained React, TypeScript, Vite, and Vega dashboard from canonical JSON. | normative-current | SPEC.md, DSH-001 through DSH-003 | [x] | `dashboard/`; `scripts/dashboard.py` |
+| P119.U008 | Correct the preserved issue-498 canary interpretation without rerunning children. | normative-current | SPEC.md, TRD-008 | [x] | recomputed canary: 618-entry detached publication; `child_solves_rerun=false` |
+| P119.U009 | Prepare but do not launch a fresh issue-486 three-arm canary. | normative-current | SPEC.md, acceptance policy | [x] | `configs/issue-486-three-arm-canary.toml` |
+| P119.U010 | Run deterministic tests, publication validation, commit, and push. | one-time-operation | AGENTS.md workflow | [x] | 242 deterministic tests plus extracted-archive validation; commit/push recorded in final response |
+
+Classification totals for P119: normative-current 9; one-time-operation 1. No P119 unit is
+unclassified and no P119 unit remains unchecked.

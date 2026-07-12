@@ -31,4 +31,6 @@ latest-*.txt
 *.pyc
 *.pyo
 __pycache__/
+dashboard/node_modules/
+dashboard/dist/
 progress-history.json*

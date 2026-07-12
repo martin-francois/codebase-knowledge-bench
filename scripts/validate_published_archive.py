@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark_hardening import sha256_file, validate_manifest
 from publication_safety import validate_embedded_manifests, validate_report_consistency, validate_source_roles
+from dashboard import validate_dashboard
 
 
 DETACHED_ONLY = {
@@ -114,6 +115,11 @@ def main() -> int:
     errors.extend(embedded_report["errors"])
     errors.extend(source_report["errors"])
     errors.extend(consistency_report["errors"])
+    suite_results_path = root / "suite-results.json"
+    if suite_results_path.is_file():
+        suite_result = json.loads(suite_results_path.read_text(encoding="utf-8"))
+        if suite_result.get("aggregates", {}).get("operational_tradeoffs") is not None:
+            validate_dashboard(root, suite_result, errors)
     semantic_report = {
         "schema_version": "published-semantic-validation-v1",
         "embedded_manifests": embedded_report,

@@ -5540,6 +5540,17 @@ def write_reference_comparison(v: Variant, metrics: dict[str, Any]) -> None:
 
 
 def write_results_candidate(metrics_by_run: dict[str, dict[str, Any]], variants: list[Variant], meta: dict[str, Any], issue: dict[str, Any], base_ok: bool) -> None:
+    from operational_tradeoffs import enrich_rows
+    from benchmark_model import METHODOLOGY_POLICY
+
+    enrich_rows(
+        list(metrics_by_run.values()),
+        float(
+            METHODOLOGY_POLICY["operational_comparison"][
+                "correctness_equivalence_margin_points"
+            ]
+        ),
+    )
     rankable = [m for m in metrics_by_run.values() if m.get("operational_rank_eligible")]
     def rank_key(m: dict[str, Any]):
         return (
