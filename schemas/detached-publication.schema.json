@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Detached suite publication receipt",
+  "type": "object",
+  "required": ["schema_version", "archive_sha256", "archive_bytes", "content_manifest_root_sha256", "manifest_entry_count", "validator_source_sha256", "validator_version", "validated_at", "validation_result"],
+  "properties": {
+    "schema_version": {"const": "detached-publication-v1"},
+    "archive_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "archive_bytes": {"type": "integer", "minimum": 1},
+    "content_manifest_root_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "manifest_entry_count": {"type": "integer", "minimum": 1},
+    "validator_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "validator_version": {"type": "string"},
+    "validated_at": {"type": "string"},
+    "validation_result": {"const": "passed"}
+  }
+}
