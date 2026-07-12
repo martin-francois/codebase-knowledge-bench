@@ -83,18 +83,18 @@ class RetryPolicyTest(unittest.TestCase):
         self.assertEqual(1, len(attempts))
         run.assert_called_once()
 
-    def test_verification_retries_timeout_only(self) -> None:
+    def test_verification_delegates_timeout_retry_to_stage_supervisor(self) -> None:
         timeout = runner.CommandResult("test", ".", 124, "", "timeout", 0.1, True)
-        failure = runner.CommandResult("test", ".", 1, "", "assertion failed", 0.1, False)
         with (
             mock.patch.object(runner, "TEST_RETRIES", 3),
             mock.patch.object(runner, "benchmark_test_env", return_value={}),
-            mock.patch.object(runner, "run", side_effect=[timeout, failure]) as run,
+            mock.patch.object(runner, "run", return_value=timeout) as run,
         ):
             result, attempts, _ = runner.run_verification_command("test", ROOT)
-        self.assertEqual(1, result.returncode)
-        self.assertEqual(2, len(attempts))
-        self.assertEqual(2, run.call_count)
+        self.assertEqual(124, result.returncode)
+        self.assertEqual(1, len(attempts))
+        run.assert_called_once()
+        self.assertEqual("verification", run.call_args.kwargs["stage"])
 
     def test_issue_preflight_does_not_retry_assertion_failure(self) -> None:
         completed = subprocess.CompletedProcess(["test"], 1, stdout="", stderr="assertion")
@@ -1743,6 +1743,11 @@ class ResumeAndValidatorTest(unittest.TestCase):
                 mock.patch.object(runner, "run_base_verification", return_value=True),
                 mock.patch.object(runner, "make_prompt"),
                 mock.patch.object(runner, "run", return_value=clean),
+                mock.patch.object(
+                    runner,
+                    "qualification_checkpoint_reuse_decision",
+                    return_value=(True, "all checkpoint inputs match exactly"),
+                ),
             )
             with ExitStack() as stack:
                 for patcher in patches:
