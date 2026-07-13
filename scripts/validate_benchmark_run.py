@@ -179,17 +179,30 @@ def validate_schema_value(
     root_schema = root_schema or schema
     reference = schema.get("$ref")
     if isinstance(reference, str):
-        if not reference.startswith("#/"):
-            fail(errors, f"{path}: unsupported non-local schema reference {reference}")
+        reference_document = root_schema
+        fragment = reference
+        if not reference.startswith("#"):
+            document_name, separator, external_fragment = reference.partition("#")
+            document_path = Path(__file__).resolve().parents[1] / "schemas" / document_name
+            if not document_path.is_file():
+                fail(errors, f"{path}: unresolved schema document {document_name}")
+                return
+            reference_document = load_json(document_path)
+            fragment = f"#{external_fragment}" if separator else "#"
+        target: Any = reference_document
+        if fragment == "#":
+            validate_schema_value(value, target, path, errors, reference_document)
             return
-        target: Any = root_schema
-        for component in reference[2:].split("/"):
+        if not fragment.startswith("#/"):
+            fail(errors, f"{path}: unsupported schema fragment {reference}")
+            return
+        for component in fragment[2:].split("/"):
             component = component.replace("~1", "/").replace("~0", "~")
             if not isinstance(target, dict) or component not in target:
                 fail(errors, f"{path}: unresolved schema reference {reference}")
                 return
             target = target[component]
-        validate_schema_value(value, target, path, errors, root_schema)
+        validate_schema_value(value, target, path, errors, reference_document)
         return
     for keyword in ("allOf",):
         for child in schema.get(keyword, []):
