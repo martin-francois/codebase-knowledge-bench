@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -19,6 +20,7 @@ from benchmark_hardening import (
     append_invocation_record,
     attribution_record,
     command_invokes_tool,
+    create_harness_source_archive,
     execution_call_lifecycle,
     matched_operational_comparisons,
     operational_rank_eligible,
@@ -26,6 +28,24 @@ from benchmark_hardening import (
 )
 from benchmark_model import METHODOLOGY_POLICY
 from validate_published_archive import validate_detached_publication
+
+
+class CleanSourceArchiveTest(unittest.TestCase):
+    def test_clean_commit_omits_empty_uncommitted_patch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "repo"
+            root.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.name", "Fixture"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.email", "fixture@example.invalid"], cwd=root, check=True)
+            (root / "source.txt").write_text("content\n", encoding="utf-8")
+            subprocess.run(["git", "add", "source.txt"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-q", "-m", "fixture"], cwd=root, check=True)
+            destination = Path(tmp) / "publication" / "source.tar"
+            metadata = create_harness_source_archive(root, destination)
+            self.assertFalse(metadata["uncommitted_changes_present"])
+            self.assertIsNone(metadata["uncommitted_patch"])
+            self.assertFalse((destination.parent / "harness-uncommitted.patch").exists())
 
 
 def row(case_id: str, category: str, weight: float, *, discriminating: bool) -> dict:

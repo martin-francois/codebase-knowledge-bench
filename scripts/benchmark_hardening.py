@@ -1371,7 +1371,10 @@ def create_harness_source_archive(harness: Path, destination: Path) -> dict[str,
     dirty = subprocess.run(["git", "diff", "--binary", "HEAD"], cwd=harness,
                            stdout=subprocess.PIPE, check=True).stdout
     dirty_path = destination.with_name("harness-uncommitted.patch")
-    dirty_path.write_bytes(dirty)
+    if dirty:
+        dirty_path.write_bytes(dirty)
+    else:
+        dirty_path.unlink(missing_ok=True)
     source_entries = [
         {"path": relative, "sha256": sha256_file(harness / relative)}
         for relative in files if (harness / relative).is_file()
@@ -1390,7 +1393,7 @@ def create_harness_source_archive(harness: Path, destination: Path) -> dict[str,
         "effective_source_tree_sha256": effective_tree,
         "archive": destination.name,
         "archive_sha256": sha256_bytes(archive),
-        "uncommitted_patch": dirty_path.name,
-        "uncommitted_patch_sha256": sha256_bytes(dirty),
+        "uncommitted_patch": dirty_path.name if dirty else None,
+        "uncommitted_patch_sha256": sha256_bytes(dirty) if dirty else None,
         "uncommitted_changes_present": bool(status),
     }
