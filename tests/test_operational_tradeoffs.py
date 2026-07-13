@@ -88,6 +88,7 @@ class OperationalTradeoffTest(unittest.TestCase):
         self.assertEqual(1.0, zero["bootstrap_support"]["correctness_non_inferior"])
         self.assertEqual(1.0, zero["bootstrap_support"]["lower_tokens"])
         self.assertFalse(comparison["absolute_quality"]["all_tasks_successful"])
+        self.assertEqual("limited_cluster_evidence", comparison["estimability"]["issue_cluster_status"])
 
     def test_equal_incomplete_lower_time_is_relative_benefit(self) -> None:
         result = self.analyze(*self.repeated(tool_tokens=1000, tool_time=400))

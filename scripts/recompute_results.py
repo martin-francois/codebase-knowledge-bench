@@ -356,7 +356,7 @@ def main() -> None:
                 changes.append({
                     "run_id": row["run_id"], "variant": row["variant"], "field": field,
                     "original": original.get(field), "recomputed": row.get(field),
-                    "reason": "current deterministic matrix, lifecycle, viability, adherence, attribution, or cost derivation",
+                    "reason": "current deterministic matrix, lifecycle, absolute-quality, adherence, attribution, or cost derivation",
                 })
     (run_root / "recomputed-value-diff.json").write_text(
         json.dumps(changes, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -371,11 +371,12 @@ def main() -> None:
     lineage = {
         "raw_evidence_root_sha256": raw_evidence_sha,
         "original_derived_results_sha256": original_results_sha,
-        "original_harness_effective_tree_sha256": str(
+        "original_harness_recorded_source_hash": str(
             results.get("metadata", {}).get("harness_effective_tree_sha256") or "unknown"
         ),
-        "recompute_harness_effective_tree_sha256": recompute_source["effective_source_tree_sha256"],
-        "recompute_reason": ["matched-decision-fix", "task-viability-fix", "call-lifecycle-fix", "detached-publication-fix"],
+        "recompute_harness_effective_source_content_sha256": recompute_source["effective_source_content_sha256"],
+        "recompute_harness_source_manifest_sha256": recompute_source["source_manifest_sha256"],
+        "recompute_reason": ["matched-decision-fix", "absolute-quality-fix", "call-lifecycle-fix", "detached-publication-fix"],
         "recomputed_at": datetime.now(timezone.utc).isoformat(),
         "source_execution_id": source_root.name,
         "source_suite_id": matching_suite.name,

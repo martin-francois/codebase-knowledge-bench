@@ -12,46 +12,11 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD = ROOT / "dashboard"
 SCHEMA = ROOT / "schemas" / "dashboard-data.schema.json"
-VERSION = "operational-dashboard-v2"
+VERSION = "operational-dashboard-v3"
 
-METRIC_DESCRIPTORS: dict[str, dict[str, str]] = {
-    "modeled_weighted_token_load": {
-        "relative_field": "modeled_weighted_token_load_change_percent",
-        "label": "Modeled weighted token load", "unit": "tokens",
-    },
-    "non_cached_input_tokens": {
-        "relative_field": "non_cached_input_tokens_change_percent",
-        "label": "Non-cached input tokens", "unit": "tokens",
-    },
-    "output_tokens": {
-        "relative_field": "output_tokens_change_percent",
-        "label": "Output tokens", "unit": "tokens",
-    },
-    "reasoning_output_tokens": {
-        "relative_field": "reasoning_output_tokens_change_percent",
-        "label": "Reasoning output tokens", "unit": "tokens",
-    },
-    "solve_wall_seconds": {
-        "relative_field": "solve_wall_seconds_change_percent",
-        "label": "Solve wall time", "unit": "seconds",
-    },
-    "warm_workflow_seconds": {
-        "relative_field": "warm_workflow_seconds_change_percent",
-        "label": "Warm end-to-end time", "unit": "seconds",
-    },
-    "execution_calls_started": {
-        "relative_field": "execution_calls_started_change_percent",
-        "label": "Execution calls started", "unit": "calls",
-    },
-    "intended_tool_successful_calls": {
-        "relative_field": "intended_tool_successful_calls_change_percent",
-        "label": "Successful intended-tool calls", "unit": "calls",
-    },
-    "estimated_monetary_cost": {
-        "relative_field": "estimated_monetary_cost_change_percent",
-        "label": "Estimated monetary cost", "unit": "currency",
-    },
-}
+METRIC_DESCRIPTORS: dict[str, dict[str, Any]] = json.loads(
+    (DASHBOARD / "src" / "metric-descriptors.json").read_text(encoding="utf-8")
+)
 
 
 def _number(value: Any) -> float | None:
@@ -143,12 +108,14 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
     descriptors = {
         key: {
             "absolute_field": key,
-            "relative_field": value["relative_field"],
-            "mean_field": f"{key}_mean",
-            "median_field": f"{key}_median",
-            "direction": "lower",
+            "relative_field": value["relativeField"],
+            "mean_field": value["meanField"],
+            "median_field": value["medianField"],
+            "direction": value["direction"],
             "label": value["label"],
             "unit": value["unit"],
+            "availability": value["availability"],
+            "baseline_relative_meaningful": value["baselineRelativeMeaningful"],
             "absolute_available": any(
                 run["metrics"][key] is not None for run in runs
             ),
@@ -193,6 +160,13 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
                 "objective_specific_winners"
             ],
             "operational_stability": analysis["operational_stability"],
+            "supported_findings": analysis["supported_findings"],
+            "correctness_tolerance_lenses": analysis[
+                "correctness_tolerance_lenses"
+            ],
+            "resource_priority_candidates": analysis[
+                "resource_priority_candidates"
+            ],
         },
     }
 

@@ -348,11 +348,13 @@ class ParsingIsolationAndEfficiencyTest(unittest.TestCase):
     def test_model_provenance_hashes_all_derivation_layers(self):
         provenance = runner.model_provenance()
         for key in (
-            "effective_source_tree_sha256", "aggregator_source_sha256",
+            "effective_source_content_sha256", "source_manifest_sha256", "aggregator_source_sha256",
             "scorer_source_sha256", "validator_source_sha256",
             "report_generator_source_sha256", "schemas_sha256",
         ):
             self.assertRegex(provenance[key], r"^[0-9a-f]{64}$")
+        self.assertEqual(provenance["source_hash_algorithm"], "sha256(path_utf8_nul_file_sha256_bytes)")
+        self.assertEqual(provenance["source_hash_version"], "source-content-v1")
 
     def test_recompute_accepts_explicit_plan_for_aborted_suite(self):
         source = (ROOT / "scripts/recompute_results.py").read_text()

@@ -3,6 +3,23 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+const descriptorSource = JSON.parse(
+  fs.readFileSync(path.join(process.cwd(), "src", "metric-descriptors.json"), "utf8"),
+) as Record<string, {
+  absoluteField: string; relativeField: string; meanField: string; medianField: string;
+  direction: "lower"; label: string; unit: string; availability: "required" | "optional";
+  baselineRelativeMeaningful: boolean;
+}>;
+
+const publishedDescriptors = Object.fromEntries(Object.entries(descriptorSource).map(([key, value]) => [key, {
+  absolute_field: value.absoluteField, relative_field: value.relativeField,
+  mean_field: value.meanField, median_field: value.medianField,
+  direction: value.direction, label: value.label, unit: value.unit,
+  availability: value.availability,
+  baseline_relative_meaningful: value.baselineRelativeMeaningful,
+  absolute_available: key !== "estimated_monetary_cost",
+  relative_available: key !== "estimated_monetary_cost" && value.baselineRelativeMeaningful,
+}]));
 
 const metricValues = (tokens: number, time: number, calls: number) => ({
   modeled_weighted_token_load: tokens, non_cached_input_tokens: tokens * .8,
@@ -18,9 +35,9 @@ const makeRun = (treatment: string, issue: string, repetition: number, correctne
   metrics: metricValues(tokens, time, calls),
 });
 const data = {
-  schema_version: "operational-dashboard-v2", suite_id: "browser-fixture",
+  schema_version: "operational-dashboard-v3", suite_id: "browser-fixture",
   analysis_mode: "repeated_matched", tolerance_grid: [0, 1, 2.5, 5, 7.5, 10],
-  default_tolerance: 2.5, metric_descriptors: {}, points: [],
+  default_tolerance: 2.5, metric_descriptors: publishedDescriptors, points: [],
   individual_runs: [
     makeRun("baseline-none", "a", 1, 30, 1000, 500, 10),
     makeRun("baseline-none", "a", 2, 30, 100, 300, 20),
@@ -32,7 +49,7 @@ const data = {
     makeRun("tool", "b", 1, 35, 1000, 300, 15),
     makeRun("invalid", "a", 1, 100, 1, 1, 1, false),
   ],
-  canonical: {comparisons: {}, coverage: {}, complete_block_frontier: {}, exact_pareto_frontier: [], tolerance_aware_pareto_frontiers: {}, preference_profiles: {}, objective_specific_winners: {}, operational_stability: {}},
+  canonical: {comparisons: {}, coverage: {}, complete_block_frontier: {}, exact_pareto_frontier: [], tolerance_aware_pareto_frontiers: {}, preference_profiles: {}, objective_specific_winners: {}, operational_stability: {}, supported_findings: {}, correctness_tolerance_lenses: {}, resource_priority_candidates: {}},
 };
 
 test("offline dashboard controls and table remain synchronized", async ({page}) => {
@@ -50,9 +67,10 @@ test("offline dashboard controls and table remain synchronized", async ({page}) 
   await expect(page.locator('tr[data-treatment="tool"]')).toContainText("460.00");
   await page.getByRole("button", {name: "Relative to baseline"}).click();
   await page.getByLabel("X-axis metric").selectOption("solve_wall_seconds");
-  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("-34.17");
+  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("-35.07");
   await page.getByLabel("X-axis metric").selectOption("execution_calls_started");
-  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("-37.50");
+  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("-38.40");
+  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("Not estimable");
   await page.getByLabel("Issue", {exact: true}).selectOption("b");
   await expect(page.locator('tr[data-treatment="tool"]')).toContainText("-50.00");
   await page.getByLabel("Issue", {exact: true}).selectOption("a");

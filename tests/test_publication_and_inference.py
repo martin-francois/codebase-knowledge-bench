@@ -112,7 +112,8 @@ class RepeatedAnalysisTest(unittest.TestCase):
         second = analyze_operational_tradeoffs(list(reversed(rows)), POLICY, seed=7, resamples=400)
         self.assertEqual(first, second)
         self.assertEqual("strictly_dominates", first["matched_comparisons"]["graphify"]["operational_tradeoff_sensitivity"][0]["classification"])
-        self.assertEqual(1.0, first["operational_stability"]["exact_pareto_frontier_membership"]["graphify"])
+        self.assertIsNone(first["operational_stability"]["exact_pareto_frontier_membership"]["graphify"])
+        self.assertFalse(first["operational_stability"]["estimable"])
 
     def test_consistent_loss_is_dominated(self):
         result = analyze_operational_tradeoffs(self.fixture(lambda _i, _r: (70, 1200, 120, True)), POLICY, resamples=200)

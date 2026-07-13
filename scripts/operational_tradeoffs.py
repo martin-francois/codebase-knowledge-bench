@@ -11,8 +11,8 @@ import statistics
 from collections import defaultdict
 from typing import Any, Iterable
 
-SCHEMA_VERSION = "operational-tradeoffs-v2"
-SCHEDULE_VERSION = "shared-hierarchical-block-schedule-v1"
+SCHEMA_VERSION = "operational-tradeoffs-v3"
+SCHEDULE_VERSION = "hierarchical-matched-block-schedule-v2"
 
 METRICS: dict[str, dict[str, Any]] = {
     "correctness": {"field": "operational_correctness_score", "direction": "higher"},
@@ -79,12 +79,12 @@ def absolute_quality(row: dict[str, Any]) -> dict[str, Any]:
     if not row.get("implementation_evaluated"):
         failures.append("implementation_not_evaluated")
     score = float(row.get("operational_correctness_score") or 0.0)
-    viability = (
-        "successful"
+    quality_class = (
+        "task_successful"
         if row.get("task_success")
-        else "partial"
+        else "task_partial"
         if score > 0
-        else "unsuccessful"
+        else "task_unsuccessful"
     )
     return {
         "correctness_score": score,
@@ -96,7 +96,7 @@ def absolute_quality(row: dict[str, Any]) -> dict[str, Any]:
             "common_regression_pass_fraction"
         ),
         "task_success": bool(row.get("task_success")),
-        "viability_class": viability,
+        "quality_class": quality_class,
         "failed_requirements": failures,
     }
 
@@ -136,6 +136,7 @@ def matched_effect(
         "correctness_delta_points": delta,
         "log_token_ratio": math.log(ratios["tokens"]) if ratios["tokens"] not in {None, 0.0} else None,
         "log_time_ratio": math.log(ratios["time"]) if ratios["time"] not in {None, 0.0} else None,
+        "log_warm_time_ratio": math.log(ratios["warm_time"]) if ratios["warm_time"] not in {None, 0.0} else None,
         "log_call_ratio": math.log(ratios["calls"]) if ratios["calls"] not in {None, 0.0} else None,
         "ratios": ratios,
         "changes_percent": {
@@ -186,17 +187,27 @@ def enrich_rows(rows: list[dict[str, Any]], default_tolerance: float) -> None:
     }
     for row in rows:
         row["absolute_quality"] = absolute_quality(row)
+        row["direct_attribution"] = row.get("attribution") or {
+            "applicable": row.get("variant") != "baseline-none",
+            "strict_direct_attribution_supported": None,
+        }
         if not row.get("operational_rank_eligible"):
             row["relative_to_matched_baseline"] = None
+            row["operational_tradeoff"] = {
+                "classification": "inconclusive", "objective_wins": [],
+                "pareto_member": False,
+            }
             continue
         baseline = baselines.get(_block(row))
         if row.get("variant") == "baseline-none":
             row["relative_to_matched_baseline"] = {
                 "correctness_delta_points": 0.0,
-                "correctness_relation": "equivalent",
-                "token_ratio": 1.0,
-                "time_ratio": 1.0,
+                "correctness_relation": "non_inferior",
+                "modeled_token_ratio": 1.0,
+                "solve_time_ratio": 1.0,
+                "warm_time_ratio": 1.0,
                 "call_ratio": 1.0,
+                "coverage": {"matched": True, "block_id": _block_id(_block(row))},
                 "metric_ratios": {metric: 1.0 for metric in METRICS if metric != "correctness"},
                 "metric_changes_percent": {metric: 0.0 for metric in METRICS if metric != "correctness"},
             }
@@ -204,9 +215,11 @@ def enrich_rows(rows: list[dict[str, Any]], default_tolerance: float) -> None:
             row["relative_to_matched_baseline"] = {
                 "correctness_delta_points": None,
                 "correctness_relation": "inconclusive",
-                "token_ratio": None,
-                "time_ratio": None,
+                "modeled_token_ratio": None,
+                "solve_time_ratio": None,
+                "warm_time_ratio": None,
                 "call_ratio": None,
+                "coverage": {"matched": False, "block_id": _block_id(_block(row))},
                 "metric_ratios": {},
                 "metric_changes_percent": {},
             }
@@ -218,18 +231,32 @@ def enrich_rows(rows: list[dict[str, Any]], default_tolerance: float) -> None:
                 "correctness_relation": (
                     "better"
                     if delta is not None and delta > 0
-                    else "equivalent"
-                    if delta == 0
-                    else "non_inferior_with_tolerance"
+                    else "non_inferior"
                     if delta is not None and delta >= -default_tolerance
-                    else "worse"
+                    else "materially_worse"
                 ),
-                "token_ratio": effect["ratios"]["tokens"],
-                "time_ratio": effect["ratios"]["time"],
+                "modeled_token_ratio": effect["ratios"]["tokens"],
+                "solve_time_ratio": effect["ratios"]["time"],
+                "warm_time_ratio": effect["ratios"]["warm_time"],
                 "call_ratio": effect["ratios"]["calls"],
+                "coverage": {"matched": True, "block_id": _block_id(_block(row))},
                 "metric_ratios": effect["ratios"],
                 "metric_changes_percent": effect["changes_percent"],
             }
+        relative = row["relative_to_matched_baseline"]
+        row["operational_tradeoff"] = {
+            "classification": (
+                "pareto_tradeoff" if row.get("variant") == "baseline-none" else
+                matched_operational_decision(
+                    relative["correctness_delta_points"],
+                    relative.get("modeled_token_ratio"),
+                    relative.get("solve_time_ratio"),
+                    default_tolerance,
+                )
+            ),
+            "objective_wins": [],
+            "pareto_member": False,
+        }
 
 
 def _dominates(left: dict[str, float], right: dict[str, float]) -> bool:
@@ -332,6 +359,11 @@ def _shared_schedule(
     }
 
 
+def _pair_seed(global_seed: int, treatment: str) -> int:
+    digest = hashlib.sha256(f"{global_seed}\0{treatment}".encode()).digest()
+    return int.from_bytes(digest[:8], "big")
+
+
 def _interval(values: list[float]) -> dict[str, Any]:
     return {
         "estimable": bool(values),
@@ -414,6 +446,7 @@ def analyze_operational_tradeoffs(
                 )
         coverage[variant] = {
             "scheduled_block_count": len(scheduled_blocks),
+            "eligible_treatment_block_count": len(eligible_rows),
             "eligible_matched_block_count": len(matched),
             "missing_treatment_blocks": [_block_id(block) for block in missing_treatment],
             "missing_baseline_blocks": [_block_id(block) for block in missing_baseline],
@@ -421,7 +454,9 @@ def analyze_operational_tradeoffs(
             "coverage_fraction": len(matched) / len(scheduled_blocks)
             if scheduled_blocks
             else None,
+            "matched_block_ids": [_block_id(block) for block in matched],
             "block_ids_used": [_block_id(block) for block in matched],
+            "complete_cross_treatment_comparison_possible": False,
         }
 
     absolute_aggregates = {
@@ -531,6 +566,10 @@ def analyze_operational_tradeoffs(
                     "equal": sum(value == 0 for value in deltas),
                     "worse": sum(value < 0 for value in deltas),
                 },
+                "raw_blocks": [
+                    {"block_id": _block_id(block), **effect}
+                    for block, effect in sorted(effects.items())
+                ],
             },
             "standardized_effect_unavailable_reason": (
                 "insufficient_matched_blocks"
@@ -608,8 +647,20 @@ def analyze_operational_tradeoffs(
     )
     sample_distributions: dict[str, list[dict[str, float]]] = defaultdict(list)
     for variant, effects in sorted(pair_effects.items()):
-        for sample in schedule:
-            selected = [effects[block] for block in sample if block in effects]
+        pair_complete = coverage[variant]["coverage_fraction"] == 1.0
+        variant_schedule, variant_schedule_metadata = (
+            (schedule, schedule_metadata)
+            if pair_complete
+            else _shared_schedule(
+                sorted(effects), _pair_seed(seed, variant), resamples
+            )
+        )
+        comparisons[variant]["resampling"] = {
+            **variant_schedule_metadata,
+            "scope": "shared_complete_blocks" if pair_complete else "pair_specific_matched_subset",
+        }
+        for sample in variant_schedule:
+            selected = [effects[block] for block in sample]
             if not selected:
                 continue
             deltas = [
@@ -651,6 +702,15 @@ def analyze_operational_tradeoffs(
             by_issue_counts.values()
         ) >= minimum_repetitions
         clusters_sufficient = len(by_issue_counts) >= minimum_clusters
+        estimable = repetitions_sufficient and clusters_sufficient
+        cluster_count = len(by_issue_counts)
+        cluster_status = (
+            "insufficient_issue_clusters"
+            if cluster_count < minimum_clusters
+            else "limited_cluster_evidence"
+            if cluster_count < int(config["limited_issue_cluster_threshold"])
+            else "broader_across_task_evidence"
+        )
         intervals = {
             "correctness_delta": _interval(
                 [
@@ -658,7 +718,7 @@ def analyze_operational_tradeoffs(
                     for sample in samples
                     if math.isfinite(sample["correctness_delta"])
                 ]
-                if repetitions_sufficient
+                if estimable
                 else []
             )
         }
@@ -668,7 +728,7 @@ def analyze_operational_tradeoffs(
                 for sample in samples
                 if math.isfinite(sample[f"log_{metric}_ratio"])
             ]
-            log_interval = _interval(values if repetitions_sufficient else [])
+            log_interval = _interval(values if estimable else [])
             intervals[f"{metric}_ratio"] = {
                 **log_interval,
                 "lower_95": math.exp(log_interval["lower_95"])
@@ -683,15 +743,23 @@ def analyze_operational_tradeoffs(
             }
         comparison["paired_intervals"] = intervals
         comparison["uncertainty_status"] = (
-            "estimable_across_task"
-            if repetitions_sufficient and clusters_sufficient
-            else "estimable_limited_issue_clusters"
-            if repetitions_sufficient
-            else "not_estimable_pilot"
+            "estimable" if estimable else "not_estimable"
         )
+        comparison["estimability"] = {
+            "estimable": estimable,
+            "minimum_repetitions_met": repetitions_sufficient,
+            "minimum_issue_clusters_met": clusters_sufficient,
+            "issue_cluster_count": cluster_count,
+            "issue_cluster_status": cluster_status,
+            "reason": None if estimable else (
+                "minimum matched repetitions not met"
+                if not repetitions_sufficient
+                else "minimum issue-cluster count not met"
+            ),
+        }
         for sensitivity in comparison["operational_tradeoff_sensitivity"]:
             tolerance = sensitivity["correctness_tolerance_points"]
-            selected = samples if repetitions_sufficient else []
+            selected = samples if estimable else []
             support = None
             if selected:
                 support = {
@@ -706,6 +774,9 @@ def analyze_operational_tradeoffs(
                     "lower_time": statistics.fmean(
                         sample["log_time_ratio"] < 0 for sample in selected
                     ),
+                    "lower_warm_time": statistics.fmean(
+                        sample["log_warm_time_ratio"] < 0 for sample in selected
+                    ),
                     "lower_calls": statistics.fmean(
                         sample["log_calls_ratio"] < 0 for sample in selected
                     ),
@@ -717,6 +788,16 @@ def analyze_operational_tradeoffs(
                     "non_inferior_and_lower_time": statistics.fmean(
                         sample["correctness_delta"] >= -tolerance
                         and sample["log_time_ratio"] < 0
+                        for sample in selected
+                    ),
+                    "non_inferior_and_lower_warm_time": statistics.fmean(
+                        sample["correctness_delta"] >= -tolerance
+                        and sample["log_warm_time_ratio"] < 0
+                        for sample in selected
+                    ),
+                    "non_inferior_and_lower_calls": statistics.fmean(
+                        sample["correctness_delta"] >= -tolerance
+                        and sample["log_calls_ratio"] < 0
                         for sample in selected
                     ),
                     "non_inferior_and_lower_tokens_and_time": statistics.fmean(
@@ -747,11 +828,25 @@ def analyze_operational_tradeoffs(
                         )
                         for sample in selected
                     ),
-                    "issue_cluster_scope": (
-                        "across_task_supported"
-                        if clusters_sufficient
-                        else "limited_cluster_evidence"
+                    "exact_pareto_frontier_membership": statistics.fmean(
+                        not (
+                            sample["correctness_delta"] <= 0
+                            and sample["log_tokens_ratio"] >= 0
+                            and sample["log_time_ratio"] >= 0
+                            and (
+                                sample["correctness_delta"] < 0
+                                or sample["log_tokens_ratio"] > 0
+                                or sample["log_time_ratio"] > 0
+                            )
+                        ) for sample in selected
                     ),
+                    "tolerance_aware_frontier_membership": statistics.fmean(
+                        sample["correctness_delta"] >= -tolerance
+                        or sample["log_tokens_ratio"] < 0
+                        or sample["log_time_ratio"] < 0
+                        for sample in selected
+                    ),
+                    "issue_cluster_status": cluster_status,
                 }
             sensitivity["bootstrap_support"] = support
 
@@ -767,6 +862,10 @@ def analyze_operational_tradeoffs(
             *(set(eligible_by_variant[variant]) for variant in complete_variants)
         )
     ) if complete_variants else []
+    for value in coverage.values():
+        value["complete_cross_treatment_comparison_possible"] = bool(
+            all_complete and complete_blocks
+        )
     complete_points: dict[str, dict[str, float]] = {}
     if all_complete and complete_blocks:
         for variant in complete_variants:
@@ -827,25 +926,37 @@ def analyze_operational_tradeoffs(
                 variant for variant, value in values.items() if value == best
             )
 
+    joint_issue_counts: dict[str, int] = defaultdict(int)
+    for block in complete_blocks:
+        joint_issue_counts[block[0]] += 1
+    joint_repetitions_met = bool(joint_issue_counts) and min(joint_issue_counts.values()) >= int(
+        policy["analysis"]["minimum_matched_repetitions"]
+    )
+    joint_clusters_met = len(joint_issue_counts) >= int(
+        config["minimum_issue_clusters_for_across_task_support"]
+    )
+    joint_estimable = bool(complete_points) and joint_repetitions_met and joint_clusters_met
     stability = {
+        "estimable": joint_estimable,
+        "reason": None if joint_estimable else "minimum repeated complete-block evidence not met",
         "resample_count": resamples,
         "exact_pareto_frontier_membership": {
-            variant: 0.0 for variant in complete_variants
+            variant: None for variant in complete_variants
         },
         "tolerance_aware_pareto_frontier_membership": {
-            f"{tolerance:g}": {variant: 0.0 for variant in complete_variants}
+            f"{tolerance:g}": {variant: None for variant in complete_variants}
             for tolerance in tolerances
         },
         "objective_winner_membership": {
-            label: {variant: 0.0 for variant in complete_variants}
+            label: {variant: None for variant in complete_variants}
             for label, _, _ in objective_fields
         },
         "preference_profile_candidate_membership": {
-            profile: {variant: 0.0 for variant in complete_variants}
+            profile: {variant: None for variant in complete_variants}
             for profile in config["preference_profiles"]
         },
     }
-    if complete_points and schedule:
+    if joint_estimable and schedule:
         exact_counts = defaultdict(int)
         tolerance_counts = {
             f"{tolerance:g}": defaultdict(int) for tolerance in tolerances
@@ -894,20 +1005,9 @@ def analyze_operational_tradeoffs(
                     for variant, value in values.items():
                         if value == best:
                             objective_counts[label][variant] += 1
-            baseline_aggregate = sample_aggregates.get("baseline-none", {})
             for profile, tolerance in config["preference_profiles"].items():
-                for variant, aggregate in sample_aggregates.items():
-                    if variant == "baseline-none":
-                        profile_counts[profile][variant] += 1
-                        continue
-                    baseline_correctness = baseline_aggregate.get("correctness")
-                    correctness = aggregate.get("correctness")
-                    if (
-                        baseline_correctness is not None
-                        and correctness is not None
-                        and correctness - baseline_correctness >= -float(tolerance)
-                    ):
-                        profile_counts[profile][variant] += 1
+                for variant in _frontier(sample_points, float(tolerance)):
+                    profile_counts[profile][variant] += 1
         stability["exact_pareto_frontier_membership"] = {
             variant: exact_counts[variant] / resamples
             for variant in complete_variants
@@ -958,10 +1058,72 @@ def analyze_operational_tradeoffs(
             "reasons": reasons,
         }
 
+    resource_priorities = {
+        "pareto_set": complete_frontier["members"],
+        "token_priority": objective_winners["lowest_modeled_weighted_token_load"],
+        "latency_priority": objective_winners["lowest_solve_time"],
+        "warm_time_priority": objective_winners["lowest_warm_end_to_end_time"],
+        "call_priority": objective_winners["fewest_execution_calls"],
+    }
+    supported_findings = {
+        "estimable": joint_estimable,
+        "correctness_improvements": [],
+        "correctness_non_inferior_by_tolerance": {
+            f"{tolerance:g}": [] for tolerance in tolerances
+        },
+        "lower_tokens": [], "lower_solve_time": [], "lower_warm_time": [],
+        "lower_calls": [], "strict_dominators": [],
+        "tolerance_aware_candidates": {f"{tolerance:g}": [] for tolerance in tolerances},
+        "exact_frontier_members": complete_frontier["members"],
+        "tolerance_frontier_members": tolerance_frontiers,
+        "preference_lens_candidates": resource_priorities,
+        "preference_independent_winner": None,
+        "limitations": [] if joint_estimable else ["inferential support is not estimable"],
+    }
+    if joint_estimable:
+        for variant, comparison in comparisons.items():
+            point = comparison["paired_effects"]
+            if point["mean_correctness_delta_points"] > 0:
+                supported_findings["correctness_improvements"].append(variant)
+            ratios = point["geometric_mean_ratios"]
+            for key, metric in (("lower_tokens", "tokens"), ("lower_solve_time", "time"),
+                                ("lower_warm_time", "warm_time"), ("lower_calls", "calls")):
+                if ratios.get(metric) is not None and ratios[metric] < 1:
+                    supported_findings[key].append(variant)
+            for sensitivity in comparison["operational_tradeoff_sensitivity"]:
+                key = f"{sensitivity['correctness_tolerance_points']:g}"
+                if sensitivity["correctness_acceptable"]:
+                    supported_findings["correctness_non_inferior_by_tolerance"][key].append(variant)
+                if sensitivity["classification"] not in {"dominated", "materially_worse_correctness", "inconclusive"}:
+                    supported_findings["tolerance_aware_candidates"][key].append(variant)
+                if sensitivity["classification"] == "strictly_dominates":
+                    supported_findings["strict_dominators"].append(variant)
+
     all_incomplete = bool(absolute_aggregates) and all(
         not aggregate["all_tasks_successful"]
         for aggregate in absolute_aggregates.values()
     )
+    for row in rows:
+        if not row.get("operational_rank_eligible"):
+            continue
+        variant = str(row.get("variant"))
+        objective_wins = sorted(
+            label for label, winners in objective_winners.items() if variant in winners
+        )
+        classification = "pareto_tradeoff"
+        if variant != "baseline-none" and variant in comparisons:
+            effect = comparisons[variant]["paired_effects"]
+            classification = matched_operational_decision(
+                effect["mean_correctness_delta_points"],
+                effect["geometric_mean_ratios"].get("tokens"),
+                effect["geometric_mean_ratios"].get("time"),
+                default_tolerance,
+            )
+        row["operational_tradeoff"] = {
+            "classification": classification,
+            "objective_wins": objective_wins,
+            "pareto_member": variant in complete_frontier["members"],
+        }
     return {
         "schema_version": SCHEMA_VERSION,
         "baseline": "baseline-none",
@@ -980,9 +1142,12 @@ def analyze_operational_tradeoffs(
         "exact_pareto_frontier": complete_frontier["members"],
         "tolerance_aware_pareto_frontiers": tolerance_frontiers,
         "objective_specific_winners": objective_winners,
+        "correctness_tolerance_lenses": profiles,
+        "resource_priority_candidates": resource_priorities,
         "preference_profiles": profiles,
         "resampling": schedule_metadata,
         "operational_stability": stability,
+        "supported_findings": supported_findings,
         "decision_summary": {
             "all_implementations_incomplete": all_incomplete,
             "absolute_quality_statement": (
@@ -993,7 +1158,7 @@ def analyze_operational_tradeoffs(
             "preference_independent_overall_winner": None,
             "statistically_supported_winner": None,
             "pilot_only": any(
-                comparison["uncertainty_status"] == "not_estimable_pilot"
+                not comparison["estimability"]["estimable"]
                 for comparison in comparisons.values()
             ),
         },

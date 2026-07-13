@@ -17,73 +17,14 @@ export type MetricDescriptor = {
   direction: "lower";
   label: string;
   unit: string;
+  availability: "required" | "optional";
+  baselineRelativeMeaningful: boolean;
 };
 
-export const METRICS: Record<MetricKey, MetricDescriptor> = {
-  modeled_weighted_token_load: {
-    absoluteField: "modeled_weighted_token_load",
-    relativeField: "modeled_weighted_token_load_change_percent",
-    meanField: "modeled_weighted_token_load_mean",
-    medianField: "modeled_weighted_token_load_median",
-    direction: "lower", label: "Modeled weighted token load", unit: "tokens",
-  },
-  non_cached_input_tokens: {
-    absoluteField: "non_cached_input_tokens",
-    relativeField: "non_cached_input_tokens_change_percent",
-    meanField: "non_cached_input_tokens_mean",
-    medianField: "non_cached_input_tokens_median",
-    direction: "lower", label: "Non-cached input tokens", unit: "tokens",
-  },
-  output_tokens: {
-    absoluteField: "output_tokens",
-    relativeField: "output_tokens_change_percent",
-    meanField: "output_tokens_mean",
-    medianField: "output_tokens_median",
-    direction: "lower", label: "Output tokens", unit: "tokens",
-  },
-  reasoning_output_tokens: {
-    absoluteField: "reasoning_output_tokens",
-    relativeField: "reasoning_output_tokens_change_percent",
-    meanField: "reasoning_output_tokens_mean",
-    medianField: "reasoning_output_tokens_median",
-    direction: "lower", label: "Reasoning output tokens", unit: "tokens",
-  },
-  solve_wall_seconds: {
-    absoluteField: "solve_wall_seconds",
-    relativeField: "solve_wall_seconds_change_percent",
-    meanField: "solve_wall_seconds_mean",
-    medianField: "solve_wall_seconds_median",
-    direction: "lower", label: "Solve wall time", unit: "seconds",
-  },
-  warm_workflow_seconds: {
-    absoluteField: "warm_workflow_seconds",
-    relativeField: "warm_workflow_seconds_change_percent",
-    meanField: "warm_workflow_seconds_mean",
-    medianField: "warm_workflow_seconds_median",
-    direction: "lower", label: "Warm end-to-end time", unit: "seconds",
-  },
-  execution_calls_started: {
-    absoluteField: "execution_calls_started",
-    relativeField: "execution_calls_started_change_percent",
-    meanField: "execution_calls_started_mean",
-    medianField: "execution_calls_started_median",
-    direction: "lower", label: "Execution calls started", unit: "calls",
-  },
-  intended_tool_successful_calls: {
-    absoluteField: "intended_tool_successful_calls",
-    relativeField: "intended_tool_successful_calls_change_percent",
-    meanField: "intended_tool_successful_calls_mean",
-    medianField: "intended_tool_successful_calls_median",
-    direction: "lower", label: "Successful intended-tool calls", unit: "calls",
-  },
-  estimated_monetary_cost: {
-    absoluteField: "estimated_monetary_cost",
-    relativeField: "estimated_monetary_cost_change_percent",
-    meanField: "estimated_monetary_cost_mean",
-    medianField: "estimated_monetary_cost_median",
-    direction: "lower", label: "Estimated monetary cost", unit: "currency",
-  },
-};
+import descriptorSource from "./metric-descriptors.json";
+
+export const METRICS = descriptorSource as Record<MetricKey, MetricDescriptor>;
+/* The checked-in JSON is also consumed by Python publication code. */
 
 export type DashboardRun = {
   issue_id: string;
@@ -103,6 +44,19 @@ export type DashboardData = {
   analysis_mode: string;
   tolerance_grid: number[];
   default_tolerance: number;
+  metric_descriptors: Record<string, {
+    absolute_field: string;
+    relative_field: string;
+    mean_field: string;
+    median_field: string;
+    direction: "lower";
+    label: string;
+    unit: string;
+    availability: "required" | "optional";
+    baseline_relative_meaningful: boolean;
+    absolute_available: boolean;
+    relative_available: boolean;
+  }>;
   individual_runs: DashboardRun[];
   canonical: {
     comparisons: Record<string, unknown>;
@@ -110,8 +64,37 @@ export type DashboardData = {
     exact_pareto_frontier: string[];
     tolerance_aware_pareto_frontiers: Record<string, string[]>;
     preference_profiles: Record<string, unknown>;
+    supported_findings?: Record<string, unknown>;
+    correctness_tolerance_lenses?: Record<string, unknown>;
+    resource_priority_candidates?: Record<string, unknown>;
   };
 };
+
+export function assertMetricDescriptorParity(data: DashboardData): void {
+  const published = data.metric_descriptors;
+  const expectedKeys = (Object.keys(METRICS) as MetricKey[]).sort();
+  if (JSON.stringify(Object.keys(published).sort()) !== JSON.stringify(expectedKeys)) {
+    throw new Error("published metric descriptor keys differ from the dashboard kernel");
+  }
+  for (const key of expectedKeys) {
+    const expected = METRICS[key];
+    const actual = published[key];
+    const pairs: Array<[unknown, unknown, string]> = [
+      [actual.absolute_field, expected.absoluteField, "absolute field"],
+      [actual.relative_field, expected.relativeField, "relative field"],
+      [actual.mean_field, expected.meanField, "mean field"],
+      [actual.median_field, expected.medianField, "median field"],
+      [actual.direction, expected.direction, "direction"],
+      [actual.label, expected.label, "label"],
+      [actual.unit, expected.unit, "unit"],
+      [actual.availability, expected.availability, "availability"],
+      [actual.baseline_relative_meaningful, expected.baselineRelativeMeaningful, "relative meaning"],
+    ];
+    for (const [actualValue, expectedValue, field] of pairs) {
+      if (actualValue !== expectedValue) throw new Error(`${key}: ${field} descriptor mismatch`);
+    }
+  }
+}
 
 export type Filters = {
   issue: string;
@@ -139,6 +122,12 @@ export type ViewPoint = {
   metricUpper: number | null;
 };
 
+export type IndividualViewPoint = DashboardRun & {
+  correctnessDelta: number | null;
+  metricChangePercent: number | null;
+  matched: boolean;
+};
+
 const average = (values: number[]) =>
   values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
 const median = (values: number[]) => {
@@ -156,7 +145,7 @@ export function metricAvailability(data: DashboardData, relative: boolean): Reco
   return Object.fromEntries((Object.keys(METRICS) as MetricKey[]).map(key => {
     const hasValues = data.individual_runs.some(run => run.metrics[key] != null);
     const baselineHasNonzero = baseline.some(run => (run.metrics[key] ?? 0) > 0);
-    return [key, hasValues && (!relative || baselineHasNonzero)];
+    return [key, hasValues && (!relative || (METRICS[key].baselineRelativeMeaningful && baselineHasNonzero))];
   })) as Record<MetricKey, boolean>;
 }
 
@@ -167,22 +156,19 @@ function dominates(a: ViewPoint, b: ViewPoint, tolerance: number): boolean {
     && (a.correctness > b.correctness || a.metricValue < b.metricValue);
 }
 
-function percentile(values: number[], p: number): number | null {
-  if (!values.length) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor((sorted.length - 1) * p)];
-}
-
-function simpleInterval(values: number[]): [number | null, number | null] {
-  if (values.length < 3) return [null, null];
-  return [percentile(values, 0.025), percentile(values, 0.975)];
-}
+const summarizeRatios = (ratios: number[], statistic: "mean" | "median") => {
+  if (!ratios.length) return null;
+  const logs = ratios.map(Math.log);
+  const logSummary = summarize(logs, statistic);
+  return logSummary == null ? null : Math.exp(logSummary);
+};
 
 export function deriveView(
   data: DashboardData,
   metric: MetricKey,
   filters: Filters,
-): {points: ViewPoint[]; individualRuns: DashboardRun[]; frontier: string[]; objectiveWinners: Record<string, string[]>} {
+  view: "absolute" | "relative" = "absolute",
+): {points: ViewPoint[]; individualRuns: IndividualViewPoint[]; frontier: string[]; objectiveWinners: Record<string, string[]>} {
   if (!data.tolerance_grid.includes(filters.tolerance)) {
     throw new Error(`unsupported correctness tolerance: ${filters.tolerance}`);
   }
@@ -198,42 +184,51 @@ export function deriveView(
   );
   const scheduled = baselineByBlock.size;
   const treatments = [...new Set(displayed.map(run => run.treatment))].sort();
+  const authoritativeTreatments = [...new Set(authoritative.map(run => run.treatment))].sort();
+  const blockSets = authoritativeTreatments.map(treatment => new Set(
+    authoritative.filter(run => run.treatment === treatment).map(blockId),
+  ));
+  const completeBlocks = new Set(
+    blockSets.length ? [...blockSets[0]].filter(block => blockSets.every(set => set.has(block))) : [],
+  );
   const points: ViewPoint[] = treatments.map(treatment => {
-    const rows = authoritative.filter(run => run.treatment === treatment);
+    const treatmentRows = authoritative.filter(run => run.treatment === treatment);
+    const rows = view === "absolute"
+      ? treatmentRows.filter(run => completeBlocks.has(blockId(run)))
+      : treatmentRows;
     const visibleRows = displayed.filter(run => run.treatment === treatment);
     const matched = rows.filter(run => baselineByBlock.has(blockId(run)));
     const correctnessValues = rows.flatMap(run => run.correctness == null ? [] : [run.correctness]);
     const metricValues = rows.flatMap(run => run.metrics[metric] == null ? [] : [run.metrics[metric] as number]);
     const correctnessDeltas: number[] = [];
-    const metricChanges: number[] = [];
+    const metricRatios: number[] = [];
     for (const run of matched) {
       const baseline = baselineByBlock.get(blockId(run))!;
       if (run.correctness != null && baseline.correctness != null) correctnessDeltas.push(run.correctness - baseline.correctness);
       const treatmentValue = run.metrics[metric];
       const baselineValue = baseline.metrics[metric];
       if (treatmentValue != null && baselineValue != null && baselineValue !== 0) {
-        metricChanges.push(100 * (treatmentValue / baselineValue - 1));
+        metricRatios.push(treatmentValue / baselineValue);
       }
     }
-    const [correctnessLower, correctnessUpper] = simpleInterval(correctnessDeltas);
-    const [metricLower, metricUpper] = simpleInterval(metricChanges);
+    const summarizedRatio = summarizeRatios(metricRatios, filters.statistic);
     const isAuthoritative = rows.length > 0;
     return {
       treatment,
       correctness: summarize(correctnessValues, filters.statistic),
       metricValue: summarize(metricValues, filters.statistic),
       correctnessDelta: treatment === "baseline-none" ? 0 : summarize(correctnessDeltas, filters.statistic),
-      metricChangePercent: treatment === "baseline-none" ? 0 : summarize(metricChanges, filters.statistic),
+      metricChangePercent: treatment === "baseline-none" ? 0 : summarizedRatio == null ? null : 100 * (summarizedRatio - 1),
       taskSuccessRate: rows.length ? rows.filter(run => run.task_success).length / rows.length : null,
       coverageFraction: scheduled ? matched.length / scheduled : null,
       frontier: false,
       authoritative: isAuthoritative,
       exclusionReason: isAuthoritative ? null : visibleRows.map(run => run.exclusion_reason).filter(Boolean).join("; ") || "operationally ineligible",
-      intervalStatus: correctnessLower == null || metricLower == null ? "not_estimable" : "estimable",
-      correctnessLower,
-      correctnessUpper,
-      metricLower,
-      metricUpper,
+      intervalStatus: "not_estimable",
+      correctnessLower: null,
+      correctnessUpper: null,
+      metricLower: null,
+      metricUpper: null,
     };
   });
   const authoritativePoints = points.filter(point => point.authoritative);
@@ -248,9 +243,22 @@ export function deriveView(
     const best = direction === "higher" ? Math.max(...values) : Math.min(...values);
     return available.filter(point => point[field] === best).map(point => point.treatment).sort();
   };
+  const individualRuns: IndividualViewPoint[] = displayed.map(run => {
+    const baseline = baselineByBlock.get(blockId(run));
+    const baselineMetric = baseline?.metrics[metric];
+    const runMetric = run.metrics[metric];
+    return {
+      ...run,
+      matched: run.treatment === "baseline-none" || Boolean(baseline),
+      correctnessDelta: run.treatment === "baseline-none" ? 0 :
+        baseline && run.correctness != null && baseline.correctness != null ? run.correctness - baseline.correctness : null,
+      metricChangePercent: run.treatment === "baseline-none" ? 0 :
+        baselineMetric != null && baselineMetric !== 0 && runMetric != null ? 100 * (runMetric / baselineMetric - 1) : null,
+    };
+  });
   return {
     points,
-    individualRuns: displayed,
+    individualRuns,
     frontier,
     objectiveWinners: {
       highest_correctness: winners("correctness", "higher"),

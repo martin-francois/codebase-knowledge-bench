@@ -19,7 +19,7 @@ const run = (treatment: string, issue: string, repetition: number, correctness: 
   metrics: metrics(tokens, time, calls),
 });
 const fixture = (): DashboardData => ({
-  schema_version: "operational-dashboard-v2", suite_id: "fixture", analysis_mode: "repeated_matched",
+  schema_version: "operational-dashboard-v3", suite_id: "fixture", analysis_mode: "repeated_matched",
   tolerance_grid: [0, 1, 2.5, 5, 7.5, 10], default_tolerance: 2.5,
   individual_runs: [
     run("baseline-none", "a", 1, 30, 1000, 500, 10),
@@ -66,10 +66,34 @@ describe("dashboard derivation", () => {
     expect(calls.points.find(point => point.treatment === "tool")?.metricValue).toBe(2);
     expect(metricAvailability(fixture(), false).estimated_monetary_cost).toBe(false);
   });
-  it("shows intervals only with at least three matched observations", () => {
+  it("does not invent intervals when canonical hierarchical uncertainty is unavailable", () => {
     const repeated = deriveView(fixture(), "solve_wall_seconds", {issue: "a", repetition: "all", statistic: "mean", tolerance: 0, includeInvalid: false});
     const pilot = deriveView(fixture(), "solve_wall_seconds", {issue: "b", repetition: "all", statistic: "mean", tolerance: 0, includeInvalid: false});
-    expect(repeated.points.find(point => point.treatment === "tool")?.intervalStatus).toBe("estimable");
+    expect(repeated.points.find(point => point.treatment === "tool")?.intervalStatus).toBe("not_estimable");
     expect(pilot.points.find(point => point.treatment === "tool")?.intervalStatus).toBe("not_estimable");
+  });
+  it("uses geometric paired resource ratios", () => {
+    const data = fixture();
+    data.individual_runs = [
+      run("baseline-none", "a", 1, 30, 100, 100, 10),
+      run("tool", "a", 1, 30, 50, 100, 10),
+      run("baseline-none", "a", 2, 30, 100, 100, 10),
+      run("tool", "a", 2, 30, 200, 100, 10),
+    ];
+    const result = deriveView(data, "modeled_weighted_token_load", {issue: "all", repetition: "all", statistic: "mean", tolerance: 0, includeInvalid: false}, "relative");
+    expect(result.points.find(point => point.treatment === "tool")?.metricChangePercent).toBeCloseTo(0);
+  });
+  it("uses paired coordinates for relative individual runs", () => {
+    const result = deriveView(fixture(), "solve_wall_seconds", {issue: "a", repetition: "1", statistic: "mean", tolerance: 0, includeInvalid: false}, "relative");
+    const tool = result.individualRuns.find(run => run.treatment === "tool");
+    expect(tool?.correctnessDelta).toBe(0);
+    expect(tool?.metricChangePercent).toBeCloseTo(-20);
+  });
+  it("uses the complete block intersection for absolute points", () => {
+    const data = fixture();
+    const result = deriveView(data, "modeled_weighted_token_load", {issue: "all", repetition: "all", statistic: "mean", tolerance: 0, includeInvalid: false}, "absolute");
+    expect(result.points.find(point => point.treatment === "baseline-none")?.coverageFraction).toBe(1);
+    expect(result.points.find(point => point.treatment === "tool")?.coverageFraction).toBe(1);
+    expect(result.points.find(point => point.treatment === "baseline-none")?.metricValue).toBeCloseTo(800);
   });
 });

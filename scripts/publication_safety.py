@@ -129,7 +129,8 @@ def validate_source_roles(root: Path) -> dict[str, Any]:
         try:
             lineage = json.loads(lineage_path.read_text())
             provenance = lineage.get("role_source_provenance", {})
-            archive_name = lineage.get("recompute_source_archive", {}).get("archive")
+            source_metadata = lineage.get("recompute_source_archive", {})
+            archive_name = source_metadata.get("archive")
             if not provenance or not archive_name:
                 continue
             candidates = sorted(root.rglob(Path(str(archive_name)).name))
@@ -139,6 +140,33 @@ def validate_source_roles(root: Path) -> dict[str, Any]:
                 target = Path(temp)
                 with tarfile.open(candidates[0], "r:*") as archive:
                     archive.extractall(target, members=_safe_tar_members(archive))
+                declared_entries = source_metadata.get("effective_source_files", [])
+                reconstructed_entries: list[dict[str, str]] = []
+                for entry in declared_entries:
+                    rel = canonical_relative_path(str(entry["path"]))
+                    source_path = target.joinpath(*rel.parts)
+                    if not source_path.is_file():
+                        raise ValueError(f"effective source is missing {rel}")
+                    actual_hash = sha256_file(source_path)
+                    if actual_hash != entry["sha256"]:
+                        raise ValueError(f"effective source hash mismatch {rel}")
+                    reconstructed_entries.append({"path": rel.as_posix(), "sha256": actual_hash})
+                manifest_bytes = json.dumps(
+                    reconstructed_entries, sort_keys=True, separators=(",", ":")
+                ).encode("utf-8")
+                manifest_hash = hashlib.sha256(manifest_bytes).hexdigest()
+                if manifest_hash != source_metadata.get("source_manifest_sha256"):
+                    raise ValueError("source manifest digest mismatch")
+                content_digest = hashlib.sha256()
+                for entry in reconstructed_entries:
+                    content_digest.update(entry["path"].encode("utf-8") + b"\0")
+                    content_digest.update(bytes.fromhex(entry["sha256"]))
+                if content_digest.hexdigest() != source_metadata.get("effective_source_content_sha256"):
+                    raise ValueError("effective source content digest mismatch")
+                if source_metadata.get("source_hash_algorithm") != "sha256(path_utf8_nul_file_sha256_bytes)":
+                    raise ValueError("unsupported source hash algorithm")
+                if source_metadata.get("source_hash_version") != "source-content-v1":
+                    raise ValueError("unsupported source hash version")
                 for role, record in sorted(provenance.items()):
                     for source in record.get("sources", []):
                         rel = canonical_relative_path(str(source["path"]))
@@ -147,7 +175,12 @@ def validate_source_roles(root: Path) -> dict[str, Any]:
                             raise ValueError(f"{role}: missing source {rel}")
                         if sha256_file(source_path) != source["sha256"]:
                             raise ValueError(f"{role}: source hash mismatch {rel}")
-                    checked.append({"lineage": lineage_path.relative_to(root).as_posix(), "role": role})
+                    checked.append({
+                        "lineage": lineage_path.relative_to(root).as_posix(),
+                        "role": role,
+                        "effective_source_content_sha256": content_digest.hexdigest(),
+                        "source_manifest_sha256": manifest_hash,
+                    })
         except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError, tarfile.TarError) as exc:
             errors.append(f"{lineage_path.relative_to(root)}: {exc}")
     return {"schema_version": "source-role-validation-v1", "roles": checked, "errors": errors}

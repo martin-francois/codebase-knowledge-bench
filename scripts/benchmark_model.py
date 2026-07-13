@@ -32,7 +32,7 @@ def _sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _effective_source_tree_sha256() -> str:
+def _effective_source_content_sha256() -> str:
     listed = subprocess.run(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         cwd=REPOSITORY_ROOT,
@@ -48,6 +48,22 @@ def _effective_source_tree_sha256() -> str:
         digest.update(raw + b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).digest())
     return digest.hexdigest()
+
+
+def _source_manifest_sha256() -> str:
+    listed = subprocess.run(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+        cwd=REPOSITORY_ROOT, stdout=subprocess.PIPE, check=True,
+    ).stdout.split(b"\0")
+    entries = [
+        {"path": raw.decode("utf-8", errors="surrogateescape"),
+         "sha256": _sha256_file(REPOSITORY_ROOT / raw.decode("utf-8", errors="surrogateescape"))}
+        for raw in sorted(item for item in listed if item)
+        if (REPOSITORY_ROOT / raw.decode("utf-8", errors="surrogateescape")).is_file()
+    ]
+    return hashlib.sha256(
+        json.dumps(entries, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
 
 
 def _git_text(*args: str) -> str | None:
@@ -74,7 +90,10 @@ SOURCE_PROVENANCE = {
     "uncommitted_changes_present": bool(
         _git_text("status", "--porcelain", "--untracked-files=normal")
     ),
-    "effective_source_tree_sha256": _effective_source_tree_sha256(),
+    "effective_source_content_sha256": _effective_source_content_sha256(),
+    "source_manifest_sha256": _source_manifest_sha256(),
+    "source_hash_algorithm": "sha256(path_utf8_nul_file_sha256_bytes)",
+    "source_hash_version": "source-content-v1",
     "aggregator_source_sha256": _sha256_file(REPOSITORY_ROOT / "scripts" / "run_benchmark_suite.py"),
     "scorer_source_sha256": _sha256_file(REPOSITORY_ROOT / "scripts" / "benchmark_hardening.py"),
     "validator_source_sha256": _sha256_file(REPOSITORY_ROOT / "scripts" / "validate_benchmark_run.py"),
@@ -93,7 +112,7 @@ SOURCE_PROVENANCE["roles"] = {
     "aggregator": {"files": ["scripts/run_benchmark_suite.py", "scripts/benchmark_hardening.py", "scripts/operational_tradeoffs.py"]},
     "validator": {"files": ["scripts/validate_benchmark_run.py", "scripts/validate_published_archive.py", "scripts/dashboard.py"]},
     "report_renderer": {"files": ["scripts/render_suite_report.py", "scripts/run_benchmark_suite.py", "scripts/dashboard.py"]},
-    "dashboard": {"files": ["scripts/dashboard.py", "dashboard/package.json", "dashboard/package-lock.json", "dashboard/src/main.tsx", "dashboard/src/analysis.ts", "schemas/dashboard-data.schema.json"]},
+    "dashboard": {"files": ["scripts/dashboard.py", "dashboard/package.json", "dashboard/package-lock.json", "dashboard/src/main.tsx", "dashboard/src/analysis.ts", "dashboard/src/metric-descriptors.json", "schemas/dashboard-data.schema.json"]},
 }
 for role in SOURCE_PROVENANCE["roles"].values():
     role["hashes"] = {

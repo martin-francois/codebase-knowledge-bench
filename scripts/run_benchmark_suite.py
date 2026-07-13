@@ -1731,9 +1731,9 @@ def load_variant_records(run_records: list[dict[str, Any]]) -> list[dict[str, An
             row["trust_valid"] = bool(row.get("trust_valid"))
             row["implementation_evaluated"] = bool(row.get("implementation_evaluated"))
             from benchmark_model import tool_effect_eligible, operational_rank_eligible
-            from benchmark_hardening import apply_operational_viability
+            from benchmark_hardening import apply_absolute_quality_status
 
-            apply_operational_viability(row)
+            apply_absolute_quality_status(row)
             row["operational_rank_eligible"] = operational_rank_eligible(row)
             row["tool_integration_valid"] = bool(
                 row.get("tool_integration_valid") and row.get("variant") != "baseline-none"
@@ -1844,9 +1844,9 @@ def aggregate_group(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "implementation_evaluated": implementation_count,
         "operational_rank_eligible": rankable_count,
         "task_success": sum(1 for row in rankable_rows if row.get("task_success")),
-        "operational_viability_counts": {
-            name: sum(1 for row in rankable_rows if row.get("operational_viability_class") == name)
-            for name in ("successful", "partial", "failed")
+        "absolute_quality_counts": {
+            name: sum(1 for row in rankable_rows if row.get("quality_class") == name)
+            for name in ("task_successful", "task_partial", "task_unsuccessful")
         },
         "tool_effect_eligible": len(tool_effect_rows),
         "tool_integration_valid": integration_count,
@@ -2132,7 +2132,7 @@ def aggregate(variant_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "statistically_supported_operational_winner": operational_tradeoffs[
             "decision_summary"
         ]["statistically_supported_winner"],
-        "scalar_or_lexicographic_rank_role": "secondary_descriptive_only",
+        "descriptive_composite_rank_role": "secondary_descriptive_only",
     }
     return {
         "ranking_basis": (

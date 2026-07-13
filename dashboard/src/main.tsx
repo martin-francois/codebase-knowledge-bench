@@ -2,12 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import embed from "vega-embed";
 import {
-  DashboardData, Filters, METRICS, MetricKey, deriveView, metricAvailability,
+  DashboardData, Filters, METRICS, MetricKey, assertMetricDescriptorParity, deriveView, metricAvailability,
 } from "./analysis";
 import "./styles.css";
 
 const source = document.getElementById("dashboard-data")?.textContent ?? "{}";
 const data = JSON.parse(source) as DashboardData;
+assertMetricDescriptorParity(data);
 
 function Chart({spec, label}: {spec: object; label: string}) {
   const ref = useRef<HTMLDivElement>(null);
@@ -31,7 +32,7 @@ function App() {
   const [showUncertainty, setShowUncertainty] = useState(true);
   const [showPareto, setShowPareto] = useState(true);
   const availability = metricAvailability(data, view === "relative");
-  const derived = useMemo(() => deriveView(data, metric, filters), [metric, filters]);
+  const derived = useMemo(() => deriveView(data, metric, filters, view), [metric, filters, view]);
   const issues = [...new Set(data.individual_runs.map(run => run.issue_id))].sort();
   const repetitions = [...new Set(data.individual_runs.map(run => String(run.repetition)))].sort();
   const descriptor = METRICS[metric];
@@ -53,9 +54,10 @@ function App() {
       treatment: run.treatment,
       issue_id: run.issue_id,
       repetition: run.repetition,
-      x: run.metrics[metric],
-      y: run.correctness,
+      x: view === "absolute" ? run.metrics[metric] : run.metricChangePercent,
+      y: view === "absolute" ? run.correctness : run.correctnessDelta,
       authoritative: run.operational_eligible,
+      matched: run.matched,
       pointKind: "individual",
     })) : [];
   const chartRows = [...aggregateRows, ...individualRows];
