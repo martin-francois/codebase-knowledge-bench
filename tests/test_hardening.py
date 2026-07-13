@@ -428,6 +428,10 @@ class ParsingIsolationAndEfficiencyTest(unittest.TestCase):
         source = (ROOT / "scripts/run_benchmark.py").read_text()
         for field, empty in (("warnings", "[]"), ("errors", "[]"), ("unknown_events", "{}")):
             self.assertIn(f'm.setdefault("{field}", {empty})', source)
+        self.assertIn(
+            'metrics.update(execution_call_lifecycle(v.run_dir / "run.jsonl"))',
+            source,
+        )
 
     def test_recursive_archives_remain_excluded(self):
         with tempfile.TemporaryDirectory() as tmp:
