@@ -35,7 +35,7 @@ const makeRun = (treatment: string, issue: string, repetition: number, correctne
   metrics: metricValues(tokens, time, calls),
 });
 const data = {
-  schema_version: "operational-dashboard-v3", suite_id: "browser-fixture",
+  schema_version: "operational-dashboard-v4", suite_id: "browser-fixture",
   analysis_mode: "repeated_matched", tolerance_grid: [0, 1, 2.5, 5, 7.5, 10],
   default_tolerance: 2.5, metric_descriptors: publishedDescriptors, points: [],
   individual_runs: [
@@ -49,7 +49,7 @@ const data = {
     makeRun("tool", "b", 1, 35, 1000, 300, 15),
     makeRun("invalid", "a", 1, 100, 1, 1, 1, false),
   ],
-  canonical: {comparisons: {}, coverage: {}, complete_block_frontier: {}, exact_pareto_frontier: [], tolerance_aware_pareto_frontiers: {}, preference_profiles: {}, objective_specific_winners: {}, operational_stability: {}, supported_findings: {}, correctness_tolerance_lenses: {}, resource_priority_candidates: {}},
+  canonical: {comparisons: {}, coverage: {}, complete_block_frontier: {}, exact_pareto_frontier: [], tolerance_aware_pareto_frontiers: {}, preference_profiles: {}, objective_specific_winners: {}, operational_stability: {}, observed_findings: {}, supported_findings: {}, correctness_tolerance_lenses: {}, resource_priority_candidates: {}},
 };
 
 test("offline dashboard controls and table remain synchronized", async ({page}) => {

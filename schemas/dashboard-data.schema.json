@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "dashboard-data.schema.json",
-  "title": "Operational dashboard data v3",
+  "title": "Operational dashboard data v4",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "suite_id", "analysis_mode", "tolerance_grid", "default_tolerance", "metric_descriptors", "points", "individual_runs", "canonical"],
@@ -25,7 +25,7 @@
     }
   },
   "properties": {
-    "schema_version": {"const": "operational-dashboard-v3"},
+    "schema_version": {"const": "operational-dashboard-v4"},
     "suite_id": {"type": "string", "minLength": 1},
     "analysis_mode": {"enum": ["pilot_only", "repeated_matched"]},
     "tolerance_grid": {
@@ -110,7 +110,7 @@
     "canonical": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["comparisons", "coverage", "complete_block_frontier", "exact_pareto_frontier", "tolerance_aware_pareto_frontiers", "preference_profiles", "objective_specific_winners", "operational_stability", "supported_findings", "correctness_tolerance_lenses", "resource_priority_candidates"],
+      "required": ["comparisons", "coverage", "complete_block_frontier", "exact_pareto_frontier", "tolerance_aware_pareto_frontiers", "preference_profiles", "objective_specific_winners", "operational_stability", "observed_findings", "supported_findings", "correctness_tolerance_lenses", "resource_priority_candidates"],
       "properties": {
         "comparisons": {"type": "object"},
         "coverage": {"type": "object"},
@@ -120,6 +120,7 @@
         "preference_profiles": {"type": "object"},
         "objective_specific_winners": {"type": "object"},
         "operational_stability": {"type": "object"},
+        "observed_findings": {"type": "object"},
         "supported_findings": {"type": "object"},
         "correctness_tolerance_lenses": {"type": "object"},
         "resource_priority_candidates": {"type": "object"}

@@ -201,10 +201,84 @@ class OperationalTradeoffTest(unittest.TestCase):
         records = self.repeated()
         self.assertEqual(self.analyze(*records), self.analyze(*reversed(records)))
 
+    def test_ten_point_improvement_uses_canonical_interval_and_supported_finding(self) -> None:
+        result = self.analyze(*self.repeated(tool_correctness=40, tool_tokens=800, tool_time=450))
+        comparison = result["matched_comparisons"]["tool"]
+        self.assertEqual(
+            {"estimable": True, "lower_95": 10.0, "median": 10.0, "upper_95": 10.0},
+            comparison["paired_intervals"]["correctness_delta_points"],
+        )
+        self.assertNotIn("correctness_delta", comparison["paired_intervals"])
+        findings = result["supported_findings"]["correctness_improvements"]
+        self.assertEqual(["tool"], [finding["variant"] for finding in findings])
+        self.assertEqual(1.0, findings[0]["bootstrap_support"])
+
+    def test_strict_dominator_is_not_duplicated_by_tolerance_grid(self) -> None:
+        result = self.analyze(*self.repeated(tool_correctness=40, tool_tokens=700, tool_time=400))
+        self.assertEqual(
+            ["tool"],
+            [item["variant"] for item in result["supported_findings"]["strict_dominators"]],
+        )
+
+    def test_incomplete_tool_does_not_suppress_complete_pairwise_findings(self) -> None:
+        records = self.repeated(tool_correctness=40, tool_tokens=700, tool_time=400)
+        records.extend(
+            row("missing-tool", 35, 750, 450, issue=issue, repetition=repetition)
+            for issue in ("a", "b", "c") for repetition in (1, 2, 3)
+            if (issue, repetition) != ("c", 3)
+        )
+        result = self.analyze(*records)
+        self.assertTrue(result["matched_comparisons"]["tool"]["estimability"]["estimable"])
+        self.assertFalse(result["matched_comparisons"]["missing-tool"]["estimability"]["estimable"])
+        self.assertEqual("not_comparable", result["complete_block_frontier"]["status"])
+        self.assertEqual(
+            ["tool"],
+            [item["variant"] for item in result["supported_findings"]["correctness_improvements"]],
+        )
+
+    def test_observed_and_supported_findings_are_distinct_in_pilot(self) -> None:
+        result = self.analyze(
+            row("baseline-none", 30, 1000, 500),
+            row("tool", 30, 700, 500),
+        )
+        self.assertIn("tool", result["observed_findings"]["exact_frontier_members"])
+        self.assertFalse(result["supported_findings"]["estimable"])
+        self.assertEqual([], result["supported_findings"]["exact_frontier_members"])
+        self.assertEqual([], result["supported_findings"]["lower_tokens"])
+
+    def test_mixed_success_wording_counts_individual_implementations(self) -> None:
+        records = []
+        for variant in ("baseline-none", "tool"):
+            records.extend((
+                row(variant, 100, 1000, 500, issue="a", task_success=True),
+                row(variant, 50, 1000, 500, issue="b", task_success=False),
+            ))
+        result = self.analyze(*records)
+        summary = result["decision_summary"]
+        self.assertFalse(summary["all_individual_evaluated_implementations_unsuccessful"])
+        self.assertTrue(summary["at_least_one_implementation_succeeded"])
+        self.assertTrue(summary["every_treatment_had_at_least_one_unsuccessful_block"])
+        self.assertNotIn("All implementations were task-unsuccessful", summary["absolute_quality_statement"])
+
+    def test_resource_heterogeneity_preserves_all_primary_log_ratios(self) -> None:
+        result = self.analyze(*self.repeated())
+        issue = result["matched_comparisons"]["tool"]["issue_sensitivity"]["a"]
+        self.assertEqual(
+            {"correctness_delta_points", "log_tokens_ratio", "log_time_ratio", "log_warm_time_ratio", "log_calls_ratio"},
+            set(issue),
+        )
+
     def test_every_schema_is_valid_json(self) -> None:
         for path in sorted((ROOT / "schemas").glob("*.json")):
             with self.subTest(path=path.name):
                 json.loads(path.read_text(encoding="utf-8"))
+
+    def test_schema_rejects_obsolete_correctness_interval_key(self) -> None:
+        schema = json.loads((ROOT / "schemas" / "operational-tradeoffs.schema.json").read_text())
+        intervals = schema["$defs"]["intervals"]
+        self.assertIn("correctness_delta_points", intervals["required"])
+        self.assertNotIn("correctness_delta", intervals["properties"])
+        self.assertFalse(intervals["additionalProperties"])
 
 
 class DashboardDataTest(unittest.TestCase):

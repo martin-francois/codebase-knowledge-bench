@@ -785,6 +785,7 @@ def matched_operational_comparisons(
     policy: dict[str, Any],
     *,
     baseline: str = "baseline-none",
+    canonical: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     from operational_tradeoffs import (
         matched_effect,
@@ -879,33 +880,35 @@ def matched_operational_comparisons(
         )
         comparison["paired_effect"] = effect
         comparisons.append(comparison)
+    if canonical is None:
+        from operational_tradeoffs import analyze_operational_tradeoffs
+
+        canonical = analyze_operational_tradeoffs(records, policy)
     by_variant: dict[str, Any] = {}
-    for variant in sorted({row["variant"] for row in comparisons}):
-        selected = [row for row in comparisons if row["variant"] == variant]
-        correctness = [row["behavioral_correctness_score"]["delta"] for row in selected]
-        token_ratios = [row["modeled_weighted_token_load"]["ratio"] for row in selected if row["modeled_weighted_token_load"]["ratio"] is not None]
-        time_ratios = [row["solve_wall_seconds"]["ratio"] for row in selected if row["solve_wall_seconds"]["ratio"] is not None]
+    for variant, comparison in sorted(canonical["matched_comparisons"].items()):
+        effects = comparison["paired_effects"]
+        raw_deltas = [
+            block["correctness_delta_points"]
+            for block in effects["raw_blocks"]
+            if block["correctness_delta_points"] is not None
+        ]
         by_variant[variant] = {
-            "matched_blocks": len(selected),
-            "paired_correctness_delta_mean": statistics.mean(correctness) if correctness else None,
-            "paired_correctness_delta_median": statistics.median(correctness) if correctness else None,
-            "paired_token_ratio_mean": statistics.mean(token_ratios) if token_ratios else None,
-            "paired_time_ratio_mean": statistics.mean(time_ratios) if time_ratios else None,
-            "sign_consistency": {
-                "positive": sum(value > 0 for value in correctness),
-                "tie": sum(value == 0 for value in correctness),
-                "negative": sum(value < 0 for value in correctness),
-            },
-            "decisions": {name: sum(row["decision"] == name for row in selected) for name in sorted({row["decision"] for row in selected})},
+            "matched_blocks": comparison["coverage"]["eligible_matched_block_count"],
+            "paired_correctness_delta_mean": effects["mean_correctness_delta_points"],
+            "paired_correctness_delta_median": statistics.median(raw_deltas)
+            if raw_deltas else None,
+            "paired_token_ratio_geometric_mean": effects["geometric_mean_ratios"].get("tokens"),
+            "paired_time_ratio_geometric_mean": effects["geometric_mean_ratios"].get("time"),
+            "sign_consistency": effects["empirical_correctness_signs"],
+            "coverage": comparison["coverage"],
+            "paired_intervals": comparison["paired_intervals"],
         }
     return {
         "policy": policy["operational_comparison"],
-        "decision_source": "operational_tradeoffs.matched_operational_decision",
+        "projection_role": "raw_block_projection_only",
+        "decision_source": "operational_tradeoffs.analyze_operational_tradeoffs",
         "blocks": comparisons,
         "by_variant": by_variant,
-        "pareto_frontier": [],
-        "tie_band_points": policy["operational_comparison"]["correctness_equivalence_margin_points"],
-        "scalar_composite_role": "secondary_descriptive_only",
     }
 
 

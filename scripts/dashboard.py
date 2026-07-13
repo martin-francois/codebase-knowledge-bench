@@ -12,7 +12,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD = ROOT / "dashboard"
 SCHEMA = ROOT / "schemas" / "dashboard-data.schema.json"
-VERSION = "operational-dashboard-v3"
+VERSION = "operational-dashboard-v4"
 
 METRIC_DESCRIPTORS: dict[str, dict[str, Any]] = json.loads(
     (DASHBOARD / "src" / "metric-descriptors.json").read_text(encoding="utf-8")
@@ -168,6 +168,7 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
                 "objective_specific_winners"
             ],
             "operational_stability": analysis["operational_stability"],
+            "observed_findings": analysis["observed_findings"],
             "supported_findings": analysis["supported_findings"],
             "correctness_tolerance_lenses": analysis[
                 "correctness_tolerance_lenses"

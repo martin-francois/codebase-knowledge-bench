@@ -1201,6 +1201,17 @@ def validate_suite(path: Path) -> list[str]:
         return [f"{suite_results}: missing suite-results.json"]
     data = load_json(suite_results)
     validate_required_schema_fields(data, "suite-results.schema.json", None, errors)
+    tradeoffs = data.get("aggregates", {}).get("operational_tradeoffs", {})
+    for variant, comparison in tradeoffs.get("matched_comparisons", {}).items():
+        intervals = comparison.get("paired_intervals", {})
+        if "correctness_delta" in intervals:
+            fail(errors, f"{variant}: obsolete paired_intervals.correctness_delta key")
+        if "correctness_delta_points" not in intervals:
+            fail(errors, f"{variant}: missing canonical paired_intervals.correctness_delta_points")
+    strict = tradeoffs.get("supported_findings", {}).get("strict_dominators", [])
+    strict_names = [row.get("variant") for row in strict if isinstance(row, dict)]
+    if len(strict_names) != len(set(strict_names)):
+        fail(errors, "supported strict dominators contain duplicate treatments")
     report_path = suite_dir / "suite-report.md"
     report = report_path.read_text(encoding="utf-8") if report_path.is_file() else ""
     if "50/20/15/15" in report:

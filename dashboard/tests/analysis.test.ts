@@ -19,8 +19,9 @@ const run = (treatment: string, issue: string, repetition: number, correctness: 
   metrics: metrics(tokens, time, calls),
 });
 const fixture = (): DashboardData => ({
-  schema_version: "operational-dashboard-v3", suite_id: "fixture", analysis_mode: "repeated_matched",
+  schema_version: "operational-dashboard-v4", suite_id: "fixture", analysis_mode: "repeated_matched",
   tolerance_grid: [0, 1, 2.5, 5, 7.5, 10], default_tolerance: 2.5,
+  points: [],
   individual_runs: [
     run("baseline-none", "a", 1, 30, 1000, 500, 10),
     run("baseline-none", "a", 2, 30, 100, 300, 20),
@@ -32,7 +33,7 @@ const fixture = (): DashboardData => ({
     run("tool", "b", 1, 35, 1000, 300, 15),
     run("invalid", "a", 1, 100, 1, 1, 1, false),
   ],
-  canonical: {comparisons: {}, coverage: {}, exact_pareto_frontier: [], tolerance_aware_pareto_frontiers: {}, preference_profiles: {}},
+  canonical: {comparisons: {}, coverage: {}, exact_pareto_frontier: [], tolerance_aware_pareto_frontiers: {}, preference_profiles: {}, observed_findings: {}},
 });
 
 describe("dashboard derivation", () => {
@@ -95,5 +96,24 @@ describe("dashboard derivation", () => {
     expect(result.points.find(point => point.treatment === "baseline-none")?.coverageFraction).toBe(1);
     expect(result.points.find(point => point.treatment === "tool")?.coverageFraction).toBe(1);
     expect(result.points.find(point => point.treatment === "baseline-none")?.metricValue).toBeCloseTo(800);
+  });
+  it("uses canonical repeated intervals for the complete selected scope", () => {
+    const data = fixture();
+    data.canonical.comparisons.tool = {
+      coverage: {coverage_fraction: 1},
+      paired_effects: {mean_correctness_delta_points: 10, geometric_mean_ratios: {tokens: .8}},
+      paired_intervals: {
+        correctness_delta_points: {estimable: true, lower_95: 10, median: 10, upper_95: 10},
+        tokens_ratio: {estimable: true, lower_95: .75, median: .8, upper_95: .85},
+      },
+      estimability: {estimable: true, issue_cluster_status: "limited_cluster_evidence", reason: null},
+    };
+    const result = deriveView(data, "modeled_weighted_token_load", {issue: "all", repetition: "all", statistic: "mean", tolerance: 0, includeInvalid: false}, "relative");
+    const point = result.points.find(candidate => candidate.treatment === "tool")!;
+    expect(point.correctnessDelta).toBe(10);
+    expect(point.metricChangePercent).toBeCloseTo(-20);
+    expect(point.correctnessLower).toBe(10);
+    expect(point.metricLower).toBeCloseTo(-25);
+    expect(point.intervalStatus).toBe("estimable");
   });
 });

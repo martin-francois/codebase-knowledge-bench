@@ -11,7 +11,7 @@ import statistics
 from collections import defaultdict
 from typing import Any, Iterable
 
-SCHEMA_VERSION = "operational-tradeoffs-v3"
+SCHEMA_VERSION = "operational-tradeoffs-v4"
 SCHEDULE_VERSION = "hierarchical-matched-block-schedule-v2"
 
 METRICS: dict[str, dict[str, Any]] = {
@@ -29,6 +29,7 @@ METRICS: dict[str, dict[str, Any]] = {
     },
     "cost": {"field": "estimated_monetary_cost", "direction": "lower"},
 }
+RESOURCE_INTERVAL_METRICS = tuple(metric for metric in METRICS if metric != "correctness")
 
 
 def _number(value: Any) -> float | None:
@@ -500,12 +501,26 @@ def analyze_operational_tradeoffs(
         geometric = {
             metric: _geometric_mean(values) for metric, values in ratios.items()
         }
-        issues: dict[str, list[float]] = defaultdict(list)
-        repetitions: dict[int, list[float]] = defaultdict(list)
+        issue_effects: dict[str, dict[str, list[float]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+        repetition_effects: dict[int, dict[str, list[float]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
         for block, effect in effects.items():
             if effect["correctness_delta_points"] is not None:
-                issues[block[0]].append(effect["correctness_delta_points"])
-                repetitions[block[1]].append(effect["correctness_delta_points"])
+                issue_effects[block[0]]["correctness_delta_points"].append(
+                    effect["correctness_delta_points"]
+                )
+                repetition_effects[block[1]]["correctness_delta_points"].append(
+                    effect["correctness_delta_points"]
+                )
+            for metric in ("tokens", "time", "warm_time", "calls"):
+                ratio = effect["ratios"].get(metric)
+                if ratio not in {None, 0.0}:
+                    value = math.log(ratio)
+                    issue_effects[block[0]][f"log_{metric}_ratio"].append(value)
+                    repetition_effects[block[1]][f"log_{metric}_ratio"].append(value)
         sensitivity = []
         for tolerance in tolerances:
             classification = matched_operational_decision(
@@ -580,27 +595,43 @@ def analyze_operational_tradeoffs(
             ),
             "within_issue_dispersion": {
                 issue: {
-                    "count": len(values),
-                    "correctness_delta_pstdev": statistics.pstdev(values)
-                    if len(values) > 1
-                    else None,
+                    metric: {
+                        "count": len(values),
+                        "mean": statistics.fmean(values),
+                        "pstdev": statistics.pstdev(values)
+                        if len(values) > 1 else None,
+                    }
+                    for metric, values in sorted(metrics.items())
                 }
-                for issue, values in sorted(issues.items())
+                for issue, metrics in sorted(issue_effects.items())
             },
             "across_issue_heterogeneity": {
-                "issue_count": len(issues),
+                "issue_count": len(issue_effects),
                 "issue_mean_correctness_deltas": {
-                    issue: statistics.fmean(values)
-                    for issue, values in sorted(issues.items())
+                    issue: statistics.fmean(metrics["correctness_delta_points"])
+                    for issue, metrics in sorted(issue_effects.items())
+                },
+                "by_issue": {
+                    issue: {
+                        metric: statistics.fmean(values)
+                        for metric, values in sorted(metrics.items())
+                    }
+                    for issue, metrics in sorted(issue_effects.items())
                 },
             },
             "issue_sensitivity": {
-                issue: statistics.fmean(values)
-                for issue, values in sorted(issues.items())
+                issue: {
+                    metric: statistics.fmean(values)
+                    for metric, values in sorted(metrics.items())
+                }
+                for issue, metrics in sorted(issue_effects.items())
             },
             "repetition_sensitivity": {
-                str(repetition): statistics.fmean(values)
-                for repetition, values in sorted(repetitions.items())
+                str(repetition): {
+                    metric: statistics.fmean(values)
+                    for metric, values in sorted(metrics.items())
+                }
+                for repetition, metrics in sorted(repetition_effects.items())
             },
             "missing_block_sensitivity": {
                 "coverage_fraction": coverage[variant]["coverage_fraction"],
@@ -673,7 +704,7 @@ def analyze_operational_tradeoffs(
                 if deltas
                 else math.nan
             }
-            for metric in ("tokens", "time", "calls", "warm_time"):
+            for metric in RESOURCE_INTERVAL_METRICS:
                 logs = [
                     math.log(effect["ratios"][metric])
                     for effect in selected
@@ -712,7 +743,7 @@ def analyze_operational_tradeoffs(
             else "broader_across_task_evidence"
         )
         intervals = {
-            "correctness_delta": _interval(
+            "correctness_delta_points": _interval(
                 [
                     sample["correctness_delta"]
                     for sample in samples
@@ -722,7 +753,7 @@ def analyze_operational_tradeoffs(
                 else []
             )
         }
-        for metric in ("tokens", "time", "calls", "warm_time"):
+        for metric in RESOURCE_INTERVAL_METRICS:
             values = [
                 sample[f"log_{metric}_ratio"]
                 for sample in samples
@@ -767,6 +798,9 @@ def analyze_operational_tradeoffs(
                     "correctness_non_inferior": statistics.fmean(
                         sample["correctness_delta"] >= -tolerance
                         for sample in selected
+                    ),
+                    "correctness_improvement": statistics.fmean(
+                        sample["correctness_delta"] > 0 for sample in selected
                     ),
                     "lower_tokens": statistics.fmean(
                         sample["log_tokens_ratio"] < 0 for sample in selected
@@ -1072,8 +1106,29 @@ def analyze_operational_tradeoffs(
         "warm_time_priority": objective_winners["lowest_warm_end_to_end_time"],
         "call_priority": objective_winners["fewest_execution_calls"],
     }
+    observed_findings = {
+        "exact_frontier_members": complete_frontier["members"],
+        "tolerance_frontier_members": tolerance_frontiers,
+        "objective_specific_winners": objective_winners,
+        "preference_lens_candidates": resource_priorities,
+        "global_complete_block_comparable": complete_frontier["status"] == "comparable",
+    }
+    support_thresholds = [
+        float(value)
+        for value in config.get("bootstrap_support_thresholds", [0.8, 0.9, 0.95])
+    ]
+    support_threshold = 0.9
+    pairwise_estimability = {
+        variant: comparison["estimability"]
+        for variant, comparison in sorted(comparisons.items())
+    }
+    any_pair_estimable = any(
+        item["estimable"] for item in pairwise_estimability.values()
+    )
     supported_findings = {
-        "estimable": joint_estimable,
+        "estimable": any_pair_estimable,
+        "joint_cross_treatment_estimable": joint_estimable,
+        "pairwise_estimability": pairwise_estimability,
         "correctness_improvements": [],
         "correctness_non_inferior_by_tolerance": {
             f"{tolerance:g}": [] for tolerance in tolerances
@@ -1081,49 +1136,149 @@ def analyze_operational_tradeoffs(
         "lower_tokens": [], "lower_solve_time": [], "lower_warm_time": [],
         "lower_calls": [], "strict_dominators": [],
         "tolerance_aware_candidates": {f"{tolerance:g}": [] for tolerance in tolerances},
-        "exact_frontier_members": complete_frontier["members"],
-        "tolerance_frontier_members": tolerance_frontiers,
-        "preference_lens_candidates": resource_priorities,
+        "exact_frontier_members": [],
+        "tolerance_frontier_members": {f"{tolerance:g}": [] for tolerance in tolerances},
+        "preference_lens_candidates": {},
         "preference_independent_winner": None,
-        "bootstrap_support_thresholds": config.get(
-            "bootstrap_support_thresholds", [0.8, 0.9, 0.95]
+        "bootstrap_support_thresholds": support_thresholds,
+        "configured_support_threshold": support_threshold,
+        "limitations": (
+            [] if joint_estimable else
+            ["global cross-treatment inference is not estimable from complete repeated blocks"]
         ),
-        "configured_support_threshold": 0.9,
-        "limitations": [] if joint_estimable else ["inferential support is not estimable"],
     }
-    if joint_estimable:
-        support_threshold = 0.9
-        for variant, comparison in comparisons.items():
+    def finding(
+        variant: str,
+        comparison: dict[str, Any],
+        *,
+        point_estimate: float | None,
+        interval_key: str,
+        bootstrap_support: float | None,
+    ) -> dict[str, Any]:
+        estimability = comparison["estimability"]
+        return {
+            "variant": variant,
+            "point_estimate": point_estimate,
+            "interval": comparison["paired_intervals"].get(interval_key),
+            "bootstrap_support": bootstrap_support,
+            "configured_support_threshold": support_threshold,
+            "threshold_crossed": bootstrap_support is not None
+            and bootstrap_support >= support_threshold,
+            "coverage": comparison["coverage"],
+            "issue_cluster_status": estimability["issue_cluster_status"],
+            "limitations": [] if estimability["estimable"] else [estimability["reason"]],
+        }
+
+    strict_dominator_records: dict[str, dict[str, Any]] = {}
+    for variant, comparison in comparisons.items():
+        if comparison["estimability"]["estimable"]:
             point = comparison["paired_effects"]
             intervals = comparison.get("paired_intervals", {})
             correctness_interval = intervals.get("correctness_delta_points", {})
-            if correctness_interval.get("lower_95") is not None and correctness_interval["lower_95"] > 0:
-                supported_findings["correctness_improvements"].append(variant)
             ratios = point["geometric_mean_ratios"]
             zero_tolerance = next(
                 item for item in comparison["operational_tradeoff_sensitivity"]
                 if item["correctness_tolerance_points"] == 0.0
             )
             zero_support = zero_tolerance.get("bootstrap_support") or {}
+            correctness_support = zero_support.get("correctness_improvement")
+            if (
+                correctness_interval.get("lower_95") is not None
+                and correctness_interval["lower_95"] > 0
+                and float(correctness_support or 0.0) >= support_threshold
+            ):
+                supported_findings["correctness_improvements"].append(
+                    finding(
+                        variant,
+                        comparison,
+                        point_estimate=point["mean_correctness_delta_points"],
+                        interval_key="correctness_delta_points",
+                        bootstrap_support=float(correctness_support),
+                    )
+                )
             for key, metric in (("lower_tokens", "tokens"), ("lower_solve_time", "time"),
                                 ("lower_warm_time", "warm_time"), ("lower_calls", "calls")):
                 support_key = {"tokens": "lower_tokens", "time": "lower_time", "warm_time": "lower_warm_time", "calls": "lower_calls"}[metric]
                 if (ratios.get(metric) is not None and ratios[metric] < 1
                         and float(zero_support.get(support_key) or 0.0) >= support_threshold):
-                    supported_findings[key].append(variant)
+                    supported_findings[key].append(
+                        finding(
+                            variant,
+                            comparison,
+                            point_estimate=ratios.get(metric),
+                            interval_key=f"{metric}_ratio",
+                            bootstrap_support=float(zero_support[support_key]),
+                        )
+                    )
             for sensitivity in comparison["operational_tradeoff_sensitivity"]:
                 key = f"{sensitivity['correctness_tolerance_points']:g}"
                 support = sensitivity.get("bootstrap_support") or {}
                 if float(support.get("correctness_non_inferior") or 0.0) >= support_threshold:
-                    supported_findings["correctness_non_inferior_by_tolerance"][key].append(variant)
+                    supported_findings["correctness_non_inferior_by_tolerance"][key].append(
+                        finding(
+                            variant,
+                            comparison,
+                            point_estimate=point["mean_correctness_delta_points"],
+                            interval_key="correctness_delta_points",
+                            bootstrap_support=float(support["correctness_non_inferior"]),
+                        )
+                    )
                 if (float(support.get("tolerance_aware_frontier_membership") or 0.0) >= support_threshold
                         and sensitivity["classification"] not in {"dominated", "materially_worse_correctness", "inconclusive"}):
-                    supported_findings["tolerance_aware_candidates"][key].append(variant)
+                    supported_findings["tolerance_aware_candidates"][key].append(
+                        finding(
+                            variant,
+                            comparison,
+                            point_estimate=point["mean_correctness_delta_points"],
+                            interval_key="correctness_delta_points",
+                            bootstrap_support=float(support["tolerance_aware_frontier_membership"]),
+                        )
+                    )
                 if float(support.get("strict_dominance") or 0.0) >= support_threshold:
-                    supported_findings["strict_dominators"].append(variant)
+                    strict_dominator_records[variant] = finding(
+                        variant,
+                        comparison,
+                        point_estimate=point["mean_correctness_delta_points"],
+                        interval_key="correctness_delta_points",
+                        bootstrap_support=float(support["strict_dominance"]),
+                    )
+    supported_findings["strict_dominators"] = [
+        strict_dominator_records[variant] for variant in sorted(strict_dominator_records)
+    ]
+    if joint_estimable:
+        supported_findings["exact_frontier_members"] = sorted(
+            variant
+            for variant, support in stability["exact_pareto_frontier_membership"].items()
+            if support is not None and support >= support_threshold
+        )
+        supported_findings["tolerance_frontier_members"] = {
+            key: sorted(
+                variant
+                for variant, support in memberships.items()
+                if support is not None and support >= support_threshold
+            )
+            for key, memberships in stability[
+                "tolerance_aware_pareto_frontier_membership"
+            ].items()
+        }
+        supported_findings["preference_lens_candidates"] = {
+            profile: sorted(
+                variant
+                for variant, support in memberships.items()
+                if support is not None and support >= support_threshold
+            )
+            for profile, memberships in stability[
+                "preference_profile_candidate_membership"
+            ].items()
+        }
 
-    all_incomplete = bool(absolute_aggregates) and all(
-        not aggregate["all_tasks_successful"]
+    eligible_rows = [row for row in rows if row.get("operational_rank_eligible")]
+    every_individual_unsuccessful = bool(eligible_rows) and all(
+        not row.get("task_success") for row in eligible_rows
+    )
+    any_implementation_succeeded = any(row.get("task_success") for row in eligible_rows)
+    every_treatment_has_unsuccessful_block = bool(absolute_aggregates) and all(
+        aggregate["task_success"]["numerator"] < aggregate["task_success"]["denominator"]
         for aggregate in absolute_aggregates.values()
     )
     for row in rows:
@@ -1170,13 +1325,28 @@ def analyze_operational_tradeoffs(
         "preference_profiles": profiles,
         "resampling": schedule_metadata,
         "operational_stability": stability,
+        "observed_findings": observed_findings,
         "supported_findings": supported_findings,
         "decision_summary": {
-            "all_implementations_incomplete": all_incomplete,
+            "all_implementations_incomplete": every_individual_unsuccessful,
+            "all_individual_evaluated_implementations_unsuccessful": every_individual_unsuccessful,
+            "at_least_one_implementation_succeeded": any_implementation_succeeded,
+            "every_treatment_had_at_least_one_unsuccessful_block": every_treatment_has_unsuccessful_block,
+            "task_success_by_treatment": {
+                variant: {
+                    **aggregate["task_success"],
+                    "rate": (
+                        aggregate["task_success"]["numerator"]
+                        / aggregate["task_success"]["denominator"]
+                        if aggregate["task_success"]["denominator"] else None
+                    ),
+                }
+                for variant, aggregate in sorted(absolute_aggregates.items())
+            },
             "absolute_quality_statement": (
                 "All implementations were task-unsuccessful in absolute terms."
-                if all_incomplete
-                else "At least one implementation met the absolute task-success contract."
+                if every_individual_unsuccessful
+                else "At least one implementation met the absolute task-success contract; see per-treatment numerators and denominators."
             ),
             "preference_independent_overall_winner": None,
             "statistically_supported_winner": None,

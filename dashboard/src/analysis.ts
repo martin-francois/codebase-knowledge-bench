@@ -68,17 +68,46 @@ export type DashboardData = {
     absolute_available: boolean;
     relative_available: boolean;
   }>;
+  points: Array<{
+    treatment: string;
+    correctness: number | null;
+    metrics: Record<MetricKey, number | null>;
+    task_success: {numerator: number; denominator: number};
+    coverage: {coverage_fraction?: number | null};
+    paired_intervals: Record<string, Interval> | null;
+  }>;
   individual_runs: DashboardRun[];
   canonical: {
-    comparisons: Record<string, unknown>;
+    comparisons: Record<string, CanonicalComparison>;
     coverage: Record<string, unknown>;
     exact_pareto_frontier: string[];
     tolerance_aware_pareto_frontiers: Record<string, string[]>;
     preference_profiles: Record<string, unknown>;
+    observed_findings?: Record<string, unknown>;
     supported_findings?: Record<string, unknown>;
     correctness_tolerance_lenses?: Record<string, unknown>;
     resource_priority_candidates?: Record<string, unknown>;
   };
+};
+
+type Interval = {estimable: boolean; lower_95: number | null; median: number | null; upper_95: number | null};
+type CanonicalComparison = {
+  coverage: {coverage_fraction: number | null};
+  paired_effects: {mean_correctness_delta_points: number | null; geometric_mean_ratios: Record<string, number | null>};
+  paired_intervals: Record<string, Interval>;
+  estimability: {estimable: boolean; issue_cluster_status: string; reason: string | null};
+};
+
+const CANONICAL_METRIC: Record<MetricKey, {ratio: string; interval: string}> = {
+  modeled_weighted_token_load: {ratio: "tokens", interval: "tokens_ratio"},
+  non_cached_input_tokens: {ratio: "non_cached_input_tokens", interval: "non_cached_input_tokens_ratio"},
+  output_tokens: {ratio: "output_tokens", interval: "output_tokens_ratio"},
+  reasoning_output_tokens: {ratio: "reasoning_output_tokens", interval: "reasoning_output_tokens_ratio"},
+  solve_wall_seconds: {ratio: "time", interval: "time_ratio"},
+  warm_workflow_seconds: {ratio: "warm_time", interval: "warm_time_ratio"},
+  execution_calls_started: {ratio: "calls", interval: "calls_ratio"},
+  intended_tool_successful_calls: {ratio: "intended_tool_calls", interval: "intended_tool_calls_ratio"},
+  estimated_monetary_cost: {ratio: "cost", interval: "cost_ratio"},
 };
 
 export function assertMetricDescriptorParity(data: DashboardData): void {
@@ -202,6 +231,7 @@ export function deriveView(
   const completeBlocks = new Set(
     blockSets.length ? [...blockSets[0]].filter(block => blockSets.every(set => set.has(block))) : [],
   );
+  const canonicalScope = filters.issue === "all" && filters.repetition === "all" && filters.statistic === "mean";
   const points: ViewPoint[] = treatments.map(treatment => {
     const treatmentRows = authoritative.filter(run => run.treatment === treatment);
     const rows = view === "absolute"
@@ -224,7 +254,7 @@ export function deriveView(
     }
     const summarizedRatio = summarizeRatios(metricRatios, filters.statistic);
     const isAuthoritative = rows.length > 0;
-    return {
+    const point: ViewPoint = {
       treatment,
       correctness: summarize(correctnessValues, filters.statistic),
       metricValue: summarize(metricValues, filters.statistic),
@@ -241,6 +271,31 @@ export function deriveView(
       metricLower: null,
       metricUpper: null,
     };
+    const canonical = data.canonical.comparisons[treatment];
+    if (canonicalScope && view === "relative" && treatment !== "baseline-none" && canonical) {
+      const descriptor = CANONICAL_METRIC[metric];
+      const correctnessInterval = canonical.paired_intervals.correctness_delta_points;
+      const metricInterval = canonical.paired_intervals[descriptor.interval];
+      const ratio = canonical.paired_effects.geometric_mean_ratios[descriptor.ratio];
+      point.correctnessDelta = canonical.paired_effects.mean_correctness_delta_points;
+      point.metricChangePercent = ratio == null ? null : 100 * (ratio - 1);
+      point.coverageFraction = canonical.coverage.coverage_fraction;
+      point.intervalStatus = canonical.estimability.estimable && correctnessInterval?.estimable
+        ? "estimable" : "not_estimable";
+      point.correctnessLower = correctnessInterval?.lower_95 ?? null;
+      point.correctnessUpper = correctnessInterval?.upper_95 ?? null;
+      point.metricLower = metricInterval?.lower_95 == null ? null : 100 * (metricInterval.lower_95 - 1);
+      point.metricUpper = metricInterval?.upper_95 == null ? null : 100 * (metricInterval.upper_95 - 1);
+    }
+    if (canonicalScope && view === "absolute") {
+      const published = data.points.find(candidate => candidate.treatment === treatment);
+      if (published) {
+        point.correctness = published.correctness;
+        point.metricValue = published.metrics[metric];
+        point.coverageFraction = published.coverage.coverage_fraction ?? point.coverageFraction;
+      }
+    }
+    return point;
   });
   const authoritativePoints = points.filter(point => point.authoritative);
   const frontier = authoritativePoints

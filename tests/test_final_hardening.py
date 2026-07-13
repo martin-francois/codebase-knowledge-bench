@@ -39,7 +39,7 @@ class CleanSourceArchiveTest(unittest.TestCase):
         self.assertEqual("gpt-5.6-sol", config["model"])
         self.assertEqual("high", config["reasoning_effort"])
         self.assertEqual(1, config["repetitions"])
-        self.assertEqual(["baseline-none", "sverklo", "graphify"], config["variants"])
+        self.assertEqual(["baseline-none", "graphify", "sverklo"], config["variants"])
         self.assertIn("model-preflight-gpt56sol-high", config["model_preflight_reuse_from"])
         self.assertEqual("issue-486", document["issues"][0]["issue_id"])
 
@@ -257,7 +257,7 @@ class InvocationEligibilityAndAttributionTest(unittest.TestCase):
         self.assertEqual(1.0515545144416758, block["solve_wall_seconds"]["ratio"])
         self.assertEqual("pareto_tradeoff", block["decision"])
         self.assertEqual(
-            "operational_tradeoffs.matched_operational_decision",
+            "operational_tradeoffs.analyze_operational_tradeoffs",
             matched_operational_comparisons([baseline, graphify], METHODOLOGY_POLICY)["decision_source"],
         )
 
