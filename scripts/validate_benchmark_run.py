@@ -1109,7 +1109,7 @@ def validate_suite(path: Path) -> list[str]:
         fail(errors, "suite report conclusion disagrees with machine-readable matched policy")
     if all(not row.get("task_success") for row in data.get("variant_rows", [])):
         required = (
-            "No workflow fully solved",
+            "task-unsuccessful",
             "No single preference-independent overall winner",
         )
         for phrase in required:
