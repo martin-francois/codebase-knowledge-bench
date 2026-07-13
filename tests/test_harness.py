@@ -3079,6 +3079,61 @@ with mock.patch.object(module, 'run', return_value=result):
         self.assertEqual(2, len(attempts))
         self.assertEqual(2, run.call_count)
 
+    def test_common_verification_resets_exact_default_env_collision_before_retry(self) -> None:
+        failed = runner.CommandResult(
+            "test",
+            "/repo",
+            1,
+            (
+                "TrelloBoardSetupMainTest."
+                "newBoardWritesFallbackReasoningForExplicitModelWhenDiscoveryDoesNotSupportFirstClassFields "
+                "setup_failed code=setup_env_write_failed (FileAlreadyExistsException)"
+            ),
+            "",
+            0.1,
+        )
+        passed = runner.CommandResult("test", "/repo", 0, "ok", "", 0.1)
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = Path(tmp)
+            (cwd / ".env").write_text("temporary test output\n", encoding="utf-8")
+            with mock.patch.object(runner, "run", side_effect=[failed, passed]) as run:
+                result, attempts, _ = runner.run_verification_command(
+                    "./mvnw test",
+                    cwd,
+                    allow_unrelated_common_flake_retry=True,
+                )
+            self.assertFalse((cwd / ".env").exists())
+        self.assertEqual(0, result.returncode)
+        self.assertEqual(2, len(attempts))
+        self.assertEqual(2, run.call_count)
+        self.assertIn("removed verifier-created repository-root .env", attempts[0].stderr)
+
+    def test_unrelated_assertion_does_not_receive_default_env_collision_retry(self) -> None:
+        failed = runner.CommandResult(
+            "test", "/repo", 1, "newBoardWritesFallbackReasoning expected 0 but was 2", "", 0.1
+        )
+        with mock.patch.object(runner, "run", return_value=failed) as run:
+            result, attempts, _ = runner.run_verification_command(
+                "./mvnw test", Path("/repo"), allow_unrelated_common_flake_retry=True
+            )
+        self.assertEqual(1, result.returncode)
+        self.assertEqual(1, len(attempts))
+        self.assertEqual(1, run.call_count)
+
+    def test_pre_solve_abort_manifest_marks_every_treatment_non_runnable(self) -> None:
+        run_map = {
+            "order": [
+                {"run_id": "run-001", "variant": "graphify"},
+                {"run_id": "run-002", "variant": "baseline-none"},
+                {"run_id": "run-003", "variant": "sverklo"},
+            ]
+        }
+        with mock.patch.object(runner, "write_manifest") as write_manifest:
+            runner.refresh_pre_solve_abort_manifest(run_map)
+        variants = write_manifest.call_args.args[0]
+        self.assertEqual(["graphify", "baseline-none", "sverklo"], [v.name for v in variants])
+        self.assertTrue(all(not v.runnable for v in variants))
+
     def test_ten_distinct_trust_integration_correctness_cases(self) -> None:
         useful = {
             "integration_operational": True,
