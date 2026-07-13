@@ -3525,7 +3525,7 @@ def _protected_channel(
         "attempts": len(attempts),
         "junit": protected_verifier.file_tree(result_dir, ["."]),
         "observed_case_identifiers": sorted(
-            case.case_identifier for case in junit_cases_from_directory(result_dir)
+            case.case_id for case in junit_cases_from_directory(result_dir)
         ),
         "evaluable": True,
     })

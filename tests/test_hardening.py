@@ -74,6 +74,10 @@ class CorrectnessTaxonomyTest(unittest.TestCase):
                 normalize_effective_weights=True,
             )
 
+    def test_protected_case_identifier_field_is_canonical(self):
+        case = TestCaseResult("CommonTest#canonical", True)
+        self.assertEqual("CommonTest#canonical", case.case_id)
+
     def test_missing_scoring_contract_case_still_fails_closed(self):
         matrix = [{
             "case_identifier": "ContractTest#requiredBehavior",
