@@ -6093,7 +6093,8 @@ def manifest_optional_empty_paths(
                 len(path.relative_to(root).parts) >= 3
                 and path.relative_to(root).parts[0] == "runs"
                 and path.relative_to(root).parts[1] in baseline_run_ids
-                and path.relative_to(root).parts[2] == "tool-smoke.jsonl"
+                and path.relative_to(root).parts[2]
+                in {"tool-smoke.jsonl", "tool-invocations-solve.jsonl"}
             )
         )
     )

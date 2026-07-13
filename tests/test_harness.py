@@ -1615,15 +1615,19 @@ class ResumeAndValidatorTest(unittest.TestCase):
         self.assertEqual(1, metrics["successful_focused_tool_calls"])
         self.assertEqual(0.25, metrics["useful_tool_call_rate"])
 
-    def test_baseline_empty_smoke_jsonl_is_optional_but_tool_smoke_is_required(self) -> None:
+    def test_baseline_empty_tool_telemetry_is_optional_but_tool_telemetry_is_required(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             baseline = root / "runs" / "run-001" / "tool-smoke.jsonl"
             tool = root / "runs" / "run-002" / "tool-smoke.jsonl"
+            baseline_solve = root / "runs" / "run-001" / "tool-invocations-solve.jsonl"
+            tool_solve = root / "runs" / "run-002" / "tool-invocations-solve.jsonl"
             baseline.parent.mkdir(parents=True)
             tool.parent.mkdir(parents=True)
             baseline.write_bytes(b"")
             tool.write_bytes(b"")
+            baseline_solve.write_bytes(b"")
+            tool_solve.write_bytes(b"")
             baseline_variant = mock.Mock(run_id="run-001", runnable=True)
             baseline_variant.name = "baseline-none"
             tool_variant = mock.Mock(run_id="run-002", runnable=True)
@@ -1631,11 +1635,13 @@ class ResumeAndValidatorTest(unittest.TestCase):
             variants = [baseline_variant, tool_variant]
 
             optional = runner.manifest_optional_empty_paths(
-                [baseline, tool], variants, root
+                [baseline, tool, baseline_solve, tool_solve], variants, root
             )
 
         self.assertIn("runs/run-001/tool-smoke.jsonl", optional)
+        self.assertIn("runs/run-001/tool-invocations-solve.jsonl", optional)
         self.assertNotIn("runs/run-002/tool-smoke.jsonl", optional)
+        self.assertNotIn("runs/run-002/tool-invocations-solve.jsonl", optional)
 
     def test_corrupt_export_is_reported_as_validation_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
