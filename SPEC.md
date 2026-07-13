@@ -618,6 +618,9 @@ expected to solve MUST provide nonempty solve telemetry; an excluded or non-runn
 an empty required file. Execution publication, suite publication, embedded-manifest validation, and
 extracted-archive validation MUST derive existence and emptiness semantics from the same versioned
 artifact contract. A generic required/non-required flag MUST NOT encode semantic emptiness.
+Treatment telemetry semantics apply to the primary execution manifest whose declared root contains
+`runs/`; derived snapshot namespaces validate only the artifacts declared under their own root and
+MUST NOT be required to duplicate immutable raw run evidence.
 
 A suite reconstructed after completed children and a derivation or publication failure MUST
 preserve the original runner exit status, MUST resolve recomputed execution paths to stable roots,

@@ -83,6 +83,19 @@ class PublicationSafetyTest(unittest.TestCase):
             }]}))
             self.assertEqual([], validate_embedded_manifests(root)["errors"])
 
+    def test_derived_namespace_manifest_does_not_require_raw_run_telemetry(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            derived = root / "executions" / "execution-1" / "original-derived"
+            derived.mkdir(parents=True)
+            results = b'{"variants":[{"run_id":"run-001","variant":"baseline-none"}]}\n'
+            (derived / "results.json").write_bytes(results)
+            (derived / "review-manifest.json").write_text(json.dumps({"entries": [{
+                "path": "results.json", "required": True, "may_be_empty": False,
+                "bytes": len(results), "sha256": hashlib.sha256(results).hexdigest(),
+            }]}))
+            self.assertEqual([], validate_embedded_manifests(root)["errors"])
+
     def test_no_winner_report_cannot_name_scalar_leader(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
