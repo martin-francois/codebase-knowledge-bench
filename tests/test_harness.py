@@ -102,7 +102,7 @@ class RetryPolicyTest(unittest.TestCase):
             suite, "PREFLIGHT_RETRIES", 3
         ), mock.patch.object(suite.subprocess, "run", return_value=completed) as run:
             result = suite.run_preflight_command(
-                "test", Path(tmp), Path(tmp) / "test.log", expected_success=True
+                "test", Path(tmp), Path(tmp) / "protected-common.log", expected_success=True
             )
         self.assertEqual(1, result["attempts"])
         run.assert_called_once()
@@ -298,8 +298,9 @@ class ToolEvidenceTest(unittest.TestCase):
             run_dir.mkdir(parents=True)
             jsonl = run_dir / "run.jsonl"
             jsonl.write_text('{"type":"turn.started"}\n{"type": broken\n', encoding="utf-8")
-            (run_dir / "test.log").write_text("ok\n", encoding="utf-8")
-            (run_dir / "reference-test.log").write_text("ok\n", encoding="utf-8")
+            (run_dir / "protected-common.log").write_text("ok\n", encoding="utf-8")
+            (run_dir / "protected-direct.log").write_text("ok\n", encoding="utf-8")
+            (run_dir / "protected-verification.json").write_text("{}\n", encoding="utf-8")
             parsed = runner.parse_jsonl(jsonl)
             metrics = {
                 **parsed,
@@ -574,8 +575,9 @@ class CorrectnessScoringTest(unittest.TestCase):
             runs = Path(tmp) / "runs"
             run_dir = runs / "run-001"
             run_dir.mkdir(parents=True)
-            for name in ("run.jsonl", "test.log", "reference-test.log"):
+            for name in ("run.jsonl", "protected-common.log", "protected-direct.log"):
                 (run_dir / name).write_text("evidence\n", encoding="utf-8")
+            (run_dir / "protected-verification.json").write_text("{}\n", encoding="utf-8")
             metrics = {
                 "run_id": "run-001",
                 "trust_valid": False,
@@ -636,19 +638,20 @@ class CorrectnessScoringTest(unittest.TestCase):
                     "diff --git a/src/main/A.java b/src/main/A.java\n+changed\n",
                     encoding="utf-8",
                 )
-                (run_dir / "test.log").write_text(
+                (run_dir / "protected-common.log").write_text(
                     "[ERROR] Tests run: 567, Failures: 1, Errors: 0, Skipped: 0\n"
                     if common_exit
                     else "",
                     encoding="utf-8",
                 )
-                (run_dir / "reference-test.log").write_text(
+                (run_dir / "protected-direct.log").write_text(
                     "[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0\n"
                     if primary_exit
                     else "",
                     encoding="utf-8",
                 )
-                (run_dir / "reference-extended-test.log").write_text("", encoding="utf-8")
+                (run_dir / "protected-extended.log").write_text("", encoding="utf-8")
+                (run_dir / "protected-verification.json").write_text("{}\n", encoding="utf-8")
                 variant = runner.Variant(run_id, name, root / "repo", run_dir)
                 variant.setup_status = "setup_succeeded"
                 metrics = {
@@ -783,17 +786,17 @@ class CorrectnessScoringTest(unittest.TestCase):
             self.assertTrue(serena_metrics["tool_effect_eligible"])
             self.assertTrue(serena_metrics["issue_contract_full_pass"])
             self.assertFalse(serena_metrics["common_regression_full_pass"])
-            self.assertGreater(serena_metrics["operational_correctness_score"], 90)
+            self.assertGreater(serena_metrics["behavioral_correctness_score"], 90)
             self.assertTrue(baseline_metrics["operational_rank_eligible"])
             self.assertFalse(baseline_metrics["tool_integration_valid"])
             self.assertFalse(baseline_metrics["tool_effect_eligible"])
             self.assertFalse(baseline_metrics["issue_contract_full_pass"])
-            self.assertLess(baseline_metrics["operational_correctness_score"], 75)
+            self.assertLess(baseline_metrics["behavioral_correctness_score"], 75)
             self.assertTrue(crg_metrics["trust_valid"])
             self.assertFalse(crg_metrics["tool_integration_valid"])
             self.assertTrue(crg_metrics["operational_rank_eligible"])
             self.assertFalse(crg_metrics["tool_effect_eligible"])
-            self.assertGreater(crg_metrics["operational_correctness_score"], 0)
+            self.assertGreater(crg_metrics["behavioral_correctness_score"], 0)
             self.assertFalse(crg_metrics["exclusion_reason"])
             self.assertEqual("tool_context_not_issue_specific_in_solve", crg_metrics["status"])
             self.assertEqual(
@@ -1195,7 +1198,7 @@ class AggregationTest(unittest.TestCase):
             "blocked_sibling_benchmark_attempts": [],
             "global_context_accesses": [],
             "anti_leak_incidents": [],
-            "operational_correctness_score": measured_correctness if integrated else 0,
+            "behavioral_correctness_score": measured_correctness if integrated else 0,
             "scheduled_correctness_points": measured_correctness if integrated else 0,
             "issue_addressed": 25 if correct else 5,
             "modeled_weighted_token_load": tokens,
@@ -1225,7 +1228,7 @@ class AggregationTest(unittest.TestCase):
         self.assertAlmostEqual(1 / 2, group["full_reference_conformance_pass_rate"])
         self.assertEqual(1, group["common_regression_full_pass"])
         self.assertEqual(1, group["full_reference_conformance_passes"])
-        self.assertEqual(2, group["operational_correctness_score"]["count"])
+        self.assertEqual(2, group["behavioral_correctness_score"]["count"])
         self.assertEqual(2, group["modeled_weighted_token_load"]["count"])
         self.assertEqual(500, group["modeled_weighted_token_load"]["mean"])
         self.assertEqual(3, group["setup_seconds"]["count"])
@@ -1254,12 +1257,12 @@ class AggregationTest(unittest.TestCase):
             tool_integration_valid=False,
             tool_effect_eligible=False,
             fallback_only=True,
-            operational_correctness_score=35,
+            behavioral_correctness_score=35,
         )
         result = suite.aggregate([row])
         self.assertEqual(["serena"], [item["variant"] for item in result["aggregate_ranking"]])
         self.assertEqual([], result["tool_effect_ranking"])
-        self.assertEqual(35, result["aggregate_ranking"][0]["operational_correctness_score"]["mean"])
+        self.assertEqual(35, result["aggregate_ranking"][0]["behavioral_correctness_score"]["mean"])
 
 
 class RecomputeEnvironmentTest(unittest.TestCase):
@@ -1350,7 +1353,7 @@ class SuiteEvidenceMutationTest(unittest.TestCase):
                                 "descriptive_composite_rank": 1,
                                 "tool_integration_valid": False,
                                 "tool_effect_eligible": False,
-                                "operational_correctness_score": 40.0,
+                                "behavioral_correctness_score": 40.0,
                                 "full_reference_conformance_pass": False,
                             }
                         ],
@@ -1374,7 +1377,7 @@ class SuiteEvidenceMutationTest(unittest.TestCase):
                 "variant_rows": rows,
                 "aggregates": suite.aggregate(rows),
             }
-            data["variant_rows"][0]["operational_correctness_score"] = 100.0
+            data["variant_rows"][0]["behavioral_correctness_score"] = 100.0
             errors: list[str] = []
             validator.validate_suite_derived_rows(data, errors)
         self.assertTrue(any("variant_rows were mutated" in error for error in errors))
@@ -2643,7 +2646,7 @@ class ComplianceRegressionTest(unittest.TestCase):
                 "reference_conformance_full_pass",
                 "issue_contract_pass_fraction",
                 "reference_conformance_pass_fraction",
-                "operational_correctness_score",
+                "behavioral_correctness_score",
                 "attribution",
                 "modeled_weighted_token_load",
                 "exclusion_reason",
@@ -2666,7 +2669,7 @@ class ComplianceRegressionTest(unittest.TestCase):
             "issue_contract_full_pass": True,
             "direct_issue_contract_full_pass": True,
             "task_success": True,
-            "quality_class": "task_successful",
+            "task_quality_class": "task_successful",
             "issue_contract_evaluable": True,
             "issue_contract_pass_fraction": 1.0,
             "common_regression_full_pass": True,
@@ -2675,7 +2678,8 @@ class ComplianceRegressionTest(unittest.TestCase):
             "reference_conformance_evaluable": True,
             "reference_conformance_full_pass": True,
             "reference_conformance_pass_fraction": 1.0,
-            "operational_correctness_score": 100.0,
+            "behavioral_correctness_score": 100.0,
+            "composite_quality_score": 100.0,
             "patch_quality_score": 20.0,
             "intended_tool_successful_solve_invocation_count": 1,
             "attribution": {
@@ -2696,12 +2700,13 @@ class ComplianceRegressionTest(unittest.TestCase):
             "native_file_read_commands": [], "native_file_read_count": 0,
             "native_context_bytes": 0,
             "absolute_quality": {
-                "correctness_score": 100.0,
+                "behavioral_correctness_score": 100.0,
                 "direct_issue_contract_pass_fraction": 1.0,
                 "direct_issue_contract_full_pass": True,
                 "common_regression_pass_fraction": 1.0,
+                "common_regression_full_pass": True,
                 "task_success": True,
-                "quality_class": "task_successful",
+                "task_quality_class": "task_successful",
                 "failed_requirements": [],
             },
             "relative_to_matched_baseline": {
@@ -2751,13 +2756,13 @@ class ComplianceRegressionTest(unittest.TestCase):
         )
         self.assertEqual([], errors)
         data["variants"][0]["trust_valid"] = "true"
-        data["variants"][0]["operational_correctness_score"] = 101
+        data["variants"][0]["behavioral_correctness_score"] = 101
         data["scoring_model"]["classification_model_version"] = "wrong"
         validator.validate_required_schema_fields(
             data, "execution-results.schema.json", "variants", errors
         )
         self.assertTrue(any("trust_valid" in error and "expected type" in error for error in errors))
-        self.assertTrue(any("operational_correctness_score" in error and "maximum" in error for error in errors))
+        self.assertTrue(any("behavioral_correctness_score" in error and "maximum" in error for error in errors))
         self.assertTrue(any("classification_model_version" in error and "constant" in error for error in errors))
     def test_model_provenance_is_complete_and_matches_focused_context_rules(self) -> None:
         import benchmark_model
@@ -2765,7 +2770,7 @@ class ComplianceRegressionTest(unittest.TestCase):
         provenance = benchmark_model.model_provenance()
         self.assertEqual("3.0.0", provenance["schema_version"])
         self.assertEqual(
-            "matrix-operational-attribution-v6",
+            "matrix-operational-attribution-v7",
             provenance["scoring_model_version"],
         )
         self.assertEqual("normalized-context-v4", provenance["classification_model_version"])
@@ -2792,7 +2797,7 @@ class ComplianceRegressionTest(unittest.TestCase):
             if name != "baseline-none":
                 self.assertTrue(adapter.command)
                 self.assertTrue(adapter.setup_handler)
-            self.assertFalse(hasattr(adapter, "operational_correctness_score"))
+            self.assertFalse(hasattr(adapter, "behavioral_correctness_score"))
             self.assertFalse(hasattr(adapter, "trust_valid"))
 
     def test_shared_model_derivations_match_runner_and_validator(self) -> None:
@@ -2929,7 +2934,7 @@ with mock.patch.object(module, 'run', return_value=result):
             "tool_integration_applicable": True,
             "tool_integration_valid": True,
             "tool_effect_eligible": True,
-            "operational_correctness_score": 80,
+            "behavioral_correctness_score": 80,
         }
         failed = {
             "variant": "serena",
@@ -2940,7 +2945,7 @@ with mock.patch.object(module, 'run', return_value=result):
             "tool_integration_valid": False,
             "tool_effect_eligible": False,
             "treatment_failure_before_implementation": True,
-            "operational_correctness_score": 0,
+            "behavioral_correctness_score": 0,
         }
         aggregate = suite.aggregate_group([completed, failed])
         self.assertEqual(2, aggregate["expected_workflow_correctness_denominator"])
@@ -3025,7 +3030,7 @@ with mock.patch.object(module, 'run', return_value=result):
             "harness-invalid-exposure": {"trust_valid": False, "implementation_evaluated": False, **ineffective},
             "exposed-ineffective": {"trust_valid": True, "implementation_evaluated": True, **ineffective},
             "fallback-only-completed": {"trust_valid": True, "implementation_evaluated": True, "fallback_only": True, **ineffective},
-            "incorrect-ranked": {"trust_valid": True, "implementation_evaluated": True, "operational_correctness_score": 20, **useful},
+            "incorrect-ranked": {"trust_valid": True, "implementation_evaluated": True, "behavioral_correctness_score": 20, **useful},
             "treatment-failure": {"trust_valid": True, "implementation_evaluated": False, "treatment_failure_before_implementation": True, **ineffective},
             "infrastructure-invalid": {"trust_valid": False, "implementation_evaluated": False, **ineffective},
             "full-correctness-failure": {"trust_valid": True, "implementation_evaluated": True, "full_reference_conformance_pass": False, **useful},

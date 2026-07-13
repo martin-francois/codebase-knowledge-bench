@@ -13,7 +13,7 @@
       "required": ["schema_version", "scoring_model_version", "classification_model_version"],
       "properties": {
         "schema_version": {"const": "3.0.0"},
-        "scoring_model_version": {"const": "matrix-operational-attribution-v6"},
+        "scoring_model_version": {"const": "matrix-operational-attribution-v7"},
         "classification_model_version": {"const": "normalized-context-v4"}
       }
     },
