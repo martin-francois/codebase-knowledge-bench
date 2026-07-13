@@ -101,6 +101,12 @@ class CorrectnessTaxonomyTest(unittest.TestCase):
                 configured_budget=60.0,
             )
 
+    def test_validator_uses_common_missing_policy_and_operational_rank(self):
+        source = (SCRIPTS / "validate_benchmark_run.py").read_text(encoding="utf-8")
+        self.assertIn("missing_common_as_failure=True", source)
+        self.assertIn('row.get("operational_rank") is None', source)
+        self.assertNotIn('row.get("rank") is None', source)
+
     def test_normalized_full_score_is_bounded_despite_float_noise(self):
         matrix = [
             {
