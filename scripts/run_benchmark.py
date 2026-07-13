@@ -134,6 +134,7 @@ from tool_adapters import adapter_for, tool_commands  # noqa: E402
 import protected_verifier  # noqa: E402
 from benchmark_hardening import (  # noqa: E402
     TestCategory,
+    artifact_may_be_empty,
     apply_absolute_quality_status,
     attribution_record,
     build_manifest,
@@ -156,6 +157,7 @@ from benchmark_hardening import (  # noqa: E402
     score_candidate_from_matrix,
     score_matrix_category,
     token_sensitivity,
+    validate_tool_invocation_artifact,
 )
 
 INVALID_STATUSES = {
@@ -6054,58 +6056,36 @@ def final_recommendation(best: dict[str, Any] | None, baseline: dict[str, Any] |
 def manifest_optional_empty_paths(
     files: list[Path], variants: list[Variant], root: Path = RUN_ROOT
 ) -> set[str]:
-    optional_empty = {"report-assets/harness-uncommitted.patch"}
-    semantically_valid_empty_names = {
-        "anti-leak-blocked.log",
-        "changed-files.txt",
-        "deleted-files.txt",
-        "diff-check.log",
-        "diff.patch",
-        "diff.stat",
-        "reference-extended-test.log",
-        "reference-test.log",
-        "run.stderr",
-        "test.log",
-        "tool-smoke-anti-leak-blocked.log",
-        "tool-smoke.stderr",
+    arm_contexts = {
+        variant.run_id: {
+            "treatment": variant.name,
+            "runnable": variant.runnable,
+            "solve_expected": variant.runnable and not SMOKE_ONLY,
+        }
+        for variant in variants
     }
-    non_runnable_run_ids = {variant.run_id for variant in variants if not variant.runnable}
-    baseline_run_ids = {variant.run_id for variant in variants if variant.name == "baseline-none"}
-    optional_empty.update(
+    return {
         path.relative_to(root).as_posix()
         for path in files
         if path.stat().st_size == 0
-        and (
-            path.name in semantically_valid_empty_names
-            or
-            (
-                "stage-diagnostics" in path.relative_to(root).parts
-                and path.name in {"stdout.log", "stderr.log"}
-            )
-            or
-            (
-                path.parent == REPORT_ASSETS
-                and path.name.startswith("patch-")
-                and path.suffix == ".patch"
-            )
-            or (
-                len(path.relative_to(root).parts) >= 2
-                and path.relative_to(root).parts[0] == "runs"
-                and path.relative_to(root).parts[1] in non_runnable_run_ids
-            )
-            or (
-                len(path.relative_to(root).parts) >= 3
-                and path.relative_to(root).parts[0] == "runs"
-                and path.relative_to(root).parts[1] in baseline_run_ids
-                and path.relative_to(root).parts[2]
-                in {"tool-smoke.jsonl", "tool-invocations-solve.jsonl"}
-            )
-        )
-    )
-    return optional_empty
+        and artifact_may_be_empty(path.relative_to(root).as_posix(), arm_contexts)
+    }
 
 
 def write_manifest(variants: list[Variant]) -> None:
+    telemetry_errors: list[str] = []
+    for variant in variants:
+        telemetry_path = RUNS / variant.run_id / "tool-invocations-solve.jsonl"
+        telemetry_errors.extend(
+            f"{variant.run_id}: {error}"
+            for error in validate_tool_invocation_artifact(
+                telemetry_path,
+                treatment=variant.name,
+                solve_expected=variant.runnable and not SMOKE_ONLY,
+            )
+        )
+    if telemetry_errors:
+        raise ValueError("; ".join(telemetry_errors))
     files = [path for path in review_artifact_files() if path != RUN_ROOT / "review-manifest.json"]
     manifest = build_manifest(
         files,

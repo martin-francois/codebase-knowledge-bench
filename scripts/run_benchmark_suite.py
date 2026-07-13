@@ -2443,8 +2443,14 @@ def write_zip(suite_dir: Path) -> None:
     entries: list[dict[str, Any]] = []
     archived: set[str] = set()
 
-    def add_bytes(zf: zipfile.ZipFile, archive_path: Path, payload: bytes,
-                  producer: str, required_override: bool | None = None) -> None:
+    def add_bytes(
+        zf: zipfile.ZipFile,
+        archive_path: Path,
+        payload: bytes,
+        producer: str,
+        required_override: bool | None = None,
+        may_be_empty_override: bool | None = None,
+    ) -> None:
         name = archive_path.as_posix()
         if name in archived:
             return
@@ -2475,16 +2481,22 @@ def write_zip(suite_dir: Path) -> None:
         required = bool(payload) or archive_path.suffix in {
             ".patch", ".json", ".md", ".toml", ".xml"
         }
+        may_be_empty = not required
         if not payload and "qualification-checkpoints" in archive_path.parts:
             required = False
         if required_override is not None:
             required = required_override
+        if may_be_empty_override is not None:
+            may_be_empty = may_be_empty_override
+        elif not payload and not required:
+            may_be_empty = True
         entries.append({
             "path": name,
             "sha256": sha256_bytes(payload),
             "bytes": len(payload),
             "media_type": media_type(archive_path),
-            "required": required,
+            "required": True,
+            "may_be_empty": may_be_empty,
             "producer": producer,
             "schema_version": MANIFEST_SCHEMA_VERSION,
         })
@@ -2530,9 +2542,9 @@ def write_zip(suite_dir: Path) -> None:
                 continue
             seen_execution_ids.add(run_id)
             execution_files = {
-                execution_root / "results.json": True,
-                execution_root / "benchmark-report.md": True,
-                execution_root / "export" / "benchmark-bundle.zip": True,
+                execution_root / "results.json": (True, False),
+                execution_root / "benchmark-report.md": (True, False),
+                execution_root / "export" / "benchmark-bundle.zip": (True, False),
             }
             review_manifest = execution_root / "review-manifest.json"
             sanitized_bundle = execution_root / "export" / "benchmark-bundle.zip"
@@ -2548,10 +2560,11 @@ def write_zip(suite_dir: Path) -> None:
                     relative_entry = Path(str(entry.get("path") or ""))
                     if relative_entry.is_absolute() or ".." in relative_entry.parts:
                         raise RuntimeError(f"non-portable execution manifest path: {relative_entry}")
-                    execution_files[execution_root / relative_entry] = bool(
-                        entry.get("required", True)
+                    execution_files[execution_root / relative_entry] = (
+                        bool(entry.get("required", True)),
+                        bool(entry.get("may_be_empty", False)),
                     )
-            for path, required in execution_files.items():
+            for path, (required, may_be_empty) in execution_files.items():
                 if path.is_file():
                     relative = path.relative_to(execution_root)
                     if relative.name == "review-manifest.json":
@@ -2563,7 +2576,7 @@ def write_zip(suite_dir: Path) -> None:
                     )
                     add_bytes(
                         zf, Path("executions") / run_id / relative,
-                        payload, "execution-evidence-v3", required,
+                        payload, "execution-evidence-v3", required, may_be_empty,
                     )
             if sanitized_archive:
                 sanitized_archive.close()

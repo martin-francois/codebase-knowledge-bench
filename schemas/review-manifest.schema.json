@@ -4,21 +4,22 @@
   "type": "object",
   "required": ["schema_version", "entries", "root_manifest_sha256"],
   "properties": {
-    "schema_version": {"const": "content-manifest-v2"},
+    "schema_version": {"const": "content-manifest-v3"},
     "root_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "entries": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["path", "sha256", "bytes", "media_type", "required", "producer", "schema_version"],
+        "required": ["path", "sha256", "bytes", "media_type", "required", "may_be_empty", "producer", "schema_version"],
         "properties": {
           "path": {"type": "string", "minLength": 1},
           "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
           "bytes": {"type": "integer", "minimum": 0},
           "media_type": {"type": "string", "minLength": 1},
           "required": {"type": "boolean"},
+          "may_be_empty": {"type": "boolean"},
           "producer": {"type": "string", "minLength": 1},
-          "schema_version": {"const": "content-manifest-v2"}
+          "schema_version": {"const": "content-manifest-v3"}
         }
       }
     }

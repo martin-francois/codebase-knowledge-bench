@@ -230,14 +230,16 @@ class ReferenceAndManifestTest(unittest.TestCase):
             manifest = build_manifest(
                 [patch], root, optional_empty={"report-assets/patch-A.patch"}
             )
-            self.assertFalse(manifest["entries"][0]["required"])
+            self.assertTrue(manifest["entries"][0]["required"])
+            self.assertTrue(manifest["entries"][0]["may_be_empty"])
             self.assertEqual([], validate_manifest(manifest, root))
 
     def test_empty_no_deletion_and_clean_diff_artifacts_are_semantically_valid(self):
-        source = (ROOT / "scripts/run_benchmark.py").read_text()
-        self.assertIn('"deleted-files.txt"', source)
-        self.assertIn('"diff-check.log"', source)
-        self.assertIn('path.name in {"stdout.log", "stderr.log"}', source)
+        from scripts.benchmark_hardening import artifact_may_be_empty
+
+        self.assertTrue(artifact_may_be_empty("runs/run-001/deleted-files.txt", {}))
+        self.assertTrue(artifact_may_be_empty("runs/run-001/diff-check.log", {}))
+        self.assertTrue(artifact_may_be_empty("runs/run-001/stage-diagnostics/stderr.log", {}))
 
     def test_smoke_checkpoint_rebuilds_a_subset_local_manifest(self):
         source = (ROOT / "scripts/run_benchmark.py").read_text()
@@ -247,10 +249,11 @@ class ReferenceAndManifestTest(unittest.TestCase):
     def test_missing_overlay_bytes_fail_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            manifest = {"schema_version": "content-manifest-v2", "entries": [{
+            manifest = {"schema_version": "content-manifest-v3", "entries": [{
                 "path": "inputs/primary-contract-overlay.patch", "sha256": "0" * 64,
                 "bytes": 1, "media_type": "text/x-diff", "required": True,
-                "producer": "fixture", "schema_version": "content-manifest-v2"
+                "may_be_empty": False,
+                "producer": "fixture", "schema_version": "content-manifest-v3"
             }], "root_manifest_sha256": "0" * 64}
             self.assertTrue(any("missing" in error for error in validate_manifest(manifest, root)))
 

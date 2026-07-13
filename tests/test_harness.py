@@ -1615,7 +1615,7 @@ class ResumeAndValidatorTest(unittest.TestCase):
         self.assertEqual(1, metrics["successful_focused_tool_calls"])
         self.assertEqual(0.25, metrics["useful_tool_call_rate"])
 
-    def test_baseline_empty_tool_telemetry_is_optional_but_tool_telemetry_is_required(self) -> None:
+    def test_baseline_empty_tool_telemetry_is_allowed_but_tool_telemetry_is_nonempty(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             baseline = root / "runs" / "run-001" / "tool-smoke.jsonl"
