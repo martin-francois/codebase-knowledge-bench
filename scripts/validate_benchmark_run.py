@@ -624,9 +624,12 @@ def validate_suite_derived_rows(data: dict[str, Any], errors: list[str]) -> None
     sys.modules[spec.name] = suite_module
     spec.loader.exec_module(suite_module)
     rebuilt_rows = suite_module.load_variant_records(data.get("run_records", []))
+    # Aggregation applies the canonical matched-baseline and Pareto projections
+    # to rows in place. Reconstruct those projections before comparing source-
+    # derived suite rows so the validator checks the published final form.
+    rebuilt_aggregates = suite_module.aggregate(rebuilt_rows)
     if data.get("variant_rows") != rebuilt_rows:
         fail(errors, "harness/evidence failure: suite variant_rows were mutated after execution")
-    rebuilt_aggregates = suite_module.aggregate(rebuilt_rows)
     if data.get("aggregates") != rebuilt_aggregates:
         fail(errors, "harness/evidence failure: suite aggregates or rankings are not recomputation-consistent")
 
