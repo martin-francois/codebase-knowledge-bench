@@ -1744,7 +1744,11 @@ def load_variant_records(run_records: list[dict[str, Any]]) -> list[dict[str, An
             row["execution_root"] = run["execution_root"]
             row["benchmark_report"] = str(Path(run["execution_root"]) / "benchmark-report.md")
             row["results_json"] = run["results_json"]
-            row["issue_rationale"] = issue_by_id[run["issue_id"]].rationale
+            persisted_rationale = str(run.get("issue_rationale") or "").strip()
+            if persisted_rationale:
+                row["issue_rationale"] = persisted_rationale
+            else:
+                row["issue_rationale"] = issue_by_id[run["issue_id"]].rationale
             row["operational_rank"] = operational_ranks.get(row.get("run_id"))
             row["descriptive_composite_rank"] = descriptive_ranks.get(row.get("run_id"))
             row["trust_valid"] = bool(row.get("trust_valid"))
@@ -2694,9 +2698,13 @@ def read_run_records(suite_dir: Path) -> list[dict[str, Any]]:
 
 
 def enrich_run_records(run_records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    issue_by_id = {issue.issue_id: issue for issue in ISSUES_TO_RUN}
     enriched = []
     for record in run_records:
         row = dict(record)
+        issue = issue_by_id.get(str(row.get("issue_id") or ""))
+        if issue is not None:
+            row.setdefault("issue_rationale", issue.rationale)
         result_path = Path(str(row.get("results_json", "")))
         if result_path.exists():
             result = json.loads(result_path.read_text(encoding="utf-8"))
@@ -3666,6 +3674,37 @@ def _main() -> None:
     print(f"[suite] wrote {suite_dir / 'suite-report.md'}", flush=True)
 
 
+def record_children_complete_derivation_failure(suite_dir: Path, exc: BaseException) -> bool:
+    from benchmark_model import atomic_write_text
+
+    records = read_jsonl_records(suite_dir / "runs.jsonl")
+    children_complete = bool(records) and all(
+        record.get("returncode") is not None
+        and Path(str(record.get("results_json") or "")).is_file()
+        for record in records
+    )
+    if not children_complete:
+        return False
+    atomic_write_text(
+        suite_dir / "children_complete_derivation_failed.json",
+        json.dumps({
+            "schema_version": "derivation-checkpoint-v1",
+            "state": "children_complete_derivation_failed",
+            "exception_type": type(exc).__name__,
+            "message": str(exc),
+            "completed_children_must_not_be_rerun": True,
+            "completed_execution_ids": sorted(
+                str(record.get("run_id") or "") for record in records
+            ),
+            "deterministic_resume_command": (
+                "python3 scripts/recompute_suite.py <source-suite> "
+                "<recomputed-executions-root> <new-suite-dir>"
+            ),
+        }, indent=2, sort_keys=True) + "\n",
+    )
+    return True
+
+
 def main() -> None:
     with sequential_timing_lock(OUTPUT_ROOT / "sequential-timing-lock.json") as lock:
         os.environ.update(lock.child_environment())
@@ -3675,18 +3714,7 @@ def main() -> None:
             candidates = sorted((OUTPUT_ROOT / "suites").glob("*/suite-plan.json"), key=lambda path: path.stat().st_mtime_ns)
             if candidates:
                 suite_dir = candidates[-1].parent
-                records_path = suite_dir / "suite-run-records.json"
-                if records_path.is_file():
-                    (suite_dir / "children-complete-derivation-failed.json").write_text(
-                        json.dumps({
-                            "schema_version": "derivation-checkpoint-v1",
-                            "state": "children_complete_derivation_failed",
-                            "exception_type": type(exc).__name__,
-                            "message": str(exc),
-                            "completed_children_must_not_be_rerun": True,
-                        }, indent=2, sort_keys=True) + "\n",
-                        encoding="utf-8",
-                    )
+                record_children_complete_derivation_failure(suite_dir, exc)
             raise
 
 
