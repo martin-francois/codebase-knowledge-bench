@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sealed Sverklo model cache",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "model_identifier", "package_name", "package_version", "package_license", "runtime", "models_lock_sha256", "files", "content_root_sha256", "acquisition"],
+  "properties": {
+    "schema_version": {"const": "sverklo-model-cache-v1"},
+    "model_identifier": {"const": "sentence-transformers/all-MiniLM-L6-v2"},
+    "package_name": {"const": "sverklo"},
+    "package_version": {"type": "string", "minLength": 1},
+    "package_license": {"type": "string", "minLength": 1},
+    "runtime": {"const": "onnxruntime-node"},
+    "models_lock_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "content_root_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "files": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["path", "bytes", "sha256", "source_url"],
+        "properties": {
+          "path": {"enum": ["model.onnx", "tokenizer.json"]},
+          "bytes": {"type": "integer", "minimum": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "source_url": {"type": "string", "pattern": "^https://"}
+        }
+      }
+    },
+    "acquisition": {"type": "object", "minProperties": 1}
+  }
+}

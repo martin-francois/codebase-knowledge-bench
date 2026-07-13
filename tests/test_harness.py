@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import os
 import subprocess
@@ -909,17 +910,49 @@ class SharedInstallTest(unittest.TestCase):
             first_models.mkdir(parents=True)
             (first_models / "model.onnx").write_bytes(b"verified-model")
             (first_models / "tokenizer.json").write_text("{}", encoding="utf-8")
+            prefix = shared_install / "sverklo/prefix"
+            package = prefix / "lib/node_modules/sverklo"
+            package.mkdir(parents=True)
+            model_hash = hashlib.sha256(b"verified-model").hexdigest()
+            tokenizer_hash = hashlib.sha256(b"{}").hexdigest()
+            (package / "package.json").write_text(json.dumps({
+                "name": "sverklo", "version": "0.29.2", "license": "MIT",
+            }))
+            (package / "models.lock.json").write_text(json.dumps({
+                "version": 1,
+                "model": {
+                    "model.onnx": {
+                        "url": runner.SVERKLO_MODEL_URLS["model.onnx"],
+                        "sha256": model_hash, "bytes": len(b"verified-model"),
+                    },
+                    "tokenizer.json": {
+                        "url": runner.SVERKLO_MODEL_URLS["tokenizer.json"],
+                        "sha256": tokenizer_hash, "bytes": len(b"{}"),
+                    },
+                },
+            }))
             with (
                 mock.patch.object(runner, "TOOL_CACHE", root / "tool-cache"),
                 mock.patch.object(runner, "SHARED_INSTALL_ROOT", shared_install),
             ):
-                runner.publish_sverklo_model_cache(first, first_log)
-                runner.stage_sverklo_model_cache(second, second_log)
+                published = runner.publish_sverklo_model_cache(first, first_log, prefix)
+                reused = runner.stage_sverklo_model_cache(second, second_log, prefix)
             second_models = root / "tool-cache/run-002/home/.sverklo/models"
+            self.assertTrue(reused)
             self.assertEqual(b"verified-model", (second_models / "model.onnx").read_bytes())
             self.assertEqual("{}", (second_models / "tokenizer.json").read_text())
+            self.assertEqual(runner.SVERKLO_MODEL_ID, published["model_identifier"])
+            self.assertEqual(0o444, (second_models / "model.onnx").stat().st_mode & 0o777)
             self.assertIn("PUBLISHED_SVERKLO_MODEL_CACHE", first_log.read_text())
             self.assertIn("REUSED_SVERKLO_MODEL_CACHE", second_log.read_text())
+            (shared_install / "sverklo/models/model.onnx").chmod(0o644)
+            (shared_install / "sverklo/models/model.onnx").write_bytes(b"tampered")
+            with (
+                mock.patch.object(runner, "TOOL_CACHE", root / "tool-cache"),
+                mock.patch.object(runner, "SHARED_INSTALL_ROOT", shared_install),
+                self.assertRaisesRegex(RuntimeError, "integrity mismatch"),
+            ):
+                runner.stage_sverklo_model_cache(second, second_log, prefix)
 
     def test_pinned_python_install_is_reused_without_install_command(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
