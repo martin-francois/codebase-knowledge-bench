@@ -71,6 +71,8 @@ class CanonicalSuiteControlTest(unittest.TestCase):
                 maximum_unique_arms=3, maximum_launches=6,
                 maximum_launches_per_arm=2,
             )
+            self.assertTrue((root / "execution-ledger.json").is_file())
+            self.assertTrue((root / "execution-ledger.md").is_file())
             order = canonical_suite.schedule_order(schedule, "issue-486", 1)
             keys = canonical_suite.begin_block(
                 root, ledger, "issue-486", 1, order, output_root=root

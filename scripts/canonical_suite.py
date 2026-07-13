@@ -351,6 +351,7 @@ def initialize_ledger(
         for field, value in expected.items():
             if ledger.get(field) != value:
                 raise SystemExit(f"Canonical ledger {field} does not match the resumed suite")
+        _write_ledger(suite_dir, ledger)
         return ledger
     planned = [
         f"{row['issue_id']}::{row['repetition']}::{variant}"
@@ -370,7 +371,7 @@ def initialize_ledger(
         "implementation_child_launches": 0,
         "events": [],
     }
-    atomic_json(path, ledger)
+    _write_ledger(suite_dir, ledger)
     return ledger
 
 
