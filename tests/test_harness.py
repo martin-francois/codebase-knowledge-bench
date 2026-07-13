@@ -1059,7 +1059,8 @@ class ModelPreflightTest(unittest.TestCase):
             jsonl = run_dir / "run.jsonl"
             stderr = run_dir / "run.stderr"
             command.write_text(
-                'codex exec --yolo --model gpt-5.6-sol -c model_reasoning_effort="high"\n',
+                f'codex exec --yolo --model gpt-5.6-sol '
+                f'-c model_reasoning_effort="high" --cd {source}\n',
                 encoding="utf-8",
             )
             jsonl.write_text("{}\n", encoding="utf-8")
@@ -1108,9 +1109,15 @@ class ModelPreflightTest(unittest.TestCase):
                 ),
             ):
                 record = suite.reuse_model_preflight(fixture / "suite")
+                copied_result = (fixture / "suite/model-preflight/model-preflight.json").read_text()
+                copied_command = (fixture / "suite/model-preflight/run-command.txt").read_text()
         self.assertTrue(record["passed"])
         self.assertTrue(record["yolo"])
         self.assertTrue(record["tokens_excluded_from_solve_ranking"])
+        self.assertNotIn(str(source), copied_result)
+        self.assertNotIn(str(source), copied_command)
+        self.assertIn("$MODEL_PREFLIGHT_SOURCE", copied_result)
+        self.assertIn("$MODEL_PREFLIGHT_SOURCE", copied_command)
 
     def test_reuses_preflight_with_yolo_disabled(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
