@@ -2676,6 +2676,10 @@ def write_zip(suite_dir: Path) -> None:
         "semantic_validation_sha256": hashlib.sha256(semantic_bytes).hexdigest(),
         "embedded_manifest_count": len(semantic_report.get("embedded_manifests", {}).get("manifests", [])),
         "source_role_count": len(semantic_report.get("source_roles", {}).get("roles", [])),
+        "source_archive_count": len(semantic_report.get("source_roles", {}).get("archives", [])),
+        "source_reconstruction_passed": bool(
+            semantic_report.get("source_roles", {}).get("source_reconstruction_passed")
+        ),
         "validated_at": stamp(),
         "validation_result": "passed",
     }

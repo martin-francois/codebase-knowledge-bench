@@ -309,6 +309,7 @@ For every requested behavior change, update `SPEC.md` and the machine-readable p
 
 - Never sanitize publication bytes with generic substring replacement. Use the structured publisher with concrete absolute prefixes, preserve relative paths and immutable raw evidence, and add a literal-path regression fixture for every sanitizer change.
 - Treat the outer suite manifest, every embedded review manifest, detached receipt, and source-role provenance as one fail-closed integrity chain. New manifest fields require semantic extracted-archive tests, not only schema tests.
+- Never infer source reconstruction from generic archive success. Fresh and recomputed bundles must explicitly reconstruct the included source tar, match its Git tree/content/manifest hashes, and validate every declared role; zero checked roles is a failure.
 - Keep artifact existence separate from semantic emptiness. Baseline intended-tool telemetry is a
   required file that may be empty; expected non-baseline solve telemetry is required and nonempty.
   Change the single versioned artifact contract and test execution, suite, and extracted consumers

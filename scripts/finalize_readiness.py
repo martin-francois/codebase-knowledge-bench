@@ -60,7 +60,14 @@ def build_readiness_payload(
     artifact_ok = receipt.get("validation_result") in {"passed", True}
     if not artifact_ok:
         blockers.append("detached publication validation did not pass")
-    source_ok = bool(receipt.get("source_reconstruction_passed", artifact_ok))
+    declared_roles = plan.get("model_provenance", {}).get("roles", {})
+    declared_role_count = len(declared_roles) if isinstance(declared_roles, dict) else 0
+    checked_role_count = int(receipt.get("source_role_count") or 0)
+    source_ok = (
+        receipt.get("source_reconstruction_passed") is True
+        and int(receipt.get("source_archive_count") or 0) >= 1
+        and checked_role_count >= max(1, declared_role_count)
+    )
     if not source_ok:
         blockers.append("source reconstruction did not pass")
     run_records = results.get("run_records", [])

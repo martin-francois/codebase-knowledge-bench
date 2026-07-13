@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import subprocess
 import tarfile
 import tempfile
 from pathlib import Path, PurePosixPath
@@ -147,68 +148,148 @@ def _safe_tar_members(archive: tarfile.TarFile) -> Iterable[tarfile.TarInfo]:
         yield member
 
 
+def _reconstruct_source_archive(
+    metadata_path: Path,
+    source_metadata: dict[str, Any],
+    provenance: dict[str, Any],
+    root: Path,
+    *,
+    archive_path_override: Path | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    archive_name = str(source_metadata.get("archive") or "")
+    if not archive_name:
+        raise ValueError("effective-source archive is not declared")
+    archive_path = archive_path_override or metadata_path.parent / archive_name
+    if not archive_path.is_file():
+        raise ValueError(f"effective-source archive is missing: {archive_name}")
+    if source_metadata.get("archive_sha256") and sha256_file(archive_path) != source_metadata["archive_sha256"]:
+        raise ValueError("effective-source archive hash mismatch")
+    with tempfile.TemporaryDirectory(prefix="source-reconstruct-") as temp:
+        target = Path(temp)
+        with tarfile.open(archive_path, "r:*") as archive:
+            archive.extractall(target, members=_safe_tar_members(archive))
+        declared_entries = source_metadata.get("effective_source_files", [])
+        if not declared_entries:
+            raise ValueError("effective-source file manifest is empty")
+        reconstructed_entries: list[dict[str, str]] = []
+        for entry in declared_entries:
+            rel = canonical_relative_path(str(entry["path"]))
+            source_path = target.joinpath(*rel.parts)
+            if not source_path.is_file():
+                raise ValueError(f"effective source is missing {rel}")
+            actual_hash = sha256_file(source_path)
+            if actual_hash != entry["sha256"]:
+                raise ValueError(f"effective source hash mismatch {rel}")
+            reconstructed_entries.append({"path": rel.as_posix(), "sha256": actual_hash})
+        manifest_bytes = json.dumps(
+            reconstructed_entries, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+        manifest_hash = hashlib.sha256(manifest_bytes).hexdigest()
+        if manifest_hash != source_metadata.get("source_manifest_sha256"):
+            raise ValueError("source manifest digest mismatch")
+        content_digest = hashlib.sha256()
+        for entry in reconstructed_entries:
+            content_digest.update(entry["path"].encode("utf-8") + b"\0")
+            content_digest.update(bytes.fromhex(entry["sha256"]))
+        content_hash = content_digest.hexdigest()
+        if content_hash != source_metadata.get("effective_source_content_sha256"):
+            raise ValueError("effective source content digest mismatch")
+        if source_metadata.get("source_hash_algorithm") != "sha256(path_utf8_nul_file_sha256_bytes)":
+            raise ValueError("unsupported source hash algorithm")
+        if source_metadata.get("source_hash_version") != "source-content-v1":
+            raise ValueError("unsupported source hash version")
+        declared_tree = str(source_metadata.get("harness_git_tree") or "")
+        if declared_tree:
+            subprocess.run(["git", "init", "-q"], cwd=target, check=True)
+            subprocess.run(["git", "add", "-A"], cwd=target, check=True)
+            actual_tree = subprocess.run(
+                ["git", "write-tree"], cwd=target, check=True, text=True,
+                stdout=subprocess.PIPE,
+            ).stdout.strip()
+            if actual_tree != declared_tree:
+                raise ValueError("reconstructed Git tree mismatch")
+        checked: list[dict[str, Any]] = []
+        for role, record in sorted(provenance.items()):
+            files = record.get("sources") or [
+                {"path": path, "sha256": record.get("hashes", {}).get(path)}
+                for path in record.get("files", [])
+            ]
+            if not files:
+                raise ValueError(f"{role}: source file list is empty")
+            for source in files:
+                rel = canonical_relative_path(str(source["path"]))
+                source_path = target.joinpath(*rel.parts)
+                if not source_path.is_file():
+                    raise ValueError(f"{role}: missing source {rel}")
+                if not source.get("sha256") or sha256_file(source_path) != source["sha256"]:
+                    raise ValueError(f"{role}: source hash mismatch {rel}")
+            checked.append({
+                "metadata": metadata_path.relative_to(root).as_posix(),
+                "role": role,
+                "effective_source_content_sha256": content_hash,
+                "source_manifest_sha256": manifest_hash,
+            })
+    return checked, {
+        "metadata": metadata_path.relative_to(root).as_posix(),
+        "archive": archive_path.relative_to(root).as_posix(),
+        "effective_source_content_sha256": content_hash,
+        "source_manifest_sha256": manifest_hash,
+        "harness_git_tree": declared_tree or None,
+    }
+
+
 def validate_source_roles(root: Path) -> dict[str, Any]:
     checked: list[dict[str, Any]] = []
+    archives: list[dict[str, Any]] = []
     errors: list[str] = []
+    suite_plan_path = root / "suite-plan.json"
+    suite_provenance: dict[str, Any] = {}
+    if suite_plan_path.is_file():
+        try:
+            suite_plan = json.loads(suite_plan_path.read_text(encoding="utf-8"))
+            suite_provenance = suite_plan.get("model_provenance", {}).get("roles", {})
+        except (OSError, TypeError, json.JSONDecodeError) as exc:
+            errors.append(f"suite-plan.json: invalid source provenance: {exc}")
+    harness_metadata_paths = sorted(root.rglob("harness-source.json"))
+    if suite_provenance and not harness_metadata_paths:
+        errors.append("suite declares source roles but contains no harness-source.json")
+    for metadata_path in harness_metadata_paths:
+        try:
+            source_metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            role_checks, archive_record = _reconstruct_source_archive(
+                metadata_path, source_metadata, suite_provenance, root
+            )
+            checked.extend(role_checks)
+            archives.append(archive_record)
+        except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError, tarfile.TarError, subprocess.SubprocessError) as exc:
+            errors.append(f"{metadata_path.relative_to(root)}: {exc}")
     for lineage_path in sorted(root.rglob("recompute-lineage.json")):
         try:
             lineage = json.loads(lineage_path.read_text())
             provenance = lineage.get("role_source_provenance", {})
             source_metadata = lineage.get("recompute_source_archive", {})
-            archive_name = source_metadata.get("archive")
-            if not provenance or not archive_name:
+            if not provenance or not source_metadata.get("archive"):
                 continue
-            candidates = sorted(root.rglob(Path(str(archive_name)).name))
+            candidates = sorted(root.rglob(Path(str(source_metadata["archive"])).name))
             if len(candidates) != 1:
-                raise ValueError(f"expected one effective-source archive, found {len(candidates)}")
-            with tempfile.TemporaryDirectory(prefix="source-reconstruct-") as temp:
-                target = Path(temp)
-                with tarfile.open(candidates[0], "r:*") as archive:
-                    archive.extractall(target, members=_safe_tar_members(archive))
-                declared_entries = source_metadata.get("effective_source_files", [])
-                reconstructed_entries: list[dict[str, str]] = []
-                for entry in declared_entries:
-                    rel = canonical_relative_path(str(entry["path"]))
-                    source_path = target.joinpath(*rel.parts)
-                    if not source_path.is_file():
-                        raise ValueError(f"effective source is missing {rel}")
-                    actual_hash = sha256_file(source_path)
-                    if actual_hash != entry["sha256"]:
-                        raise ValueError(f"effective source hash mismatch {rel}")
-                    reconstructed_entries.append({"path": rel.as_posix(), "sha256": actual_hash})
-                manifest_bytes = json.dumps(
-                    reconstructed_entries, sort_keys=True, separators=(",", ":")
-                ).encode("utf-8")
-                manifest_hash = hashlib.sha256(manifest_bytes).hexdigest()
-                if manifest_hash != source_metadata.get("source_manifest_sha256"):
-                    raise ValueError("source manifest digest mismatch")
-                content_digest = hashlib.sha256()
-                for entry in reconstructed_entries:
-                    content_digest.update(entry["path"].encode("utf-8") + b"\0")
-                    content_digest.update(bytes.fromhex(entry["sha256"]))
-                if content_digest.hexdigest() != source_metadata.get("effective_source_content_sha256"):
-                    raise ValueError("effective source content digest mismatch")
-                if source_metadata.get("source_hash_algorithm") != "sha256(path_utf8_nul_file_sha256_bytes)":
-                    raise ValueError("unsupported source hash algorithm")
-                if source_metadata.get("source_hash_version") != "source-content-v1":
-                    raise ValueError("unsupported source hash version")
-                for role, record in sorted(provenance.items()):
-                    for source in record.get("sources", []):
-                        rel = canonical_relative_path(str(source["path"]))
-                        source_path = target.joinpath(*rel.parts)
-                        if not source_path.is_file():
-                            raise ValueError(f"{role}: missing source {rel}")
-                        if sha256_file(source_path) != source["sha256"]:
-                            raise ValueError(f"{role}: source hash mismatch {rel}")
-                    checked.append({
-                        "lineage": lineage_path.relative_to(root).as_posix(),
-                        "role": role,
-                        "effective_source_content_sha256": content_digest.hexdigest(),
-                        "source_manifest_sha256": manifest_hash,
-                    })
+                raise ValueError(f"expected one recompute source archive, found {len(candidates)}")
+            role_checks, archive_record = _reconstruct_source_archive(
+                lineage_path, source_metadata, provenance, root,
+                archive_path_override=candidates[0],
+            )
+            checked.extend(role_checks)
+            archives.append(archive_record)
         except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError, tarfile.TarError) as exc:
             errors.append(f"{lineage_path.relative_to(root)}: {exc}")
-    return {"schema_version": "source-role-validation-v1", "roles": checked, "errors": errors}
+    if suite_provenance and len({item["role"] for item in checked}) < len(suite_provenance):
+        errors.append("not every suite-declared source role was reconstructed")
+    return {
+        "schema_version": "source-role-validation-v2",
+        "source_reconstruction_passed": bool(archives) and bool(checked) and not errors,
+        "archives": archives,
+        "roles": checked,
+        "errors": errors,
+    }
 
 
 def validate_report_consistency(root: Path) -> dict[str, Any]:
