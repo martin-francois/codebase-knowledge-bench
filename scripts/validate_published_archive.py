@@ -116,15 +116,17 @@ def main() -> int:
     errors.extend(source_report["errors"])
     errors.extend(consistency_report["errors"])
     suite_results_path = root / "suite-results.json"
+    dashboard_report = {"status": "not_applicable"}
     if suite_results_path.is_file():
         suite_result = json.loads(suite_results_path.read_text(encoding="utf-8"))
         if suite_result.get("aggregates", {}).get("operational_tradeoffs") is not None:
-            validate_dashboard(root, suite_result, errors)
+            dashboard_report = validate_dashboard(root, suite_result, errors)
     semantic_report = {
         "schema_version": "published-semantic-validation-v1",
         "embedded_manifests": embedded_report,
         "source_roles": source_report,
         "report_consistency": consistency_report,
+        "dashboard": dashboard_report,
         "validation_result": "failed" if errors else "passed",
     }
     if args.report:

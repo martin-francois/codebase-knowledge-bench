@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and validate the self-contained operational dashboard."""
+"""Build and semantically validate the offline operational dashboard."""
 
 from __future__ import annotations
 
@@ -12,110 +12,188 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD = ROOT / "dashboard"
 SCHEMA = ROOT / "schemas" / "dashboard-data.schema.json"
-VERSION = "operational-dashboard-v1"
+VERSION = "operational-dashboard-v2"
+
+METRIC_DESCRIPTORS: dict[str, dict[str, str]] = {
+    "modeled_weighted_token_load": {
+        "relative_field": "modeled_weighted_token_load_change_percent",
+        "label": "Modeled weighted token load", "unit": "tokens",
+    },
+    "non_cached_input_tokens": {
+        "relative_field": "non_cached_input_tokens_change_percent",
+        "label": "Non-cached input tokens", "unit": "tokens",
+    },
+    "output_tokens": {
+        "relative_field": "output_tokens_change_percent",
+        "label": "Output tokens", "unit": "tokens",
+    },
+    "reasoning_output_tokens": {
+        "relative_field": "reasoning_output_tokens_change_percent",
+        "label": "Reasoning output tokens", "unit": "tokens",
+    },
+    "solve_wall_seconds": {
+        "relative_field": "solve_wall_seconds_change_percent",
+        "label": "Solve wall time", "unit": "seconds",
+    },
+    "warm_workflow_seconds": {
+        "relative_field": "warm_workflow_seconds_change_percent",
+        "label": "Warm end-to-end time", "unit": "seconds",
+    },
+    "execution_calls_started": {
+        "relative_field": "execution_calls_started_change_percent",
+        "label": "Execution calls started", "unit": "calls",
+    },
+    "intended_tool_successful_calls": {
+        "relative_field": "intended_tool_successful_calls_change_percent",
+        "label": "Successful intended-tool calls", "unit": "calls",
+    },
+    "estimated_monetary_cost": {
+        "relative_field": "estimated_monetary_cost_change_percent",
+        "label": "Estimated monetary cost", "unit": "currency",
+    },
+}
 
 
-def _mean_metric(record: dict[str, Any], field: str) -> float | None:
-    value = record.get(field)
-    if isinstance(value, dict):
-        value = value.get("mean")
-    return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+def _number(value: Any) -> float | None:
+    return (
+        float(value)
+        if isinstance(value, (int, float)) and not isinstance(value, bool)
+        else None
+    )
+
+
+def _run_metrics(row: dict[str, Any]) -> dict[str, float | None]:
+    return {
+        "modeled_weighted_token_load": _number(
+            row.get("modeled_weighted_token_load")
+        ),
+        "non_cached_input_tokens": _number(row.get("non_cached_input_tokens")),
+        "output_tokens": _number(row.get("output_tokens")),
+        "reasoning_output_tokens": _number(row.get("reasoning_output_tokens")),
+        "solve_wall_seconds": _number(row.get("solve_wall_seconds")),
+        "warm_workflow_seconds": _number(row.get("warm_workflow_seconds")),
+        "execution_calls_started": _number(row.get("execution_calls_started")),
+        "intended_tool_successful_calls": _number(
+            row.get("intended_tool_successful_solve_invocation_count")
+        ),
+        "estimated_monetary_cost": _number(
+            row.get("estimated_monetary_cost")
+        ),
+    }
 
 
 def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
-    aggregates = suite_result["aggregates"]
-    analysis = aggregates["operational_tradeoffs"]
+    from benchmark_model import METHODOLOGY_POLICY
+
+    analysis = suite_result["aggregates"]["operational_tradeoffs"]
+    runs = []
+    for row in sorted(
+        suite_result.get("variant_rows", []),
+        key=lambda item: (
+            str(item.get("issue_id")),
+            int(item.get("repetition") or 0),
+            str(item.get("variant")),
+        ),
+    ):
+        attribution = row.get("attribution") or {}
+        runs.append(
+            {
+                "issue_id": str(row.get("issue_id")),
+                "repetition": int(row.get("repetition") or 0),
+                "treatment": str(row.get("variant")),
+                "operational_eligible": bool(
+                    row.get("operational_rank_eligible")
+                ),
+                "exclusion_reason": row.get("exclusion_reason"),
+                "task_success": bool(row.get("task_success")),
+                "strict_attribution_supported": attribution.get(
+                    "strict_direct_attribution_supported"
+                ),
+                "correctness": _number(
+                    row.get("operational_correctness_score")
+                ),
+                "metrics": _run_metrics(row),
+            }
+        )
     points = []
-    comparisons = analysis.get("matched_comparisons", {})
     for treatment, aggregate in sorted(analysis["absolute_quality"].items()):
         mean = aggregate["mean"]
-        comparison = comparisons.get(treatment, {})
-        relative = comparison.get("relative_to_matched_baseline", {})
-        task = aggregate["task_success"]
-        attribution_values = [
-            row.get("attribution", {}).get("strict_direct_attribution_supported")
-            for row in suite_result.get("variant_rows", [])
-            if row.get("variant") == treatment
-        ]
-        strict = (
-            all(value is True for value in attribution_values)
-            if attribution_values and treatment != "baseline-none"
-            else None
+        comparison = analysis["matched_comparisons"].get(treatment, {})
+        points.append(
+            {
+                "treatment": treatment,
+                "correctness": mean["correctness"],
+                "metrics": {
+                    key: mean.get(
+                        {
+                            "modeled_weighted_token_load": "tokens",
+                            "solve_wall_seconds": "time",
+                            "warm_workflow_seconds": "warm_time",
+                            "execution_calls_started": "calls",
+                            "intended_tool_successful_calls": "intended_tool_calls",
+                        }.get(key, key)
+                    )
+                    for key in METRIC_DESCRIPTORS
+                },
+                "task_success": aggregate["task_success"],
+                "coverage": analysis["coverage"][treatment],
+                "paired_intervals": comparison.get("paired_intervals"),
+            }
         )
-        points.append({
-            "treatment": treatment,
-            "correctness": mean["correctness"],
-            "modeled_weighted_token_load": mean["tokens"],
-            "non_cached_input_tokens": _mean_metric(
-                aggregates["by_variant"].get(treatment, {}), "non_cached_input_tokens"
+    descriptors = {
+        key: {
+            "absolute_field": key,
+            "relative_field": value["relative_field"],
+            "mean_field": f"{key}_mean",
+            "median_field": f"{key}_median",
+            "direction": "lower",
+            "label": value["label"],
+            "unit": value["unit"],
+            "absolute_available": any(
+                run["metrics"][key] is not None for run in runs
             ),
-            "output_tokens": _mean_metric(
-                aggregates["by_variant"].get(treatment, {}), "output_tokens"
+            "relative_available": any(
+                run["treatment"] == "baseline-none"
+                and run["operational_eligible"]
+                and run["metrics"][key] not in {None, 0.0}
+                for run in runs
             ),
-            "solve_wall_seconds": mean["time"],
-            "warm_workflow_seconds": mean.get("warm_time"),
-            "execution_calls_started": mean.get("calls"),
-            "intended_tool_successful_calls": _mean_metric(
-                aggregates["by_variant"].get(treatment, {}),
-                "intended_tool_successful_solve_invocation_count",
-            ),
-            "estimated_monetary_cost": mean.get("cost"),
-            "task_success_rate": (
-                task["numerator"] / task["denominator"] if task["denominator"] else 0.0
-            ),
-            "operational_eligible": True,
-            "strict_attribution_supported": strict,
-            "correctness_delta": relative.get("correctness_delta_points", 0.0),
-            "token_change_percent": (
-                None if relative.get("token_ratio") is None
-                else 100.0 * (relative["token_ratio"] - 1.0)
-            ),
-            "time_change_percent": (
-                None if relative.get("time_ratio") is None
-                else 100.0 * (relative["time_ratio"] - 1.0)
-            ),
-            "call_change_percent": (
-                None if relative.get("call_ratio") is None
-                else 100.0 * (relative["call_ratio"] - 1.0)
-            ),
-            "intervals": comparison.get("paired_intervals", {}),
-            "median": aggregate.get("median", {}),
-        })
+        }
+        for key, value in METRIC_DESCRIPTORS.items()
+    }
     return {
         "schema_version": VERSION,
         "suite_id": suite_result["suite_id"],
         "analysis_mode": (
-            "pilot_only" if analysis["decision_summary"]["pilot_only"] else "repeated"
+            "pilot_only"
+            if analysis["decision_summary"]["pilot_only"]
+            else "repeated_matched"
         ),
-        "tolerance_grid": analysis["correctness_loss_tolerance_grid_points"],
-        "default_tolerance": 2.0,
+        "tolerance_grid": analysis[
+            "correctness_loss_tolerance_grid_points"
+        ],
+        "default_tolerance": float(
+            METHODOLOGY_POLICY["operational_tradeoffs"][
+                "default_dashboard_correctness_tolerance_points"
+            ]
+        ),
+        "metric_descriptors": descriptors,
         "points": points,
-        "exact_pareto_frontier": analysis["exact_pareto_frontier"],
-        "tolerance_aware_pareto_frontiers": analysis[
-            "tolerance_aware_pareto_frontiers"
-        ],
-        "individual_runs": [
-            {
-                "issue_id": row.get("issue_id"),
-                "repetition": row.get("repetition"),
-                "treatment": row.get("variant"),
-                "correctness": row.get("operational_correctness_score"),
-                "modeled_weighted_token_load": row.get("modeled_weighted_token_load"),
-                "solve_wall_seconds": row.get("solve_wall_seconds"),
-                "warm_workflow_seconds": row.get("warm_workflow_seconds"),
-                "execution_calls_started": row.get("execution_calls_started"),
-                "intended_tool_successful_calls": row.get(
-                    "intended_tool_successful_solve_invocation_count"
-                ),
-                "non_cached_input_tokens": row.get("non_cached_input_tokens"),
-                "output_tokens": row.get("output_tokens"),
-                "relative_to_matched_baseline": row.get(
-                    "relative_to_matched_baseline"
-                ),
-                "operational_eligible": row.get("operational_rank_eligible"),
-            }
-            for row in suite_result.get("variant_rows", [])
-        ],
+        "individual_runs": runs,
+        "canonical": {
+            "comparisons": analysis["matched_comparisons"],
+            "coverage": analysis["coverage"],
+            "complete_block_frontier": analysis["complete_block_frontier"],
+            "exact_pareto_frontier": analysis["exact_pareto_frontier"],
+            "tolerance_aware_pareto_frontiers": analysis[
+                "tolerance_aware_pareto_frontiers"
+            ],
+            "preference_profiles": analysis["preference_profiles"],
+            "objective_specific_winners": analysis[
+                "objective_specific_winners"
+            ],
+            "operational_stability": analysis["operational_stability"],
+        },
     }
 
 
@@ -127,22 +205,24 @@ def build_dashboard(suite_dir: Path, suite_result: dict[str, Any]) -> Path:
         json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     shutil.copy2(SCHEMA, output / "dashboard-data.schema.json")
-    specs = output / "chart-specs"
-    specs.mkdir(exist_ok=True)
-    for name, x, y in (
-        ("absolute", "modeled_weighted_token_load", "correctness"),
-        ("baseline-relative", "token_change_percent", "correctness_delta"),
+    templates = output / "chart-templates"
+    templates.mkdir(exist_ok=True)
+    for name, description in (
+        ("absolute-template", "Minimal absolute scatter template; runtime controls generate the displayed spec."),
+        ("baseline-relative-template", "Minimal relative scatter template; runtime controls generate the displayed spec."),
     ):
-        (specs / f"{name}.json").write_text(json.dumps({
-            "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-            "description": f"{name} operational benchmark scatter chart",
-            "mark": {"type": "point", "filled": True},
-            "encoding": {
-                "x": {"field": x, "type": "quantitative"},
-                "y": {"field": y, "type": "quantitative"},
-                "shape": {"field": "treatment", "type": "nominal"},
-            },
-        }, indent=2) + "\n", encoding="utf-8")
+        (templates / f"{name}.json").write_text(
+            json.dumps(
+                {
+                    "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+                    "description": description,
+                    "mark": {"type": "point", "filled": True},
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
     subprocess.run(
         ["npm", "run", "build"],
         cwd=DASHBOARD,
@@ -159,35 +239,124 @@ def build_dashboard(suite_dir: Path, suite_result: dict[str, Any]) -> Path:
     return output
 
 
+def _schema_check(data: dict[str, Any]) -> list[str]:
+    errors = []
+    required = {
+        "schema_version",
+        "suite_id",
+        "analysis_mode",
+        "tolerance_grid",
+        "default_tolerance",
+        "metric_descriptors",
+        "points",
+        "individual_runs",
+        "canonical",
+    }
+    missing = sorted(required - set(data))
+    if missing:
+        errors.append(f"dashboard schema missing fields: {missing}")
+    if data.get("schema_version") != VERSION:
+        errors.append("dashboard schema version mismatch")
+    if data.get("default_tolerance") not in data.get("tolerance_grid", []):
+        errors.append("dashboard default tolerance is outside configured grid")
+    for index, run in enumerate(data.get("individual_runs", [])):
+        if set(run.get("metrics", {})) != set(METRIC_DESCRIPTORS):
+            errors.append(f"dashboard run {index} has incomplete metric fields")
+    return errors
+
+
+def _browser_smoke(index: Path) -> dict[str, Any]:
+    chromium = shutil.which("chromium") or shutil.which("chromium-browser")
+    if not chromium:
+        return {"status": "not_supported", "reason": "system Chromium unavailable"}
+    try:
+        completed = subprocess.run(
+            [
+                chromium,
+                "--headless",
+                "--no-sandbox",
+                "--disable-gpu",
+                "--disable-background-networking",
+                "--host-resolver-rules=MAP * ~NOTFOUND",
+                "--dump-dom",
+                index.as_uri(),
+            ],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        return {"status": "failed", "reason": "Chromium smoke timed out"}
+    passed = (
+        completed.returncode == 0
+        and 'data-testid="data-table"' in completed.stdout
+        and 'data-testid="chart"' in completed.stdout
+    )
+    return {
+        "status": "passed" if passed else "failed",
+        "returncode": completed.returncode,
+        "table_rendered": 'data-testid="data-table"' in completed.stdout,
+        "chart_rendered": 'data-testid="chart"' in completed.stdout,
+    }
+
+
 def validate_dashboard(
     suite_dir: Path, suite_result: dict[str, Any], errors: list[str]
-) -> None:
+) -> dict[str, Any]:
     output = suite_dir / "report-assets" / "operational-dashboard"
     required = [
         output / "index.html",
         output / "dashboard-data.json",
         output / "dashboard-data.schema.json",
-        output / "chart-specs" / "absolute.json",
-        output / "chart-specs" / "baseline-relative.json",
+        output / "chart-templates" / "absolute-template.json",
+        output / "chart-templates" / "baseline-relative-template.json",
     ]
-    for path in required:
-        if not path.is_file() or path.stat().st_size == 0:
-            errors.append(f"missing dashboard artifact: {path.relative_to(suite_dir)}")
-    if errors or not (output / "dashboard-data.json").is_file():
-        return
+    missing = [
+        path.relative_to(suite_dir).as_posix()
+        for path in required
+        if not path.is_file() or path.stat().st_size == 0
+    ]
+    for path in missing:
+        errors.append(f"missing dashboard artifact: {path}")
+    report: dict[str, Any] = {
+        "schema_version": "dashboard-semantic-validation-v1",
+        "data_schema": "failed",
+        "canonical_join": "failed",
+        "offline_dependencies": "failed",
+        "browser_smoke": {"status": "not_run"},
+        "errors": [],
+    }
+    if missing:
+        report["errors"] = list(missing)
+        return report
     stored = json.loads((output / "dashboard-data.json").read_text(encoding="utf-8"))
+    schema_errors = _schema_check(stored)
+    report["data_schema"] = "passed" if not schema_errors else "failed"
     expected = dashboard_data(suite_result)
-    if stored != expected:
-        errors.append("dashboard data differs from canonical suite analysis")
+    join_ok = stored == expected
+    report["canonical_join"] = "passed" if join_ok else "failed"
+    if not join_ok:
+        schema_errors.append("dashboard data differs from canonical suite analysis")
     page = (output / "index.html").read_text(encoding="utf-8")
-    if "__DASHBOARD_DATA__" in page:
-        errors.append("dashboard contains an unresolved data marker")
-    for token in ("src=\"http", "href=\"http", "src='http", "href='http"):
-        if token in page.lower():
-            errors.append(f"dashboard has an external network dependency: {token}")
+    network_tokens = ("src=\"http", "href=\"http", "src='http", "href='http")
+    offline_ok = not any(token in page.lower() for token in network_tokens)
+    report["offline_dependencies"] = "passed" if offline_ok else "failed"
+    if not offline_ok:
+        schema_errors.append("dashboard has an external network dependency")
     for required_text in (
-        "Accessible data table", "Correctness-loss tolerance", "aria-label",
+        "Accessible filtered data table",
+        "Correctness-loss tolerance",
+        "aria-label",
         "prefers-reduced-motion",
     ):
         if required_text not in page:
-            errors.append(f"dashboard missing accessibility feature: {required_text}")
+            schema_errors.append(
+                f"dashboard missing accessibility feature: {required_text}"
+            )
+    report["browser_smoke"] = _browser_smoke(output / "index.html")
+    if report["browser_smoke"]["status"] == "failed":
+        schema_errors.append("dashboard Chromium smoke failed")
+    report["errors"] = schema_errors
+    errors.extend(schema_errors)
+    return report

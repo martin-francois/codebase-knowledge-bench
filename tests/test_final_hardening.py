@@ -218,8 +218,11 @@ class InvocationEligibilityAndAttributionTest(unittest.TestCase):
         )["blocks"][0]
         self.assertEqual(0.9043544404987407, block["modeled_weighted_token_load"]["ratio"])
         self.assertEqual(1.0515545144416758, block["solve_wall_seconds"]["ratio"])
-        self.assertEqual("equivalent_correctness_no_practical_efficiency_benefit", block["decision"])
-        self.assertEqual("both_incorrect_no_operational_win", block["viability_decision"])
+        self.assertEqual("pareto_tradeoff", block["decision"])
+        self.assertEqual(
+            "operational_tradeoffs.matched_operational_decision",
+            matched_operational_comparisons([baseline, graphify], METHODOLOGY_POLICY)["decision_source"],
+        )
 
     def test_lifecycle_counts_unfinished_sverklo_shell_item(self):
         with tempfile.TemporaryDirectory() as tmp:

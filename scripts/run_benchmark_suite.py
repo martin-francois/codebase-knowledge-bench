@@ -39,7 +39,6 @@ from benchmark_hardening import (
 )
 from benchmark_progress import EVENT_PREFIX, ProgressReporter
 from publication_safety import sanitize_payload
-from repeated_analysis import analyze_repeated
 from operational_tradeoffs import analyze_operational_tradeoffs
 from dashboard import build_dashboard
 
@@ -2029,8 +2028,6 @@ def aggregate(variant_rows: list[dict[str, Any]]) -> dict[str, Any]:
     ranking = sorted(
         eligible,
         key=lambda row: (
-            -int(row.get("operational_viability_counts", {}).get("successful") or 0),
-            -int(row.get("operational_viability_counts", {}).get("partial") or 0),
             -float(row.get("aggregate_overall_score") or 0),
             -float(row.get("expected_workflow_correctness") or 0),
             -float(row.get("integration_reliability_rate") or 0),
@@ -2039,12 +2036,6 @@ def aggregate(variant_rows: list[dict[str, Any]]) -> dict[str, Any]:
     for idx, row in enumerate(ranking, 1):
         row["descriptive_composite_rank"] = idx
         row["operational_rank"] = None
-    successful_ranking = [
-        row for row in ranking
-        if int(row.get("operational_viability_counts", {}).get("successful") or 0) > 0
-    ]
-    for idx, row in enumerate(successful_ranking, 1):
-        row["operational_rank"] = idx
 
     tool_effect_candidates = [
         row
@@ -2128,12 +2119,21 @@ def aggregate(variant_rows: list[dict[str, Any]]) -> dict[str, Any]:
         variant_rows, METHODOLOGY_POLICY
     )
     matched = matched_operational_comparisons(variant_rows, METHODOLOGY_POLICY)
-    repeated = analyze_repeated(
-        variant_rows,
-        METHODOLOGY_POLICY,
-        seed=int(METHODOLOGY_POLICY.get("repeated_analysis", {}).get("seed", 20260713)),
-        resamples=int(METHODOLOGY_POLICY.get("repeated_analysis", {}).get("resamples", 10000)),
-    )
+    repeated = {
+        "schema_version": "operational-repeated-view-v2",
+        "analysis_mode": (
+            "pilot_only"
+            if operational_tradeoffs["decision_summary"]["pilot_only"]
+            else "repeated_matched"
+        ),
+        "resampling": operational_tradeoffs["resampling"],
+        "operational_stability": operational_tradeoffs["operational_stability"],
+        "treatments": operational_tradeoffs["matched_comparisons"],
+        "statistically_supported_operational_winner": operational_tradeoffs[
+            "decision_summary"
+        ]["statistically_supported_winner"],
+        "scalar_or_lexicographic_rank_role": "secondary_descriptive_only",
+    }
     return {
         "ranking_basis": (
             "primary operational workflow ranking over trust-valid completed implementations: "
@@ -2149,7 +2149,7 @@ def aggregate(variant_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "balanced_tool_effect": balanced_effect,
         "matched_operational_comparisons": matched,
         "operational_tradeoffs": operational_tradeoffs,
-        "repeated_analysis": repeated,
+        "operational_inference": repeated,
         "operational_conclusion": authoritative_operational_conclusion(
             variant_rows, {
                 "matched_operational_comparisons": matched,
@@ -2255,17 +2255,22 @@ def write_report(suite_dir: Path, suite_id: str, run_records: list[dict[str, Any
     repetitions = int(plan.get("repetitions") or 1)
     policy = analysis_policy(repetitions)
     conclusion = authoritative_operational_conclusion(variant_rows, aggregates, repetitions)
-    matched = aggregates.get("matched_operational_comparisons", {})
     tradeoffs = aggregates.get("operational_tradeoffs", {})
     trust_rows = [{k: row.get(k) for k in (
         "issue_id", "repetition", "variant", "trust_valid", "implementation_evaluated",
         "treatment_adherent", "operational_rank_eligible", "anti_leak_confidence"
     )} for row in variant_rows]
-    task_rows = [{k: row.get(k) for k in (
-        "issue_id", "repetition", "variant", "direct_issue_contract_full_pass",
-        "common_regression_full_pass", "task_success", "operational_viability_class",
-        "operational_correctness_score"
-    )} for row in variant_rows]
+    task_rows = [{
+        "issue_id": row.get("issue_id"),
+        "repetition": row.get("repetition"),
+        "variant": row.get("variant"),
+        "direct_issue_contract_full_pass": row.get("direct_issue_contract_full_pass"),
+        "common_regression_full_pass": row.get("common_regression_full_pass"),
+        "absolute_task_outcome": (
+            "successful" if row.get("task_success") else "task-unsuccessful"
+        ),
+        "operational_correctness_score": row.get("operational_correctness_score"),
+    } for row in variant_rows]
     attribution_rows = [{
         "variant": row.get("variant"),
         "applicable": row.get("attribution", {}).get("applicable"),
@@ -2277,13 +2282,23 @@ def write_report(suite_dir: Path, suite_id: str, run_records: list[dict[str, Any
             else "yes" if row.get("attribution", {}).get("context_bounded") is False else "no"
         ),
     } for row in variant_rows]
-    cost_rows = [{
-        "variant": row.get("variant"),
-        "solve_only_provisioned": row.get("efficiency_views", {}).get("solve_only_provisioned"),
-        "warm_workflow": row.get("efficiency_views", {}).get("warm_workflow"),
-        "cold_install_first_use": row.get("efficiency_views", {}).get("cold_install_first_use"),
-        "persistent_index_amortized": row.get("efficiency_views", {}).get("persistent_index_amortized"),
-    } for row in variant_rows]
+    cost_rows = []
+    for row in variant_rows:
+        views = row.get("efficiency_views", {})
+        amortized = views.get("persistent_index_amortized", {})
+        cost_rows.append({
+            "variant": row.get("variant"),
+            "solve_seconds": views.get("solve_only_provisioned", {}).get("seconds"),
+            "warm_seconds": views.get("warm_workflow", {}).get("seconds"),
+            "cold_measured": views.get("cold_install_first_use", {}).get("measured"),
+            "setup_seconds": row.get("setup_seconds"),
+            "index_seconds": row.get("index_seconds"),
+            "smoke_seconds": row.get("tool_smoke_seconds"),
+            "amortized_n1_seconds": amortized.get("1", {}).get("seconds_per_task"),
+            "amortized_n5_seconds": amortized.get("5", {}).get("seconds_per_task"),
+            "amortized_n20_seconds": amortized.get("20", {}).get("seconds_per_task"),
+            "assumption": amortized.get("1", {}).get("assumption"),
+        })
     continuous_findings = []
     token_threshold = 100.0 * float(
         METHODOLOGY_POLICY["operational_comparison"][
@@ -2291,8 +2306,11 @@ def write_report(suite_dir: Path, suite_id: str, run_records: list[dict[str, Any
         ]
     )
     for variant, comparison in sorted(tradeoffs.get("matched_comparisons", {}).items()):
-        token_saving = comparison.get("break_even", {}).get("tokens_saved_percent")
-        time_saving = comparison.get("break_even", {}).get("time_saved_percent")
+        savings = comparison.get("break_even", {}).get("metric_savings_percent", {})
+        token_saving = savings.get("tokens")
+        time_saving = savings.get("time")
+        call_saving = savings.get("calls")
+        warm_saving = savings.get("warm_time")
         if token_saving is not None:
             continuous_findings.append(
                 f"{variant}: observed token reduction {token_saving:.2f}%. "
@@ -2304,6 +2322,16 @@ def write_report(suite_dir: Path, suite_id: str, run_records: list[dict[str, Any
             continuous_findings.append(
                 f"{variant}: observed solve-time {direction} {abs(time_saving):.2f}%."
             )
+        if call_saving is not None:
+            direction = "reduction" if call_saving >= 0 else "increase"
+            continuous_findings.append(
+                f"{variant}: observed started-call {direction} {abs(call_saving):.2f}%."
+            )
+        if warm_saving is not None:
+            direction = "reduction" if warm_saving >= 0 else "increase"
+            continuous_findings.append(
+                f"{variant}: observed warm end-to-end {direction} {abs(warm_saving):.2f}%."
+            )
     lines = [
         "# Codebase Context Benchmark Report", "",
         f"- Suite: `{suite_id}`", f"- Analysis mode: `{policy['analysis_mode']}`",
@@ -2311,41 +2339,71 @@ def write_report(suite_dir: Path, suite_id: str, run_records: list[dict[str, Any
         f"- Meaningfully better than baseline: `{policy['meaningfully_better_than_baseline']}`",
         f"- Within-issue run-to-run variance: `{policy['within_issue_run_to_run_variance']}`", "",
         "## 1. Trust and Evidence Integrity", "", table(trust_rows, list(trust_rows[0]) if trust_rows else []), "",
-        "## 2. Absolute Quality", "", scoring_policy_prose(), "",
+        "## 2. Absolute Task Quality", "", scoring_policy_prose(), "",
         conclusion["primary_statement"], "",
         table(task_rows, list(task_rows[0]) if task_rows else []), "",
-        "## 3. Objective-Specific Operational Findings", "",
+        "## 3. Matched Relative Correctness", "",
+        table([
+            {
+                "variant": variant,
+                "matched_blocks": comparison.get("coverage", {}).get("eligible_matched_block_count"),
+                "scheduled_blocks": comparison.get("coverage", {}).get("scheduled_block_count"),
+                "coverage_fraction": comparison.get("coverage", {}).get("coverage_fraction"),
+                "mean_correctness_delta_points": comparison.get("paired_effects", {}).get("mean_correctness_delta_points"),
+                "signs": comparison.get("paired_effects", {}).get("empirical_correctness_signs"),
+                "uncertainty": comparison.get("uncertainty_status"),
+            }
+            for variant, comparison in sorted(tradeoffs.get("matched_comparisons", {}).items())
+        ], ["variant", "matched_blocks", "scheduled_blocks", "coverage_fraction", "mean_correctness_delta_points", "signs", "uncertainty"]), "",
+        "## 4. Objective-Specific Efficiency and Pareto Tradeoffs", "",
         *conclusion.get("objective_specific_findings", []),
         *continuous_findings, "",
         "There is no single preference-independent overall winner.", "",
-        "## 4. Correctness-Tolerance Sensitivity", "",
+        "## 5. Correctness-Tolerance Sensitivity", "",
         table([
             {
                 "variant": variant,
                 "tolerance": item.get("correctness_tolerance_points"),
                 "correctness_acceptable": item.get("correctness_acceptable"),
-                "token_savings_percent": item.get("token_savings_percent"),
-                "time_savings_percent": item.get("time_savings_percent"),
+                "token_savings_percent": item.get("metric_savings_percent", {}).get("tokens"),
+                "time_savings_percent": item.get("metric_savings_percent", {}).get("time"),
+                "call_savings_percent": item.get("metric_savings_percent", {}).get("calls"),
                 "classification": item.get("classification"),
-                "pareto": item.get("tolerance_aware_pareto_optimal"),
             }
             for variant, comparison in sorted(tradeoffs.get("matched_comparisons", {}).items())
             for item in comparison.get("operational_tradeoff_sensitivity", [])
-        ], ["variant", "tolerance", "correctness_acceptable", "token_savings_percent", "time_savings_percent", "classification", "pareto"]), "",
-        "## 5. Matched Operational Treatment Comparisons", "",
-        f"Operational scope: solve-only provisioned cost; warm workflow is reported separately. Thresholds: `{json.dumps(METHODOLOGY_POLICY['operational_comparison'], sort_keys=True)}`.", "",
-        table(matched.get("blocks", []), ["issue_id", "repetition", "variant", "decision", "viability_decision", "operational_correctness_score", "modeled_weighted_token_load", "solve_wall_seconds"]), "",
+        ], ["variant", "tolerance", "correctness_acceptable", "token_savings_percent", "time_savings_percent", "call_savings_percent", "classification"]), "",
+        "### Preference profiles", "",
+        table([
+            {
+                "profile": name,
+                "maximum_correctness_loss_points": profile.get("maximum_correctness_loss_points"),
+                "candidate_treatments": ", ".join(profile.get("candidate_treatments", [])),
+            }
+            for name, profile in sorted(tradeoffs.get("preference_profiles", {}).items())
+        ], ["profile", "maximum_correctness_loss_points", "candidate_treatments"]), "",
+        "### Break-even values", "",
+        table([
+            {
+                "variant": variant,
+                "minimum_tolerance_points": comparison.get("break_even", {}).get("minimum_correctness_loss_tolerance_points"),
+                "correctness_delta_points": comparison.get("break_even", {}).get("correctness_points_gained_or_lost"),
+                "token_savings_percent": comparison.get("break_even", {}).get("metric_savings_percent", {}).get("tokens"),
+                "time_savings_percent": comparison.get("break_even", {}).get("metric_savings_percent", {}).get("time"),
+            }
+            for variant, comparison in sorted(tradeoffs.get("matched_comparisons", {}).items())
+        ], ["variant", "minimum_tolerance_points", "correctness_delta_points", "token_savings_percent", "time_savings_percent"]), "",
         "## 6. Statistical Support", "",
         (
             "Unavailable in pilot-only mode; no inferential winner is permitted."
-            if aggregates.get("repeated_analysis", {}).get("analysis_mode") == "pilot_only"
-            else "Machine conclusion: `" + str(aggregates.get("repeated_analysis", {}).get("outcome"))
-            + "`; supported treatment: `" + str(aggregates.get("repeated_analysis", {}).get("statistically_supported_operational_winner")) + "`."
+            if aggregates.get("operational_inference", {}).get("analysis_mode") == "pilot_only"
+            else "Machine conclusion: `" + str(aggregates.get("operational_inference", {}).get("outcome"))
+            + "`; supported treatment: `" + str(aggregates.get("operational_inference", {}).get("statistically_supported_operational_winner")) + "`."
         ), "",
         "## 7. Operational Pareto Frontier", "",
         f"Exact Pareto frontier: `{tradeoffs.get('exact_pareto_frontier', [])}`.", "",
-        "## 8. Strict Direct Attribution", "", table(attribution_rows, list(attribution_rows[0]) if attribution_rows else []), "",
-        "## 9. Operational Cost Scopes", "", table(cost_rows, list(cost_rows[0]) if cost_rows else []), "",
+        "## 8. Direct Mechanism Attribution", "", table(attribution_rows, list(attribution_rows[0]) if attribution_rows else []), "",
+        "## 9. Operational Cost Scopes", "", table(cost_rows, ["variant", "solve_seconds", "warm_seconds", "cold_measured", "setup_seconds", "index_seconds", "smoke_seconds", "amortized_n1_seconds", "amortized_n5_seconds", "amortized_n20_seconds", "assumption"]), "",
         "## 10. Secondary Descriptive Scalar Ordering", "",
         "This ordering is `secondary_descriptive_only`; it is not the primary operational conclusion.", "",
         table(aggregates.get("aggregate_ranking", []), ["operational_rank", "descriptive_composite_rank", "variant", "aggregate_overall_score", "expected_workflow_correctness"]), "",

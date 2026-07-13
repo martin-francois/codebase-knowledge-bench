@@ -663,6 +663,11 @@ def matched_operational_comparisons(
     *,
     baseline: str = "baseline-none",
 ) -> dict[str, Any]:
+    from operational_tradeoffs import (
+        matched_effect,
+        matched_operational_decision,
+    )
+
     records = list(rows)
     baselines = {
         (str(row.get("issue_id")), int(row.get("repetition") or 0)): row
@@ -717,6 +722,7 @@ def matched_operational_comparisons(
         base = baselines.get(block)
         if base is None:
             continue
+        effect = matched_effect(row, base)
         comparison: dict[str, Any] = {
             "issue_id": block[0],
             "repetition": block[1],
@@ -724,10 +730,10 @@ def matched_operational_comparisons(
             "baseline": baseline,
             "intended_tool_successful_calls": int(row.get("intended_tool_successful_solve_invocation_count") or 0),
             "intended_tool_failed_calls": int(row.get("intended_tool_failed_solve_invocation_count") or 0),
-            "treatment_task_success": bool(row.get("task_success")),
-            "baseline_task_success": bool(base.get("task_success")),
-            "treatment_viability": row.get("operational_viability_class"),
-            "baseline_viability": base.get("operational_viability_class"),
+            "absolute_task_quality": {
+                "treatment_task_success": bool(row.get("task_success")),
+                "baseline_task_success": bool(base.get("task_success")),
+            },
         }
         for field in fields:
             treatment_value = float(row.get(field) or 0)
@@ -738,31 +744,17 @@ def matched_operational_comparisons(
                 "delta": treatment_value - baseline_value,
                 "ratio": treatment_value / baseline_value if baseline_value > 0 else None,
             }
-        correctness_delta = comparison["operational_correctness_score"]["delta"]
-        token_ratio = comparison["modeled_weighted_token_load"]["ratio"]
-        time_ratio = comparison["solve_wall_seconds"]["ratio"]
+        correctness_delta = effect["correctness_delta_points"]
+        token_ratio = effect["ratios"]["tokens"]
+        time_ratio = effect["ratios"]["time"]
         operational = policy["operational_comparison"]
-        if correctness_delta >= float(operational["correctness_material_improvement_points"]):
-            decision = "material_correctness_benefit"
-        elif correctness_delta < -float(operational["correctness_equivalence_margin_points"]):
-            decision = "materially_lower_correctness"
-        else:
-            token_better = token_ratio is not None and token_ratio <= 1 - float(operational["minimum_practical_token_reduction_fraction"])
-            time_better = time_ratio is not None and time_ratio <= 1 - float(operational["minimum_practical_time_reduction_fraction"])
-            viability_floor_met = bool(row.get("task_success") and base.get("task_success"))
-            decision = (
-                "equivalent_correctness_practical_efficiency_benefit"
-                if viability_floor_met and (token_better or time_better)
-                else "equivalent_correctness_no_practical_efficiency_benefit"
-            )
-        comparison["decision"] = decision
-        comparison["viability_decision"] = (
-            "both_incorrect_no_operational_win"
-            if not row.get("task_success") and not base.get("task_success")
-            else "treatment_success_only" if row.get("task_success") and not base.get("task_success")
-            else "baseline_success_only" if base.get("task_success") and not row.get("task_success")
-            else "both_successful"
+        comparison["decision"] = matched_operational_decision(
+            correctness_delta,
+            token_ratio,
+            time_ratio,
+            float(operational["correctness_equivalence_margin_points"]),
         )
+        comparison["paired_effect"] = effect
         comparisons.append(comparison)
     by_variant: dict[str, Any] = {}
     for variant in sorted({row["variant"] for row in comparisons}):
@@ -785,6 +777,7 @@ def matched_operational_comparisons(
         }
     return {
         "policy": policy["operational_comparison"],
+        "decision_source": "operational_tradeoffs.matched_operational_decision",
         "blocks": comparisons,
         "by_variant": by_variant,
         "pareto_frontier": [],

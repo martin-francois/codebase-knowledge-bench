@@ -7,4 +7,7 @@
 - `tolerance_aware_pareto_frontiers`: frontiers that permit the named correctness loss while retaining its measured value.
 - `objective_specific_winners`: highest correctness or lowest resource observations, not a universal winner.
 - `bootstrap_support`: frequency within deterministic hierarchical resamples, not a posterior probability.
+- `operational_inference`: the sole repeated matched inference view, using one shared issue/repetition resample schedule.
+- `coverage`: scheduled, matched, missing, and excluded block identities for a treatment.
+- `operational_stability`: objective-winner, exact/tolerance-aware frontier, and preference-profile support including baseline.
 - `attribution`: separate evidence about direct useful context and plausible indirect narrowing.

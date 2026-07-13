@@ -35,19 +35,25 @@ reports observed resource savings, whether correctness is acceptable, dominance,
 and bootstrap support when estimable. The report always shows the observed percentage and practical
 threshold even when the threshold is narrowly missed.
 
-Repeated analysis resamples issue clusters and then matched repetitions within each selected issue,
-using the recorded seed. It analyzes paired correctness differences and log token, time, and call
-ratios. Three repetitions are minimum evidence, not automatic proof; only three issue clusters still
-imply limited generalizability. A one-repetition suite remains pilot-only and emits no inferential
-winner.
+Repeated analysis creates one shared schedule that resamples issue clusters and then matched
+repetitions within each selected issue, using the recorded seed. The same sampled block IDs are
+applied to baseline and every treatment. It analyzes paired correctness differences and geometric
+means of log token, time, and call ratios. It publishes exact coverage and refuses a cross-treatment
+absolute frontier when treatments do not share complete blocks. Three repetitions are minimum
+evidence, not automatic proof; only three issue clusters still imply limited generalizability. A
+one-repetition suite remains pilot-only and emits no inferential winner.
 
 ## Interactive operational dashboard
 
 The dashboard is generated from the same `operational_tradeoffs` object used by reports and
 validators. It offers absolute and baseline-relative SVG scatter views, a correctness-tolerance
-control, objective selectors, filters, Pareto highlighting, accessible tooltips, and a complete HTML
-table. It is built with React, TypeScript, Vite, Vega-Lite, and Vega Embed into one offline HTML file.
-The extracted-archive validator rejects a plotted aggregate that differs from canonical suite JSON.
+control restricted to the configured grid, objective selectors backed by an exhaustive metric map,
+filters that recompute matched aggregates, optional individual-run points, Pareto highlighting,
+accessible tooltips, and a synchronized HTML table. It is built with React, TypeScript, Vite,
+Vega-Lite, and Vega Embed into one offline HTML file. TypeScript unit tests cover pure transformations;
+a headless browser test covers offline operation, keyboard controls, reduced motion, and chart/table
+agreement. The extracted-archive validator rejects a plotted aggregate that differs from canonical
+suite JSON.
 
 ## Pilot and repeated evidence
 

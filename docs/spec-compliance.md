@@ -167,7 +167,7 @@ This Phase 2 audit maps every stable normative requirement in [SPEC.md](../SPEC.
 | --- | --- | --- | --- |
 | `HPI-001` structured path-safe publication | `scripts/publication_safety.py`; publisher integration | `PublicationSafetyTest` literal relative-path and absolute-prefix cases | conforming |
 | `HPI-002` embedded manifests and source roles | extracted validator semantic pass | corrupt placeholder, size/hash, and source reconstruction fixtures | conforming |
-| `HPI-003` repeated matched inference | `scripts/repeated_analysis.py`; schema and methodology policy | deterministic win/loss/equivalence/failure/heterogeneity/timeout/pilot fixtures | conforming |
+| `HPI-003` repeated matched inference | `scripts/operational_tradeoffs.py`; schema and methodology policy | deterministic matched, coverage, heterogeneity, timeout, shared-resampling, Pareto, and pilot fixtures | conforming |
 | `HPI-004` operational versus descriptive ranks | runner, suite aggregator, schemas, report validator | no-winner contradiction fixture | conforming |
 | `HPI-005` structured anti-leak evidence | classifier wired into runtime audit | harmless URL and blocked lookup fixtures | conforming |
 | `HPI-006` event-indexed timeline | solve usage timeline indexes and pre/post partitions | Graphify recomputation and timeline consistency checks | conforming |

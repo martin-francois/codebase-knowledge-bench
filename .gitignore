@@ -33,4 +33,5 @@ latest-*.txt
 __pycache__/
 dashboard/node_modules/
 dashboard/dist/
+dashboard/test-results/
 progress-history.json*
