@@ -2565,3 +2565,18 @@ Post-reconstruction additions after P118: `normative-current` +9, `one-time-oper
 
 Classification totals for P119: normative-current 9; one-time-operation 1. No P119 unit is
 unclassified and no P119 unit remains unchecked.
+
+## P120 - final deterministic hardening and authorized fresh acceptance canary
+
+| Status | Source ID | Prompt | Normalized source text | Classification | Conflict or precedence notes | Surviving requirement | Destination and evidence |
+| --- | --- | ---: | --- | --- | --- | --- | --- |
+| [x] | `P120.U001` | 120 | Use one authoritative operational model and keep absolute quality, matched relative correctness, resource tradeoffs, Pareto classification, tolerance sensitivity, eligibility, and attribution separate. | `normative-current` | Supersedes remaining all-or-nothing task-success gates. | All machine and human projections derive from the canonical operational model. | `SPEC.md` `ODM-*`, `TRD-*`, `HPI-*`; operational-model tests |
+| [x] | `P120.U002` | 120 | Use matched blocks, shared deterministic hierarchical schedules, paired log resource ratios, coverage, limited-cluster policy, objective findings, and preference lenses. | `normative-current` | Latest repeated-inference contract. | Repeated analysis is paired, coverage-aware, deterministic, and non-scalar. | `SPEC.md` `INF-*`; `scripts/operational_tradeoffs.py`; inference fixtures |
+| [x] | `P120.U003` | 120 | Keep dashboard filtering, relative points, descriptors, uncertainty, table, and browser behavior synchronized with canonical analysis. | `normative-current` | No independent browser scoring path. | Python emits canonical records and TypeScript renders tested selections. | `SPEC.md` `DSH-*`; dashboard TypeScript/browser tests |
+| [x] | `P120.U004` | 120 | Reconcile reports, strict schemas, source hashes, clean exact source, and provenance. | `normative-current` | Latest publication contract. | Reports and publication reconstruct the exact committed source and canonical decisions. | `SPEC.md` reporting/publication sections; validators and reconstruction tests |
+| [x] | `P120.U005` | 120 | Recompute issue 498 without rerunning preserved solves, then run the authorized issue-486 three-arm canary only after deterministic gates pass. | `one-time-operation` | Explicitly authorizes this fresh canary but not the full suite. | Preserve raw evidence; repair derived failures without rerunning completed children. | recomputation lineage and fresh canary runtime evidence |
+| [x] | `P120.U006` | 120 | A candidate test rename must not destroy sibling evidence; missing predeclared common cases remain correctness evidence. | `normative-current` | Resolves the live canary's deterministic derivation defect while preserving the earlier fail-closed rule for hidden scoring cases. | Materialize missing common cases as failed regression evidence; hidden issue/reference cases remain fatal. | `SPEC.md` `TAX-001`; `category_candidate_cases`; regression tests |
+| [x] | `P120.U007` | 120 | Generate a machine-readable GO/NO-GO artifact and set GO only when every live acceptance criterion passes. | `normative-current` | GO cannot be inferred from unit tests alone. | Readiness records exact gates and blockers; no full suite runs in this task. | fresh canary publication and final report |
+
+Classification totals for P120: normative-current 6; one-time-operation 1. No P120 unit is
+unclassified and no P120 unit remains unchecked.

@@ -284,6 +284,7 @@ def score_matrix_category(
         evidence.append({
             "case_identifier": case.case_id,
             "passed": case.passed,
+            "source": case.source,
             "original_effective_weight": float(row["effective_weight"]),
             "normalized_effective_weight": effective_weight,
         })
@@ -361,6 +362,7 @@ def category_candidate_cases(
     category: TestCategory | str,
     preferred: Iterable[TestCaseResult],
     *fallbacks: Iterable[TestCaseResult],
+    missing_common_as_failure: bool = False,
 ) -> list[TestCaseResult]:
     """Resolve expected cases with deterministic command-category precedence.
 
@@ -376,10 +378,19 @@ def category_candidate_cases(
         and float(row.get("effective_weight") or 0) > 0
     })
     sources = [_case_map(preferred), *(_case_map(source) for source in fallbacks)]
+    if missing_common_as_failure and category_value != TestCategory.COMMON_REGRESSION.value:
+        raise ValueError("only missing common-regression cases may be materialized as failures")
     resolved = []
     for case_id in expected:
         matches = [source[case_id] for source in sources if case_id in source]
         if not matches:
+            if missing_common_as_failure:
+                resolved.append(TestCaseResult(
+                    case_id=case_id,
+                    passed=False,
+                    failures=1,
+                    source="missing-required-common-regression-case",
+                ))
             continue
         resolved.append(matches[0])
     return resolved
