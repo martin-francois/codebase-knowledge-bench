@@ -1825,6 +1825,38 @@ def ensure_sverklo_node_runtime(v: Variant, setup_log: Path) -> dict[str, str]:
     return env
 
 
+SVERKLO_MODEL_FILES = ("model.onnx", "tokenizer.json")
+
+
+def stage_sverklo_model_cache(v: Variant, setup_log: Path) -> None:
+    shared = SHARED_INSTALL_ROOT / "sverklo" / "models"
+    local = tool_home(v) / ".sverklo" / "models"
+    with shared_install_lock(v):
+        if not all((shared / name).is_file() for name in SVERKLO_MODEL_FILES):
+            return
+        local.mkdir(parents=True, exist_ok=True)
+        for name in SVERKLO_MODEL_FILES:
+            shutil.copy2(shared / name, local / name)
+    with setup_log.open("a", encoding="utf-8") as log:
+        log.write("REUSED_SVERKLO_MODEL_CACHE\n")
+
+
+def publish_sverklo_model_cache(v: Variant, setup_log: Path) -> None:
+    local = tool_home(v) / ".sverklo" / "models"
+    if not all((local / name).is_file() for name in SVERKLO_MODEL_FILES):
+        raise RuntimeError("sverklo proof completed without the required model cache")
+    shared = SHARED_INSTALL_ROOT / "sverklo" / "models"
+    with shared_install_lock(v):
+        shared.mkdir(parents=True, exist_ok=True)
+        for name in SVERKLO_MODEL_FILES:
+            if not (shared / name).is_file():
+                temporary = shared / f".{name}.tmp-{os.getpid()}"
+                shutil.copy2(local / name, temporary)
+                os.replace(temporary, shared / name)
+    with setup_log.open("a", encoding="utf-8") as log:
+        log.write("PUBLISHED_SVERKLO_MODEL_CACHE\n")
+
+
 def setup_sverklo(v: Variant, setup_log: Path, version_file: Path, config_file: Path) -> None:
     env = ensure_sverklo_node_runtime(v, setup_log)
     if shutil.which("node", path=env.get("PATH")):
@@ -1841,12 +1873,14 @@ def setup_sverklo(v: Variant, setup_log: Path, version_file: Path, config_file: 
         encoding="utf-8",
     )
     write_wrapper(v, "sverklo", bin_path)
+    stage_sverklo_model_cache(v, setup_log)
     env = setup_environment(v, [prefix / "bin"])
     res = run([str(bin_path), "prove", "--no-write", "--guided", "--markdown"], cwd=v.repo, timeout=STAGE_POLICY.timeout_for("indexing"), env=env, stage="indexing", treatment=v.name, activity_paths=(v.repo,))
     log_command(setup_log, res)
     v.index_seconds = res.seconds
     if res.returncode != 0:
         raise RuntimeError("sverklo no-write proof failed")
+    publish_sverklo_model_cache(v, setup_log)
     for args in (["init", "--dry-run"], ["init"]):
         res = run([str(bin_path), *args], cwd=v.repo, timeout=STAGE_POLICY.timeout_for("setup"), env=env, stage="setup", treatment=v.name, activity_paths=(v.repo,))
         log_command(setup_log, res)

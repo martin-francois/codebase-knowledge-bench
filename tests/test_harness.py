@@ -895,6 +895,32 @@ class SharedInstallTest(unittest.TestCase):
             self.assertTrue((node_bin / "node").is_file())
             self.assertGreater(variant.install_seconds, 0)
 
+    def test_sverklo_model_cache_is_published_once_and_reused_per_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shared_install = root / "shared-installs"
+            first = runner.Variant("run-001", "sverklo", root / "repo-1", root / "run-1")
+            second = runner.Variant("run-002", "sverklo", root / "repo-2", root / "run-2")
+            first_log = root / "first.log"
+            second_log = root / "second.log"
+            first_log.touch()
+            second_log.touch()
+            first_models = root / "tool-cache/run-001/home/.sverklo/models"
+            first_models.mkdir(parents=True)
+            (first_models / "model.onnx").write_bytes(b"verified-model")
+            (first_models / "tokenizer.json").write_text("{}", encoding="utf-8")
+            with (
+                mock.patch.object(runner, "TOOL_CACHE", root / "tool-cache"),
+                mock.patch.object(runner, "SHARED_INSTALL_ROOT", shared_install),
+            ):
+                runner.publish_sverklo_model_cache(first, first_log)
+                runner.stage_sverklo_model_cache(second, second_log)
+            second_models = root / "tool-cache/run-002/home/.sverklo/models"
+            self.assertEqual(b"verified-model", (second_models / "model.onnx").read_bytes())
+            self.assertEqual("{}", (second_models / "tokenizer.json").read_text())
+            self.assertIn("PUBLISHED_SVERKLO_MODEL_CACHE", first_log.read_text())
+            self.assertIn("REUSED_SVERKLO_MODEL_CACHE", second_log.read_text())
+
     def test_pinned_python_install_is_reused_without_install_command(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
