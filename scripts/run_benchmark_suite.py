@@ -32,6 +32,7 @@ from benchmark_hardening import (
     balanced_tool_effect_blocks,
     collect_junit_cases,
     command_case,
+    create_harness_source_archive,
     export_reference_artifacts,
     taxonomy_markdown,
     taxonomy_rows,
@@ -1428,6 +1429,15 @@ def run_preflight_command(
             report.unlink(missing_ok=True)
     env = os.environ.copy()
     env.setdefault("MAVEN_USER_HOME", str(log_path.parents[2] / "maven-home"))
+    command_tmp = log_path.parent / "command-tmp" / log_path.stem
+    if command_tmp.exists():
+        shutil.rmtree(command_tmp)
+    command_tmp.mkdir(parents=True)
+    env["TMPDIR"] = str(command_tmp)
+    java_tmp = f"-Djava.io.tmpdir={command_tmp}"
+    env["MAVEN_OPTS"] = " ".join(
+        value for value in (env.get("MAVEN_OPTS", "").strip(), java_tmp) if value
+    )
     attempts = []
     total_started = time.monotonic()
     for attempt in range(PREFLIGHT_RETRIES + 1):
@@ -2476,10 +2486,25 @@ def write_report(suite_dir: Path, suite_id: str, run_records: list[dict[str, Any
         "Native discovery after successful intended-tool use is allowed and retains its measured cost. Baseline is operationally eligible when trust-valid and evaluated; non-baseline treatments additionally require at least one successful intended-tool solve invocation. Absent or failed-only intended-tool use is treatment non-adherence and is not normally ranked. Broad or unfocused context affects direct attribution, not operational eligibility.", "",
     ]
     atomic_write_text(suite_dir / "suite-report.md", "\n".join(lines))
+def ensure_suite_source_archive(suite_dir: Path, harness: Path = BENCH) -> None:
+    from benchmark_model import atomic_write_text
+    source_assets = suite_dir / "report-assets"
+    source_archive = source_assets / "harness-source.tar"
+    source_metadata = source_assets / "harness-source.json"
+    if not source_archive.is_file() or not source_metadata.is_file():
+        source_assets.mkdir(parents=True, exist_ok=True)
+        metadata = create_harness_source_archive(harness, source_archive)
+        atomic_write_text(
+            source_metadata,
+            json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+        )
+
+
 def write_zip(suite_dir: Path) -> None:
     from benchmark_hardening import MANIFEST_SCHEMA_VERSION, media_type, sha256_bytes
     from benchmark_model import atomic_write_text
 
+    ensure_suite_source_archive(suite_dir)
     zip_path = suite_dir / "suite-bundle.zip"
     temporary_zip = suite_dir / ".suite-bundle.zip.tmp"
     temporary_zip.unlink(missing_ok=True)

@@ -2593,6 +2593,15 @@ unclassified and no P120 unit remains unchecked.
 Classification totals for P121: `normative-current` 4; `one-time-operation` 1. No P121 unit is
 unclassified or unchecked.
 
+## P122 - acceptance-canary deterministic defects
+
+| Status | Source ID | Classification | Surviving requirement | Destination and evidence |
+| --- | --- | --- | --- | --- |
+| [x] | `P122.U001` | `normative-current` | Isolate every protected preflight command from stale JVM temporary files without retrying assertion failures. | `SPEC.md` `CRS-007`; preflight environment fixture |
+| [x] | `P122.U002` | `normative-current` | Pre-child abort publication must include reconstructable exact harness source for every declared role. | `SPEC.md` `CRS-008`; abort-publication source fixture |
+
+Classification totals for P122: `normative-current` 2. No P122 unit is unclassified or unchecked.
+
 ## Current correctness-isolation directive
 
 - [x] `PFINAL.U001` (`normative-current`): candidate-edited tests, resources, discovery, and build

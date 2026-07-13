@@ -19,6 +19,7 @@ from publication_safety import (
     validate_source_roles,
 )
 from operational_tradeoffs import analyze_operational_tradeoffs
+import run_benchmark_suite as suite
 
 
 POLICY = json.loads((ROOT / "configs" / "methodology-policy.json").read_text())
@@ -50,6 +51,31 @@ def row(issue: str, repetition: int, variant: str, correctness: float, tokens: f
 
 
 class PublicationSafetyTest(unittest.TestCase):
+    def test_pre_child_abort_publication_captures_declared_source_roles(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            harness = root / "harness"
+            harness.mkdir()
+            source = harness / "runner.py"
+            source.write_text("print('ok')\n")
+            subprocess.run(["git", "init", "-q"], cwd=harness, check=True)
+            subprocess.run(["git", "add", "-A"], cwd=harness, check=True)
+            subprocess.run(
+                ["git", "-c", "user.name=Benchmark", "-c", "user.email=benchmark@example.invalid",
+                 "commit", "-qm", "fixture"], cwd=harness, check=True,
+            )
+            source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+            (root / "suite-plan.json").write_text(json.dumps({
+                "model_provenance": {"roles": {
+                    "validator": {"files": ["runner.py"], "hashes": {"runner.py": source_hash}},
+                }},
+            }))
+            suite.ensure_suite_source_archive(root, harness)
+            report = validate_source_roles(root)
+            self.assertEqual([], report["errors"])
+            self.assertTrue(report["source_reconstruction_passed"])
+            self.assertGreater(len(report["roles"]), 0)
+
     def test_fresh_source_archive_reconstructs_every_declared_role(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

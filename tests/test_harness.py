@@ -106,6 +106,10 @@ class RetryPolicyTest(unittest.TestCase):
             )
         self.assertEqual(1, result["attempts"])
         run.assert_called_once()
+        environment = run.call_args.kwargs["env"]
+        self.assertTrue(Path(environment["TMPDIR"]).is_absolute())
+        self.assertEqual("protected-common", Path(environment["TMPDIR"]).name)
+        self.assertIn(f"-Djava.io.tmpdir={environment['TMPDIR']}", environment["MAVEN_OPTS"])
 
 
 class ToolEvidenceTest(unittest.TestCase):

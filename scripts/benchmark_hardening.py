@@ -1532,7 +1532,7 @@ def create_harness_source_archive(harness: Path, destination: Path) -> dict[str,
     ).stdout
     return {
         "harness_source_commit": commit,
-        "harness_git_tree": tree,
+        "harness_git_tree": tree if not status else None,
         "effective_source_files": source_entries,
         "effective_source_content_sha256": content_digest.hexdigest(),
         "source_manifest_sha256": sha256_bytes(source_manifest_bytes),
