@@ -11,12 +11,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark_hardening import sha256_file, validate_manifest
 from publication_safety import validate_embedded_manifests, validate_report_consistency, validate_source_roles
 from dashboard import validate_dashboard
+from model_preflight_lock import validate_model_preflight_lock
 
 
 DETACHED_ONLY = {
     "suite-bundle.sha256", "suite-bundle.zip.sha256", "suite-bundle.validation.json",
     "extracted-archive-validation.log",
     "suite-bundle.semantic-validation.json",
+    "operator-summary.json", "operator-summary.md",
 }
 
 
@@ -121,12 +123,24 @@ def main() -> int:
         suite_result = json.loads(suite_results_path.read_text(encoding="utf-8"))
         if suite_result.get("aggregates", {}).get("operational_tradeoffs") is not None:
             dashboard_report = validate_dashboard(root, suite_result, errors)
+    model_lock_report = {"status": "not_applicable", "errors": []}
+    model_lock_path = root / "model-preflight-lock.json"
+    if model_lock_path.is_file():
+        model_lock_errors = validate_model_preflight_lock(
+            json.loads(model_lock_path.read_text(encoding="utf-8")), root
+        )
+        errors.extend(model_lock_errors)
+        model_lock_report = {
+            "status": "failed" if model_lock_errors else "passed",
+            "errors": model_lock_errors,
+        }
     semantic_report = {
         "schema_version": "published-semantic-validation-v1",
         "embedded_manifests": embedded_report,
         "source_roles": source_report,
         "report_consistency": consistency_report,
         "dashboard": dashboard_report,
+        "model_preflight_lock": model_lock_report,
         "validation_result": "failed" if errors else "passed",
     }
     if args.report:
