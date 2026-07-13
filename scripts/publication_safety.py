@@ -113,7 +113,13 @@ def validate_embedded_manifests(root: Path) -> dict[str, Any]:
                     raise ValueError(f"required artifact is unexpectedly empty: {rel}")
                 checked += 1
             results_path = manifest_path.parent / "results.json"
-            if results_path.is_file() and (manifest_path.parent / "runs").is_dir():
+            telemetry_contract_entries = [
+                entry for entry in entries
+                if isinstance(entry, dict)
+                and str(entry.get("path") or "").endswith("/tool-invocations-solve.jsonl")
+                and "may_be_empty" in entry
+            ]
+            if results_path.is_file() and telemetry_contract_entries:
                 results = json.loads(results_path.read_text(encoding="utf-8"))
                 for row in results.get("variants", []):
                     run_id = str(row.get("run_id") or "")
