@@ -58,6 +58,7 @@ from canonical_suite import (
 )
 from model_preflight_lock import write_model_preflight_lock, validate_model_preflight_lock
 from operator_summary import write_operator_summary, validate_operator_summary
+from finalize_readiness import finalize_canary_readiness
 
 
 ACTIVE_PROGRESS_REPORTER: ProgressReporter | None = None
@@ -3911,6 +3912,10 @@ def _main() -> None:
             shutil.copy2(ledger_dir / name, suite_dir / name)
         if readiness["decision"] != "GO":
             raise SystemExit("Canonical matrix completed but final readiness is NO_GO")
+    elif EXECUTION_PROFILE == "acceptance_canary":
+        readiness = finalize_canary_readiness(suite_dir)
+        if readiness["decision"] != "GO":
+            raise SystemExit("Acceptance canary completed but final readiness is NO_GO")
     print(f"[suite] wrote {suite_dir / 'suite-report.md'}", flush=True)
 
 
