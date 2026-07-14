@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
 import tempfile
 import unittest
@@ -108,6 +109,128 @@ class CanonicalSuiteControlTest(unittest.TestCase):
             )
             self.assertNotIn(completed, keys)
             self.assertEqual(2, len(keys))
+
+    def test_json_semantic_profile_round_trip_accepts_tuples_and_lists(self) -> None:
+        runtime = {
+            "resolved": {
+                "issues": ("issue-486", ("issue-498", "issue-488")),
+                "variants": ("baseline-none", "graphify"),
+                "enabled": True,
+                "repetitions": 3,
+                "threshold": 2.5,
+                "optional": None,
+            }
+        }
+        persisted = json.loads(json.dumps(runtime))
+        self.assertNotEqual(runtime, persisted)
+        self.assertTrue(canonical_suite.json_semantically_equal(runtime, persisted))
+        self.assertEqual(
+            canonical_suite.canonical_bytes(runtime),
+            canonical_suite.canonical_bytes(persisted),
+        )
+
+    def test_json_normalization_is_order_independent_and_fails_closed(self) -> None:
+        self.assertEqual(
+            canonical_suite.canonical_bytes({"b": 2, "a": [True, None]}),
+            canonical_suite.canonical_bytes({"a": (True, None), "b": 2}),
+        )
+        for invalid in ({1: "not-a-string-key"}, {"value": {1, 2}}, {"value": math.nan}):
+            with self.subTest(invalid=invalid), self.assertRaises(TypeError):
+                canonical_suite.canonical_bytes(invalid)
+
+    def test_persisted_tuple_profile_resumes_but_real_mismatches_fail(self) -> None:
+        schedule = canonical_suite.balanced_schedule(
+            ["issue-486"], 1, ["baseline-none", "graphify", "sverklo"], 7
+        )
+        runtime_profile = {
+            "resolved": {"issues": ("issue-486",), "variants": ("baseline-none", "graphify", "sverklo")},
+            "model": "gpt-5.6-sol", "reasoning": "high",
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            canonical_suite.initialize_ledger(
+                root, runtime_profile, schedule,
+                maximum_unique_arms=3, maximum_launches=6, maximum_launches_per_arm=2,
+            )
+            canonical_suite.initialize_ledger(
+                root, json.loads(json.dumps(runtime_profile)), schedule,
+                maximum_unique_arms=3, maximum_launches=6, maximum_launches_per_arm=2,
+            )
+            mutations = [
+                {"resolved": {"issues": ["issue-498"], "variants": ["baseline-none", "graphify", "sverklo"]}, "model": "gpt-5.6-sol", "reasoning": "high"},
+                {**json.loads(json.dumps(runtime_profile)), "model": "different"},
+                {**json.loads(json.dumps(runtime_profile)), "reasoning": "medium"},
+            ]
+            for mutation in mutations:
+                with self.subTest(mutation=mutation), self.assertRaisesRegex(SystemExit, "profile"):
+                    canonical_suite.initialize_ledger(
+                        root, mutation, schedule,
+                        maximum_unique_arms=3, maximum_launches=6, maximum_launches_per_arm=2,
+                    )
+
+    def test_single_pending_arm_resume_never_relaunches_completed_arms(self) -> None:
+        variants = list(canonical_suite.CANONICAL_VARIANTS)
+        schedule = canonical_suite.balanced_schedule(["issue-488"], 1, variants, 19)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ledger = canonical_suite.initialize_ledger(
+                root, {"profile": "fixture"}, schedule,
+                maximum_unique_arms=7, maximum_launches=14, maximum_launches_per_arm=2,
+            )
+            order = canonical_suite.schedule_order(schedule, "issue-488", 1)
+            pending_variant = "code-review-graph"
+            for variant in order:
+                key = f"issue-488::1::{variant}"
+                arm = ledger["arms"][key]
+                arm["launch_count"] = 1
+                arm["attempts"] = [{"terminal": variant != pending_variant}]
+                arm["terminal"] = variant != pending_variant
+                arm["status"] = "solve_completed" if variant != pending_variant else "model_service_unavailable"
+            ledger["implementation_child_launches"] = 7
+            canonical_suite._write_ledger(root, ledger)
+            before = {
+                key: json.loads(json.dumps(value))
+                for key, value in ledger["arms"].items() if value["terminal"]
+            }
+            keys = canonical_suite.begin_block(root, ledger, "issue-488", 1, order, output_root=root)
+            self.assertEqual(["issue-488::1::code-review-graph"], keys)
+            self.assertEqual(8, ledger["implementation_child_launches"])
+            for key, value in before.items():
+                self.assertEqual(value, ledger["arms"][key])
+            result = root / "results.json"
+            result.write_text(json.dumps({"variants": [{
+                "variant": pending_variant, "status": "solve_completed",
+                "intended_tool_successful_solve_invocation_count": 1,
+            }]}))
+            canonical_suite.finish_block(root, ledger, keys, result)
+            self.assertTrue(all(item["terminal"] for item in ledger["arms"].values()))
+
+    def test_second_service_interruption_exhausts_single_arm_budget(self) -> None:
+        variants = list(canonical_suite.CANONICAL_VARIANTS)
+        schedule = canonical_suite.balanced_schedule(["issue-488"], 1, variants, 19)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ledger = canonical_suite.initialize_ledger(
+                root, {"profile": "fixture"}, schedule,
+                maximum_unique_arms=7, maximum_launches=8, maximum_launches_per_arm=2,
+            )
+            order = canonical_suite.schedule_order(schedule, "issue-488", 1)
+            for variant in order:
+                arm = ledger["arms"][f"issue-488::1::{variant}"]
+                arm.update({
+                    "launch_count": 1, "terminal": variant != "code-review-graph",
+                    "status": "solve_completed" if variant != "code-review-graph" else "model_service_unavailable",
+                    "attempts": [{"terminal": variant != "code-review-graph"}],
+                })
+            ledger["implementation_child_launches"] = 7
+            keys = canonical_suite.begin_block(root, ledger, "issue-488", 1, order, output_root=root)
+            result = root / "results.json"
+            result.write_text(json.dumps({"variants": [{
+                "variant": "code-review-graph", "status": "model_service_unavailable",
+            }]}))
+            canonical_suite.finish_block(root, ledger, keys, result)
+            with self.assertRaisesRegex(SystemExit, "Per-arm launch budget exhausted"):
+                canonical_suite.begin_block(root, ledger, "issue-488", 1, order, output_root=root)
 
     def test_toolchain_lock_detects_mutated_qualification_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

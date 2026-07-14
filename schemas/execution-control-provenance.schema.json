@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "execution-control-provenance.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "execution_source",
+    "control_source",
+    "analysis_source",
+    "child_execution_contract_sha256",
+    "mixed_execution_matrix",
+    "explanation"
+  ],
+  "properties": {
+    "schema_version": {"const": "execution-control-provenance-v1"},
+    "execution_source": {"$ref": "#/$defs/source"},
+    "control_source": {"$ref": "#/$defs/source"},
+    "analysis_source": {"$ref": "#/$defs/source"},
+    "child_execution_contract_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "mixed_execution_matrix": {"const": false},
+    "explanation": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "tree", "origin_main", "clean", "pushed", "status", "role"],
+      "properties": {
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "origin_main": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "clean": {"type": "boolean"},
+        "pushed": {"type": "boolean"},
+        "status": {"type": "string"},
+        "role": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

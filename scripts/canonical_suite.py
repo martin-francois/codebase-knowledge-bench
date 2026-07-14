@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import random
 import subprocess
 import tempfile
 from collections import Counter, defaultdict
+from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -23,8 +25,36 @@ CANONICAL_VARIANTS = (
 )
 
 
+def normalize_json_value(value: Any, *, path: str = "$") -> Any:
+    """Return a JSON-native, type-safe representation or fail closed."""
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise TypeError(f"Non-finite number is not valid JSON at {path}")
+        return value
+    if isinstance(value, (list, tuple)):
+        return [
+            normalize_json_value(item, path=f"{path}[{index}]")
+            for index, item in enumerate(value)
+        ]
+    if isinstance(value, Mapping):
+        normalized: dict[str, Any] = {}
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise TypeError(f"JSON object key is not a string at {path}: {key!r}")
+            normalized[key] = normalize_json_value(item, path=f"{path}.{key}")
+        return normalized
+    raise TypeError(f"Unsupported non-JSON value at {path}: {type(value).__name__}")
+
+
 def canonical_bytes(value: Any) -> bytes:
-    return (json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    normalized = normalize_json_value(value)
+    return (json.dumps(normalized, sort_keys=True, separators=(",", ":")) + "\n").encode()
+
+
+def json_semantically_equal(left: Any, right: Any) -> bool:
+    return canonical_bytes(left) == canonical_bytes(right)
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -42,7 +72,10 @@ def sha256_file(path: Path) -> str:
 def atomic_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile("wb", dir=path.parent, delete=False) as handle:
-        handle.write(json.dumps(value, indent=2, sort_keys=True).encode() + b"\n")
+        handle.write(
+            json.dumps(normalize_json_value(value), indent=2, sort_keys=True).encode()
+            + b"\n"
+        )
         temporary = Path(handle.name)
     os.replace(temporary, path)
 
@@ -77,8 +110,8 @@ def validate_execution_profile(
     variants: Iterable[str],
     repetitions: int,
 ) -> dict[str, Any]:
-    issue_ids = tuple(issue_ids)
-    variants = tuple(variants)
+    issue_ids = list(issue_ids)
+    variants = list(variants)
     identity = git_identity(root)
     if resolved_configuration.get("require_clean_pushed_source", False):
         if not identity["clean"] or not identity["pushed"]:
@@ -88,16 +121,16 @@ def validate_execution_profile(
     expected: dict[str, Any]
     if profile == "canonical_three_repetition":
         expected = {
-            "issues": CANONICAL_ISSUES,
-            "variants": CANONICAL_VARIANTS,
+            "issues": list(CANONICAL_ISSUES),
+            "variants": list(CANONICAL_VARIANTS),
             "repetitions": 3,
             "model": "gpt-5.6-sol",
             "reasoning_effort": "high",
         }
     elif profile == "acceptance_canary":
         expected = {
-            "issues": ("issue-486",),
-            "variants": ("baseline-none", "graphify", "sverklo"),
+            "issues": ["issue-486"],
+            "variants": ["baseline-none", "graphify", "sverklo"],
             "repetitions": 1,
             "model": "gpt-5.6-sol",
             "reasoning_effort": "high",
@@ -142,6 +175,90 @@ def validate_execution_profile(
     payload["effective_configuration_sha256"] = sha256_bytes(
         canonical_bytes(resolved_configuration)
     )
+    frozen_ledger_path = os.environ.get("BENCH_FROZEN_EXECUTION_LEDGER")
+    if frozen_ledger_path:
+        ledger_path = Path(frozen_ledger_path).expanduser().resolve()
+        if not ledger_path.is_file():
+            raise SystemExit(f"Frozen execution ledger is missing: {ledger_path}")
+        persisted_profile = json.loads(ledger_path.read_text(encoding="utf-8")).get("profile")
+        if not isinstance(persisted_profile, dict):
+            raise SystemExit("Frozen execution ledger has no canonical profile")
+        current_without_source = dict(payload)
+        persisted_without_source = dict(persisted_profile)
+        current_without_source.pop("source", None)
+        persisted_without_source.pop("source", None)
+        if not json_semantically_equal(current_without_source, persisted_without_source):
+            raise SystemExit("Frozen execution profile differs from the current canonical configuration")
+        execution_source = persisted_profile.get("source")
+        expected_commit = os.environ.get("BENCH_EXECUTION_SOURCE_COMMIT")
+        expected_tree = os.environ.get("BENCH_EXECUTION_SOURCE_TREE")
+        if not isinstance(execution_source, dict):
+            raise SystemExit("Frozen execution source identity is missing")
+        if expected_commit and execution_source.get("commit") != expected_commit:
+            raise SystemExit("Frozen execution source commit does not match the authorized resume")
+        if expected_tree and execution_source.get("tree") != expected_tree:
+            raise SystemExit("Frozen execution source tree does not match the authorized resume")
+        payload["source"] = execution_source
+    return normalize_json_value(payload)
+
+
+def validate_child_execution_contract(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        raise SystemExit(f"Child execution contract is missing: {path}")
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    if contract.get("schema_version") != "child-execution-contract-v1":
+        raise SystemExit("Child execution contract schema version is invalid")
+    source = contract.get("execution_source") or {}
+    if source.get("commit") != os.environ.get("BENCH_EXECUTION_SOURCE_COMMIT"):
+        raise SystemExit("Child execution contract commit is not the frozen execution source")
+    if source.get("tree") != os.environ.get("BENCH_EXECUTION_SOURCE_TREE"):
+        raise SystemExit("Child execution contract tree is not the frozen execution source")
+    if not contract.get("all_execution_files_match"):
+        raise SystemExit("Child execution contract contains changed execution-affecting files")
+    expected = contract.get("contract_sha256")
+    unhashed = dict(contract)
+    unhashed.pop("contract_sha256", None)
+    if expected != sha256_bytes(canonical_bytes(unhashed)):
+        raise SystemExit("Child execution contract hash is invalid")
+    return contract
+
+
+def write_execution_control_provenance(
+    ledger_dir: Path, ledger: dict[str, Any], contract: dict[str, Any]
+) -> dict[str, Any]:
+    repository = Path(__file__).resolve().parents[1]
+    control_source = git_identity(repository)
+    payload = {
+        "schema_version": "execution-control-provenance-v1",
+        "execution_source": {
+            **ledger["profile"]["source"],
+            "role": "child execution semantics",
+        },
+        "control_source": {
+            **control_source,
+            "role": "resume coordination only",
+        },
+        "analysis_source": {
+            **control_source,
+            "role": "deterministic analysis and publication",
+        },
+        "child_execution_contract_sha256": contract["contract_sha256"],
+        "mixed_execution_matrix": False,
+        "explanation": (
+            "The control source only normalizes JSON-semantic profile comparison, selects the "
+            "single retryable arm, and coordinates deterministic publication. Every file that "
+            "can affect child execution matches the frozen execution source."
+        ),
+    }
+    destinations = [ledger_dir / "execution-control-provenance.json"]
+    published_suite = os.environ.get("BENCH_FROZEN_SUITE_DIR")
+    if published_suite:
+        destinations.append(
+            Path(published_suite).expanduser().resolve()
+            / "execution-control-provenance.json"
+        )
+    for destination in destinations:
+        atomic_json(destination, payload)
     return payload
 
 
@@ -349,8 +466,16 @@ def initialize_ledger(
             "maximum_launches_per_arm": maximum_launches_per_arm,
         }
         for field, value in expected.items():
-            if ledger.get(field) != value:
+            if not json_semantically_equal(ledger.get(field), value):
                 raise SystemExit(f"Canonical ledger {field} does not match the resumed suite")
+        contract_path = os.environ.get("BENCH_CHILD_EXECUTION_CONTRACT")
+        if os.environ.get("BENCH_FROZEN_EXECUTION_LEDGER"):
+            if not contract_path:
+                raise SystemExit("Frozen execution resume requires a child execution contract")
+            contract = validate_child_execution_contract(
+                Path(contract_path).expanduser().resolve()
+            )
+            write_execution_control_provenance(suite_dir, ledger, contract)
         _write_ledger(suite_dir, ledger)
         return ledger
     planned = [
@@ -361,7 +486,7 @@ def initialize_ledger(
         raise SystemExit("Canonical planned arm set does not match the configured unique-arm budget")
     ledger = {
         "schema_version": LEDGER_VERSION,
-        "profile": profile,
+        "profile": normalize_json_value(profile),
         "schedule_sha256": schedule["schedule_sha256"],
         "maximum_unique_arms": maximum_unique_arms,
         "maximum_launches": maximum_launches,
