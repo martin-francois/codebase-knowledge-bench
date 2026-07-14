@@ -139,7 +139,14 @@ def create_child_contract(repository: Path, suite_dir: Path, ledger: dict[str, A
     paths = [
         path for path in tracked
         if (
-            (path.startswith("scripts/") and path.endswith(".py") and path != "scripts/canonical_suite.py")
+            (
+                path.startswith("scripts/")
+                and path.endswith(".py")
+                and path not in {
+                    "scripts/canonical_suite.py",
+                    "scripts/run_benchmark_suite.py",
+                }
+            )
             or path.startswith("configs/")
             or path.startswith("tool-guides/")
             or path.startswith("schemas/")
@@ -175,6 +182,10 @@ def create_child_contract(repository: Path, suite_dir: Path, ledger: dict[str, A
         "external_frozen_artifacts": external,
         "all_execution_files_match": not mismatches,
         "mismatched_paths": mismatches,
+        "control_only_paths": [
+            "scripts/canonical_suite.py",
+            "scripts/run_benchmark_suite.py",
+        ],
     }
     payload["contract_sha256"] = sha256_bytes(canonical_bytes(payload))
     return payload
