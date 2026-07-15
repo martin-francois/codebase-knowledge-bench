@@ -1400,9 +1400,9 @@
     "supplement_archive_sha256": "2b560a78410e47ee1cec4d9f000cfed4a0c633e6339cbc8c422ebee452bcb387",
     "supplement_manifest_root": "4bbffa63600cef846d069b9405e5acd1bfcda88a8fe36eeeee937212da82a0bd"
   },
-  "reviewed_subject_tree_sha256": "8598f47084c6e56e3fd246a62548bf5a18a0186725e4786353cdbf8c30bdc5ba",
+  "reviewed_subject_tree_sha256": "3ba44c5b27504b5e342bd0c01e250bf06c2c82c8df5828e28813ec9d41324f09",
   "schema_version": "current-canonical-verification-v2",
-  "source_commit": "aa1dc508e7bb01c5b31c134b40b50b60f2037002",
+  "source_commit": "62eb0b2371ae70668d0693cf7cb22bf6f075c74d",
   "status": "passed",
   "token_accounting_version": "token-accounting-v2",
   "token_compatibility": {
