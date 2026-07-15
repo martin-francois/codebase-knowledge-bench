@@ -14,9 +14,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from launch_accounting import (
+    child_spawn_receipt,
+    finish_attempt,
+    mark_pre_spawn_rejected,
+    record_child_spawn,
+    reserve_attempt,
+    validate_ledger_accounting,
+)
+
 SCHEMA_VERSION = "canonical-execution-controls-v1"
 SCHEDULE_VERSION = "balanced-rotating-treatment-order-v1"
-LEDGER_VERSION = "canonical-execution-ledger-v1"
+LEDGER_VERSION = "canonical-execution-ledger-v2"
 TOOLCHAIN_VERSION = "qualified-toolchain-lock-v1"
 CANONICAL_ISSUES = ("issue-486", "issue-498", "issue-488")
 CANONICAL_VARIANTS = (
@@ -492,8 +501,17 @@ def initialize_ledger(
         "maximum_launches": maximum_launches,
         "maximum_launches_per_arm": maximum_launches_per_arm,
         "planned_arm_keys": sorted(planned),
-        "arms": {key: {"launch_count": 0, "terminal": False, "attempts": []} for key in sorted(planned)},
-        "implementation_child_launches": 0,
+        "arms": {
+            key: {
+                "orchestration_attempt_count": 0,
+                "actual_child_spawn_count": 0,
+                "terminal": False,
+                "attempts": [],
+            }
+            for key in sorted(planned)
+        },
+        "orchestration_attempts": 0,
+        "actual_implementation_child_spawns": 0,
         "events": [],
     }
     _write_ledger(suite_dir, ledger)
@@ -504,12 +522,14 @@ def _write_ledger(suite_dir: Path, ledger: dict[str, Any]) -> None:
     atomic_json(suite_dir / "execution-ledger.json", ledger)
     lines = [
         "# Canonical execution ledger", "",
-        f"- Child launches: `{ledger['implementation_child_launches']}/{ledger['maximum_launches']}`",
+        f"- Actual implementation child spawns: `{ledger['actual_implementation_child_spawns']}/{ledger['maximum_launches']}`",
+        f"- Orchestration attempts: `{ledger['orchestration_attempts']}`",
         f"- Completed arms: `{sum(item['terminal'] for item in ledger['arms'].values())}/{ledger['maximum_unique_arms']}`", "",
-        "| Arm | Launches | Terminal |", "| --- | ---: | --- |",
+        "| Arm | Orchestration attempts | Actual child spawns | Terminal |",
+        "| --- | ---: | ---: | --- |",
     ]
     lines.extend(
-        f"| {key} | {item['launch_count']} | {item['terminal']} |"
+        f"| {key} | {item['orchestration_attempt_count']} | {item['actual_child_spawn_count']} | {item['terminal']} |"
         for key, item in sorted(ledger["arms"].items())
     )
     (suite_dir / "execution-ledger.md").write_text("\n".join(lines) + "\n")
@@ -546,7 +566,7 @@ def write_qualification_only_result(
     payload = {
         "schema_version": "canonical-qualification-only-v1",
         "passed": passed,
-        "implementation_child_launches": 0,
+        "actual_implementation_child_spawns": 0,
         "qualification_cell_count": len(cells),
         "cells": sorted(cells, key=lambda row: (str(row["issue_id"]), str(row["treatment"]))),
         "effective_configuration_sha256": profile.get("effective_configuration_sha256"),
@@ -577,7 +597,7 @@ def begin_block(
     keys = []
     retryable_statuses = {
         "model_service_unavailable", "pre_solve_gate_aborted", "results_missing",
-        "transient_infrastructure_failure",
+        "transient_infrastructure_failure", "pre_spawn_rejected",
     }
     for key in scheduled_keys:
         arm = ledger["arms"].get(key)
@@ -585,23 +605,50 @@ def begin_block(
             raise SystemExit(f"Unscheduled canonical arm: {key}")
         if arm["terminal"]:
             continue
-        if arm["launch_count"] and arm.get("status") not in retryable_statuses:
+        if arm["orchestration_attempt_count"] and arm.get("status") not in retryable_statuses:
             raise SystemExit(f"Canonical arm is unfinished without a retryable status: {key}")
-        if arm["launch_count"] >= ledger["maximum_launches_per_arm"]:
+        if arm["actual_child_spawn_count"] >= ledger["maximum_launches_per_arm"]:
             raise SystemExit(f"Per-arm launch budget exhausted: {key}")
         keys.append(key)
     if not keys:
         raise SystemExit("Refusing to relaunch a canonical block with no incomplete arms")
-    if ledger["implementation_child_launches"] + len(keys) > ledger["maximum_launches"]:
+    if ledger["actual_implementation_child_spawns"] + len(keys) > ledger["maximum_launches"]:
         raise SystemExit("Canonical child launch budget would be exceeded")
     timestamp = datetime.now(timezone.utc).isoformat()
     for key in keys:
-        ledger["arms"][key]["launch_count"] += 1
-        ledger["arms"][key]["attempts"].append({"started_at": timestamp, "terminal": False})
-    ledger["implementation_child_launches"] += len(keys)
-    ledger["events"].append({"event": "block_started", "issue_id": issue_id, "repetition": repetition, "arm_keys": keys, "at": timestamp})
+        reserve_attempt(ledger, key, started_at=timestamp)
+    ledger["events"].append({"event": "block_reserved", "issue_id": issue_id, "repetition": repetition, "arm_keys": keys, "at": timestamp})
     _write_ledger(suite_dir, ledger)
     return keys
+
+
+def record_implementation_child_spawn(
+    suite_dir: Path, ledger: dict[str, Any], arm_key: str, pid: int,
+) -> dict[str, Any]:
+    attempt = ledger["arms"][arm_key]["attempts"][-1]
+    receipt = child_spawn_receipt(arm_key, attempt, pid)
+    receipt_dir = suite_dir / "child-spawn-receipts"
+    atomic_json(receipt_dir / f"{receipt['receipt_sha256']}.json", receipt)
+    record_child_spawn(ledger, arm_key, receipt)
+    ledger["events"].append({
+        "event": "child_process_spawned",
+        "arm_key": arm_key,
+        "receipt_sha256": receipt["receipt_sha256"],
+        "at": receipt["observed_at"],
+    })
+    _write_ledger(suite_dir, ledger)
+    return receipt
+
+
+def reject_pre_spawn_attempt(
+    suite_dir: Path, ledger: dict[str, Any], arm_key: str, reason: str,
+) -> None:
+    mark_pre_spawn_rejected(ledger, arm_key, reason)
+    ledger["events"].append({
+        "event": "pre_spawn_rejected", "arm_key": arm_key, "reason": reason,
+        "at": datetime.now(timezone.utc).isoformat(),
+    })
+    _write_ledger(suite_dir, ledger)
 
 
 def finish_block(suite_dir: Path, ledger: dict[str, Any], keys: Iterable[str], result_path: Path) -> None:
@@ -613,12 +660,15 @@ def finish_block(suite_dir: Path, ledger: dict[str, Any], keys: Iterable[str], r
         row = by_variant.get(variant)
         terminal = bool(row) and row.get("status") not in {"model_service_unavailable", "pre_solve_gate_aborted"}
         arm = ledger["arms"][key]
+        if arm["attempts"][-1].get("pre_spawn_rejected"):
+            arm["status"] = "pre_spawn_rejected"
+            continue
         arm["terminal"] = terminal
         arm["status"] = row.get("status") if row else "results_missing"
         arm["intended_tool_successful_invocations"] = int(
             (row or {}).get("intended_tool_successful_solve_invocation_count") or 0
         )
-        arm["attempts"][-1].update({"finished_at": timestamp, "terminal": terminal})
+        finish_attempt(ledger, key, terminal=terminal, status=arm["status"], finished_at=timestamp)
     ledger["events"].append({"event": "block_finished", "arm_keys": list(keys), "at": timestamp})
     _write_ledger(suite_dir, ledger)
 
@@ -655,7 +705,8 @@ def write_full_suite_readiness(
         "canonical_matrix_complete": len(completed) == ledger["maximum_unique_arms"],
         "scheduled_unique_arms": ledger["maximum_unique_arms"],
         "completed_unique_arms": len(completed),
-        "implementation_child_launches": ledger["implementation_child_launches"],
+        "actual_implementation_child_spawns": ledger["actual_implementation_child_spawns"],
+        "orchestration_attempts": ledger["orchestration_attempts"],
         "all_treatments_adherent": not nonadherent,
         "all_artifacts_valid": artifacts_valid,
         "statistical_analysis_valid": validator_exit_zero,
@@ -667,7 +718,7 @@ def write_full_suite_readiness(
         "# Full-suite readiness\n\n"
         f"- Decision: **{decision}**\n"
         f"- Completed arms: `{len(completed)}/{ledger['maximum_unique_arms']}`\n"
-        f"- Child launches: `{ledger['implementation_child_launches']}/{ledger['maximum_launches']}`\n"
+        f"- Actual implementation child spawns: `{ledger['actual_implementation_child_spawns']}/{ledger['maximum_launches']}`\n"
         f"- All treatments adherent: `{not nonadherent}`\n"
         f"- Artifact integrity: `{artifacts_valid}`\n"
         f"- Limitations: hard external egress denial unavailable\n",

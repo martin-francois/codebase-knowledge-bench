@@ -78,6 +78,10 @@ class CanonicalSuiteControlTest(unittest.TestCase):
             keys = canonical_suite.begin_block(
                 root, ledger, "issue-486", 1, order, output_root=root
             )
+            for offset, key in enumerate(keys):
+                canonical_suite.record_implementation_child_spawn(
+                    root, ledger, key, 1000 + offset
+                )
             results = root / "results.json"
             results.write_text(json.dumps({"variants": [
                 {"variant": variant, "status": "completed",
@@ -182,11 +186,16 @@ class CanonicalSuiteControlTest(unittest.TestCase):
             for variant in order:
                 key = f"issue-488::1::{variant}"
                 arm = ledger["arms"][key]
-                arm["launch_count"] = 1
-                arm["attempts"] = [{"terminal": variant != pending_variant}]
+                arm["orchestration_attempt_count"] = 1
+                arm["actual_child_spawn_count"] = 1
+                arm["attempts"] = [{
+                    "terminal": variant != pending_variant,
+                    "counts_as_implementation_child_launch": True,
+                }]
                 arm["terminal"] = variant != pending_variant
                 arm["status"] = "solve_completed" if variant != pending_variant else "model_service_unavailable"
-            ledger["implementation_child_launches"] = 7
+            ledger["orchestration_attempts"] = 7
+            ledger["actual_implementation_child_spawns"] = 7
             canonical_suite._write_ledger(root, ledger)
             before = {
                 key: json.loads(json.dumps(value))
@@ -194,7 +203,8 @@ class CanonicalSuiteControlTest(unittest.TestCase):
             }
             keys = canonical_suite.begin_block(root, ledger, "issue-488", 1, order, output_root=root)
             self.assertEqual(["issue-488::1::code-review-graph"], keys)
-            self.assertEqual(8, ledger["implementation_child_launches"])
+            self.assertEqual(8, ledger["orchestration_attempts"])
+            self.assertEqual(7, ledger["actual_implementation_child_spawns"])
             for key, value in before.items():
                 self.assertEqual(value, ledger["arms"][key])
             result = root / "results.json"
@@ -218,12 +228,19 @@ class CanonicalSuiteControlTest(unittest.TestCase):
             for variant in order:
                 arm = ledger["arms"][f"issue-488::1::{variant}"]
                 arm.update({
-                    "launch_count": 1, "terminal": variant != "code-review-graph",
+                    "orchestration_attempt_count": 1,
+                    "actual_child_spawn_count": 1,
+                    "terminal": variant != "code-review-graph",
                     "status": "solve_completed" if variant != "code-review-graph" else "model_service_unavailable",
-                    "attempts": [{"terminal": variant != "code-review-graph"}],
+                    "attempts": [{
+                        "terminal": variant != "code-review-graph",
+                        "counts_as_implementation_child_launch": True,
+                    }],
                 })
-            ledger["implementation_child_launches"] = 7
+            ledger["orchestration_attempts"] = 7
+            ledger["actual_implementation_child_spawns"] = 7
             keys = canonical_suite.begin_block(root, ledger, "issue-488", 1, order, output_root=root)
+            canonical_suite.record_implementation_child_spawn(root, ledger, keys[0], 1234)
             result = root / "results.json"
             result.write_text(json.dumps({"variants": [{
                 "variant": "code-review-graph", "status": "model_service_unavailable",

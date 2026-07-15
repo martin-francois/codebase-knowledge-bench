@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "migration_algorithm", "original_ledger_sha256",
+    "migrated_ledger_sha256", "evidence_files", "legacy", "corrected",
+    "validator_result"
+  ],
+  "properties": {
+    "schema_version": {"const": "launch-accounting-migration-v1"},
+    "migration_algorithm": {"const": "reservation-to-child-spawn-v1"},
+    "original_ledger_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "migrated_ledger_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "evidence_files": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "legacy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["implementation_child_launches", "missing_arm_launch_count"],
+      "properties": {
+        "implementation_child_launches": {"type": "integer", "minimum": 0},
+        "missing_arm_launch_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "corrected": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "actual_implementation_child_spawns", "missing_arm_actual_child_spawns",
+        "orchestration_attempts", "missing_arm_orchestration_attempts"
+      ],
+      "properties": {
+        "actual_implementation_child_spawns": {"type": "integer", "minimum": 0},
+        "missing_arm_actual_child_spawns": {"type": "integer", "minimum": 0},
+        "orchestration_attempts": {"type": "integer", "minimum": 0},
+        "missing_arm_orchestration_attempts": {"type": "integer", "minimum": 0}
+      }
+    },
+    "validator_result": {"const": "pass"}
+  }
+}

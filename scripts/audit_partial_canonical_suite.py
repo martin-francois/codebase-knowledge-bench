@@ -218,18 +218,18 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
         pending_arm = pending.get(PENDING_KEY, {})
         checks = {
             "scheduled_63": len(ledger["planned_arm_keys"]) == len(set(ledger["planned_arm_keys"])) == 63,
-            "launches_63": ledger["implementation_child_launches"] == 63,
+            "launches_63": ledger["actual_implementation_child_spawns"] == 63,
             "terminal_62": len(terminal) == 62,
             "only_expected_pending": list(pending) == [PENDING_KEY],
-            "pending_launch_once": pending_arm.get("launch_count") == 1,
+            "pending_launch_once": pending_arm.get("actual_child_spawn_count") == 1,
             "pending_service_unavailable": pending_arm.get("status") == "model_service_unavailable",
             "pending_has_no_usable_terminal_result": pending_arm.get("terminal") is False,
             "completed_trust_valid_and_eligible": completed_valid,
-            "completed_never_relaunched": all(arm.get("launch_count") == 1 for arm in terminal.values()),
+            "completed_never_relaunched": all(arm.get("actual_child_spawn_count") == 1 for arm in terminal.values()),
             "execution_source_frozen": source.get("commit") == EXECUTION_COMMIT and source.get("tree") == EXECUTION_TREE,
             "one_retry_within_budget": (
-                ledger["implementation_child_launches"] + 1 <= min(64, ledger["maximum_launches"])
-                and pending_arm.get("launch_count", 0) < ledger["maximum_launches_per_arm"]
+                ledger["actual_implementation_child_spawns"] + 1 <= min(64, ledger["maximum_launches"])
+                and pending_arm.get("actual_child_spawn_count", 0) < ledger["maximum_launches_per_arm"]
             ),
             "partial_execution_reusable": (
                 Path(records[("issue-488", 3)]["execution_root"]) / "results.json"
@@ -245,14 +245,14 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
             {"arm_key": row["arm_key"], "manifest_sha256": row["manifest_sha256"]}
             for row in retained
         ]))
-        launch_twice = [key for key, arm in ledger["arms"].items() if arm.get("launch_count") == 2]
+        launch_twice = [key for key, arm in ledger["arms"].items() if arm.get("actual_child_spawn_count") == 2]
         checks = {
             "scheduled_63": len(ledger["planned_arm_keys"]) == 63,
-            "launches_64": ledger["implementation_child_launches"] == 64,
+            "launches_64": ledger["actual_implementation_child_spawns"] == 64,
             "terminal_63": len(terminal) == 63 and not pending,
             "only_missing_arm_retried": launch_twice == [PENDING_KEY],
             "other_arms_launched_once": all(
-                arm.get("launch_count") == (2 if key == PENDING_KEY else 1)
+                arm.get("actual_child_spawn_count") == (2 if key == PENDING_KEY else 1)
                 for key, arm in ledger["arms"].items()
             ),
             "original_62_unchanged": retained_root == original["completed_arm_aggregate_sha256"],
@@ -285,7 +285,7 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
         "suite_id": "canonical-three-repetition",
         "mode": args.mode,
         "scheduled_unique_arms": 63,
-        "implementation_child_launches": ledger["implementation_child_launches"],
+        "actual_implementation_child_spawns": ledger["actual_implementation_child_spawns"],
         "terminal_unique_arms": len(terminal),
         "nonterminal_arms": sorted(pending),
         "execution_source": source,
@@ -305,7 +305,7 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
         "# " + ("Partial suite audit" if args.mode == "pre-retry" else "Matrix reconciliation") + "\n\n"
         + f"- Result: **{'PASS' if payload['passed'] else 'FAIL'}**\n"
         + f"- Terminal arms: `{len(terminal)}/63`\n"
-        + f"- Child launches: `{ledger['implementation_child_launches']}`\n"
+        + f"- Actual implementation child spawns: `{ledger['actual_implementation_child_spawns']}`\n"
         + f"- Original completed-evidence root: `{aggregate}`\n\n"
         + "## Checks\n\n"
         + "\n".join(f"- `{key}`: `{value}`" for key, value in checks.items())
@@ -328,7 +328,7 @@ def main() -> None:
     print(json.dumps({
         "passed": payload["passed"],
         "terminal_unique_arms": payload["terminal_unique_arms"],
-        "implementation_child_launches": payload["implementation_child_launches"],
+        "actual_implementation_child_spawns": payload["actual_implementation_child_spawns"],
         "completed_arm_aggregate_sha256": payload["completed_arm_aggregate_sha256"],
         "child_execution_contract_sha256": payload["child_execution_contract_sha256"],
     }, indent=2))
