@@ -72,6 +72,42 @@ class ReviewHandoffTest(unittest.TestCase):
         self.assertTrue(scan_text("agent-response.md", b"/home/alice/private/file"))
         self.assertEqual([], scan_text("docs/path", b"repo://relative/path"))
 
+    def test_explicit_directories_are_not_file_collisions(self):
+        from safe_archive import safe_extract_tar
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive_path = root / "directories.tar"
+            with tarfile.open(archive_path, "w") as archive:
+                folder = tarfile.TarInfo("folder/")
+                folder.type = tarfile.DIRTYPE
+                archive.addfile(folder)
+                child = tarfile.TarInfo("folder/child.txt")
+                child.size = 1
+                import io
+                archive.addfile(child, io.BytesIO(b"x"))
+            with tarfile.open(archive_path) as archive:
+                safe_extract_tar(archive, root / "out")
+            self.assertEqual("x", (root / "out/folder/child.txt").read_text())
+
+    def test_file_directory_collision_is_rejected(self):
+        from safe_archive import safe_extract_tar
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive_path = root / "collision.tar"
+            with tarfile.open(archive_path, "w") as archive:
+                import io
+                parent = tarfile.TarInfo("folder")
+                parent.size = 1
+                archive.addfile(parent, io.BytesIO(b"x"))
+                child = tarfile.TarInfo("folder/child")
+                child.size = 1
+                archive.addfile(child, io.BytesIO(b"y"))
+            with tarfile.open(archive_path) as archive:
+                with self.assertRaisesRegex(ValueError, "file/directory collision"):
+                    safe_extract_tar(archive, root / "out")
+
 
 if __name__ == "__main__":
     unittest.main()

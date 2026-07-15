@@ -12,14 +12,17 @@ def _path(name:str)->PurePosixPath:
  if not name or p.is_absolute() or '..' in p.parts or '\\' in name: raise ValueError(f'unsafe archive path: {name}')
  return p
 
-def _collisions(names:list[str])->None:
- seen=set();folded=set()
- for name in names:
+def _collisions(entries:list[tuple[str,bool]])->None:
+ seen:dict[str,bool]={};folded=set()
+ for name,is_dir in entries:
   clean=str(_path(name)).rstrip('/')
   if clean in seen or clean.casefold() in folded: raise ValueError(f'duplicate or case-fold collision: {name}')
+  seen[clean]=is_dir;folded.add(clean.casefold())
+ for clean in seen:
   parts=PurePosixPath(clean).parts
-  if any('/'.join(parts[:i]) in seen for i in range(1,len(parts))): raise ValueError(f'file/directory collision: {name}')
-  seen.add(clean);folded.add(clean.casefold())
+  for i in range(1,len(parts)):
+   parent='/'.join(parts[:i])
+   if parent in seen and not seen[parent]:raise ValueError(f'file/directory collision: {clean}')
 
 def _safe_link(member:str,target:str)->None:
  base=PurePosixPath(member).parent; resolved=base/PurePosixPath(target)
@@ -28,7 +31,7 @@ def _safe_link(member:str,target:str)->None:
 def safe_extract_tar(archive:tarfile.TarFile,destination:Path,members:Iterable[tarfile.TarInfo]|None=None)->None:
  members=list(archive.getmembers() if members is None else members)
  if len(members)>MAX_MEMBERS: raise ValueError('tar member limit exceeded')
- _collisions([m.name for m in members]);total=0
+ _collisions([(m.name,m.isdir()) for m in members]);total=0
  for m in members:
   if m.size>MAX_MEMBER_BYTES: raise ValueError('tar member size limit exceeded')
   total+=m.size
@@ -51,7 +54,7 @@ def safe_extract_tar(archive:tarfile.TarFile,destination:Path,members:Iterable[t
 def safe_extract_zip(archive:zipfile.ZipFile,destination:Path)->None:
  infos=archive.infolist()
  if len(infos)>MAX_MEMBERS: raise ValueError('ZIP member limit exceeded')
- _collisions([i.filename for i in infos]);total=0
+ _collisions([(i.filename,i.is_dir()) for i in infos]);total=0
  for info in infos:
   mode=(info.external_attr>>16)&0o170000
   if mode==stat.S_IFLNK: raise ValueError('ZIP symlink rejected')
