@@ -17,6 +17,7 @@ from completed_retry_integration import (
     reconcile_attempt,
     score_protected,
 )
+from benchmark_hardening import attribution_record
 import run_benchmark_suite
 import publication_safety
 
@@ -112,6 +113,47 @@ class CompletedRetryIntegrationTest(unittest.TestCase):
         policy = run_benchmark_suite.analysis_policy(3)
         self.assertEqual("reported_in_operational_inference", policy["run_to_run_variance"])
         self.assertEqual("reported_in_operational_inference", policy["meaningfully_better_than_baseline"])
+
+    def test_canonical_attribution_has_discovery_dimensions(self) -> None:
+        row = {
+            "variant": "code-review-graph",
+            "intended_tool_successful_solve_invocation_count": 6,
+            "context_issue_relevant": True,
+            "context_focused": False,
+            "context_bounded": False,
+            "context_useful": False,
+            "tool_used_before_first_relevant_native_discovery": False,
+            "subsequent_native_discovery_narrower": False,
+        }
+        self.assertEqual(
+            {
+                "tool_used_before_first_relevant_native_discovery",
+                "subsequent_native_discovery_narrower",
+            },
+            {
+                key for key in attribution_record(row)
+                if key in {
+                    "tool_used_before_first_relevant_native_discovery",
+                    "subsequent_native_discovery_narrower",
+                }
+            },
+        )
+
+    def test_historical_interruption_is_not_validated_as_primary_execution(self) -> None:
+        source = inspect.getsource(__import__("validate_benchmark_run").validate_suite)
+        self.assertIn('failure_kind == "provider_interruption_after_partial_implementation"', source)
+        self.assertIn("packaged_evidence_root", source)
+
+    def test_suite_validation_separates_execution_and_analysis_provenance(self) -> None:
+        source = inspect.getsource(__import__("validate_benchmark_run").validate_suite)
+        self.assertIn("execution_provenance = plan.get", source)
+        self.assertIn("analysis_provenance = model_provenance()", source)
+
+    def test_relocated_snapshot_validation_is_content_addressed(self) -> None:
+        source = inspect.getsource(__import__("validate_benchmark_run").validate_execution)
+        self.assertIn('"content_addressed_relocation"', source)
+        self.assertIn("network_refetch_used", source)
+        self.assertIn("solve_prompt_sha256", source)
 
 
 if __name__ == "__main__":

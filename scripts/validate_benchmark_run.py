@@ -829,7 +829,10 @@ def validate_v3_variant(row: dict[str, Any], run_dir: Path,
         fail(errors, f"{prefix}: attribution dimensions are not canonical")
 
 
-def validate_execution(path: Path) -> list[str]:
+def validate_execution(
+    path: Path,
+    expected_provenance: dict[str, Any] | None = None,
+) -> list[str]:
     from benchmark_model import model_provenance
 
     root = execution_root(path)
@@ -845,7 +848,7 @@ def validate_execution(path: Path) -> list[str]:
     verification = load_json(verification_path) if verification_path.exists() else {}
     smoke_only = bool(verification.get("smoke_only"))
     scoring_model = results.get("scoring_model", {})
-    expected_provenance = model_provenance()
+    expected_provenance = expected_provenance or model_provenance()
     if not smoke_only and scoring_model.get("version") != expected_provenance["scoring_model_version"]:
         fail(errors, "execution does not declare the corrected validity/integration/correctness scoring model")
     if not smoke_only:
@@ -955,6 +958,35 @@ def validate_execution(path: Path) -> list[str]:
                     source_file = source / str(name)
                     if not source_file.is_file() or sha256_file(source_file) != expected_hash:
                         fail(errors, f"reused issue snapshot source hash mismatch for {name}")
+        elif snapshot_record.get("mode") == "content_addressed_relocation":
+            if snapshot_record.get("network_refetch_used") is not False:
+                fail(errors, "relocated issue snapshot does not prove network_refetch_used=false")
+            lineage_name = str(snapshot_record.get("lineage_path") or "")
+            lineage_path = root / lineage_name
+            if not lineage_name or not lineage_path.is_file():
+                fail(errors, "relocated issue snapshot is missing packaged lineage evidence")
+            else:
+                lineage = load_json(lineage_path)
+                materialized_name = str(lineage.get("materialized_path") or "")
+                materialized = root / materialized_name
+                if (
+                    lineage.get("lineage_mode") != "content_addressed_relocation"
+                    or lineage.get("network_refetch_used") is not False
+                    or not materialized.is_file()
+                    or sha256_file(materialized) != lineage.get("sha256")
+                    or lineage.get("source_artifact_sha256") != lineage.get("sha256")
+                ):
+                    fail(errors, "relocated issue snapshot lineage does not prove immutable content identity")
+                prompt = root / "runs" / "run-007" / "solve-prompt.txt"
+                if (
+                    not prompt.is_file()
+                    or sha256_file(prompt) != lineage.get("solve_prompt_sha256")
+                    or lineage.get("prompt_generation_proof", {}).get("prompt_sha256")
+                    != lineage.get("solve_prompt_sha256")
+                ):
+                    fail(errors, "relocated issue snapshot prompt provenance disagrees with solve evidence")
+        elif snapshot_record.get("mode") not in {None, "fresh_sanitized_snapshot"}:
+            fail(errors, f"unsupported issue snapshot lineage mode: {snapshot_record.get('mode')}")
     treatment = root / "tool-treatment.md"
     if not treatment.is_file():
         fail(errors, f"{treatment}: missing realistic quickstart treatment record")
@@ -1200,6 +1232,11 @@ def validate_suite(path: Path) -> list[str]:
     if not suite_results.exists():
         return [f"{suite_results}: missing suite-results.json"]
     data = load_json(suite_results)
+    plan_path = suite_dir / "suite-plan.json"
+    plan = load_json(plan_path) if plan_path.is_file() else {}
+    execution_provenance = plan.get("model_provenance")
+    if not isinstance(execution_provenance, dict):
+        execution_provenance = {}
     validate_required_schema_fields(data, "suite-results.schema.json", None, errors)
     tradeoffs = data.get("aggregates", {}).get("operational_tradeoffs", {})
     for variant, comparison in tradeoffs.get("matched_comparisons", {}).items():
@@ -1252,21 +1289,36 @@ def validate_suite(path: Path) -> list[str]:
     if plan_path.is_file() and data.get("suite_plan") != load_json(plan_path):
         fail(errors, "suite_results suite_plan differs from preserved suite-plan.json")
     validate_suite_derived_rows(data, errors)
-    expected_provenance = model_provenance()
-    if data.get("scoring_model", {}).get("version") != expected_provenance["scoring_model_version"]:
+    analysis_provenance = model_provenance()
+    if data.get("scoring_model", {}).get("version") != analysis_provenance["scoring_model_version"]:
         fail(errors, "suite does not declare the corrected validity/integration/correctness model")
-    plan_path = suite_dir / "suite-plan.json"
     if not plan_path.is_file():
         fail(errors, f"{plan_path}: missing suite plan")
-        plan: dict[str, Any] = {}
-    else:
-        plan = load_json(plan_path)
     validate_suite_progress(suite_dir, plan, errors)
-    if plan.get("model_provenance") != expected_provenance:
-        fail(errors, "suite plan has incorrect or missing model provenance")
-    for key, expected in expected_provenance.items():
+    required_execution_provenance = {
+        "harness_git_commit", "harness_git_tree", "scoring_model_version",
+        "schema_version", "effective_source_content_sha256", "source_manifest_sha256",
+    }
+    if not required_execution_provenance.issubset(execution_provenance):
+        fail(errors, "suite plan has incomplete frozen execution provenance")
+    for key, expected in analysis_provenance.items():
         if data.get("scoring_model", {}).get(key) != expected:
             fail(errors, f"suite scoring_model has incorrect or missing {key}")
+    control_path = suite_dir / "execution-control-provenance.json"
+    if control_path.is_file():
+        control = load_json(control_path)
+        execution_source = control.get("execution_source", {})
+        analysis_source = control.get("analysis_source", {})
+        if (
+            execution_source.get("commit") != execution_provenance.get("harness_git_commit")
+            or execution_source.get("tree") != execution_provenance.get("harness_git_tree")
+        ):
+            fail(errors, "execution/control provenance does not preserve the frozen execution source")
+        if (
+            analysis_source.get("commit") != analysis_provenance.get("harness_git_commit")
+            or analysis_source.get("tree") != analysis_provenance.get("harness_git_tree")
+        ):
+            fail(errors, "execution/control provenance does not identify the active analysis source")
     if data.get("excluded_tools") != plan.get("excluded_tools", []):
         fail(errors, "harness/evidence failure: excluded_tools differs from suite-plan.json")
     if plan.get("model") != "gpt-5.6-sol" or plan.get("reasoning_effort") != "high":
@@ -1348,11 +1400,24 @@ def validate_suite(path: Path) -> list[str]:
         if failure_kind == "stale_qualification_checkpoint_before_solve":
             errors.extend(validate_stale_checkpoint_diagnostic(attempt, suite_dir))
             continue
+        if failure_kind == "provider_interruption_after_partial_implementation":
+            packaged = Path(str(attempt.get("packaged_evidence_root") or ""))
+            if not packaged.is_absolute():
+                packaged = suite_dir / packaged
+            if (
+                attempt.get("excluded_from_ranking") is not True
+                or attempt.get("token_usage_available") is not False
+                or not packaged.is_dir()
+                or not (packaged / "run.jsonl").is_file()
+                or not (packaged / "diff.patch").is_file()
+            ):
+                fail(errors, f"{run_id}: packaged provider-interruption evidence is incomplete")
+            continue
         if int(attempt.get("model_service_unavailable_variant_count") or 0) < 1:
             fail(errors, f"{run_id}: infrastructure attempt lacks model-service failure evidence")
         execution_root = Path(str(attempt.get("execution_root") or ""))
         if execution_root.is_dir():
-            errors.extend(validate_execution(execution_root))
+            errors.extend(validate_execution(execution_root, execution_provenance))
         else:
             fail(errors, f"{run_id}: infrastructure attempt execution root is missing")
     qualification = data.get("qualification")
@@ -1405,7 +1470,7 @@ def validate_suite(path: Path) -> list[str]:
                 if not checkpoint.is_dir():
                     fail(errors, f"{record.get('issue_id')}: qualification checkpoint directory is missing")
                 else:
-                    errors.extend(validate_execution(checkpoint))
+                    errors.extend(validate_execution(checkpoint, execution_provenance))
     expected_pairs = {
         (issue_id, repetition)
         for issue_id in selected_issues
@@ -1423,7 +1488,7 @@ def validate_suite(path: Path) -> list[str]:
         fail(errors, "suite has duplicate execution roots")
     for root in roots:
         if root:
-            errors.extend(validate_execution(root))
+            errors.extend(validate_execution(root, execution_provenance))
             execution_results = root / "results.json"
             if execution_results.is_file() and selected_variants:
                 variants = {
