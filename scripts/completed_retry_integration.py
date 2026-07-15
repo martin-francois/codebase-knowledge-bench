@@ -33,6 +33,13 @@ EXECUTION_COPY_EXCLUDES = (
     "tool-cache", "export", "review-manifest.json", "results.json",
     "benchmark-report.md",
 )
+SUITE_COPY_EXCLUDES = (
+    "suite-bundle.zip", "suite-bundle.zip.sha256", "suite-bundle.validation.json",
+    "suite-bundle.semantic-validation.json", "operator-summary.json",
+    "operator-summary.md", "suite-results.json", "suite-report.md",
+    "suite-validator.log", "suite-validation-failure.log", "report-assets",
+    "source-roles", "resume-history", "maven-home", "preflight",
+)
 
 
 def canonical_bytes(value: Any) -> bytes:
@@ -437,14 +444,6 @@ def _execution_manifest(execution: Path) -> dict[str, Any]:
         entries.append({"path": relative, "bytes": path.stat().st_size, "sha256": sha_file(path), "required": True, "may_be_empty": path.stat().st_size == 0, "producer": "completed-retry-integration-v1", "schema_version": "content-manifest-v3"})
     manifest = {"schema_version": "content-manifest-v3", "manifest_root": ".", "entries": entries}
     atomic_json(execution / "review-manifest.json", manifest)
-    export = execution / "export" / "benchmark-bundle.zip"
-    export.parent.mkdir(parents=True, exist_ok=True)
-    temporary = export.with_suffix(".tmp")
-    with zipfile.ZipFile(temporary, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for entry in entries:
-            archive.write(execution / entry["path"], entry["path"])
-        archive.write(execution / "review-manifest.json", "review-manifest.json")
-    os.replace(temporary, export)
     return manifest
 
 
@@ -539,7 +538,7 @@ def integrate(args: argparse.Namespace) -> Path:
     receipt = canonical_control / "child-spawn-receipts" / "2d8051de972b3ed84696152b6db9739fe75068d67ae851bd7a93cc7a4434f52d.json"
     timing = timing_provenance(receipt, run_dir / "run.jsonl")
 
-    ignore = shutil.ignore_patterns("suite-bundle.zip", "suite-bundle.zip.sha256", "suite-bundle.validation.json", "suite-bundle.semantic-validation.json", "operator-summary.json", "operator-summary.md", "suite-results.json", "suite-report.md", "suite-validator.log", "suite-validation-failure.log", "report-assets", "resume-history", "maven-home", "preflight")
+    ignore = shutil.ignore_patterns(*SUITE_COPY_EXCLUDES)
     _copytree_hardlink(source_suite, output, ignore=ignore)
     (output / "report-assets").mkdir(exist_ok=True)
     for flag in ("INTERRUPTED.md", "suite-aborted.md"):
