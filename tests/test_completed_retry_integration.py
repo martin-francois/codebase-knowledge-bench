@@ -4,6 +4,7 @@ import json
 import sys
 import tempfile
 import unittest
+import inspect
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +17,8 @@ from completed_retry_integration import (
     reconcile_attempt,
     score_protected,
 )
+import run_benchmark_suite
+import publication_safety
 
 
 class CompletedRetryIntegrationTest(unittest.TestCase):
@@ -95,6 +98,14 @@ class CompletedRetryIntegrationTest(unittest.TestCase):
         self.assertNotIn("runs", EXECUTION_COPY_EXCLUDES)
         self.assertIn("source-roles", SUITE_COPY_EXCLUDES)
         self.assertIn("report-assets", SUITE_COPY_EXCLUDES)
+
+    def test_suite_root_walk_defers_execution_files_to_execution_publisher(self) -> None:
+        source = inspect.getsource(run_benchmark_suite.write_zip)
+        self.assertIn('relative.parts[0] == "executions"', source)
+
+    def test_source_archive_can_bind_its_own_role_provenance(self) -> None:
+        source = inspect.getsource(publication_safety.validate_source_roles)
+        self.assertIn('source_metadata.get("role_source_provenance") or suite_provenance', source)
 
 
 if __name__ == "__main__":

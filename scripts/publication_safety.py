@@ -257,7 +257,9 @@ def validate_source_roles(root: Path) -> dict[str, Any]:
         try:
             source_metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
             role_checks, archive_record = _reconstruct_source_archive(
-                metadata_path, source_metadata, suite_provenance, root
+                metadata_path, source_metadata,
+                source_metadata.get("role_source_provenance") or suite_provenance,
+                root,
             )
             checked.extend(role_checks)
             archives.append(archive_record)
