@@ -148,6 +148,15 @@ class ReviewHandoffTest(unittest.TestCase):
         stores = [node for node in ast.walk(function) if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store) and node.id == "target"]
         self.assertEqual([], stores)
 
+    def test_target_fixture_scanner_exceptions_are_provenance_scoped(self):
+        fixture = b"api_key=ATTAsecretsecretsecret path=/home/Jane/private"
+        target_name = "methodology/mutation-calibration/target-snapshots/issue.tar!/src/test/Fixture.java"
+        errors, exceptions = scan_source_text(target_name, fixture)
+        self.assertEqual([], errors)
+        self.assertEqual({"host-only path", "secret-shaped value"}, {row["category"] for row in exceptions})
+        errors, _ = scan_source_text("source/git-archive.tar!/src/main/Production.java", fixture)
+        self.assertEqual(2, len(errors))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -58,8 +58,13 @@ def scan_text(name:str,data:bytes)->list[str]:
  return errors
 
 def scan_source_text(name:str,data:bytes)->tuple[list[str],list[dict[str,str]]]:
- findings=scan_text(name,data);allowed=SOURCE_SCAN_ALLOWLIST.get(name,{})
- if name.endswith('Trello' + 'BoardSetupMainTest.java'):
+ findings=scan_text(name,data);member=name.split('!/',1)[-1];allowed=SOURCE_SCAN_ALLOWLIST.get(member,{})
+ target_member=name.startswith('methodology/mutation-calibration/target-snapshots/')
+ if target_member and (member in {'.env.example','CONTRIBUTING.md','README.md'} or member.startswith(('src/test/','deploy/systemd/'))):
+  allowed={**allowed,'host-only path':'immutable target test or documented example','secret-shaped value':'immutable target test or documented example'}
+ if target_member and member=='config/betterleaks/private-context.toml':
+  allowed={**allowed,'host-only path':'target secret-scanner path fixture'}
+ if member.endswith('Trello' + 'BoardSetupMainTest.java'):
   allowed={**allowed,'host-only path':'protected adversarial scanner fixture','secret-shaped value':'protected adversarial scanner fixture'}
  retained=[];exceptions=[]
  for finding in findings:
@@ -151,7 +156,7 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
      with tarfile.open(t) as archive:
       for member in archive.getmembers():
        if member.isfile():
-        stream=archive.extractfile(member);found,exceptions=scan_source_text(member.name,stream.read() if stream else b'');errors+=found;source_scan_exceptions+=exceptions
+        stream=archive.extractfile(member);found,exceptions=scan_source_text(f'{name}!/{member.name}',stream.read() if stream else b'');errors+=found;source_scan_exceptions+=exceptions
    elif not name.endswith('.zip'):
     found,exceptions=scan_source_text(name,data);errors+=found;source_scan_exceptions+=exceptions
   if errors:raise ValueError(f'handoff content scan failed: {errors[:10]}')
