@@ -1,5 +1,10 @@
 # Agent Instructions
 
+For an explicitly authorized fresh-workspace recovery where a historical digest has no restorable
+snapshot, do not reuse or clean the interrupted workspace. Require two isolated setup/index builds,
+semantic graph equality, immutable-input equality, and a selected pre-smoke snapshot round trip. Gate
+the retry on the selected workspace's own restored digest, not the unreconstructable historical digest.
+
 ## Authority and scope
 
 Read `SPEC.md` before changing benchmark behavior. `SPEC.md` is the normative,

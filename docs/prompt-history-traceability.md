@@ -2651,3 +2651,10 @@ Classification totals for P123: `normative-current` 2; `one-time-operation` 1. N
   issue-486 acceptance canary, but never the full suite. Destination: `AGENTS.md`, protected
   verification maintenance and existing Git workflow sections. Implementation evidence is populated
   by the final readiness artifacts.
+## Fresh-workspace final-arm recovery v2
+
+| Status | Source ID | Classification | Surviving requirement | Destination and evidence |
+| --- | --- | --- | --- | --- |
+| [x] | `PFRESHARM.U001` | `normative-current` | A digest without a snapshot is evidence, not reconstruction; an authorized final retry may use a semantically equivalent fresh workspace. | `SPEC.md` `CRS-005D`; `scripts/fresh_workspace_retry.py` |
+| [x] | `PFRESHARM.U002` | `normative-current` | Require two isolated graph builds, semantic fingerprint equality, immutable prompt/input equality, and a selected snapshot round trip before model work. | fresh-workspace schema and tests |
+| [ ] | `PFRESHARM.U003` | `one-time-operation` | Prepare and, only after a `GO` pre-model receipt, launch the one remaining canonical arm without qualification, canary, or another suite. | external versioned recovery evidence |
