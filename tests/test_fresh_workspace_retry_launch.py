@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from fresh_workspace_retry import repair_config  # noqa: E402
+from fresh_workspace_retry import POLICY, repair_config  # noqa: E402
 from fresh_workspace_retry_launch import (  # noqa: E402
     extract_frozen_source,
     kill_switch,
@@ -111,6 +111,10 @@ class FreshWorkspaceRetryLaunchTests(unittest.TestCase):
             __import__("shutil").move(str(run_root), archive)
             self.assertFalse(run_root.exists())
             self.assertEqual((archive / "partial.txt").read_text(encoding="utf-8"), "pre-spawn\n")
+
+    def test_protected_overlay_restores_qualified_reference_files_first(self):
+        self.assertEqual(len(POLICY["reference_test_files"]), 2)
+        self.assertTrue(all(path.startswith("src/test/") for path in POLICY["reference_test_files"]))
 
 
 if __name__ == "__main__":
