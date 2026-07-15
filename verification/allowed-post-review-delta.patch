@@ -1,0 +1,69 @@
+diff --git a/verification/current-canonical-verification-report.json b/verification/current-canonical-verification-report.json
+index ce6c7f5..ad15f6e 100644
+--- a/verification/current-canonical-verification-report.json
++++ b/verification/current-canonical-verification-report.json
+@@ -1400,9 +1400,9 @@
+     "supplement_archive_sha256": "2b560a78410e47ee1cec4d9f000cfed4a0c633e6339cbc8c422ebee452bcb387",
+     "supplement_manifest_root": "4bbffa63600cef846d069b9405e5acd1bfcda88a8fe36eeeee937212da82a0bd"
+   },
+-  "reviewed_subject_tree_sha256": "8598f47084c6e56e3fd246a62548bf5a18a0186725e4786353cdbf8c30bdc5ba",
++  "reviewed_subject_tree_sha256": "3ba44c5b27504b5e342bd0c01e250bf06c2c82c8df5828e28813ec9d41324f09",
+   "schema_version": "current-canonical-verification-v2",
+-  "source_commit": "aa1dc508e7bb01c5b31c134b40b50b60f2037002",
++  "source_commit": "62eb0b2371ae70668d0693cf7cb22bf6f075c74d",
+   "status": "passed",
+   "token_accounting_version": "token-accounting-v2",
+   "token_compatibility": {
+diff --git a/verification/current-canonical-verification-report.md b/verification/current-canonical-verification-report.md
+index 57225f1..02fefab 100644
+--- a/verification/current-canonical-verification-report.md
++++ b/verification/current-canonical-verification-report.md
+@@ -1,7 +1,7 @@
+ # Current canonical verification report
+ 
+ - Status: `passed`
+-- Reviewed source: `aa1dc508e7bb01c5b31c134b40b50b60f2037002`
++- Reviewed source: `62eb0b2371ae70668d0693cf7cb22bf6f075c74d`
+ - Canonical methodology: `matrix-operational-attribution-v7`
+ - Future methodology: `behavioral-correctness-vNext` (not applied retroactively)
+ - Primary arms: `63`
+diff --git a/verification/llm-verification-report.json b/verification/llm-verification-report.json
+index 45649e7..18aee57 100644
+--- a/verification/llm-verification-report.json
++++ b/verification/llm-verification-report.json
+@@ -192,7 +192,7 @@
+     "The canonical suite has three issue clusters and sparse direct contracts."
+   ],
+   "overall_status": "passed",
+-  "report_envelope_commit": "3b553a64e6bd38071ed36b9a704d3deb0b75480b",
++  "report_envelope_commit": "62eb0b2371ae70668d0693cf7cb22bf6f075c74d",
+   "review_session_description": "Semantic maintenance self-review performed by the implementing coding agent after all deterministic checks; no additional model or child process was launched.",
+   "reviewed_artifacts": [
+     "repo://AGENTS.md",
+@@ -224,8 +224,8 @@
+     "zip://immutable-evidence/canonical-publication-supplement.zip!/direct-attribution-summary.json",
+     "zip://immutable-evidence/canonical-publication-supplement.zip!/operator-summary.json"
+   ],
+-  "reviewed_subject_tree_sha256": "8598f47084c6e56e3fd246a62548bf5a18a0186725e4786353cdbf8c30bdc5ba",
++  "reviewed_subject_tree_sha256": "3ba44c5b27504b5e342bd0c01e250bf06c2c82c8df5828e28813ec9d41324f09",
+   "reviewer_kind": "implementing_coding_agent",
+   "self_review": true,
+-  "source_commit": "aa1dc508e7bb01c5b31c134b40b50b60f2037002"
++  "source_commit": "62eb0b2371ae70668d0693cf7cb22bf6f075c74d"
+ }
+diff --git a/verification/llm-verification-report.md b/verification/llm-verification-report.md
+index 522c9b4..721c8a9 100644
+--- a/verification/llm-verification-report.md
++++ b/verification/llm-verification-report.md
+@@ -1,8 +1,8 @@
+ # LLM maintenance verification
+ 
+-- Reviewed implementation: `aa1dc508e7bb01c5b31c134b40b50b60f2037002`
+-- Reviewed subject tree SHA-256: `8598f47084c6e56e3fd246a62548bf5a18a0186725e4786353cdbf8c30bdc5ba`
+-- Report base commit: `3b553a64e6bd38071ed36b9a704d3deb0b75480b`
++- Reviewed implementation: `62eb0b2371ae70668d0693cf7cb22bf6f075c74d`
++- Reviewed subject tree SHA-256: `3ba44c5b27504b5e342bd0c01e250bf06c2c82c8df5828e28813ec9d41324f09`
++- Report base commit: `62eb0b2371ae70668d0693cf7cb22bf6f075c74d`
+ - Reviewer: implementing coding agent (self-review)
+ - Independent review: `false`
+ - Additional automated model calls: `0`

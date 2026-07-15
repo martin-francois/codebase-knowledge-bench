@@ -1,0 +1,18 @@
+[
+  {
+    "allowed_generated_verification_artifact": true,
+    "path": "verification/current-canonical-verification-report.json"
+  },
+  {
+    "allowed_generated_verification_artifact": true,
+    "path": "verification/current-canonical-verification-report.md"
+  },
+  {
+    "allowed_generated_verification_artifact": true,
+    "path": "verification/llm-verification-report.json"
+  },
+  {
+    "allowed_generated_verification_artifact": true,
+    "path": "verification/llm-verification-report.md"
+  }
+]
