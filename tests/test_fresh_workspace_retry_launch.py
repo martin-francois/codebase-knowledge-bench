@@ -13,6 +13,7 @@ from fresh_workspace_retry_launch import (  # noqa: E402
     configure_frozen_environment,
     extract_frozen_source,
     kill_switch,
+    project_fresh_smoke_telemetry,
     validated_existing_probe,
 )
 
@@ -136,6 +137,26 @@ class FreshWorkspaceRetryLaunchTests(unittest.TestCase):
             finally:
                 __import__("os").environ.clear()
                 __import__("os").environ.update(old)
+
+    def test_fresh_smoke_projection_is_nonempty_and_identifies_direct_api_evidence(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            run_dir = root / "run"
+            run_dir.mkdir()
+            (root / "selected-smoke-result.json").write_text(json.dumps({
+                "successful": True,
+                "issue_relevant": True,
+                "exit_code": 0,
+                "output_excerpt": "issue-relevant result",
+            }), encoding="utf-8")
+            (run_dir / "tool-invocations-solve.jsonl").write_text(
+                '{"phase":"solve"}\n', encoding="utf-8",
+            )
+            project_fresh_smoke_telemetry(root, run_dir)
+            record = json.loads((run_dir / "tool-invocations-smoke.jsonl").read_text())
+            self.assertEqual(record["phase"], "smoke")
+            self.assertEqual(record["evidence_source"], "fresh_workspace_direct_python_api")
+            self.assertIn('"phase":"solve"', (run_dir / "tool-invocations.jsonl").read_text())
 
 
 if __name__ == "__main__":
