@@ -13,6 +13,7 @@ import shutil
 import statistics
 import tempfile
 import zipfile
+from safe_archive import safe_extract_zip
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -683,7 +684,7 @@ def independent_validation(
 ) -> dict[str, Any]:
     errors = []
     with zipfile.ZipFile(archive_path) as archive:
-        archive.extractall(extract_root)
+        safe_extract_zip(archive, extract_root)
     embedded = validate_embedded_manifests(extract_root)
     source_roles = validate_source_roles(extract_root)
     report_consistency = validate_report_consistency(extract_root)

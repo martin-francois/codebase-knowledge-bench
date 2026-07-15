@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "status", "zip_sha256", "zip_bytes", "manifest_entry_count", "manifest_root_sha256", "evidence_uris_resolved", "secret_scan", "errors"],
+  "properties": {
+    "schema_version": {"const": "review-handoff-validation-v1"}, "status": {"enum": ["passed", "failed"]},
+    "zip_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "zip_bytes": {"type": "integer", "minimum": 1},
+    "manifest_entry_count": {"type": "integer", "minimum": 1}, "manifest_root_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "evidence_uris_resolved": {"type": "integer", "minimum": 0}, "secret_scan": {"type": "object"}, "errors": {"type": "array", "items": {"type": "string"}}
+  }
+}

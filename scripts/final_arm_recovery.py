@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import tempfile
 import zipfile
+from safe_archive import safe_extract_zip
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -269,7 +270,7 @@ def write_no_go_bundle(
     with tempfile.TemporaryDirectory() as temporary:
         extracted = Path(temporary)
         with zipfile.ZipFile(archive) as bundle:
-            bundle.extractall(extracted)
+            safe_extract_zip(bundle, extracted)
         extracted_manifest = json.loads((extracted / "content-manifest.json").read_text())
         errors = []
         for entry in extracted_manifest["entries"]:

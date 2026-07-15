@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed_post_review_delta": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_generated_verification_artifact": {
+            "const": true
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "allowed_generated_verification_artifact"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "allowed_post_review_delta_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "report_envelope_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "report_envelope_tree": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "reviewed_source_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "source-verification-envelope-v1"
+    },
+    "subject_unchanged": {
+      "const": true
+    },
+    "verification_subject_manifest": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "bytes": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "bytes",
+          "sha256"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "verification_subject_tree_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "reviewed_source_commit",
+    "verification_subject_manifest",
+    "verification_subject_tree_sha256",
+    "report_envelope_commit",
+    "report_envelope_tree",
+    "allowed_post_review_delta",
+    "allowed_post_review_delta_sha256",
+    "subject_unchanged"
+  ],
+  "type": "object"
+}

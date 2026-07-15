@@ -1,23 +1,17 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "LLM maintenance verification report v1",
-  "type": "object", "additionalProperties": false,
-  "required": ["source_commit", "reviewed_artifacts", "checks", "overall_status", "limitations"],
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "additionalProperties": false,
+  "required": ["source_commit", "reviewer_kind", "self_review", "independent_review", "additional_automated_model_calls", "reviewed_subject_tree_sha256", "report_envelope_commit", "review_session_description", "reviewed_artifacts", "checks", "overall_status", "limitations"],
   "properties": {
-    "source_commit": {"type": "string", "minLength": 1},
-    "reviewed_artifacts": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
-    "checks": {"type": "array", "minItems": 10, "items": {
-      "type": "object", "additionalProperties": false,
-      "required": ["id", "status", "evidence", "findings", "residual_uncertainty"],
-      "properties": {
-        "id": {"pattern": "^LLM-0(0[1-9]|10)$", "type": "string"},
-        "status": {"enum": ["passed", "failed", "not_applicable"]},
-        "evidence": {"type": "array", "items": {"type": "string"}},
-        "findings": {"type": "array", "items": {"type": "string"}},
-        "residual_uncertainty": {"type": "string"}
-      }
-    }},
-    "overall_status": {"enum": ["passed", "failed"]},
-    "limitations": {"type": "array", "items": {"type": "string"}}
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "reviewer_kind": {"const": "implementing_coding_agent"},
+    "self_review": {"const": true}, "independent_review": {"const": false}, "additional_automated_model_calls": {"const": 0},
+    "reviewed_subject_tree_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "report_envelope_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "review_session_description": {"type": "string", "minLength": 1},
+    "reviewed_artifacts": {"type": "array", "items": {"type": "string", "pattern": "^(repo|zip)://"}, "minItems": 1},
+    "checks": {"type": "array", "minItems": 15, "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "evidence", "findings", "residual_uncertainty"], "properties": {
+      "id": {"pattern": "^LLM-(00[1-9]|01[0-5])$"}, "status": {"enum": ["passed", "failed", "not_applicable"]},
+      "evidence": {"type": "array", "items": {"type": "string", "pattern": "^(repo|zip)://"}, "minItems": 1},
+      "findings": {"type": "array", "items": {"type": "string"}}, "residual_uncertainty": {"type": "string"}
+    }}},
+    "overall_status": {"enum": ["passed", "failed"]}, "limitations": {"type": "array", "items": {"type": "string"}}
   }
 }

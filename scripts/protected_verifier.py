@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import tarfile
+from safe_archive import safe_extract_tar
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
@@ -101,7 +102,7 @@ def _archive_commit(source_repo: Path, commit: str, destination: Path, paths: It
                 link_target = (target.parent / member.linkname).resolve()
                 if link_target != destination_root and destination_root not in link_target.parents:
                     raise ValueError(f"git archive contains unsafe link: {member.name}")
-            handle.extract(member, destination)
+            safe_extract_tar(handle, destination, [member])
 
 
 def _initialize_snapshot(source_repo: Path, base_commit: str, destination: Path) -> None:

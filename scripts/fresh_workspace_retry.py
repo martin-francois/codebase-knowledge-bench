@@ -12,6 +12,7 @@ import sqlite3
 import stat
 import subprocess
 import tarfile
+from safe_archive import safe_extract_tar
 import tempfile
 import time
 from pathlib import Path
@@ -314,14 +315,7 @@ def restore_snapshot(snapshot: Path, destination: Path) -> dict[str, Any]:
 
 
 def safe_extract(bundle: tarfile.TarFile, destination: Path) -> None:
-    root = destination.resolve()
-    for member in bundle.getmembers():
-        target = (destination / member.name).resolve()
-        if target != root and root not in target.parents:
-            raise RuntimeError(f"snapshot member escapes destination: {member.name}")
-        if member.issym() or member.islnk():
-            raise RuntimeError(f"snapshot links are not accepted: {member.name}")
-    bundle.extractall(destination)
+    safe_extract_tar(bundle, destination)
 
 
 def direct_smoke(workspace: Path, tool_root: Path) -> dict[str, Any]:

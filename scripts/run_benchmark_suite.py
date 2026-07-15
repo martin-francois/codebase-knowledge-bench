@@ -11,6 +11,7 @@ import subprocess
 import shutil
 import sys
 import tarfile
+from safe_archive import safe_extract_tar, safe_extract_zip
 import tempfile
 import threading
 import time
@@ -1530,7 +1531,7 @@ def extract_git_archive(ref: str, dest: Path) -> None:
     tar_path = dest.parent / f"{dest.name}.tar"
     tar_path.write_bytes(archive.stdout)
     with tarfile.open(tar_path) as tf:
-        tf.extractall(dest)
+        safe_extract_tar(tf, dest)
     tar_path.unlink(missing_ok=True)
 
 
@@ -2845,7 +2846,7 @@ def write_zip(suite_dir: Path) -> None:
         extracted = Path(tmp)
         semantic_report_path = extracted.parent / "semantic-validation.json"
         with zipfile.ZipFile(zip_path) as archive:
-            archive.extractall(extracted)
+            safe_extract_zip(archive, extracted)
         extracted_manifest = json.loads((extracted / "suite-manifest.json").read_text(encoding="utf-8"))
         validation = subprocess.run(
             [sys.executable, str(BENCH / "scripts" / "validate_published_archive.py"), str(extracted),

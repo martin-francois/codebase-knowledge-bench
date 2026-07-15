@@ -48,10 +48,10 @@ export const TOKEN_VIEWS: Record<TokenView, {label: string; metric: MetricKey | 
   cached_input: {label: "Cached input tokens", metric: null},
   observed_non_cached_input: {label: "Observed non-cached input", metric: "non_cached_input_tokens"},
   cache_writes: {label: "Cache writes", metric: null, caveat: "Unavailable when Codex JSONL omits cache_write_tokens"},
-  output: {label: "Output tokens", metric: "output_tokens"},
-  reasoning: {label: "Reasoning output tokens", metric: "reasoning_output_tokens"},
+  output: {label: "Output tokens including reasoning", metric: "output_tokens"},
+  reasoning: {label: "Reasoning output tokens (subset of output)", metric: "reasoning_output_tokens"},
   cache_hit_rate: {label: "Cache hit rate", metric: null},
-  weighted_load: {label: "Modeled weighted token load", metric: "modeled_weighted_token_load"},
+  weighted_load: {label: "Historical modeled weighted load v1 (reasoning double-counted)", metric: "modeled_weighted_token_load"},
   pricing_cost: {label: "Pricing-based cost", metric: "estimated_monetary_cost", caveat: "Available only with complete pinned price and cache-write telemetry"},
 };
 

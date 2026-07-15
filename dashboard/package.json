@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit && vite build",
-    "test": "vitest run tests/analysis.test.ts",
+    "test": "vitest run tests/*.test.ts",
     "test:browser": "playwright test"
   },
   "dependencies": {

@@ -19,6 +19,7 @@ import statistics
 import subprocess
 import signal
 import tarfile
+from safe_archive import safe_extract_tar
 import tempfile
 import uuid
 import xml.etree.ElementTree as ET
@@ -1409,7 +1410,7 @@ def export_reference_artifacts(repo: Path, base_ref: str, reference_ref: str,
             apply_root = Path(temporary) / "repo"
             apply_root.mkdir()
             with tarfile.open(archive_path) as handle:
-                handle.extractall(apply_root)
+                safe_extract_tar(handle, apply_root)
             applied = subprocess.run(["git", "apply", "--check", str(patch_path)], cwd=apply_root,
                                      text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             metadata["patch_applies_cleanly"] = applied.returncode == 0

@@ -1,31 +1,190 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Benchmark verification registry v1",
-  "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "entries"],
   "properties": {
-    "schema_version": {"const": "verification-registry-v1"},
-    "entries": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/entry"}}
-  },
-  "$defs": {
-    "stringList": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
-    "entry": {
-      "type": "object", "additionalProperties": false,
-      "required": ["id", "title", "area", "invariant", "why", "kind", "implementation", "test_files", "fixture_files", "commands", "output_artifacts", "applies_to", "failure_severity", "introduced_by", "status", "last_verified_commit"],
-      "properties": {
-        "id": {"type": "string", "pattern": "^[A-Z][A-Z-]*-[0-9]{3}$"},
-        "title": {"type": "string", "minLength": 1},
-        "area": {"enum": ["publication", "tokens", "correctness", "statistics", "treatment", "attribution", "retry", "security", "source", "dashboard", "documentation"]},
-        "invariant": {"type": "string", "minLength": 1},
-        "why": {"type": "string", "minLength": 1},
-        "kind": {"enum": ["automated", "llm_manual", "external_capability"]},
-        "implementation": {"$ref": "#/$defs/stringList"}, "test_files": {"$ref": "#/$defs/stringList"}, "fixture_files": {"$ref": "#/$defs/stringList"}, "commands": {"$ref": "#/$defs/stringList"}, "output_artifacts": {"$ref": "#/$defs/stringList"}, "applies_to": {"$ref": "#/$defs/stringList"},
-        "failure_severity": {"enum": ["blocker", "high", "medium", "informational"]},
-        "introduced_by": {"const": "external-review-2026-07"},
-        "status": {"enum": ["implemented", "documented", "not_automatable"]},
-        "last_verified_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"}
-      }
+    "entries": {
+      "items": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "automated"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            "then": {
+              "required": [
+                "checker_id",
+                "checker_implementation",
+                "checker_version",
+                "expected_evidence_schema"
+              ]
+            }
+          }
+        ],
+        "properties": {
+          "applies_to": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "area": {
+            "enum": [
+              "publication",
+              "tokens",
+              "correctness",
+              "statistics",
+              "treatment",
+              "attribution",
+              "retry",
+              "security",
+              "source",
+              "dashboard",
+              "documentation"
+            ]
+          },
+          "checker_id": {
+            "type": "string"
+          },
+          "checker_implementation": {
+            "type": "string"
+          },
+          "checker_version": {
+            "type": "string"
+          },
+          "commands": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "expected_evidence_schema": {
+            "type": "string"
+          },
+          "failure_severity": {
+            "enum": [
+              "blocker",
+              "high",
+              "medium",
+              "informational"
+            ]
+          },
+          "fixture_files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^[A-Z]+(?:-[A-Z]+)*-[0-9]{3}$",
+            "type": "string"
+          },
+          "implementation": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "introduced_by": {
+            "type": "string"
+          },
+          "invariant": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "automated",
+              "llm_manual",
+              "external_capability"
+            ]
+          },
+          "last_verified_commit": {
+            "pattern": "^[0-9a-f]{40}$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_verified_subject_ref": {
+            "const": "repo://verification/source-verification-envelope.json#/verification_subject_tree_sha256"
+          },
+          "last_verified_subject_tree_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "output_artifacts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "implemented",
+              "documented",
+              "not_automatable"
+            ]
+          },
+          "test_files": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "why": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "area",
+          "invariant",
+          "why",
+          "kind",
+          "implementation",
+          "test_files",
+          "fixture_files",
+          "commands",
+          "output_artifacts",
+          "applies_to",
+          "failure_severity",
+          "introduced_by",
+          "status",
+          "last_verified_commit",
+          "last_verified_subject_tree_sha256",
+          "last_verified_subject_ref"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "verification-registry-v1"
     }
-  }
+  },
+  "required": [
+    "schema_version",
+    "entries"
+  ],
+  "type": "object"
 }

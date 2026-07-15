@@ -8,6 +8,7 @@ import json
 import re
 import subprocess
 import tarfile
+from safe_archive import safe_extract_tar as _safe_extract_tar
 import tempfile
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
@@ -167,7 +168,7 @@ def _reconstruct_source_archive(
     with tempfile.TemporaryDirectory(prefix="source-reconstruct-") as temp:
         target = Path(temp)
         with tarfile.open(archive_path, "r:*") as archive:
-            archive.extractall(target, members=_safe_tar_members(archive))
+            _safe_extract_tar(archive, target, _safe_tar_members(archive))
         declared_entries = source_metadata.get("effective_source_files", [])
         if not declared_entries:
             raise ValueError("effective-source file manifest is empty")

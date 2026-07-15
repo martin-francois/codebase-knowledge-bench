@@ -389,3 +389,9 @@ candidate tests diagnostic and update adversarial fixtures whenever verification
 Behavioral correctness excludes patch quality; reports and dashboards must derive from the canonical
 behavioral field. Recompute preserved evidence with protected verifier workspaces instead of launching
 new child solves.
+
+## External-review handoff
+
+When a maintenance task asks for or would benefit from external review, the agent MUST create one portable handoff ZIP rather than requiring Francois to gather files manually. Include all relevant tracked source, source diffs and identities, machine and human reports, test logs, schemas, generated verification artifacts, immutable published evidence, and `agent-response.md`. Generate a machine manifest containing every relative path, byte count, SHA-256, media type, provenance role, and requiredness. Create detached `.sha256` and `.validation.json` files, safely extract into a new directory, verify every member and source/evidence identity, resolve evidence URIs, and scan for credentials. Do not include `.git`, dependency caches, build outputs, secrets, or absolute host-only evidence paths. The final response's last section MUST be titled `External review ZIP` and point to the ZIP, checksum, and validation receipt.
+
+The LLM maintenance report also runs `LLM-011` output/reasoning token semantics, `LLM-012` per-ID checker and final-source binding, `LLM-013` handoff ZIP completeness and portability, `LLM-014` executable-mutant and vNext end-to-end readiness, and `LLM-015` self-review independence disclosure. It MUST identify the implementing coding agent as a self-reviewer, not an independent reviewer.
