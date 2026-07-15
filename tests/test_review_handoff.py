@@ -7,11 +7,12 @@ import sys
 import tarfile
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from build_review_handoff import portable_generated_text, reconstruct_tree, scan_source_text, scan_text
+from build_review_handoff import portable_generated_text, reconstruct_tree, scan_source_text, scan_text, write_zip
 
 
 def git(repo: Path, *args: str) -> str:
@@ -94,6 +95,14 @@ class ReviewHandoffTest(unittest.TestCase):
         self.assertGreaterEqual(len(notes), 3)
         self.assertNotIn("/home/", " ".join(notes))
         self.assertNotIn("abcdefghijklmnop", " ".join(notes))
+
+    def test_deterministic_zip_member_uses_complete_timestamp(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "member.zip"
+            with zipfile.ZipFile(path, "w") as archive:
+                write_zip(archive, "member.txt", b"content")
+            with zipfile.ZipFile(path) as archive:
+                self.assertEqual((1980, 1, 1, 0, 0, 0), archive.getinfo("member.txt").date_time)
 
     def test_explicit_directories_are_not_file_collisions(self):
         from safe_archive import safe_extract_tar

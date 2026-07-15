@@ -31,7 +31,7 @@ def sha256_file(path:Path)->str:
 def git(repo:Path,*args:str,raw:bool=False):return subprocess.check_output(['git','-C',str(repo),*args],text=not raw)
 def canonical_root(entries:list[dict[str,Any]])->str:return sha256_bytes(json.dumps(entries,sort_keys=True,separators=(',',':')).encode())
 def write_zip(z:zipfile.ZipFile,name:str,data:bytes)->None:
- info=zipfile.ZipInfo(name,date_time=(1980,1,1));info.external_attr=(0o100644&0xffff)<<16;info.compress_type=zipfile.ZIP_STORED if name.endswith(('.zip','.tar')) else zipfile.ZIP_DEFLATED;z.writestr(info,data)
+ info=zipfile.ZipInfo(name,date_time=(1980,1,1,0,0,0));info.external_attr=(0o100644&0xffff)<<16;info.compress_type=zipfile.ZIP_STORED if name.endswith(('.zip','.tar')) else zipfile.ZIP_DEFLATED;z.writestr(info,data)
 def media(name:str)->str:return mimetypes.guess_type(name)[0] or 'application/octet-stream'
 
 def ls_tree(repo:Path,commit:str)->list[dict[str,str]]:
