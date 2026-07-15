@@ -8,7 +8,7 @@ from safe_archive import safe_extract_tar,safe_extract_zip
 
 CANONICAL_SHA='b4a77687b40bea1ff97117224d08e00b0b66ee0a6fc1875c87d0b95da19e49e0'
 SUPPLEMENT_SHA='2b560a78410e47ee1cec4d9f000cfed4a0c633e6339cbc8c422ebee452bcb387'
-PRE_CLEANUP_COMMIT='fe2fad65065606e5b2e4f9ed697566981a75cb4f'
+PRE_CLEANUP_COMMIT='a74d9639c8dbcadb3855f4992539c4564c20168d'
 SOURCE_SCAN_ALLOWLIST={
  'docs/prompt-history-traceability.md':{'host-only path':'immutable historical provenance paths'},
  'docs/variant-synthesis.md':{'host-only path':'documented benchmark sandbox mount'},
@@ -100,25 +100,23 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
   tar_path=Path(td)/'git-archive.tar';subprocess.run(['git','-C',str(repo),'archive','--format=tar','-o',str(tar_path),commit],check=True);tar_bytes=tar_path.read_bytes()
   tree_rows=ls_tree(repo,commit);reconstruction=reconstruct_tree(tar_bytes,tree)
   if not reconstruction['exact_match']:raise ValueError('Git tree reconstruction failed')
-  required_reports=['current-verification-report.json','current-verification-report.md','llm-verification-report.json','llm-verification-report.md','checker-fault-injection.json','checker-fault-injection.md','test-results.json','test-results.md','command-log.txt','current-methodology-pre-fix-audit.json','current-methodology-pre-fix-audit.md','private-pre-release-cleanup.json','private-pre-release-cleanup.md','normative-document-audit.json','normative-document-audit.md','contract-provenance.json','contract-provenance.md','live-pipeline-qualification.json','live-pipeline-qualification.md','mutation-calibration.json','readiness.json','readiness.md','dashboard-data.json','dashboard-data.schema.json','index.html','browser-result.json']
+  required_reports=['current-verification-report.json','current-verification-report.md','llm-verification-report.json','llm-verification-report.md','checker-specificity.json','checker-specificity.md','test-results.json','test-results.md','command-log.txt','pre-fix-audit.json','pre-fix-audit.md','private-pre-release-cleanup.json','private-pre-release-cleanup.md','normative-document-audit.json','contract-provenance.json','production-shadow-result.json','production-shadow-result.md','generated-execution-results.json','generated-suite-results.json','execution-report.md','suite-report.md','dashboard-data.json','dashboard-data.schema.json','dashboard-index.html','browser-result.json','mutation-calibration.json','calibration-coverage.json','readiness.json','readiness.md']
   missing=[name for name in required_reports if not (reports/name).is_file()]
   if missing:raise ValueError(f'missing generated reports: {missing}')
   full_diff,diff_redactions=portable_generated_text(git(repo,'diff','--binary',f'{PRE_CLEANUP_COMMIT}..{commit}',raw=True))
   payloads={
-   'agent-response.md':agent_response.read_bytes(),'source/git-archive.tar':tar_bytes,
+   'agent-response.md':agent_response.read_bytes(),'source/source.tar':tar_bytes,
    'source/git-ls-tree.json':(json.dumps(tree_rows,indent=2,sort_keys=True)+'\n').encode(),
    'source/source-state.json':(json.dumps({'commit':commit,'tree':tree,'branch':git(repo,'branch','--show-current').strip()},indent=2,sort_keys=True)+'\n').encode(),
    'source/source-tree-reconstruction.json':(json.dumps(reconstruction,indent=2,sort_keys=True)+'\n').encode(),
    'source/full-diff.patch':full_diff,
-   'audit/pre-cleanup-independent-findings.json':(repo/'verification/pre-cleanup-independent-findings.json').read_bytes(),
-   'audit/pre-cleanup-independent-findings.md':(repo/'verification/pre-cleanup-independent-findings.md').read_bytes(),
    'verification/verification-registry.json':(repo/'verification/verification-registry.json').read_bytes(),
    'verification/review-findings-ledger.json':(repo/'verification/review-findings-ledger.json').read_bytes(),
    'immutable-evidence/canonical-suite-bundle.zip':canonical.read_bytes(),
    'immutable-evidence/canonical-publication-supplement.zip':supplement.read_bytes(),
    'README.md':b'Private pre-release deterministic review handoff. Validate with the detached receipt and scripts/build_review_handoff.py.\n',
   }
-  mapping={'current-methodology-pre-fix-audit.json':'audit/current-methodology-pre-fix-audit.json','current-methodology-pre-fix-audit.md':'audit/current-methodology-pre-fix-audit.md','private-pre-release-cleanup.json':'audit/private-pre-release-cleanup.json','private-pre-release-cleanup.md':'audit/private-pre-release-cleanup.md','normative-document-audit.json':'audit/normative-document-audit.json','normative-document-audit.md':'audit/normative-document-audit.md','contract-provenance.json':'methodology/contract-provenance.json','contract-provenance.md':'methodology/contract-provenance.md','live-pipeline-qualification.json':'methodology/live-pipeline-qualification.json','live-pipeline-qualification.md':'methodology/live-pipeline-qualification.md','mutation-calibration.json':'methodology/mutation-calibration/mutation-calibration.json','readiness.json':'methodology/readiness.json','readiness.md':'methodology/readiness.md','dashboard-data.json':'dashboard/dashboard-data.json','dashboard-data.schema.json':'dashboard/dashboard-data.schema.json','index.html':'dashboard/index.html','browser-result.json':'dashboard/browser-result.json','test-results.json':'tests/test-results.json','test-results.md':'tests/test-results.md','command-log.txt':'tests/command-log.txt'}
+  mapping={'pre-fix-audit.json':'audit/pre-fix-audit.json','pre-fix-audit.md':'audit/pre-fix-audit.md','private-pre-release-cleanup.json':'audit/private-pre-release-cleanup.json','private-pre-release-cleanup.md':'audit/private-pre-release-cleanup.md','normative-document-audit.json':'audit/normative-document-audit.json','contract-provenance.json':'methodology/contract-provenance.json','production-shadow-result.json':'shadow/production-shadow-result.json','production-shadow-result.md':'shadow/production-shadow-result.md','generated-execution-results.json':'shadow/generated-execution-results.json','generated-suite-results.json':'shadow/generated-suite-results.json','execution-report.md':'shadow/execution-report.md','suite-report.md':'shadow/suite-report.md','dashboard-data.json':'shadow/dashboard-data.json','dashboard-data.schema.json':'shadow/dashboard-data.schema.json','dashboard-index.html':'shadow/dashboard-index.html','browser-result.json':'shadow/browser-result.json','mutation-calibration.json':'methodology/mutation-calibration/mutation-calibration.json','calibration-coverage.json':'methodology/calibration-coverage.json','readiness.json':'methodology/readiness.json','readiness.md':'methodology/readiness.md','checker-specificity.json':'verification/checker-specificity.json','checker-specificity.md':'verification/checker-specificity.md','test-results.json':'tests/test-results.json','test-results.md':'tests/test-results.md','command-log.txt':'tests/command-log.txt'}
   generated_redactions={'source/full-diff.patch':diff_redactions}
   for name in required_reports:
    published_target=mapping.get(name,f'verification/{name}');data=(reports/name).read_bytes()
@@ -185,12 +183,12 @@ def validate(zip_path:Path)->dict[str,Any]:
   if canonical_root(manifest['entries'])!=manifest['manifest_root']:errors.append('manifest root mismatch')
   if sha256_file(root/'immutable-evidence/canonical-suite-bundle.zip')!=CANONICAL_SHA:errors.append('canonical hash mismatch')
   if sha256_file(root/'immutable-evidence/canonical-publication-supplement.zip')!=SUPPLEMENT_SHA:errors.append('supplement hash mismatch')
-  reconstruction=reconstruct_tree((root/'source/git-archive.tar').read_bytes(),manifest['source_tree'])
+  reconstruction=reconstruct_tree((root/'source/source.tar').read_bytes(),manifest['source_tree'])
   if not reconstruction['exact_match']:errors.append('source tree mismatch')
   for p in root.rglob('*'):
    if p.is_file() and not p.name.endswith(('.zip','.tar')):
     found,_=scan_source_text(p.relative_to(root).as_posix(),p.read_bytes());errors+=found
-  mandatory={'agent-response.md','audit/current-methodology-pre-fix-audit.json','audit/private-pre-release-cleanup.json','audit/normative-document-audit.json','methodology/contract-provenance.json','methodology/live-pipeline-qualification.json','methodology/mutation-calibration/mutation-calibration.json','methodology/readiness.json','dashboard/dashboard-data.json','dashboard/dashboard-data.schema.json','dashboard/index.html','dashboard/browser-result.json','verification/current-verification-report.json','verification/checker-fault-injection.json','verification/llm-verification-report.json','tests/test-results.json','tests/command-log.txt','review-handoff-validation.json'}
+  mandatory={'agent-response.md','source/source.tar','audit/pre-fix-audit.json','audit/private-pre-release-cleanup.json','audit/normative-document-audit.json','methodology/contract-provenance.json','methodology/mutation-calibration/mutation-calibration.json','methodology/calibration-coverage.json','methodology/readiness.json','shadow/production-shadow-result.json','shadow/generated-execution-results.json','shadow/generated-suite-results.json','shadow/execution-report.md','shadow/suite-report.md','shadow/dashboard-data.json','shadow/dashboard-data.schema.json','shadow/dashboard-index.html','shadow/browser-result.json','verification/current-verification-report.json','verification/checker-specificity.json','verification/llm-verification-report.json','tests/test-results.json','tests/command-log.txt','review-handoff-validation.json'}
   if not mandatory<=actual:errors.append('mandatory artifact missing')
  return {'schema_id':'review-handoff-validation-current','status':'passed' if not errors else 'failed','errors':errors,'zip_bytes':zip_path.stat().st_size,'zip_sha256':sha256_file(zip_path),'manifest_entry_count':len(manifest['entries']),'manifest_root':manifest['manifest_root'],'source_tree_reconstruction':reconstruction,'secret_and_host_path_scan':'passed' if not errors else 'failed'}
 

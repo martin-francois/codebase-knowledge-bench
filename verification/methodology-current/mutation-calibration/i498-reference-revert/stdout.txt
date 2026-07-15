@@ -1,5 +1,5 @@
-[ERROR] Tests run: 5, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 1.968 s <<< FAILURE! -- in ch.fmartin.symphony.trello.setup.LocalSetupTest
-[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.dryRunRejectsCustomInProgressForNewBoardBeforePlannedOutput -- Time elapsed: 1.669 s <<< FAILURE!
+[ERROR] Tests run: 5, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 1.801 s <<< FAILURE! -- in ch.fmartin.symphony.trello.setup.LocalSetupTest
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.dryRunRejectsCustomInProgressForNewBoardBeforePlannedOutput -- Time elapsed: 1.580 s <<< FAILURE!
 org.opentest4j.AssertionFailedError: 
 [stdout:
 Symphony for Trello setup
@@ -12,9 +12,9 @@ Checking prerequisites...
   OPTIONAL GitHub CLI authenticated
 
 Dry run
-  WOULD configure Trello credentials: /tmp/junit-7657232935075922843/config/.env
-  WOULD write workflow under: /tmp/junit-7657232935075922843/config
-  WOULD update connected-board manifest: /tmp/junit-7657232935075922843/config/connected-boards.json
+  WOULD configure Trello credentials: /tmp/junit-12730457600992147683/config/.env
+  WOULD write workflow under: /tmp/junit-12730457600992147683/config
+  WOULD update connected-board manifest: /tmp/junit-12730457600992147683/config/connected-boards.json
   WOULD start Symphony after setup unless --no-start is used
 
 stderr:
@@ -24,7 +24,7 @@ expected: 2
 	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.assertFailure(SetupRunResult.java:15)
 	at ch.fmartin.symphony.trello.setup.LocalSetupTest.dryRunRejectsCustomInProgressForNewBoardBeforePlannedOutput(LocalSetupTest.java:67)
 
-[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupLocalRejectsCustomInProgressForNewBoardBeforeSideEffects -- Time elapsed: 1.929 s <<< FAILURE!
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupLocalRejectsCustomInProgressForNewBoardBeforeSideEffects -- Time elapsed: 1.732 s <<< FAILURE!
 org.opentest4j.AssertionFailedError: 
 [stdout:
 Symphony for Trello setup
@@ -40,7 +40,7 @@ Validating Trello...
   OK  Connected to Trello as "Alex Example"
 
 Saving Trello credentials...
-  OK  Credentials saved: /tmp/junit-16893060728877427003/.env.custom-pickup
+  OK  Credentials saved: /tmp/junit-17510721110529360691/.env.custom-pickup
   OK  Trello API key: ****
   OK  Trello token: toke****
 
@@ -53,7 +53,7 @@ GitHub integration
 Trello board
   OK  Board connected: "Custom Pickup Queue"
   OK  Board lists: "Inbox", "Ready for Codex", "In Progress", "Blocked", "Human Review", "Done"
-  OK  Workflow written: /tmp/junit-16893060728877427003/WORKFLOW.custom-pickup.md
+  OK  Workflow written: /tmp/junit-17510721110529360691/WORKFLOW.custom-pickup.md
   OK  Local server port selected for "Custom Pickup Queue": 20006
 
 Workspace access
@@ -92,7 +92,7 @@ expected: 2
 	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.assertFailure(SetupRunResult.java:15)
 	at ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupLocalRejectsCustomInProgressForNewBoardBeforeSideEffects(LocalSetupTest.java:1357)
 
-[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveSetupLocalRejectsCustomInProgressWithoutBoardBeforeSideEffects -- Time elapsed: 1.929 s <<< FAILURE!
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveSetupLocalRejectsCustomInProgressWithoutBoardBeforeSideEffects -- Time elapsed: 1.732 s <<< FAILURE!
 org.opentest4j.AssertionFailedError: 
 [stdout:
 Symphony for Trello setup
@@ -108,7 +108,7 @@ Validating Trello...
   OK  Connected to Trello as "Alex Example"
 
 Saving Trello credentials...
-  OK  Credentials saved: /tmp/junit-4429559204257842284/.env.interactive-custom-pickup
+  OK  Credentials saved: /tmp/junit-17590094179244296163/.env.interactive-custom-pickup
   OK  Trello API key: ****
   OK  Trello token: toke****
 
@@ -145,7 +145,7 @@ Allow Codex to run without its command/filesystem sandbox for this workflow (dan
 Trello board
   OK  Board connected: "Symphony Work Queue"
   OK  Board lists: "Inbox", "Ready for Codex", "In Progress", "Blocked", "Human Review", "Done"
-  OK  Workflow written: /tmp/junit-4429559204257842284/WORKFLOW.interactive-custom-pickup.md
+  OK  Workflow written: /tmp/junit-17590094179244296163/WORKFLOW.interactive-custom-pickup.md
   OK  Local server port selected for "Symphony Work Queue": 20005
 
 Workspace access
@@ -184,7 +184,7 @@ expected: 2
 	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.assertFailure(SetupRunResult.java:15)
 	at ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveSetupLocalRejectsCustomInProgressWithoutBoardBeforeSideEffects(LocalSetupTest.java:1391)
 
-[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupLocalNoInProgressCreatesWorkflowWithoutPickupList -- Time elapsed: 1.937 s <<< FAILURE!
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupLocalNoInProgressCreatesWorkflowWithoutPickupList -- Time elapsed: 1.750 s <<< FAILURE!
 java.lang.AssertionError: 
 
 Expecting actual:
@@ -201,7 +201,7 @@ Validating Trello...
   OK  Connected to Trello as "Alex Example"
 
 Saving Trello credentials...
-  OK  Credentials saved: /tmp/junit-5330192231264504188/.env.no-pickup
+  OK  Credentials saved: /tmp/junit-14308504694924428135/.env.no-pickup
   OK  Trello API key: ****
   OK  Trello token: toke****
 
@@ -214,7 +214,7 @@ GitHub integration
 Trello board
   OK  Board connected: "No Pickup Queue"
   OK  Board lists: "Inbox", "Ready for Codex", "In Progress", "Blocked", "Human Review", "Done"
-  OK  Workflow written: /tmp/junit-5330192231264504188/WORKFLOW.no-pickup.md
+  OK  Workflow written: /tmp/junit-14308504694924428135/WORKFLOW.no-pickup.md
   OK  Local server port selected for "No Pickup Queue": 20004
 
 Workspace access
@@ -264,9 +264,9 @@ Checking prerequisites...
   OPTIONAL GitHub CLI authenticated
 
 Dry run
-  WOULD configure Trello credentials: /tmp/junit-7657232935075922843/config/.env
-  WOULD write workflow under: /tmp/junit-7657232935075922843/config
-  WOULD update connected-board manifest: /tmp/junit-7657232935075922843/config/connected-boards.json
+  WOULD configure Trello credentials: /tmp/junit-12730457600992147683/config/.env
+  WOULD write workflow under: /tmp/junit-12730457600992147683/config
+  WOULD update connected-board manifest: /tmp/junit-12730457600992147683/config/connected-boards.json
   WOULD start Symphony after setup unless --no-start is used
 
 stderr:
@@ -287,7 +287,7 @@ Validating Trello...
   OK  Connected to Trello as "Alex Example"
 
 Saving Trello credentials...
-  OK  Credentials saved: /tmp/junit-4429559204257842284/.env.interactive-custom-pickup
+  OK  Credentials saved: /tmp/junit-17590094179244296163/.env.interactive-custom-pickup
   OK  Trello API key: ****
   OK  Trello token: toke****
 
@@ -324,7 +324,7 @@ Allow Codex to run without its command/filesystem sandbox for this workflow (dan
 Trello board
   OK  Board connected: "Symphony Work Queue"
   OK  Board lists: "Inbox", "Ready for Codex", "In Progress", "Blocked", "Human Review", "Done"
-  OK  Workflow written: /tmp/junit-4429559204257842284/WORKFLOW.interactive-custom-pickup.md
+  OK  Workflow written: /tmp/junit-17590094179244296163/WORKFLOW.interactive-custom-pickup.md
   OK  Local server port selected for "Symphony Work Queue": 20005
 
 Workspace access
@@ -375,7 +375,7 @@ Validating Trello...
   OK  Connected to Trello as "Alex Example"
 
 Saving Trello credentials...
-  OK  Credentials saved: /tmp/junit-5330192231264504188/.env.no-pickup
+  OK  Credentials saved: /tmp/junit-14308504694924428135/.env.no-pickup
   OK  Trello API key: ****
   OK  Trello token: toke****
 
@@ -388,7 +388,7 @@ GitHub integration
 Trello board
   OK  Board connected: "No Pickup Queue"
   OK  Board lists: "Inbox", "Ready for Codex", "In Progress", "Blocked", "Human Review", "Done"
-  OK  Workflow written: /tmp/junit-5330192231264504188/WORKFLOW.no-pickup.md
+  OK  Workflow written: /tmp/junit-14308504694924428135/WORKFLOW.no-pickup.md
   OK  Local server port selected for "No Pickup Queue": 20004
 
 Workspace access
@@ -437,7 +437,7 @@ Validating Trello...
   OK  Connected to Trello as "Alex Example"
 
 Saving Trello credentials...
-  OK  Credentials saved: /tmp/junit-16893060728877427003/.env.custom-pickup
+  OK  Credentials saved: /tmp/junit-17510721110529360691/.env.custom-pickup
   OK  Trello API key: ****
   OK  Trello token: toke****
 
@@ -450,7 +450,7 @@ GitHub integration
 Trello board
   OK  Board connected: "Custom Pickup Queue"
   OK  Board lists: "Inbox", "Ready for Codex", "In Progress", "Blocked", "Human Review", "Done"
-  OK  Workflow written: /tmp/junit-16893060728877427003/WORKFLOW.custom-pickup.md
+  OK  Workflow written: /tmp/junit-17510721110529360691/WORKFLOW.custom-pickup.md
   OK  Local server port selected for "Custom Pickup Queue": 20006
 
 Workspace access
@@ -489,7 +489,7 @@ expected: 2
 [ERROR] Tests run: 5, Failures: 4, Errors: 0, Skipped: 0
 [ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project symphony-trello: There are test failures.
 [ERROR] 
-[ERROR] See /tmp/tmpghwbvrl4/target/target/surefire-reports for the individual test results.
+[ERROR] See /tmp/tmpn_bxtp8r/target/target/surefire-reports for the individual test results.
 [ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
 [ERROR] -> [Help 1]
 [ERROR] 

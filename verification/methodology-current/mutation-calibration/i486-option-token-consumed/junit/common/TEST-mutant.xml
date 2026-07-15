@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<testsuite name="protected-common"><testcase name="nonInteractiveSetupRejectsAttachedOptionTokenAsMissingListSelectorBeforeTrelloRequest" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.076">
+<testsuite name="protected-common"><testcase name="nonInteractiveSetupRejectsAttachedOptionTokenAsMissingListSelectorBeforeTrelloRequest" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.174">
     <failure message="&#10;Expecting actual:&#10;  &quot;setup_failed code=trello_api_request message=Trello request failed&#10;Next step: Check the Trello API endpoint URL and network connection, or remove the custom --endpoint value, then rerun the command.&#10;&quot;&#10;to contain:&#10;  [&quot;setup_failed code=setup_invalid_arguments&quot;,&#10;    &quot;Expected parameter for option '--active'&quot;]&#10;but could not find:&#10;  [&quot;setup_failed code=setup_invalid_arguments&quot;,&#10;    &quot;Expected parameter for option '--active'&quot;]&#10; " type="java.lang.AssertionError">java.lang.AssertionError: 
 
 Expecting actual:
@@ -17,7 +17,7 @@ but could not find:
 	at ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupRejectsAttachedOptionTokenAsMissingListSelectorBeforeTrelloRequest(LocalSetupTest.java:3211)
 </failure>
   </testcase>
-  <testcase name="importBoardRejectsSeparateOptionTokenAsMissingListSelectorBeforeTrelloRequest" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="1.067">
+  <testcase name="importBoardRejectsSeparateOptionTokenAsMissingListSelectorBeforeTrelloRequest" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="1.165">
     <failure message="&#10;Expecting actual:&#10;  &quot;setup_failed code=trello_api_request message=Trello request failed&#10;Next step: Check the Trello API endpoint URL and network connection, or remove the custom --endpoint value, then rerun the command.&#10;&quot;&#10;to contain:&#10;  [&quot;setup_failed code=setup_invalid_arguments&quot;,&#10;    &quot;Expected parameter for option '--active'&quot;]&#10;but could not find:&#10;  [&quot;setup_failed code=setup_invalid_arguments&quot;,&#10;    &quot;Expected parameter for option '--active'&quot;]&#10; " type="java.lang.AssertionError">java.lang.AssertionError: 
 
 Expecting actual:

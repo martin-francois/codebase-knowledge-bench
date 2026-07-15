@@ -62,9 +62,12 @@ def term_classification(repo:Path)->dict:
     term=match.group(0)
     if term.lower()=='compatibility' and ('"category"' in line or 'behavior' in line.lower()):classification='domain_behavior_term'
     elif rel.startswith(('docs/','verification/pre-cleanup-independent-findings')) and any(word in line.lower() for word in ('archive','published','historical','immutable','prior')):classification='immutable_external_evidence_note'
+    elif rel.startswith(tuple(f'{root}/' for root in ACTIVE_ROOTS)):
+     classification='remove' if not any(token in line.lower() for token in ('prohibit','reject','banned','immutable','published')) else 'false_positive'
     else:classification='false_positive'
     rows.append({'path':rel,'line':number,'term':term,'classification':classification,'reason':'retained prose or domain terminology; not an active translation, alternate reader, or scoring branch'})
- return {'schema_id':'compatibility-term-classification-current','matches_found':len(rows),'retained_matches':rows,'active_runtime_compatibility_paths':0}
+ active_paths=sorted({row['path'] for row in rows if row['classification']=='remove' and row['path'].startswith(tuple(f'{root}/' for root in ACTIVE_ROOTS))})
+ return {'schema_id':'compatibility-term-classification-current','matches_found':len(rows),'retained_matches':rows,'active_runtime_compatibility_paths':len(active_paths),'active_runtime_paths':active_paths}
 
 def main()->int:
  p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[1]);p.add_argument('--output-dir',type=Path);a=p.parse_args();result=audit(a.repo.resolve());dead=dead_code(a.repo.resolve())

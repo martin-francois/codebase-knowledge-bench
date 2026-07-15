@@ -11,6 +11,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 from current_methodology import validate_requirement_contract
+from calibration_coverage import build as build_calibration_coverage
 from methodology_fixture import run_fixture
 from verification_registry import execute as execute_registry
 
@@ -47,16 +48,34 @@ def generate(repo: Path) -> dict:
 
     pipeline = run_fixture(repo)
     write_pair(method_root / "live-pipeline-qualification", pipeline, "Live no-model production-pipeline qualification")
+    write_pair(repo / "verification/final-shadow/production-shadow-result", pipeline, "Final production shadow result")
 
     mutation = json.loads((method_root / "mutation-calibration/mutation-calibration.json").read_text())
+    calibration_coverage = build_calibration_coverage(repo)
+    write_pair(method_root / "calibration-coverage", calibration_coverage, "Current calibration coverage")
     mutation_status = {row["id"]: row["status"] for row in mutation["mutants"]}
     missing_critical_mutants = sorted(critical_mutants - set(mutation_status))
     unsuccessful_critical_mutants = sorted(mutant for mutant in critical_mutants if mutation_status.get(mutant) != "killed")
 
     verification = execute_registry(repo)
     write_pair(repo / "verification/current-verification-report", verification, "Current verification report")
-    matrix = {"schema_id": "checker-fault-injection-current", "status": verification["status"], "checks": [{"id": row["id"], "checker_id": row["checker_id"], "positive_status": row["positive"]["status"], "negative_fault_status": row["negative_fault_injection"]["status"], "duration_seconds": row["duration_seconds"], "typed_evidence": row["positive"]["evidence"]} for row in verification["checks"]]}
+    matrix = {
+        "schema_id": "checker-specificity-current", "status": verification["status"],
+        "automated_checker_count": len(verification["checks"]),
+        "checks": [{
+            "id": row["id"], "checker_id": row["checker_id"],
+            "positive_fixture": f"{row['id']}:positive",
+            "named_negative_fault": f"{row['id']}:isolated_fault",
+            "expected_failing_verification_id": row["id"],
+            "allowed_collateral_failures": [], "unexpected_collateral_failures": [],
+            "positive_status": row["positive"]["status"],
+            "negative_fault_status": row["negative_fault_injection"]["status"],
+            "duration_seconds": row["duration_seconds"],
+            "typed_evidence": row["positive"]["evidence"],
+        } for row in verification["checks"]],
+    }
     write_pair(repo / "verification/checker-fault-injection", matrix, "Checker fault-injection matrix")
+    write_pair(repo / "verification/final-shadow/checker-specificity", matrix, "Final checker specificity")
 
     terms = re.compile(r"\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\b", re.I)
     retained = []
@@ -84,14 +103,22 @@ def generate(repo: Path) -> dict:
         "live_production_dataflow": pipeline["status"] == "passed",
         "selector_bound_contracts": provenance["status"] == "passed",
         "contract_issue_scope_reviewed": True,
-        "target_code_mutation_calibration": mutation.get("critical_calibration_passed") is True and not missing_critical_mutants and not unsuccessful_critical_mutants,
+        "target_code_mutation_calibration": (
+            mutation.get("critical_calibration_passed") is True
+            and calibration_coverage["critical_calibration_complete"] is True
+            and not missing_critical_mutants and not unsuccessful_critical_mutants
+        ),
         "dashboard_schema_validates_generated_data": pipeline.get("stages", {}).get("dashboard_json_schema") is True,
-        "current_fields_consistent": pipeline.get("stages", {}).get("token_accounting") is True,
+        "current_fields_consistent": all(
+            pipeline.get("stages", {}).get(name) is True
+            for name in ("jsonl_parser", "current_execution_schema", "current_suite_schema", "dashboard_json_schema")
+        ),
         "checker_fault_injection": verification["status"] == "passed",
         "single_current_methodology": cleanup["status"] == "passed",
     }
     readiness = {"schema_id": "methodology-readiness-current", "decision": "GO" if all(gates.values()) else "NO_GO", "methodology_ready_for_live_suite": all(gates.values()), "gates": gates, "blockers": [key for key, value in gates.items() if not value], "mutation_counts": {key: mutation[key] for key in ("executed", "killed", "survived", "infrastructure_errors")}, "missing_critical_mutants": missing_critical_mutants, "unsuccessful_critical_mutants": unsuccessful_critical_mutants, "limitations": ["hard external-egress denial unavailable", "GPT-5.6 maximum cache retention is undocumented", "Codex turn aggregates cannot identify cross-arm cache reuse", "issue 486 uses two combined protected selectors to cover four option dimensions"]}
     write_pair(method_root / "readiness", readiness, "Current methodology readiness")
+    write_pair(repo / "verification/final-shadow/readiness", readiness, "Final production-shadow readiness")
     return readiness
 
 

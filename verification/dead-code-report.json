@@ -1,0 +1,16 @@
+{
+  "deleted_modules": [
+    "completed_retry_integration",
+    "final_arm_recovery",
+    "fresh_workspace_retry",
+    "fresh_workspace_retry_launch",
+    "future_methodology",
+    "publication_supplement",
+    "source_verification",
+    "token_accounting_erratum",
+    "vnext_fixture"
+  ],
+  "live_import_references": [],
+  "schema_id": "dead-code-report-current",
+  "status": "passed"
+}

@@ -1,17 +1,17 @@
 <?xml version='1.0' encoding='utf-8'?>
-<testsuite name="protected-extended"><testcase name="rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.279">
+<testsuite name="protected-extended"><testcase name="rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.262">
     <failure message="&#10;Expecting value to be false but was true" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
 
 Expecting value to be false but was true
 	at ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed(TrelloHandoffToolHandlerTest.java:667)
 </failure>
   </testcase>
-  <testcase name="importBoardRejectsAmbiguousDefaultReviewListName(String)[1]" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="0.464">
-    <failure message="[stdout:&#10;&#10;Saving Trello credentials...&#10;  OK  Credentials saved: /tmp/junit-15544778910173389305/.env.direct-cli-fixture&#10;  OK  Trello API key: ****&#10;  OK  Trello token: toke****&#10;Imported Trello board: &quot;Existing Board&quot;&#10;Board URL: https://trello.com/b/SYNTH001/board&#10;Board identifier for WORKFLOW.md: SYNTH001&#10;Open lists: &quot;Ready for Codex&quot;, &quot;Human Review&quot;, &quot;Human Review&quot;, &quot;Done&quot;&#10;Active lists: &quot;Ready for Codex&quot;&#10;In-progress list: &lt;none&gt;&#10;Terminal lists: &quot;Done&quot;&#10;Blocked list: &lt;none&gt;&#10;Wrote workflow: /tmp/junit-15544778910173389305/ambiguous-default-review.WORKFLOW.md&#10;HTTP status port: 18080&#10;&#10;Next:&#10;  symphony-trello start --env '/tmp/junit-15544778910173389305/.env.direct-cli-fixture' --workflow '/tmp/junit-15544778910173389305/ambiguous-default-review.WORKFLOW.md'&#10;  symphony-trello logs --workflow '/tmp/junit-15544778910173389305/ambiguous-default-review.WORKFLOW.md'&#10;&#10;stderr:&#10;] &#10;expected: 2&#10; but was: 0" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
+<testcase name="importBoardRejectsAmbiguousDefaultReviewListName(String)[1]" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="0.474">
+    <failure message="[stdout:&#10;&#10;Saving Trello credentials...&#10;  OK  Credentials saved: /tmp/junit-9707541279416021963/.env.direct-cli-fixture&#10;  OK  Trello API key: ****&#10;  OK  Trello token: toke****&#10;Imported Trello board: &quot;Existing Board&quot;&#10;Board URL: https://trello.com/b/SYNTH001/board&#10;Board identifier for WORKFLOW.md: SYNTH001&#10;Open lists: &quot;Ready for Codex&quot;, &quot;Human Review&quot;, &quot;Human Review&quot;, &quot;Done&quot;&#10;Active lists: &quot;Ready for Codex&quot;&#10;In-progress list: &lt;none&gt;&#10;Terminal lists: &quot;Done&quot;&#10;Blocked list: &lt;none&gt;&#10;Wrote workflow: /tmp/junit-9707541279416021963/ambiguous-default-review.WORKFLOW.md&#10;HTTP status port: 18080&#10;&#10;Next:&#10;  symphony-trello start --env '/tmp/junit-9707541279416021963/.env.direct-cli-fixture' --workflow '/tmp/junit-9707541279416021963/ambiguous-default-review.WORKFLOW.md'&#10;  symphony-trello logs --workflow '/tmp/junit-9707541279416021963/ambiguous-default-review.WORKFLOW.md'&#10;&#10;stderr:&#10;] &#10;expected: 2&#10; but was: 0" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
 [stdout:
 
 Saving Trello credentials...
-  OK  Credentials saved: /tmp/junit-15544778910173389305/.env.direct-cli-fixture
+  OK  Credentials saved: /tmp/junit-9707541279416021963/.env.direct-cli-fixture
   OK  Trello API key: ****
   OK  Trello token: toke****
 Imported Trello board: "Existing Board"
@@ -22,12 +22,12 @@ Active lists: "Ready for Codex"
 In-progress list: &lt;none&gt;
 Terminal lists: "Done"
 Blocked list: &lt;none&gt;
-Wrote workflow: /tmp/junit-15544778910173389305/ambiguous-default-review.WORKFLOW.md
+Wrote workflow: /tmp/junit-9707541279416021963/ambiguous-default-review.WORKFLOW.md
 HTTP status port: 18080
 
 Next:
-  symphony-trello start --env '/tmp/junit-15544778910173389305/.env.direct-cli-fixture' --workflow '/tmp/junit-15544778910173389305/ambiguous-default-review.WORKFLOW.md'
-  symphony-trello logs --workflow '/tmp/junit-15544778910173389305/ambiguous-default-review.WORKFLOW.md'
+  symphony-trello start --env '/tmp/junit-9707541279416021963/.env.direct-cli-fixture' --workflow '/tmp/junit-9707541279416021963/ambiguous-default-review.WORKFLOW.md'
+  symphony-trello logs --workflow '/tmp/junit-9707541279416021963/ambiguous-default-review.WORKFLOW.md'
 
 stderr:
 ] 
@@ -37,12 +37,12 @@ expected: 2
 	at ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.importBoardRejectsAmbiguousDefaultReviewListName(TrelloBoardSetupMainTest.java:6099)
 </failure>
   </testcase>
-  <testcase name="importBoardRejectsAmbiguousDefaultReviewListName(String)[2]" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="0.764">
-    <failure message="[stdout:&#10;&#10;Saving Trello credentials...&#10;  OK  Credentials saved: /tmp/junit-10535894894009752073/.env.direct-cli-fixture&#10;  OK  Trello API key: ****&#10;  OK  Trello token: toke****&#10;Imported Trello board: &quot;Existing Board&quot;&#10;Board URL: https://trello.com/b/SYNTH001/board&#10;Board identifier for WORKFLOW.md: SYNTH001&#10;Open lists: &quot;Ready for Codex&quot;, &quot;Review&quot;, &quot;Review&quot;, &quot;Done&quot;&#10;Active lists: &quot;Ready for Codex&quot;&#10;In-progress list: &lt;none&gt;&#10;Terminal lists: &quot;Done&quot;&#10;Blocked list: &lt;none&gt;&#10;Wrote workflow: /tmp/junit-10535894894009752073/ambiguous-default-review.WORKFLOW.md&#10;HTTP status port: 18080&#10;&#10;Next:&#10;  symphony-trello start --env '/tmp/junit-10535894894009752073/.env.direct-cli-fixture' --workflow '/tmp/junit-10535894894009752073/ambiguous-default-review.WORKFLOW.md'&#10;  symphony-trello logs --workflow '/tmp/junit-10535894894009752073/ambiguous-default-review.WORKFLOW.md'&#10;&#10;stderr:&#10;] &#10;expected: 2&#10; but was: 0" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
+  <testcase name="importBoardRejectsAmbiguousDefaultReviewListName(String)[2]" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="0.823">
+    <failure message="[stdout:&#10;&#10;Saving Trello credentials...&#10;  OK  Credentials saved: /tmp/junit-1323105939928645001/.env.direct-cli-fixture&#10;  OK  Trello API key: ****&#10;  OK  Trello token: toke****&#10;Imported Trello board: &quot;Existing Board&quot;&#10;Board URL: https://trello.com/b/SYNTH001/board&#10;Board identifier for WORKFLOW.md: SYNTH001&#10;Open lists: &quot;Ready for Codex&quot;, &quot;Review&quot;, &quot;Review&quot;, &quot;Done&quot;&#10;Active lists: &quot;Ready for Codex&quot;&#10;In-progress list: &lt;none&gt;&#10;Terminal lists: &quot;Done&quot;&#10;Blocked list: &lt;none&gt;&#10;Wrote workflow: /tmp/junit-1323105939928645001/ambiguous-default-review.WORKFLOW.md&#10;HTTP status port: 18080&#10;&#10;Next:&#10;  symphony-trello start --env '/tmp/junit-1323105939928645001/.env.direct-cli-fixture' --workflow '/tmp/junit-1323105939928645001/ambiguous-default-review.WORKFLOW.md'&#10;  symphony-trello logs --workflow '/tmp/junit-1323105939928645001/ambiguous-default-review.WORKFLOW.md'&#10;&#10;stderr:&#10;] &#10;expected: 2&#10; but was: 0" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
 [stdout:
 
 Saving Trello credentials...
-  OK  Credentials saved: /tmp/junit-10535894894009752073/.env.direct-cli-fixture
+  OK  Credentials saved: /tmp/junit-1323105939928645001/.env.direct-cli-fixture
   OK  Trello API key: ****
   OK  Trello token: toke****
 Imported Trello board: "Existing Board"
@@ -53,12 +53,12 @@ Active lists: "Ready for Codex"
 In-progress list: &lt;none&gt;
 Terminal lists: "Done"
 Blocked list: &lt;none&gt;
-Wrote workflow: /tmp/junit-10535894894009752073/ambiguous-default-review.WORKFLOW.md
+Wrote workflow: /tmp/junit-1323105939928645001/ambiguous-default-review.WORKFLOW.md
 HTTP status port: 18080
 
 Next:
-  symphony-trello start --env '/tmp/junit-10535894894009752073/.env.direct-cli-fixture' --workflow '/tmp/junit-10535894894009752073/ambiguous-default-review.WORKFLOW.md'
-  symphony-trello logs --workflow '/tmp/junit-10535894894009752073/ambiguous-default-review.WORKFLOW.md'
+  symphony-trello start --env '/tmp/junit-1323105939928645001/.env.direct-cli-fixture' --workflow '/tmp/junit-1323105939928645001/ambiguous-default-review.WORKFLOW.md'
+  symphony-trello logs --workflow '/tmp/junit-1323105939928645001/ambiguous-default-review.WORKFLOW.md'
 
 stderr:
 ] 

@@ -1,16 +1,16 @@
 <?xml version='1.0' encoding='utf-8'?>
-<testsuite name="protected-common"><testcase name="movesCurrentCardToAllowedListIdWhenNamesAreDuplicated" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.407">
+<testsuite name="protected-common"><testcase name="movesCurrentCardToAllowedListIdWhenNamesAreDuplicated" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.388">
     <failure message="&#10;Expecting value to be true but was false" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
 
 Expecting value to be true but was false
 	at ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.movesCurrentCardToAllowedListIdWhenNamesAreDuplicated(TrelloHandoffToolHandlerTest.java:645)
 </failure>
   </testcase>
-  <testcase name="movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.407">
+  <testcase name="movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.388">
     <failure message="&#10;Expecting value to be true but was false" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
 
 Expecting value to be true but was false
 	at ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured(TrelloHandoffToolHandlerTest.java:628)
 </failure>
   </testcase>
-</testsuite>
+  </testsuite>

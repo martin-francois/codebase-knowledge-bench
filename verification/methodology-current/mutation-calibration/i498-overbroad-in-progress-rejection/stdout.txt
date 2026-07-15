@@ -1,5 +1,5 @@
-[ERROR] Tests run: 5, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 1.825 s <<< FAILURE! -- in ch.fmartin.symphony.trello.setup.LocalSetupTest
-[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveExistingBoardSetupAcceptsExplicitInProgressWithoutBoardArgument -- Time elapsed: 0.062 s <<< FAILURE!
+[ERROR] Tests run: 5, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 1.796 s <<< FAILURE! -- in ch.fmartin.symphony.trello.setup.LocalSetupTest
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveExistingBoardSetupAcceptsExplicitInProgressWithoutBoardArgument -- Time elapsed: 0.034 s <<< FAILURE!
 org.opentest4j.AssertionFailedError: 
 [stdout:
 Symphony for Trello setup
@@ -52,7 +52,7 @@ expected: 0
 [ERROR] Tests run: 5, Failures: 1, Errors: 0, Skipped: 0
 [ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project symphony-trello: There are test failures.
 [ERROR] 
-[ERROR] See /tmp/tmpdse2zwvo/target/target/surefire-reports for the individual test results.
+[ERROR] See /tmp/tmpmz2uimy8/target/target/surefire-reports for the individual test results.
 [ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
 [ERROR] -> [Help 1]
 [ERROR] 

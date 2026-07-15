@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<testsuite name="protected-direct"><testcase name="nonInteractiveSetupAcceptsRepeatedActiveAndTerminalListOptions" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.067">
+<testsuite name="protected-direct"><testcase name="nonInteractiveSetupAcceptsRepeatedActiveAndTerminalListOptions" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.22">
     <failure message="[stdout:&#10;&#10;stderr:&#10;setup_failed code=setup_invalid_arguments message=option '--active' (&lt;activeState&gt;) should be specified only once&#10;Try 'setup-local --help' for usage.&#10;] &#10;expected: 0&#10; but was: 2" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
 [stdout:
 
@@ -13,7 +13,7 @@ expected: 0
 	at ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupAcceptsRepeatedActiveAndTerminalListOptions(LocalSetupTest.java:3175)
 </failure>
   </testcase>
-<testcase name="importBoardAcceptsRepeatedActiveAndTerminalListOptions" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="1.05">
+<testcase name="importBoardAcceptsRepeatedActiveAndTerminalListOptions" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="1.211">
     <failure message="[stdout:&#10;&#10;stderr:&#10;setup_failed code=setup_invalid_arguments message=option '--active' (&lt;activeState&gt;) should be specified only once&#10;Try 'import-board --help' for usage.&#10;] &#10;expected: 0&#10; but was: 2" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
 [stdout:
 

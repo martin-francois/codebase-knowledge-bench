@@ -1,4 +1,4 @@
 <?xml version='1.0' encoding='utf-8'?>
-<testsuite name="protected-common"><testcase name="nonInteractiveSetupRejectsAttachedOptionTokenAsMissingListSelectorBeforeTrelloRequest" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.068" />
-  <testcase name="importBoardRejectsSeparateOptionTokenAsMissingListSelectorBeforeTrelloRequest" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="1.05" />
+<testsuite name="protected-common"><testcase name="nonInteractiveSetupRejectsAttachedOptionTokenAsMissingListSelectorBeforeTrelloRequest" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.218" />
+  <testcase name="importBoardRejectsSeparateOptionTokenAsMissingListSelectorBeforeTrelloRequest" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="1.209" />
   </testsuite>

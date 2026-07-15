@@ -349,20 +349,25 @@ class ContextAndRankingTest(unittest.TestCase):
 
 class ParsingIsolationAndEfficiencyTest(unittest.TestCase):
     def test_smoke_only_qualification_does_not_require_candidate_junit(self):
+        from current_pipeline import derive_non_solve_row
+
         metrics = {"run_id": "run-001", "no_patch": True, "solve_wall_seconds": 0}
         with (
             mock.patch.object(runner, "SMOKE_ONLY", True),
             mock.patch.object(runner, "correctness_preflight_matrix", return_value=[]),
         ):
             runner.ensure_correctness_evidence(metrics)
-        self.assertFalse(metrics["issue_contract_evaluable"])
-        self.assertIsNone(metrics["issue_contract_pass_fraction"])
-        self.assertEqual(0.0, metrics["issue_contract_matrix_evidence"]["score"])
-        self.assertFalse(metrics["implementation_produced"])
+        row = derive_non_solve_row(
+            run_metadata={"run_id": "run-001", "variant": "baseline-none", "issue_id": "issue-486", "status": "smoke_only"},
+            reason="smoke_only",
+        )
+        self.assertFalse(row["correctness_evidence_available"])
+        self.assertFalse(row["implementation_produced"])
+        self.assertFalse(row["token_usage_available"])
 
     def test_current_schema_requires_requirement_and_token_dimensions(self):
         schema = json.loads((ROOT / "schemas/execution-results.schema.json").read_text())
-        required = set(schema["properties"]["variants"]["items"]["required"])
+        required = set(schema["$defs"]["currentVariantRow"]["required"])
         self.assertIn("requirement_vector", required)
         self.assertIn("critical_requirement_status", required)
         self.assertIn("output_tokens_including_reasoning", required)
@@ -383,13 +388,9 @@ class ParsingIsolationAndEfficiencyTest(unittest.TestCase):
             "scheduled_correctness_points", "composite_quality_score", "correctness_factor",
             "issue_contract_score", "direct_issue_contract_full_pass",
         }
-        variant_schema = schema["properties"]["variants"]["items"]
+        variant_schema = schema["$defs"]["currentVariantRow"]
         self.assertTrue(forbidden.isdisjoint(variant_schema["properties"]))
-        rejected = {
-            clause["required"][0]
-            for clause in variant_schema["allOf"][0]["not"]["anyOf"]
-        }
-        self.assertTrue(forbidden.issubset(rejected))
+        self.assertFalse(variant_schema["additionalProperties"])
         self.assertFalse((ROOT / "configs/preserved-pilot-migration.json").exists())
         self.assertFalse((ROOT / "scripts/recompute_preserved_suite.py").exists())
 

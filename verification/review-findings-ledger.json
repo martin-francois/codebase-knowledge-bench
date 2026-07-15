@@ -1,93 +1,217 @@
 {
-  "schema_version": "review-findings-ledger-current",
   "findings": [
     {
-      "id": "PRIVATE-2026-07-AUDIT",
-      "source": "private-pre-release-review-2026-07",
-      "normalized_finding": "The prior handoff contained ten reproducible source, methodology, mutation, validation, tree, mode, and scan defects.",
-      "decision": "accepted_automated",
       "affected_invariant": "independent handoff fidelity",
-      "verification_ids": ["AUD-001", "AUD-002", "AUD-003", "AUD-004", "AUD-005", "AUD-006", "AUD-007", "AUD-008", "AUD-009", "AUD-010"],
+      "decision": "accepted_automated",
+      "id": "PRIVATE-2026-07-AUDIT",
       "implementation_commit": null,
-      "test_evidence": ["verification/pre-cleanup-independent-findings.json", "tests/test_verification_registry.py"],
-      "residual_limitation": "The prior handoff remains immutable evidence and is not repaired in place."
+      "normalized_finding": "The prior handoff contained ten reproducible source, methodology, mutation, validation, tree, mode, and scan defects.",
+      "residual_limitation": "The prior handoff remains immutable evidence and is not repaired in place.",
+      "source": "private-pre-release-review-2026-07",
+      "test_evidence": [
+        "verification/pre-cleanup-independent-findings.json",
+        "tests/test_verification_registry.py"
+      ],
+      "verification_ids": [
+        "AUD-001",
+        "AUD-002",
+        "AUD-003",
+        "AUD-004",
+        "AUD-005",
+        "AUD-006",
+        "AUD-007",
+        "AUD-008",
+        "AUD-009",
+        "AUD-010"
+      ]
     },
     {
-      "id": "PRIVATE-2026-07-TOKENS",
-      "source": "private-pre-release-review-2026-07",
-      "normalized_finding": "The live token formula must treat reasoning as a subset of output and expose cache uncertainty without supporting obsolete rows.",
-      "decision": "accepted_automated",
       "affected_invariant": "current token accounting",
-      "verification_ids": ["TOK-CURRENT-001", "TOK-CURRENT-002", "TOK-CURRENT-003", "TOK-CURRENT-004", "TOK-CURRENT-005", "TOK-CURRENT-006", "TOK-CURRENT-007", "TOK-CURRENT-008", "TOK-CURRENT-009"],
+      "decision": "accepted_automated",
+      "id": "PRIVATE-2026-07-TOKENS",
       "implementation_commit": null,
-      "test_evidence": ["tests/test_current_methodology.py", "tests/test_hardening.py", "dashboard/tests/browser.spec.ts"],
-      "residual_limitation": "Cache-write telemetry may be absent and turn aggregates cannot identify cross-arm reuse."
+      "normalized_finding": "The live token formula must treat reasoning as a subset of output and expose cache uncertainty without supporting obsolete rows.",
+      "residual_limitation": "Cache-write telemetry may be absent and turn aggregates cannot identify cross-arm reuse.",
+      "source": "private-pre-release-review-2026-07",
+      "test_evidence": [
+        "tests/test_current_methodology.py",
+        "tests/test_hardening.py",
+        "dashboard/tests/browser.spec.ts"
+      ],
+      "verification_ids": [
+        "TOK-CURRENT-001",
+        "TOK-CURRENT-002",
+        "TOK-CURRENT-003",
+        "TOK-CURRENT-004",
+        "TOK-CURRENT-005",
+        "TOK-CURRENT-006",
+        "TOK-CURRENT-007",
+        "TOK-CURRENT-008",
+        "TOK-CURRENT-009"
+      ]
     },
     {
-      "id": "PRIVATE-2026-07-CORRECTNESS",
-      "source": "private-pre-release-review-2026-07",
-      "normalized_finding": "Requirement ownership, critical gates, candidate-test isolation, and behavior rather than source similarity must define the sole current correctness methodology.",
-      "decision": "accepted_automated",
       "affected_invariant": "current behavioral correctness",
-      "verification_ids": ["COR-CURRENT-001", "COR-CURRENT-002", "COR-CURRENT-003", "COR-CURRENT-004", "COR-CURRENT-005", "COR-CURRENT-006", "COR-CURRENT-007", "COR-CURRENT-008", "COR-CURRENT-009", "COR-CURRENT-010"],
+      "decision": "accepted_automated",
+      "id": "PRIVATE-2026-07-CORRECTNESS",
       "implementation_commit": null,
-      "test_evidence": ["tests/test_current_methodology.py", "tests/test_hardening.py"],
-      "residual_limitation": "A future live suite must qualify the current methodology before rankings use it."
+      "normalized_finding": "Requirement ownership, critical gates, candidate-test isolation, and behavior rather than source similarity must define the sole current correctness methodology.",
+      "residual_limitation": "A future live suite must qualify the current methodology before rankings use it.",
+      "source": "private-pre-release-review-2026-07",
+      "test_evidence": [
+        "tests/test_current_methodology.py",
+        "tests/test_hardening.py"
+      ],
+      "verification_ids": [
+        "COR-CURRENT-001",
+        "COR-CURRENT-002",
+        "COR-CURRENT-003",
+        "COR-CURRENT-004",
+        "COR-CURRENT-005",
+        "COR-CURRENT-006",
+        "COR-CURRENT-007",
+        "COR-CURRENT-008",
+        "COR-CURRENT-009",
+        "COR-CURRENT-010"
+      ]
     },
     {
-      "id": "PRIVATE-2026-07-MUTATION",
-      "source": "private-pre-release-review-2026-07",
-      "normalized_finding": "Boolean scorer simulations are not executable target-code mutants and cannot establish mutation calibration readiness.",
-      "decision": "accepted_automated",
       "affected_invariant": "mutation calibration honesty",
-      "verification_ids": ["MUT-CURRENT-001", "MUT-CURRENT-002", "MUT-CURRENT-003", "MUT-CURRENT-004", "MUT-CURRENT-005", "MUT-CURRENT-006"],
+      "decision": "accepted_automated",
+      "id": "PRIVATE-2026-07-MUTATION",
       "implementation_commit": null,
-      "test_evidence": ["tests/test_current_methodology.py", "tests/test_verification_registry.py"],
-      "residual_limitation": "Target snapshots and an executable protected-verifier mutation harness are not source-controlled, so live methodology readiness is false."
+      "normalized_finding": "Boolean scorer simulations are not executable target-code mutants and cannot establish mutation calibration readiness.",
+      "residual_limitation": "Target snapshots and an executable protected-verifier mutation harness are not source-controlled, so live methodology readiness is false.",
+      "source": "private-pre-release-review-2026-07",
+      "test_evidence": [
+        "tests/test_current_methodology.py",
+        "tests/test_verification_registry.py"
+      ],
+      "verification_ids": [
+        "MUT-CURRENT-001",
+        "MUT-CURRENT-002",
+        "MUT-CURRENT-003",
+        "MUT-CURRENT-004",
+        "MUT-CURRENT-005",
+        "MUT-CURRENT-006"
+      ]
     },
     {
-      "id": "PRIVATE-2026-07-HANDOFF",
-      "source": "private-pre-release-review-2026-07",
-      "normalized_finding": "Review handoffs must preserve the exact Git tree and reject unsafe archive and textual evidence content.",
-      "decision": "accepted_automated",
       "affected_invariant": "portable secure review handoff",
-      "verification_ids": ["HANDOFF-CURRENT-001", "HANDOFF-CURRENT-002", "HANDOFF-CURRENT-003", "HANDOFF-CURRENT-004", "HANDOFF-CURRENT-005", "HANDOFF-CURRENT-006", "HANDOFF-CURRENT-007", "HANDOFF-CURRENT-008", "HANDOFF-CURRENT-009", "HANDOFF-CURRENT-010"],
-      "implementation_commit": null,
-      "test_evidence": ["tests/test_review_handoff.py", "tests/test_protected_verifier.py"],
-      "residual_limitation": "Opaque immutable ZIPs are hash-verified rather than recursively text-scanned."
-    },
-    {
-      "id": "PRIVATE-2026-07-CLEANUP",
-      "source": "private-pre-release-review-2026-07",
-      "normalized_finding": "Private pre-release live code must have one current schema and methodology with no translation or recovery implementation retained.",
       "decision": "accepted_automated",
+      "id": "PRIVATE-2026-07-HANDOFF",
+      "implementation_commit": null,
+      "normalized_finding": "Review handoffs must preserve the exact Git tree and reject unsafe archive and textual evidence content.",
+      "residual_limitation": "Opaque immutable ZIPs are hash-verified rather than recursively text-scanned.",
+      "source": "private-pre-release-review-2026-07",
+      "test_evidence": [
+        "tests/test_review_handoff.py",
+        "tests/test_protected_verifier.py"
+      ],
+      "verification_ids": [
+        "HANDOFF-CURRENT-001",
+        "HANDOFF-CURRENT-002",
+        "HANDOFF-CURRENT-003",
+        "HANDOFF-CURRENT-004",
+        "HANDOFF-CURRENT-005",
+        "HANDOFF-CURRENT-006",
+        "HANDOFF-CURRENT-007",
+        "HANDOFF-CURRENT-008",
+        "HANDOFF-CURRENT-009",
+        "HANDOFF-CURRENT-010"
+      ]
+    },
+    {
       "affected_invariant": "no internal compatibility layer",
-      "verification_ids": ["CLEAN-CURRENT-001", "CLEAN-CURRENT-002", "CLEAN-CURRENT-003", "CLEAN-CURRENT-004", "CLEAN-CURRENT-005"],
+      "decision": "accepted_automated",
+      "id": "PRIVATE-2026-07-CLEANUP",
       "implementation_commit": null,
-      "test_evidence": ["tests/test_verification_registry.py", "tests/test_private_prerelease_cleanup.py"],
-      "residual_limitation": "Immutable external evidence may describe historical formats but is never accepted by live runtime."
+      "normalized_finding": "Private pre-release live code must have one current schema and methodology with no translation or recovery implementation retained.",
+      "residual_limitation": "Immutable external evidence may describe historical formats but is never accepted by live runtime.",
+      "source": "private-pre-release-review-2026-07",
+      "test_evidence": [
+        "tests/test_verification_registry.py",
+        "tests/test_private_prerelease_cleanup.py"
+      ],
+      "verification_ids": [
+        "CLEAN-CURRENT-001",
+        "CLEAN-CURRENT-002",
+        "CLEAN-CURRENT-003",
+        "CLEAN-CURRENT-004",
+        "CLEAN-CURRENT-005"
+      ]
     },
     {
-      "id": "PRIVATE-2026-07-SEMANTIC",
-      "source": "private-pre-release-review-2026-07",
-      "normalized_finding": "Semantic contradictions and reward-hacking risks require implementing-agent review after deterministic checks.",
-      "decision": "accepted_llm_manual",
       "affected_invariant": "cross-artifact semantic integrity",
-      "verification_ids": ["LLM-001", "LLM-002", "LLM-003", "LLM-004", "LLM-005", "LLM-006", "LLM-007", "LLM-008", "LLM-009", "LLM-010", "LLM-011", "LLM-012", "LLM-013", "LLM-014", "LLM-015"],
+      "decision": "accepted_llm_manual",
+      "id": "PRIVATE-2026-07-SEMANTIC",
       "implementation_commit": null,
-      "test_evidence": ["AGENTS.md", "docs/llm-maintenance-verification.md", "tests/test_verification_registry.py"],
-      "residual_limitation": "Implementing-agent self-review is not independent review and does not affect benchmark scores."
+      "normalized_finding": "Semantic contradictions and reward-hacking risks require implementing-agent review after deterministic checks.",
+      "residual_limitation": "Implementing-agent self-review is not independent review and does not affect benchmark scores.",
+      "source": "private-pre-release-review-2026-07",
+      "test_evidence": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "tests/test_verification_registry.py"
+      ],
+      "verification_ids": [
+        "LLM-001",
+        "LLM-002",
+        "LLM-003",
+        "LLM-004",
+        "LLM-005",
+        "LLM-006",
+        "LLM-007",
+        "LLM-008",
+        "LLM-009",
+        "LLM-010",
+        "LLM-011",
+        "LLM-012",
+        "LLM-013",
+        "LLM-014",
+        "LLM-015"
+      ]
     },
     {
-      "id": "PRIVATE-2026-07-EGRESS",
-      "source": "private-pre-release-review-2026-07",
-      "normalized_finding": "Hard external-egress denial is unavailable on the current platform.",
-      "decision": "accepted_external_capability",
       "affected_invariant": "anti-leak capability honesty",
-      "verification_ids": ["SEC-001"],
+      "decision": "accepted_external_capability",
+      "id": "PRIVATE-2026-07-EGRESS",
       "implementation_commit": null,
-      "test_evidence": ["SECURITY.md"],
-      "residual_limitation": "Anti-leak confidence remains medium without hard external-egress denial."
+      "normalized_finding": "Hard external-egress denial is unavailable on the current platform.",
+      "residual_limitation": "Anti-leak confidence remains medium without hard external-egress denial.",
+      "source": "private-pre-release-review-2026-07",
+      "test_evidence": [
+        "SECURITY.md"
+      ],
+      "verification_ids": [
+        "SEC-001"
+      ]
+    },
+    {
+      "affected_invariant": "current production methodology qualification",
+      "decision": "accepted_automated",
+      "id": "FINAL-SHADOW-2026-07",
+      "implementation_commit": null,
+      "normalized_finding": "Ten live parser, schema, aggregation, diagnostic, ordering, overwrite, fixture, stale-field, and checker-specificity defects required production-path qualification.",
+      "residual_limitation": "Targeted mutant coverage remains incomplete for combined issue-486 and issue-498 acceptance dimensions.",
+      "source": "production-shadow-review-2026-07",
+      "test_evidence": [
+        "verification/final-shadow/pre-fix-audit.json",
+        "tests/test_final_shadow.py"
+      ],
+      "verification_ids": [
+        "SHADOW-001",
+        "SHADOW-002",
+        "SHADOW-003",
+        "SHADOW-004",
+        "SHADOW-005",
+        "SHADOW-006",
+        "SHADOW-007",
+        "SHADOW-008",
+        "SHADOW-009",
+        "SHADOW-010"
+      ]
     }
-  ]
+  ],
+  "schema_version": "review-findings-ledger-current"
 }

@@ -106,10 +106,14 @@ class ProductionDataflowQualificationTests(unittest.TestCase):
     def test_PIPELINE_001_full_no_model_flow(self):
         result = run_fixture(ROOT)
         self.assertEqual("passed", result["status"], result)
-        self.assertTrue(result["methodology_ready"])
+        self.assertTrue(result["methodology_ready_for_live_suite"])
 
     def test_PIPELINE_faults_fail_at_named_stage(self):
-        for defect in ("partial_requested_behavior", "critical_failure", "missing_required_junit", "duplicate_junit", "dashboard_schema", "tool_non_adherent", "trust_invalid"):
+        for defect in (
+            "partial_requested_behavior", "critical_required_failure",
+            "missing_required_selector", "duplicate_required_selector",
+            "dashboard_schema_drift", "tool_non_adherent", "trust_invalid",
+        ):
             with self.subTest(defect=defect):
                 self.assertEqual("failed_as_expected", run_fixture(ROOT, defect)["status"])
 

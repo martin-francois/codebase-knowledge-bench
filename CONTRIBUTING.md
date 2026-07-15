@@ -84,7 +84,7 @@ future history, and solution metadata away from child solves.
 
 Never recursively include an older `suite-bundle.zip` in a new archive.
 
-## Determinism and compatibility
+## Determinism and current-format discipline
 
 - Sort paths, mappings, issues, variants, and report rows before serialization.
 - Never depend on Python hash or set iteration order.
@@ -99,7 +99,7 @@ Never recursively include an older `suite-bundle.zip` in a new archive.
 - Never create merge commits or force-push.
 - Fetch and rebase rather than merge when the remote advances.
 - Include tests with behavior changes.
-- Explain trust, scoring, compatibility, and evidence implications in review descriptions.
+- Explain trust, scoring, regression, and evidence implications in review descriptions.
 
 ## Publication and release readiness
 
@@ -108,6 +108,6 @@ The repository remains private until its owner changes visibility. Before public
 [SUPPORT.md](SUPPORT.md), CI workflows, repository metadata, tracked files, and secret scans. Do not
 invent or change licensing without repository evidence.
 
-## Private pre-release compatibility policy
+## Private pre-release single-current policy
 
 Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration commands, and parallel scoring or token paths are prohibited. A provenance identifier is accepted at exactly one value and never dispatches to another implementation. Immutable experiment ZIPs are opaque external evidence, not supported runtime input. Breaking internal changes replace obsolete behavior in place.

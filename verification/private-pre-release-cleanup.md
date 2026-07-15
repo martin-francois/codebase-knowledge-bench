@@ -5,7 +5,7 @@ Status: **passed**
 ```json
 {
   "active_runtime_blockers": [],
-  "files_scanned": 118,
+  "files_scanned": 128,
   "matches": 61,
   "old_input_translation_supported": false,
   "one_live_correctness_methodology": true,
@@ -13,91 +13,91 @@ Status: **passed**
   "retained_matches": [
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "legacy",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "compatibility",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "migration",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "migrate",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "deprecated",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "deprecation",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "shim",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "alias",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "dual_read",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "dual_write",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "vNext",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "old format",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
     },
     {
       "classification": "immutable_external_evidence_note",
-      "line": 61,
+      "line": 80,
       "path": "scripts/methodology_reports.py",
       "term": "historical_methodology",
       "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
@@ -307,28 +307,28 @@ Status: **passed**
     },
     {
       "classification": "false_positive",
-      "line": 67,
+      "line": 70,
       "path": "scripts/private_prerelease_audit.py",
       "term": "compatibility",
-      "text": "return {'schema_id':'compatibility-term-classification-current','matches_found':len(rows),'retained_matches':rows,'active_runtime_compatibility_paths':0}"
+      "text": "return {'schema_id':'compatibility-term-classification-current','matches_found':len(rows),'retained_matches':rows,'active_runtime_compatibility_paths':len(active_paths),'active_runtime_paths':active_paths}"
     },
     {
       "classification": "false_positive",
-      "line": 72,
+      "line": 75,
       "path": "scripts/private_prerelease_audit.py",
       "term": "compatibility",
       "text": "a.output_dir.mkdir(parents=True,exist_ok=True);(a.output_dir/'private-pre-release-cleanup.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\\n');(a.output_dir/'dead-code-report.json').write_text(json.dumps(dead,indent=2,sort_keys=True)+'\\n');(a.output_dir/'compatibility-term-classificati"
     },
     {
       "classification": "false_positive",
-      "line": 157,
+      "line": 166,
       "path": "scripts/verification_checkers.py",
       "term": "compatibility",
       "text": "banned = (\"output_tokens + reasoning_output_tokens\", \"public compatibility contract\", \"future methodology\", \"behavioral-correctness-vNext\")"
     },
     {
       "classification": "false_positive",
-      "line": 157,
+      "line": 166,
       "path": "scripts/verification_checkers.py",
       "term": "vNext",
       "text": "banned = (\"output_tokens + reasoning_output_tokens\", \"public compatibility contract\", \"future methodology\", \"behavioral-correctness-vNext\")"
@@ -342,14 +342,14 @@ Status: **passed**
     },
     {
       "classification": "false_positive",
-      "line": 393,
+      "line": 394,
       "path": "tests/test_hardening.py",
       "term": "migration",
       "text": "self.assertFalse((ROOT / \"configs/preserved-pilot-migration.json\").exists())"
     },
     {
       "classification": "false_positive",
-      "line": 434,
+      "line": 435,
       "path": "tests/test_hardening.py",
       "term": "deprecated",
       "text": "message = \"warning: --dangerously-bypass-hook-trust is deprecated\""

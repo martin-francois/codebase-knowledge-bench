@@ -2,37 +2,6 @@
   "entries": [
     {
       "area": "correctness",
-      "checker_id": "dataflow_producer",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "DATAFLOW-001",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "DATAFLOW-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::DATAFLOW-001:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::DATAFLOW-001:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Dataflow 001",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "correctness",
       "checker_id": "contract_binding",
       "checker_implementation": "scripts/verification_checkers.py",
       "checker_version": "1",
@@ -122,440 +91,6 @@
         "tests/test_verification_registry.py"
       ],
       "title": "Contract 003",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "dashboard",
-      "checker_id": "token_fields",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "DASH-001",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "DASH-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::DASH-001:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::DASH-001:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Dash 001",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "dashboard",
-      "checker_id": "dashboard_schema",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "DASH-002",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "DASH-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::DASH-002:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::DASH-002:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Dash 002",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "verification",
-      "checker_id": "pipeline",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "PIPELINE-001",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "PIPELINE-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::PIPELINE-001:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::PIPELINE-001:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Pipeline 001",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "verification",
-      "checker_id": "pipeline",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "VERIFY-001",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "VERIFY-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::VERIFY-001:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::VERIFY-001:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Verify 001",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "documentation",
-      "checker_id": "normative_docs",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "DOC-001",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "DOC-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::DOC-001:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::DOC-001:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Doc 001",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "tokens",
-      "checker_id": "token_reasoning",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "TOK-CURRENT-001",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "TOK-CURRENT-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-001:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-001:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Tok Current 001",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "tokens",
-      "checker_id": "token_reasoning",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "TOK-CURRENT-002",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "TOK-CURRENT-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-002:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-002:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Tok Current 002",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "tokens",
-      "checker_id": "token_fields",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "TOK-CURRENT-003",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "TOK-CURRENT-003 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-003:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-003:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Tok Current 003",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "tokens",
-      "checker_id": "token_fields",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "TOK-CURRENT-004",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "TOK-CURRENT-004 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-004:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-004:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Tok Current 004",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "tokens",
-      "checker_id": "token_fields",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "TOK-CURRENT-005",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "TOK-CURRENT-005 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-005:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-005:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Tok Current 005",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "tokens",
-      "checker_id": "token_cache_null",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "TOK-CURRENT-006",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "TOK-CURRENT-006 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-006:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-006:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Tok Current 006",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "tokens",
-      "checker_id": "token_cache_null",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "TOK-CURRENT-007",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "TOK-CURRENT-007 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-007:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-007:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Tok Current 007",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "tokens",
-      "checker_id": "normative_docs",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "TOK-CURRENT-008",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "TOK-CURRENT-008 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-008:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-008:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Tok Current 008",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
-    },
-    {
-      "area": "tokens",
-      "checker_id": "token_fields",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "TOK-CURRENT-009",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "TOK-CURRENT-009 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-009:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-009:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Tok Current 009",
       "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
@@ -869,8 +404,8 @@
       "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "correctness",
-      "checker_id": "mutation_artifacts",
+      "area": "dashboard",
+      "checker_id": "token_fields",
       "checker_implementation": "scripts/verification_checkers.py",
       "checker_version": "1",
       "commands": [
@@ -881,27 +416,58 @@
       "fixture_files": [
         "scripts/methodology_fixture.py"
       ],
-      "id": "MUT-CURRENT-001",
+      "id": "DASH-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "MUT-CURRENT-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "invariant": "DASH-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-001:fault",
+      "negative_fixture": "tests/test_verification_registry.py::DASH-001:fault",
       "output_artifacts": [
         "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-001:positive",
+      "positive_fixture": "tests/test_verification_registry.py::DASH-001:positive",
       "status": "implemented",
       "test_files": [
         "tests/test_verification_registry.py"
       ],
-      "title": "Mut Current 001",
+      "title": "Dash 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "dashboard",
+      "checker_id": "dashboard_schema",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "DASH-002",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "DASH-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::DASH-002:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::DASH-002:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Dash 002",
       "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "mutation_process",
+      "checker_id": "dataflow_producer",
       "checker_implementation": "scripts/verification_checkers.py",
       "checker_version": "1",
       "commands": [
@@ -912,27 +478,27 @@
       "fixture_files": [
         "scripts/methodology_fixture.py"
       ],
-      "id": "MUT-CURRENT-002",
+      "id": "DATAFLOW-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "MUT-CURRENT-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "invariant": "DATAFLOW-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-002:fault",
+      "negative_fixture": "tests/test_verification_registry.py::DATAFLOW-001:fault",
       "output_artifacts": [
         "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-002:positive",
+      "positive_fixture": "tests/test_verification_registry.py::DATAFLOW-001:positive",
       "status": "implemented",
       "test_files": [
         "tests/test_verification_registry.py"
       ],
-      "title": "Mut Current 002",
+      "title": "Dataflow 001",
       "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "correctness",
-      "checker_id": "mutation_process",
+      "area": "documentation",
+      "checker_id": "normative_docs",
       "checker_implementation": "scripts/verification_checkers.py",
       "checker_version": "1",
       "commands": [
@@ -943,54 +509,46 @@
       "fixture_files": [
         "scripts/methodology_fixture.py"
       ],
-      "id": "MUT-CURRENT-003",
+      "id": "DOC-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "MUT-CURRENT-003 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "invariant": "DOC-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-003:fault",
+      "negative_fixture": "tests/test_verification_registry.py::DOC-001:fault",
       "output_artifacts": [
         "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-003:positive",
+      "positive_fixture": "tests/test_verification_registry.py::DOC-001:positive",
       "status": "implemented",
       "test_files": [
         "tests/test_verification_registry.py"
       ],
-      "title": "Mut Current 003",
+      "title": "Doc 001",
       "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "correctness",
-      "checker_id": "mutation_process",
-      "checker_implementation": "scripts/verification_checkers.py",
-      "checker_version": "1",
-      "commands": [
-        "python scripts/verification_registry.py run"
-      ],
-      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
-      "failure_severity": "blocker",
-      "fixture_files": [
-        "scripts/methodology_fixture.py"
-      ],
-      "id": "MUT-CURRENT-004",
+      "area": "security",
+      "checker_id": null,
+      "checker_implementation": null,
+      "checker_version": null,
+      "commands": [],
+      "expected_evidence_schema": null,
+      "failure_severity": "medium",
+      "fixture_files": [],
+      "id": "EXT-001",
       "implementation": [
-        "scripts/verification_checkers.py"
+        "docs/methodology.md"
       ],
-      "invariant": "MUT-CURRENT-004 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
-      "kind": "automated",
-      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-004:fault",
-      "output_artifacts": [
-        "verification/checker-fault-injection.json"
-      ],
-      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-004:positive",
-      "status": "implemented",
-      "test_files": [
-        "tests/test_verification_registry.py"
-      ],
-      "title": "Mut Current 004",
-      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+      "invariant": "External egress is denied by a capability outside this repository.",
+      "kind": "external_capability",
+      "negative_fixture": null,
+      "output_artifacts": [],
+      "positive_fixture": null,
+      "status": "external_limitation",
+      "test_files": [],
+      "title": "Hard external egress denial",
+      "why": "Repository checks cannot create a host network sandbox."
     },
     {
       "area": "verification",
@@ -1543,27 +1101,829 @@
       "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "security",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
       "commands": [],
-      "expected_evidence_schema": null,
-      "failure_severity": "medium",
-      "fixture_files": [],
-      "id": "EXT-001",
-      "implementation": [
-        "docs/methodology.md"
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/build_review_handoff.py"
       ],
-      "invariant": "External egress is denied by a capability outside this repository.",
-      "kind": "external_capability",
+      "id": "LLM-023",
+      "implementation": [
+        "AGENTS.md",
+        "scripts/build_review_handoff.py"
+      ],
+      "invariant": "The final handoff contains the exact final response, source tree, shadow evidence, schemas, tests, immutable evidence, detached checksum, and extracted validation.",
+      "kind": "llm_manual",
       "negative_fixture": null,
-      "output_artifacts": [],
+      "output_artifacts": [
+        "verification/llm-verification-report.json"
+      ],
       "positive_fixture": null,
-      "status": "external_limitation",
-      "test_files": [],
-      "title": "Hard external egress denial",
-      "why": "Repository checks cannot create a host network sandbox."
+      "status": "documented",
+      "test_files": [
+        "tests/test_review_handoff.py"
+      ],
+      "title": "final handoff completeness and exact response binding",
+      "why": "A passing source tree is not independently reviewable when handoff evidence is incomplete."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "mutation_artifacts",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "MUT-CURRENT-001",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "MUT-CURRENT-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-001:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-001:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Mut Current 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "mutation_process",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "MUT-CURRENT-002",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "MUT-CURRENT-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-002:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-002:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Mut Current 002",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "mutation_process",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "MUT-CURRENT-003",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "MUT-CURRENT-003 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-003:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-003:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Mut Current 003",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "mutation_process",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "MUT-CURRENT-004",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "MUT-CURRENT-004 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-004:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-004:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Mut Current 004",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "verification",
+      "checker_id": "pipeline",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "PIPELINE-001",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "PIPELINE-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::PIPELINE-001:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::PIPELINE-001:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Pipeline 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "tokens",
+      "checker_id": "shadow_001",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "2",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "SHADOW-001",
+      "implementation": [
+        "scripts/current_pipeline.py",
+        "scripts/current_row.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Live parser emits the complete current token record.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_final_shadow.py::SHADOW-001:fault",
+      "output_artifacts": [
+        "verification/final-shadow/checker-specificity.json"
+      ],
+      "positive_fixture": "tests/test_final_shadow.py::SHADOW-001:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_final_shadow.py"
+      ],
+      "title": "Live parser emits the complete current token record",
+      "why": "A production-shadow claim must fail under its named injected defect."
+    },
+    {
+      "area": "source",
+      "checker_id": "shadow_002",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "2",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "SHADOW-002",
+      "implementation": [
+        "scripts/current_pipeline.py",
+        "scripts/current_row.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Execution schema rejects every retired row field.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_final_shadow.py::SHADOW-002:fault",
+      "output_artifacts": [
+        "verification/final-shadow/checker-specificity.json"
+      ],
+      "positive_fixture": "tests/test_final_shadow.py::SHADOW-002:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_final_shadow.py"
+      ],
+      "title": "Execution schema rejects every retired row field",
+      "why": "A production-shadow claim must fail under its named injected defect."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "shadow_003",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "2",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "SHADOW-003",
+      "implementation": [
+        "scripts/current_pipeline.py",
+        "scripts/current_row.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Suite success and per-success cost use task success.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_final_shadow.py::SHADOW-003:fault",
+      "output_artifacts": [
+        "verification/final-shadow/checker-specificity.json"
+      ],
+      "positive_fixture": "tests/test_final_shadow.py::SHADOW-003:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_final_shadow.py"
+      ],
+      "title": "Suite success and per-success cost use task success",
+      "why": "A production-shadow claim must fail under its named injected defect."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "shadow_004",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "2",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "SHADOW-004",
+      "implementation": [
+        "scripts/current_pipeline.py",
+        "scripts/current_row.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Reference diagnostics cannot gate task success.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_final_shadow.py::SHADOW-004:fault",
+      "output_artifacts": [
+        "verification/final-shadow/checker-specificity.json"
+      ],
+      "positive_fixture": "tests/test_final_shadow.py::SHADOW-004:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_final_shadow.py"
+      ],
+      "title": "Reference diagnostics cannot gate task success",
+      "why": "A production-shadow claim must fail under its named injected defect."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "shadow_005",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "2",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "SHADOW-005",
+      "implementation": [
+        "scripts/current_pipeline.py",
+        "scripts/current_row.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Patch quality is derived after and separate from behavior.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_final_shadow.py::SHADOW-005:fault",
+      "output_artifacts": [
+        "verification/final-shadow/checker-specificity.json"
+      ],
+      "positive_fixture": "tests/test_final_shadow.py::SHADOW-005:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_final_shadow.py"
+      ],
+      "title": "Patch quality is derived after and separate from behavior",
+      "why": "A production-shadow claim must fail under its named injected defect."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "shadow_006",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "2",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "SHADOW-006",
+      "implementation": [
+        "scripts/current_pipeline.py",
+        "scripts/current_row.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Reference diagnostics are independently rederived.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_final_shadow.py::SHADOW-006:fault",
+      "output_artifacts": [
+        "verification/final-shadow/checker-specificity.json"
+      ],
+      "positive_fixture": "tests/test_final_shadow.py::SHADOW-006:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_final_shadow.py"
+      ],
+      "title": "Reference diagnostics are independently rederived",
+      "why": "A production-shadow claim must fail under its named injected defect."
+    },
+    {
+      "area": "dashboard",
+      "checker_id": "shadow_007",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "2",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "SHADOW-007",
+      "implementation": [
+        "scripts/current_pipeline.py",
+        "scripts/current_row.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Suite rows and dashboard data validate strictly.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_final_shadow.py::SHADOW-007:fault",
+      "output_artifacts": [
+        "verification/final-shadow/checker-specificity.json"
+      ],
+      "positive_fixture": "tests/test_final_shadow.py::SHADOW-007:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_final_shadow.py"
+      ],
+      "title": "Suite rows and dashboard data validate strictly",
+      "why": "A production-shadow claim must fail under its named injected defect."
+    },
+    {
+      "area": "source",
+      "checker_id": "shadow_008",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "2",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "SHADOW-008",
+      "implementation": [
+        "scripts/current_pipeline.py",
+        "scripts/current_row.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "No-model fixture traverses the production publication flow.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_final_shadow.py::SHADOW-008:fault",
+      "output_artifacts": [
+        "verification/final-shadow/checker-specificity.json"
+      ],
+      "positive_fixture": "tests/test_final_shadow.py::SHADOW-008:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_final_shadow.py"
+      ],
+      "title": "No-model fixture traverses the production publication flow",
+      "why": "A production-shadow claim must fail under its named injected defect."
+    },
+    {
+      "area": "source",
+      "checker_id": "shadow_009",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "2",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "SHADOW-009",
+      "implementation": [
+        "scripts/current_pipeline.py",
+        "scripts/current_row.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Active source contains no stale current-field references.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_final_shadow.py::SHADOW-009:fault",
+      "output_artifacts": [
+        "verification/final-shadow/checker-specificity.json"
+      ],
+      "positive_fixture": "tests/test_final_shadow.py::SHADOW-009:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_final_shadow.py"
+      ],
+      "title": "Active source contains no stale current-field references",
+      "why": "A production-shadow claim must fail under its named injected defect."
+    },
+    {
+      "area": "source",
+      "checker_id": "shadow_010",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "2",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "SHADOW-010",
+      "implementation": [
+        "scripts/current_pipeline.py",
+        "scripts/current_row.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Automated checker faults are ID-specific.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_final_shadow.py::SHADOW-010:fault",
+      "output_artifacts": [
+        "verification/final-shadow/checker-specificity.json"
+      ],
+      "positive_fixture": "tests/test_final_shadow.py::SHADOW-010:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_final_shadow.py"
+      ],
+      "title": "Automated checker faults are ID-specific",
+      "why": "A production-shadow claim must fail under its named injected defect."
+    },
+    {
+      "area": "tokens",
+      "checker_id": "token_reasoning",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "TOK-CURRENT-001",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "TOK-CURRENT-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-001:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-001:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "tokens",
+      "checker_id": "token_reasoning",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "TOK-CURRENT-002",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "TOK-CURRENT-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-002:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-002:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 002",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "tokens",
+      "checker_id": "token_fields",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "TOK-CURRENT-003",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "TOK-CURRENT-003 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-003:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-003:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 003",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "tokens",
+      "checker_id": "token_fields",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "TOK-CURRENT-004",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "TOK-CURRENT-004 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-004:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-004:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 004",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "tokens",
+      "checker_id": "token_fields",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "TOK-CURRENT-005",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "TOK-CURRENT-005 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-005:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-005:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 005",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "tokens",
+      "checker_id": "token_cache_null",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "TOK-CURRENT-006",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "TOK-CURRENT-006 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-006:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-006:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 006",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "tokens",
+      "checker_id": "token_cache_null",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "TOK-CURRENT-007",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "TOK-CURRENT-007 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-007:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-007:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 007",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "tokens",
+      "checker_id": "normative_docs",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "TOK-CURRENT-008",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "TOK-CURRENT-008 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-008:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-008:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 008",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "tokens",
+      "checker_id": "token_fields",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "TOK-CURRENT-009",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "TOK-CURRENT-009 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-009:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-009:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 009",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "verification",
+      "checker_id": "pipeline",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "VERIFY-001",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "VERIFY-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::VERIFY-001:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::VERIFY-001:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Verify 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     }
   ],
   "schema_id": "verification-registry-current"

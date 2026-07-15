@@ -284,15 +284,16 @@ class CanonicalSuiteControlTest(unittest.TestCase):
     def test_reports_use_protected_channels_and_current_treatment_policy(self) -> None:
         runner = (ROOT / "scripts" / "run_benchmark.py").read_text()
         suite = (ROOT / "scripts" / "run_benchmark_suite.py").read_text()
+        reports = (ROOT / "scripts" / "current_reports.py").read_text()
         self.assertNotIn('"Tests passed"', runner)
         self.assertIn("Protected direct and common passed", runner)
         self.assertNotIn("operational_inference', {}).get(\"outcome\")", suite)
         for phrase in (
-            "non-baseline treatments additionally require at least one successful intended-tool solve invocation",
+            "Non-baseline treatments additionally require at least one successful intended-tool solve invocation",
             "Absent or failed-only intended-tool use is treatment non-adherence",
             "Broad or unfocused context affects direct attribution, not operational eligibility",
         ):
-            self.assertIn(phrase, suite)
+            self.assertIn(phrase, reports)
 
 
 if __name__ == "__main__":
