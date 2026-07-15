@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from build_review_handoff import reconstruct_tree, scan_text
+from build_review_handoff import reconstruct_tree, scan_source_text, scan_text
 
 
 def git(repo: Path, *args: str) -> str:
@@ -71,6 +71,18 @@ class ReviewHandoffTest(unittest.TestCase):
         self.assertTrue(scan_text("source/x", b"api_key=abcdefghijklmnop"))
         self.assertTrue(scan_text("agent-response.md", b"/home/alice/private/file"))
         self.assertEqual([], scan_text("docs/path", b"repo://relative/path"))
+
+    def test_source_scan_exceptions_are_path_scoped_and_recorded(self):
+        findings, exceptions = scan_source_text(
+            "tests/test_review_handoff.py", b"api_key=abcdefghijklmnop"
+        )
+        self.assertEqual([], findings)
+        self.assertEqual("negative scanner fixture", exceptions[0]["reason"])
+        findings, exceptions = scan_source_text(
+            "src/runtime.py", b"api_key=abcdefghijklmnop"
+        )
+        self.assertTrue(findings)
+        self.assertEqual([], exceptions)
 
     def test_explicit_directories_are_not_file_collisions(self):
         from safe_archive import safe_extract_tar

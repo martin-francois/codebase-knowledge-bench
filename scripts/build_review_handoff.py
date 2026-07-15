@@ -9,6 +9,17 @@ from safe_archive import safe_extract_tar,safe_extract_zip
 CANONICAL_SHA='b4a77687b40bea1ff97117224d08e00b0b66ee0a6fc1875c87d0b95da19e49e0'
 SUPPLEMENT_SHA='2b560a78410e47ee1cec4d9f000cfed4a0c633e6339cbc8c422ebee452bcb387'
 PRE_CLEANUP_COMMIT='6631618f961a8f44b5a4743e0c378177f986a34b'
+SOURCE_SCAN_ALLOWLIST={
+ 'docs/prompt-history-traceability.md':{'host-only path':'immutable historical provenance paths'},
+ 'docs/variant-synthesis.md':{'host-only path':'documented benchmark sandbox mount'},
+ 'scripts/run_benchmark.py':{'host-only path':'enforced benchmark sandbox and cache paths'},
+ 'scripts/validate_benchmark_run.py':{'host-only path':'validation of enforced sandbox paths'},
+ 'scripts/validate_published_archive.py':{'host-only path':'host-path rejection pattern'},
+ 'scripts/verification_checkers.py':{'host-only path':'negative scanner fixture','secret-shaped value':'negative scanner fixture'},
+ 'tests/test_anti_leak_cache_probes.py':{'host-only path':'anti-leak negative fixture'},
+ 'tests/test_harness.py':{'host-only path':'isolated temporary fixture path'},
+ 'tests/test_review_handoff.py':{'host-only path':'negative scanner fixture','secret-shaped value':'negative scanner fixture'},
+}
 
 def sha256_bytes(data:bytes)->str:return hashlib.sha256(data).hexdigest()
 def sha256_file(path:Path)->str:
@@ -45,6 +56,15 @@ def scan_text(name:str,data:bytes)->list[str]:
  if re.search(r'/(?:home|Users)/[^/\s]+/',text):errors.append(f'host-only path: {name}')
  return errors
 
+def scan_source_text(name:str,data:bytes)->tuple[list[str],list[dict[str,str]]]:
+ findings=scan_text(name,data);allowed=SOURCE_SCAN_ALLOWLIST.get(name,{})
+ retained=[];exceptions=[]
+ for finding in findings:
+  category=finding.split(':',1)[0]
+  if category in allowed:exceptions.append({'path':name,'category':category,'reason':allowed[category]})
+  else:retained.append(finding)
+ return retained,exceptions
+
 def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:Path,output:Path)->tuple[Path,dict[str,Any]]:
  if sha256_file(canonical)!=CANONICAL_SHA or sha256_file(supplement)!=SUPPLEMENT_SHA:raise ValueError('immutable evidence hash mismatch')
  commit=git(repo,'rev-parse','HEAD').strip();tree=git(repo,'rev-parse','HEAD^{tree}').strip();output.mkdir(parents=True,exist_ok=True)
@@ -76,7 +96,7 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
   with zipfile.ZipFile(supplement) as z:
    for name in ('token-accounting-erratum.json','token-accounting-erratum.md','token-accounting-corrected-effects.csv'):
     if name in z.namelist():payloads[f'immutable-evidence/canonical-{name}']=z.read(name)
-  errors=[]
+  errors=[];source_scan_exceptions=[]
   for name,data in payloads.items():
    if name.endswith('.tar'):
     with tempfile.TemporaryDirectory() as scan_dir:
@@ -84,11 +104,11 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
      with tarfile.open(t) as archive:
       for member in archive.getmembers():
        if member.isfile():
-        stream=archive.extractfile(member);errors+=scan_text(f'{name}!/{member.name}',stream.read() if stream else b'')
+        stream=archive.extractfile(member);found,exceptions=scan_source_text(member.name,stream.read() if stream else b'');errors+=found;source_scan_exceptions+=exceptions
    elif not name.endswith('.zip'):errors+=scan_text(name,data)
   if errors:raise ValueError(f'handoff content scan failed: {errors[:10]}')
   entries=[{'path':name,'bytes':len(data),'sha256':sha256_bytes(data),'media_type':media(name),'role':name.split('/',1)[0],'source':'generated-or-content-addressed','required':True} for name,data in sorted(payloads.items())]
-  manifest={'schema_id':'review-handoff-current','source_commit':commit,'source_tree':tree,'entries':entries,'manifest_root':canonical_root(entries)}
+  manifest={'schema_id':'review-handoff-current','source_commit':commit,'source_tree':tree,'entries':entries,'manifest_root':canonical_root(entries),'source_scan_exceptions':source_scan_exceptions}
   zip_path=output/f'codebase-knowledge-graph-benchmark-private-review-{commit[:8]}.zip'
   with zipfile.ZipFile(zip_path,'w',allowZip64=True) as z:
    for name,data in sorted(payloads.items()):write_zip(z,name,data)
