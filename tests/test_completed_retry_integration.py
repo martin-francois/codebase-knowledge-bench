@@ -95,6 +95,7 @@ class CompletedRetryIntegrationTest(unittest.TestCase):
         self.assertIn("tool-cache", EXECUTION_COPY_EXCLUDES)
         self.assertIn("maven-home", EXECUTION_COPY_EXCLUDES)
         self.assertIn("verification-home", EXECUTION_COPY_EXCLUDES)
+        self.assertIn("raw-issue", EXECUTION_COPY_EXCLUDES)
         self.assertNotIn("runs", EXECUTION_COPY_EXCLUDES)
         self.assertIn("source-roles", SUITE_COPY_EXCLUDES)
         self.assertIn("report-assets", SUITE_COPY_EXCLUDES)
@@ -106,6 +107,11 @@ class CompletedRetryIntegrationTest(unittest.TestCase):
     def test_source_archive_can_bind_its_own_role_provenance(self) -> None:
         source = inspect.getsource(publication_safety.validate_source_roles)
         self.assertIn('source_metadata.get("role_source_provenance") or suite_provenance', source)
+
+    def test_repeated_policy_uses_schema_valid_inference_reference(self) -> None:
+        policy = run_benchmark_suite.analysis_policy(3)
+        self.assertEqual("reported_in_operational_inference", policy["run_to_run_variance"])
+        self.assertEqual("reported_in_operational_inference", policy["meaningfully_better_than_baseline"])
 
 
 if __name__ == "__main__":
