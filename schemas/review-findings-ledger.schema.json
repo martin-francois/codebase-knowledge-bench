@@ -1,21 +1,30 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Review findings ledger v1",
-  "type": "object", "additionalProperties": false,
+  "$id": "review-findings-ledger-current",
+  "title": "Current review findings ledger",
+  "type": "object",
+  "additionalProperties": false,
   "required": ["schema_version", "findings"],
   "properties": {
-    "schema_version": {"const": "review-findings-ledger-v1"},
-    "findings": {"type": "array", "items": {
-      "type": "object", "additionalProperties": false,
-      "required": ["id", "source", "normalized_finding", "decision", "affected_invariant", "verification_ids", "implementation_commit", "test_evidence", "residual_limitation"],
-      "properties": {
-        "id": {"type": "string", "minLength": 1}, "source": {"type": "string", "minLength": 1}, "normalized_finding": {"type": "string", "minLength": 1},
-        "decision": {"enum": ["accepted_automated", "accepted_llm_manual", "accepted_external_capability", "rejected_with_rationale", "superseded"]},
-        "affected_invariant": {"type": "string", "minLength": 1},
-        "verification_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
-        "implementation_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
-        "test_evidence": {"type": "array", "items": {"type": "string"}}, "residual_limitation": {"type": "string"}
+    "schema_version": {"const": "review-findings-ledger-current"},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "source", "normalized_finding", "decision", "affected_invariant", "verification_ids", "implementation_commit", "test_evidence", "residual_limitation"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "source": {"type": "string", "minLength": 1},
+          "normalized_finding": {"type": "string", "minLength": 1},
+          "decision": {"enum": ["accepted_automated", "accepted_llm_manual", "accepted_external_capability", "rejected_with_rationale"]},
+          "affected_invariant": {"type": "string", "minLength": 1},
+          "verification_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+          "implementation_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+          "test_evidence": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+          "residual_limitation": {"type": "string"}
+        }
       }
-    }}
+    }
   }
 }

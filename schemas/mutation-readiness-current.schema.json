@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "methodology_id", "requirements", "ready"],
+  "properties": {
+    "schema_id": {"const": "mutation-readiness-current"},
+    "methodology_id": {"const": "behavioral-correctness-current"},
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["requirement_id", "critical", "mutants", "calibrated", "killed", "executed"],
+        "properties": {
+          "requirement_id": {"type": "string"},
+          "critical": {"type": "boolean"},
+          "mutants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "execution_kind", "status"],
+              "properties": {
+                "id": {"type": "string"},
+                "execution_kind": {"const": "target_code"},
+                "status": {"enum": ["killed", "survived", "no_coverage", "infrastructure_error", "not_run"]}
+              }
+            }
+          },
+          "calibrated": {"type": "boolean"},
+          "killed": {"type": "integer", "minimum": 0},
+          "executed": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "ready": {"type": "boolean"}
+  }
+}

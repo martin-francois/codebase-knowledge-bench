@@ -1,15 +1,13 @@
 """Canonical orchestration-attempt and implementation-child accounting."""
 from __future__ import annotations
 
-import copy
 import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
-SCHEMA_VERSION = "canonical-launch-accounting-v2"
-MIGRATION_VERSION = "reservation-to-child-spawn-v1"
+SCHEMA_VERSION = "canonical-launch-accounting-current"
 LIFECYCLE_STATES = (
     "orchestration_attempt_reserved",
     "pre_spawn_validation_started",
@@ -154,70 +152,6 @@ def finish_attempt(
     attempt["status"] = "child_terminal" if terminal else status
     ledger["arms"][arm_key]["terminal"] = bool(terminal)
     ledger["arms"][arm_key]["status"] = status
-
-
-def migrate_legacy_ledger(
-    legacy: dict[str, Any], *, spawned_attempt_indexes: dict[str, Iterable[int]],
-    pre_spawn_rejections: dict[str, dict[int, str]],
-) -> dict[str, Any]:
-    """Derive v2 accounting from immutable process/JSONL evidence."""
-    if legacy.get("schema_version") != "canonical-execution-ledger-v1":
-        raise ValueError("launch-accounting migration requires a v1 ledger")
-    migrated = copy.deepcopy(legacy)
-    migrated["schema_version"] = "canonical-execution-ledger-v2"
-    migrated["launch_accounting_schema_version"] = SCHEMA_VERSION
-    migrated["legacy_implementation_child_launches"] = int(
-        legacy.get("implementation_child_launches") or 0
-    )
-    migrated.pop("implementation_child_launches", None)
-    total_actual = 0
-    total_orchestration = 0
-    for arm_key, arm in sorted(migrated["arms"].items()):
-        old_attempts = list(arm.get("attempts") or [])
-        spawned = set(int(value) for value in spawned_attempt_indexes.get(arm_key, ()))
-        rejected = pre_spawn_rejections.get(arm_key, {})
-        if any(index < 0 or index >= len(old_attempts) for index in spawned):
-            raise ValueError(f"spawn evidence references absent attempt for {arm_key}")
-        attempts: list[dict[str, Any]] = []
-        for index, old in enumerate(old_attempts):
-            attempt = new_attempt(arm_key, index + 1, started_at=old.get("started_at"))
-            attempt["finished_at"] = old.get("finished_at")
-            attempt["pre_spawn_validation_started"] = True
-            if index in spawned:
-                attempt.update({
-                    "child_process_spawned": True,
-                    "model_request_started": True,
-                    "provider_response_observed": True,
-                    "counts_as_implementation_child_launch": True,
-                    "terminal": bool(old.get("terminal")),
-                    "status": "child_terminal" if old.get("terminal") else str(arm.get("status") or "model_service_unavailable"),
-                })
-            elif index in rejected:
-                attempt.update({
-                    "pre_spawn_rejected": True,
-                    "pre_spawn_rejection_reason": rejected[index],
-                    "status": "pre_spawn_rejected",
-                })
-            else:
-                raise ValueError(f"attempt lacks spawn or rejection evidence: {arm_key}#{index + 1}")
-            attempts.append(attempt)
-        actual = len(spawned)
-        total_actual += actual
-        total_orchestration += len(attempts)
-        arm["legacy_launch_count"] = int(arm.get("launch_count") or 0)
-        arm.pop("launch_count", None)
-        arm["orchestration_attempt_count"] = len(attempts)
-        arm["actual_child_spawn_count"] = actual
-        arm["attempts"] = attempts
-    migrated["orchestration_attempts"] = total_orchestration
-    migrated["actual_implementation_child_spawns"] = total_actual
-    migrated["events"].append({
-        "event": "launch_accounting_migrated",
-        "migration_version": MIGRATION_VERSION,
-        "actual_implementation_child_spawns": total_actual,
-        "orchestration_attempts": total_orchestration,
-    })
-    return migrated
 
 
 def validate_ledger_accounting(ledger: dict[str, Any]) -> list[str]:

@@ -22,15 +22,14 @@ const publishedDescriptors = Object.fromEntries(Object.entries(descriptorSource)
 }]));
 
 const metricValues = (tokens: number, time: number, calls: number) => ({
-  modeled_weighted_token_load: tokens, non_cached_input_tokens: tokens * .8,
-  output_tokens: tokens * .1, reasoning_output_tokens: tokens * .05,
+  modeled_weighted_token_load: tokens, observed_non_cached_input_tokens: tokens * .8,
+  output_tokens_including_reasoning: tokens * .1, reasoning_output_tokens_including_reasoning: tokens * .05,
   solve_wall_seconds: time, warm_workflow_seconds: time + 10,
   execution_calls_started: calls, intended_tool_successful_calls: 2,
   estimated_monetary_cost: null,
 });
 const makeRun = (treatment: string, issue: string, repetition: number, correctness: number, tokens: number, time: number, calls: number, eligible = true) => ({
   treatment, issue_id: issue, repetition, correctness, operational_eligible: eligible,
-  composite_quality: correctness,
   exclusion_reason: eligible ? null : "trust-invalid", task_success: false,
   strict_attribution_supported: treatment === "baseline-none" ? null : false,
   metrics: metricValues(tokens, time, calls),

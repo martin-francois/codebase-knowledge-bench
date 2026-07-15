@@ -107,3 +107,7 @@ The repository remains private until its owner changes visibility. Before public
 [LICENSE](LICENSE), [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md),
 [SUPPORT.md](SUPPORT.md), CI workflows, repository metadata, tracked files, and secret scans. Do not
 invent or change licensing without repository evidence.
+
+## Private pre-release compatibility policy
+
+Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration commands, and parallel scoring or token paths are prohibited. A provenance identifier is accepted at exactly one value and never dispatches to another implementation. Immutable experiment ZIPs are opaque external evidence, not supported runtime input. Breaking internal changes replace obsolete behavior in place.

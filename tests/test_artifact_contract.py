@@ -87,7 +87,8 @@ class ArtifactContractTest(unittest.TestCase):
                         if path.is_file():
                             bundle.write(path, path.relative_to(source))
                 with zipfile.ZipFile(archive) as bundle:
-                    bundle.extractall(extracted)
+                    from safe_archive import safe_extract_zip
+                    safe_extract_zip(bundle, extracted)
                 published = json.loads((extracted / "suite-manifest.json").read_text())
                 self.assertEqual([], validate_manifest(published, extracted))
                 baseline = next(run for run, item in contexts.items() if item["treatment"] == "baseline-none")

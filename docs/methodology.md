@@ -75,8 +75,12 @@ Hard child-network denial remains capability-dependent. When it cannot be enforc
 
 ## Versioning and future contracts
 
-The completed canonical suite keeps its original methodology. `behavioral-correctness-vNext` applies
+The completed canonical suite keeps its original methodology. `behavioral-correctness-current` applies
 only to future suites and uses requirement weights, critical requirements, protected common safety,
 black-box differential diagnostics, curated mutant calibration, and issue-diversity preflight. Source
 similarity is never primary correctness. Cache writes remain nullable when Codex JSONL omits them;
 1800 seconds is a minimum cache lifetime, not a maximum or eviction guarantee.
+
+## Private pre-release compatibility policy
+
+Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration commands, and parallel scoring or token paths are prohibited. A provenance identifier is accepted at exactly one value and never dispatches to another implementation. Immutable experiment ZIPs are opaque external evidence, not supported runtime input. Breaking internal changes replace obsolete behavior in place.

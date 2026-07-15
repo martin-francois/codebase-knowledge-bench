@@ -1,51 +1,77 @@
 from __future__ import annotations
 
-import hashlib
-import json
+import os
+import stat
+import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
-import zipfile
 from pathlib import Path
 
-ROOT=Path(__file__).resolve().parents[1]; sys.path.insert(0,str(ROOT/"scripts"))
-import build_review_handoff as handoff
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from build_review_handoff import reconstruct_tree, scan_text
+
+
+def git(repo: Path, *args: str) -> str:
+    return subprocess.check_output(["git", "-C", str(repo), *args], text=True).strip()
 
 
 class ReviewHandoffTest(unittest.TestCase):
-    def test_portable_manifest_extracts_and_validates(self):
+    def fixture(self, root: Path) -> tuple[Path, bytes, str]:
+        repo = root / "repo"
+        repo.mkdir()
+        subprocess.run(["git", "-C", str(repo), "init", "-q"], check=True)
+        (repo / "plain.txt").write_text("plain\n")
+        script = repo / "tool.sh"
+        script.write_text("#!/bin/sh\nexit 0\n")
+        script.chmod(0o755)
+        os.symlink("plain.txt", repo / "plain-link")
+        subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True)
+        tree = git(repo, "write-tree")
+        archive = root / "source.tar"
+        subprocess.run(["git", "-C", str(repo), "archive", "--format=tar", "--output", str(archive), tree], check=True)
+        return repo, archive.read_bytes(), tree
+
+    def test_reconstructs_exact_tree_with_modes_and_symlink(self):
         with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory); canonical=root/"canonical.zip"; supplement=root/"supplement.zip"
-            with zipfile.ZipFile(canonical,"w") as archive:archive.writestr("suite-results.json","{}")
-            with zipfile.ZipFile(supplement,"w") as archive:archive.writestr("operator-summary.json","{}")
-            original=(handoff.CANONICAL_SHA,handoff.SUPPLEMENT_SHA); handoff.CANONICAL_SHA=handoff.sha256_file(canonical); handoff.SUPPLEMENT_SHA=handoff.sha256_file(supplement); self.addCleanup(lambda:setattr(handoff,"CANONICAL_SHA",original[0])); self.addCleanup(lambda:setattr(handoff,"SUPPLEMENT_SHA",original[1]))
-            payloads={
-                "source/source-state.json":json.dumps({"commit":"a"*40,"tree":"b"*40}).encode(),
-                "source/git-archive/AGENTS.md":b"instructions\n", "agent-response.md":b"exact response\n",
-                "immutable-evidence/canonical-suite-bundle.zip":canonical.read_bytes(),
-                "immutable-evidence/canonical-publication-supplement.zip":supplement.read_bytes(),
-                "reports/report.json":b'{"evidence":"repo://AGENTS.md"}\n', "tests/test-results.json":b"{}\n", "registry/verification-registry.json":b"{}\n",
+            _, payload, tree = self.fixture(Path(directory))
+            result = reconstruct_tree(payload, tree)
+            self.assertTrue(result["exact_match"], result)
+
+    def test_changed_byte_mode_missing_and_extra_change_tree(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, payload, tree = self.fixture(root)
+            extracted = root / "extracted"
+            tar_path = root / "copy.tar"
+            tar_path.write_bytes(payload)
+            with tarfile.open(tar_path) as archive:
+                from safe_archive import safe_extract_tar
+                safe_extract_tar(archive, extracted)
+            variants = {
+                "byte": lambda: (extracted / "plain.txt").write_text("changed\n"),
+                "mode": lambda: (extracted / "tool.sh").chmod(0o644),
+                "missing": lambda: (extracted / "plain-link").unlink(),
+                "extra": lambda: (extracted / "extra.txt").write_text("extra\n"),
             }
-            entries=[{"path":path,"bytes":len(value),"sha256":hashlib.sha256(value).hexdigest(),"media_type":"application/octet-stream","role":"fixture","source":"fixture","required":True} for path,value in sorted(payloads.items())]
-            manifest={"schema_version":"review-handoff-manifest-v1","source_commit":"a"*40,"source_tree":"b"*40,"entries":entries,"manifest_root_sha256":handoff.canonical_root(entries)}
-            target=root/"handoff.zip"
-            with zipfile.ZipFile(target,"w") as archive:
-                for path,value in payloads.items():handoff._zip_write(archive,path,value)
-                handoff._zip_write(archive,"review-handoff-manifest.json",json.dumps(manifest).encode())
-            validation=handoff.validate_handoff(ROOT,target); self.assertEqual("passed",validation["status"],validation); self.assertEqual(len(entries),validation["manifest_entry_count"])
+            for name, mutate in variants.items():
+                with self.subTest(name=name):
+                    subprocess.run(["git", "-C", str(extracted), "init", "-q"], check=True)
+                    mutate()
+                    subprocess.run(["git", "-C", str(extracted), "add", "-A"], check=True)
+                    self.assertNotEqual(tree, git(extracted, "write-tree"))
+                    subprocess.run(["rm", "-rf", str(extracted)], check=True)
+                    with tarfile.open(tar_path) as archive:
+                        from safe_archive import safe_extract_tar
+                        safe_extract_tar(archive, extracted)
 
-    def test_absolute_host_report_path_is_rejected(self):
-        text=Path(ROOT/"scripts/build_review_handoff.py").read_text(); self.assertIn('if "/home/" in text',text)
-
-    def test_agent_response_is_required_member(self):
-        text=Path(ROOT/"scripts/build_review_handoff.py").read_text(); self.assertIn('"agent-response.md":agent_response.read_bytes()',text)
-
-    def test_published_repo_evidence_uris_resolve_to_files(self):
-        report=json.loads((ROOT/"verification/current-canonical-verification-report.json").read_text())
-        for check in report["checks"]:
-            for uri in check["evidence"]:
-                if uri.startswith("repo://"):
-                    self.assertTrue((ROOT/uri[7:]).is_file(), f"non-file evidence URI: {uri}")
+    def test_secret_and_host_paths_are_scanned(self):
+        self.assertTrue(scan_text("source/x", b"api_key=abcdefghijklmnop"))
+        self.assertTrue(scan_text("agent-response.md", b"/home/alice/private/file"))
+        self.assertEqual([], scan_text("docs/path", b"repo://relative/path"))
 
 
-if __name__=="__main__":unittest.main()
+if __name__ == "__main__":
+    unittest.main()

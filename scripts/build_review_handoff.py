@@ -1,160 +1,125 @@
 #!/usr/bin/env python3
-"""Build and independently validate a portable external-review handoff ZIP."""
-
+"""Build and independently validate a portable exact-tree review handoff."""
 from __future__ import annotations
-
-import argparse
-import hashlib
-import json
-import mimetypes
-import re
-import subprocess
-import tarfile
-import tempfile
-import zipfile
+import argparse,hashlib,json,mimetypes,re,subprocess,tarfile,tempfile,zipfile
 from pathlib import Path
 from typing import Any
+from safe_archive import safe_extract_tar,safe_extract_zip
 
-from safe_archive import safe_extract_tar, safe_extract_zip
-from source_verification import subject_manifest, validate_envelope
+CANONICAL_SHA='b4a77687b40bea1ff97117224d08e00b0b66ee0a6fc1875c87d0b95da19e49e0'
+SUPPLEMENT_SHA='2b560a78410e47ee1cec4d9f000cfed4a0c633e6339cbc8c422ebee452bcb387'
+PRE_CLEANUP_COMMIT='6631618f961a8f44b5a4743e0c378177f986a34b'
 
-CANONICAL_SHA = "b4a77687b40bea1ff97117224d08e00b0b66ee0a6fc1875c87d0b95da19e49e0"
-SUPPLEMENT_SHA = "2b560a78410e47ee1cec4d9f000cfed4a0c633e6339cbc8c422ebee452bcb387"
-REQUIRED_REPORTS = [
-    "current-canonical-verification-report.json", "current-canonical-verification-report.md",
-    "llm-verification-report.json", "llm-verification-report.md", "token-accounting-erratum.json",
-    "token-accounting-erratum.md", "token-accounting-corrected-effects.csv",
-    "verification-changes-table.json", "verification-changes-table.md", "vnext-readiness.json", "vnext-readiness.md",
-]
+def sha256_bytes(data:bytes)->str:return hashlib.sha256(data).hexdigest()
+def sha256_file(path:Path)->str:
+ h=hashlib.sha256()
+ with path.open('rb') as f:
+  for block in iter(lambda:f.read(1024*1024),b''):h.update(block)
+ return h.hexdigest()
+def git(repo:Path,*args:str,raw:bool=False):return subprocess.check_output(['git','-C',str(repo),*args],text=not raw)
+def canonical_root(entries:list[dict[str,Any]])->str:return sha256_bytes(json.dumps(entries,sort_keys=True,separators=(',',':')).encode())
+def write_zip(z:zipfile.ZipFile,name:str,data:bytes)->None:
+ info=zipfile.ZipInfo(name,date_time=(1980,1,1));info.external_attr=(0o100644&0xffff)<<16;info.compress_type=zipfile.ZIP_STORED if name.endswith(('.zip','.tar')) else zipfile.ZIP_DEFLATED;z.writestr(info,data)
+def media(name:str)->str:return mimetypes.guess_type(name)[0] or 'application/octet-stream'
 
+def ls_tree(repo:Path,commit:str)->list[dict[str,str]]:
+ raw=git(repo,'ls-tree','-rz','--full-tree',commit,raw=True);rows=[]
+ for record in raw.split(b'\0'):
+  if not record:continue
+  head,path=record.split(b'\t',1);mode,kind,oid=head.decode().split();rows.append({'mode':mode,'type':kind,'object_id':oid,'path':path.decode()})
+ return rows
 
-def sha256_bytes(payload: bytes) -> str: return hashlib.sha256(payload).hexdigest()
-def sha256_file(path: Path) -> str:
-    digest=hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda:stream.read(1024*1024),b""):digest.update(block)
-    return digest.hexdigest()
+def reconstruct_tree(tar_bytes:bytes,expected:str)->dict[str,Any]:
+ with tempfile.TemporaryDirectory() as td:
+  root=Path(td)/'source';tar_path=Path(td)/'source.tar';tar_path.write_bytes(tar_bytes)
+  with tarfile.open(tar_path) as archive:safe_extract_tar(archive,root)
+  subprocess.run(['git','-C',str(root),'init','-q'],check=True);subprocess.run(['git','-C',str(root),'add','-A'],check=True)
+  actual=git(root,'write-tree').strip()
+ return {'expected_tree':expected,'reconstructed_tree':actual,'exact_match':actual==expected}
 
+def scan_text(name:str,data:bytes)->list[str]:
+ if b'\0' in data:return []
+ text=data.decode('utf-8','ignore');errors=[]
+ secret=re.compile(r'(?i)(?:api[_-]?key|access[_-]?token|password|private[_-]?key)\s*[:=]\s*[\'\"]?[A-Za-z0-9_\-/+=]{16,}')
+ if secret.search(text):errors.append(f'secret-shaped value: {name}')
+ if re.search(r'/(?:home|Users)/[^/\s]+/',text):errors.append(f'host-only path: {name}')
+ return errors
 
-def canonical_root(entries: list[dict[str, Any]]) -> str:
-    return sha256_bytes(json.dumps(entries,sort_keys=True,separators=(",",":")).encode())
+def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:Path,output:Path)->tuple[Path,dict[str,Any]]:
+ if sha256_file(canonical)!=CANONICAL_SHA or sha256_file(supplement)!=SUPPLEMENT_SHA:raise ValueError('immutable evidence hash mismatch')
+ commit=git(repo,'rev-parse','HEAD').strip();tree=git(repo,'rev-parse','HEAD^{tree}').strip();output.mkdir(parents=True,exist_ok=True)
+ with tempfile.TemporaryDirectory() as td:
+  tar_path=Path(td)/'git-archive.tar';subprocess.run(['git','-C',str(repo),'archive','--format=tar','-o',str(tar_path),commit],check=True);tar_bytes=tar_path.read_bytes()
+  tree_rows=ls_tree(repo,commit);reconstruction=reconstruct_tree(tar_bytes,tree)
+  if not reconstruction['exact_match']:raise ValueError('Git tree reconstruction failed')
+  required_reports=['current-verification-report.json','current-verification-report.md','llm-verification-report.json','llm-verification-report.md','checker-negative-coverage.json','test-results.json','test-results.md','command-log.txt','token-accounting-current.json','correctness-current.json','mutation-calibration.json','end-to-end-fixture.json','private-pre-release-cleanup.json','private-pre-release-cleanup.md','compatibility-term-classification.json','dead-code-report.json']
+  missing=[name for name in required_reports if not (reports/name).is_file()]
+  if missing:raise ValueError(f'missing generated reports: {missing}')
+  payloads={
+   'agent-response.md':agent_response.read_bytes(),'source/git-archive.tar':tar_bytes,
+   'source/git-ls-tree.json':(json.dumps(tree_rows,indent=2,sort_keys=True)+'\n').encode(),
+   'source/source-state.json':(json.dumps({'commit':commit,'tree':tree,'branch':git(repo,'branch','--show-current').strip()},indent=2,sort_keys=True)+'\n').encode(),
+   'source/source-tree-reconstruction.json':(json.dumps(reconstruction,indent=2,sort_keys=True)+'\n').encode(),
+   'source/full-diff.patch':git(repo,'diff','--binary',f'{PRE_CLEANUP_COMMIT}..{commit}',raw=True),
+   'audit/pre-cleanup-independent-findings.json':(repo/'verification/pre-cleanup-independent-findings.json').read_bytes(),
+   'audit/pre-cleanup-independent-findings.md':(repo/'verification/pre-cleanup-independent-findings.md').read_bytes(),
+   'verification/verification-registry.json':(repo/'verification/verification-registry.json').read_bytes(),
+   'verification/review-findings-ledger.json':(repo/'verification/review-findings-ledger.json').read_bytes(),
+   'immutable-evidence/canonical-suite-bundle.zip':canonical.read_bytes(),
+   'immutable-evidence/canonical-publication-supplement.zip':supplement.read_bytes(),
+   'README.md':b'Private pre-release deterministic review handoff. Validate with the detached receipt and scripts/build_review_handoff.py.\n',
+  }
+  mapping={'private-pre-release-cleanup.json':'audit/private-pre-release-cleanup.json','private-pre-release-cleanup.md':'audit/private-pre-release-cleanup.md','compatibility-term-classification.json':'audit/compatibility-term-classification.json','dead-code-report.json':'audit/dead-code-report.json','token-accounting-current.json':'methodology/token-accounting-current.json','correctness-current.json':'methodology/correctness-current.json','mutation-calibration.json':'methodology/mutation-calibration.json','end-to-end-fixture.json':'methodology/end-to-end-fixture.json','test-results.json':'tests/test-results.json','test-results.md':'tests/test-results.md','command-log.txt':'tests/command-log.txt'}
+  for name in required_reports:
+   target=mapping.get(name,f'verification/{name}');payloads[target]=(reports/name).read_bytes()
+  # Preserve the static published erratum from the prior supplement; it is never parsed by live runtime.
+  with zipfile.ZipFile(supplement) as z:
+   for name in ('token-accounting-erratum.json','token-accounting-erratum.md','token-accounting-corrected-effects.csv'):
+    if name in z.namelist():payloads[f'immutable-evidence/canonical-{name}']=z.read(name)
+  errors=[]
+  for name,data in payloads.items():
+   if name.endswith('.tar'):
+    with tempfile.TemporaryDirectory() as scan_dir:
+     t=Path(scan_dir)/'a.tar';t.write_bytes(data)
+     with tarfile.open(t) as archive:
+      for member in archive.getmembers():
+       if member.isfile():
+        stream=archive.extractfile(member);errors+=scan_text(f'{name}!/{member.name}',stream.read() if stream else b'')
+   elif not name.endswith('.zip'):errors+=scan_text(name,data)
+  if errors:raise ValueError(f'handoff content scan failed: {errors[:10]}')
+  entries=[{'path':name,'bytes':len(data),'sha256':sha256_bytes(data),'media_type':media(name),'role':name.split('/',1)[0],'source':'generated-or-content-addressed','required':True} for name,data in sorted(payloads.items())]
+  manifest={'schema_id':'review-handoff-current','source_commit':commit,'source_tree':tree,'entries':entries,'manifest_root':canonical_root(entries)}
+  zip_path=output/f'codebase-knowledge-graph-benchmark-private-review-{commit[:8]}.zip'
+  with zipfile.ZipFile(zip_path,'w',allowZip64=True) as z:
+   for name,data in sorted(payloads.items()):write_zip(z,name,data)
+   write_zip(z,'review-handoff-manifest.json',(json.dumps(manifest,indent=2,sort_keys=True)+'\n').encode())
+ validation=validate(zip_path)
+ Path(str(zip_path)+'.sha256').write_text(f'{sha256_file(zip_path)}  {zip_path.name}\n')
+ Path(str(zip_path)+'.validation.json').write_text(json.dumps(validation,indent=2,sort_keys=True)+'\n')
+ if validation['status']!='passed':raise ValueError(validation['errors'])
+ return zip_path,validation
 
-
-def media_type(path: str) -> str:
-    return mimetypes.guess_type(path)[0] or "application/octet-stream"
-
-
-def _zip_write(archive: zipfile.ZipFile, path: str, payload: bytes) -> None:
-    info=zipfile.ZipInfo(path,date_time=(1980,1,1,0,0,0)); info.external_attr=(0o100644&0xFFFF)<<16
-    info.compress_type=zipfile.ZIP_STORED if path.endswith(".zip") else zipfile.ZIP_DEFLATED
-    archive.writestr(info,payload)
-
-
-def _git(repo: Path,*args: str)->str:return subprocess.check_output(["git","-C",str(repo),*args],text=True).strip()
-
-
-def build_handoff(repo: Path, canonical: Path, supplement: Path, output_dir: Path, agent_response: Path) -> tuple[Path,dict[str,Any]]:
-    if sha256_file(canonical)!=CANONICAL_SHA or sha256_file(supplement)!=SUPPLEMENT_SHA: raise ValueError("immutable evidence hash mismatch")
-    commit=_git(repo,"rev-parse","HEAD"); tree=_git(repo,"rev-parse","HEAD^{tree}"); short=commit[:8]
-    envelope=json.loads((repo/"verification/source-verification-envelope.json").read_text())
-    if validate_envelope(repo,envelope): raise ValueError("source verification envelope failed")
-    required=[repo/"verification"/name for name in REQUIRED_REPORTS]
-    missing=[str(path) for path in required if not path.is_file()]
-    if missing: raise ValueError(f"required handoff reports missing: {missing}")
-    zip_path=output_dir/f"codebase-knowledge-graph-benchmark-review-handoff-{short}.zip"
-    output_dir.mkdir(parents=True,exist_ok=True)
-    with tempfile.TemporaryDirectory() as directory:
-        temp=Path(directory); source=temp/"source"
-        tar_path=temp/"source.tar"
-        subprocess.run(["git","-C",str(repo),"archive","--format=tar","-o",str(tar_path),"HEAD"],check=True)
-        with tarfile.open(tar_path) as archive:safe_extract_tar(archive,source)
-        subject=subject_manifest(repo,commit)
-        state={"commit":commit,"tree":tree,"branch":_git(repo,"branch","--show-current"),"verification_subject_tree_sha256":subject["verification_subject_tree_sha256"]}
-        sources: list[tuple[str,bytes,str,str]]=[]
-        for path in sorted(source.rglob("*")):
-            if path.is_file():sources.append((f"source/git-archive/{path.relative_to(source).as_posix()}",path.read_bytes(),"tracked_source",f"git:{commit}"))
-        generated={
-            "source/source-state.json":json.dumps(state,indent=2,sort_keys=True).encode()+b"\n",
-            "source/verification-subject-manifest.json":json.dumps(subject,indent=2,sort_keys=True).encode()+b"\n",
-            "source/allowed-post-review-delta.patch":(repo/"verification/allowed-post-review-delta.patch").read_bytes(),
-            "source/allowed-post-review-delta.json":(repo/"verification/allowed-post-review-delta.json").read_bytes(),
-            "agent-response.md":agent_response.read_bytes(),
-            "README.md":b"Portable deterministic review handoff. Validate with the detached receipt and scripts/build_review_handoff.py.\n",
-        }
-        payloads=sources+[(path,payload,"source_identity" if path.startswith("source/") else "review_response","repo-generated") for path,payload in generated.items()]
-        payloads += [("immutable-evidence/canonical-suite-bundle.zip",canonical.read_bytes(),"immutable_evidence",f"sha256:{CANONICAL_SHA}"),("immutable-evidence/canonical-publication-supplement.zip",supplement.read_bytes(),"immutable_evidence",f"sha256:{SUPPLEMENT_SHA}")]
-        payloads += [(f"reports/{path.name}",path.read_bytes(),"verification_report",f"repo://verification/{path.name}") for path in required]
-        for name in ("test-results.json","test-results.md","ci-command-log.txt"):
-            path=repo/"verification"/name; payloads.append((f"tests/{name}",path.read_bytes(),"test_evidence",f"repo://verification/{name}"))
-        for name in ("verification-registry.json","review-findings-ledger.json"):
-            path=repo/"verification"/name; payloads.append((f"registry/{name}",path.read_bytes(),"registry",f"repo://verification/{name}"))
-        paths=[item[0] for item in payloads]
-        if len(paths)!=len(set(paths)):raise ValueError("duplicate handoff path")
-        entries=[{"path":path,"bytes":len(payload),"sha256":sha256_bytes(payload),"media_type":media_type(path),"role":role,"source":origin,"required":True} for path,payload,role,origin in sorted(payloads)]
-        manifest={"schema_version":"review-handoff-manifest-v1","source_commit":commit,"source_tree":tree,"entries":entries,"manifest_root_sha256":canonical_root(entries)}
-        with zipfile.ZipFile(zip_path,"w",allowZip64=True) as archive:
-            for path,payload,_,_ in sorted(payloads):_zip_write(archive,path,payload)
-            _zip_write(archive,"review-handoff-manifest.json",json.dumps(manifest,indent=2,sort_keys=True).encode()+b"\n")
-    validation=validate_handoff(repo,zip_path)
-    sha_path=Path(str(zip_path)+".sha256"); sha_path.write_text(f"{sha256_file(zip_path)}  {zip_path.name}\n")
-    validation_path=Path(str(zip_path)+".validation.json"); validation_path.write_text(json.dumps(validation,indent=2,sort_keys=True)+"\n")
-    if validation["status"]!="passed":raise ValueError(f"handoff validation failed: {validation['errors']}")
-    return zip_path,validation
-
-
-def _resolve_uri(extract: Path, uri: str) -> bool:
-    if uri.startswith("repo://"):return (extract/"source/git-archive"/uri[7:]).is_file()
-    if uri.startswith("zip://"):
-        archive_name,separator,member=uri[6:].partition("!/")
-        archive_path=extract/archive_name
-        if not archive_path.is_file():return False
-        if not separator:return True
-        with zipfile.ZipFile(archive_path) as archive:return member in archive.namelist()
-    return False
-
-
-def validate_handoff(repo: Path, zip_path: Path) -> dict[str,Any]:
-    errors=[]; secret_hits=[]; uri_count=0
-    with tempfile.TemporaryDirectory() as directory:
-        extract=Path(directory)/"extract"
-        with zipfile.ZipFile(zip_path) as archive:safe_extract_zip(archive,extract)
-        manifest=json.loads((extract/"review-handoff-manifest.json").read_text())
-        expected={entry["path"] for entry in manifest["entries"]}|{"review-handoff-manifest.json"}
-        actual={path.relative_to(extract).as_posix() for path in extract.rglob("*") if path.is_file()}
-        if actual!=expected:errors.append("unexpected or missing ZIP members")
-        for entry in manifest["entries"]:
-            path=extract/entry["path"]
-            if not path.is_file() or path.stat().st_size!=entry["bytes"] or sha256_file(path)!=entry["sha256"]:errors.append(f"manifest mismatch: {entry['path']}")
-        if canonical_root(manifest["entries"])!=manifest["manifest_root_sha256"]:errors.append("handoff manifest root mismatch")
-        state=json.loads((extract/"source/source-state.json").read_text())
-        if state["tree"]!=manifest["source_tree"] or state["commit"]!=manifest["source_commit"]:errors.append("source identity mismatch")
-        if sha256_file(extract/"immutable-evidence/canonical-suite-bundle.zip")!=CANONICAL_SHA:errors.append("canonical evidence mismatch")
-        if sha256_file(extract/"immutable-evidence/canonical-publication-supplement.zip")!=SUPPLEMENT_SHA:errors.append("supplement evidence mismatch")
-        for report in (extract/"reports").glob("*.json"):
-            text=report.read_text(errors="replace")
-            if "/home/" in text:errors.append(f"absolute host path in report: {report.name}")
-            try:data=json.loads(text)
-            except json.JSONDecodeError:continue
-            stack=[data]
-            while stack:
-                value=stack.pop()
-                if isinstance(value,dict):stack.extend(value.values())
-                elif isinstance(value,list):stack.extend(value)
-                elif isinstance(value,str) and value.startswith(("repo://","zip://")):
-                    uri_count+=1
-                    if not _resolve_uri(extract,value):errors.append(f"unresolved evidence URI: {value}")
-        secret_pattern=re.compile(r"(?i)(?:api[_-]?key|access[_-]?token|password|private[_-]?key)\s*[:=]\s*['\"]?[A-Za-z0-9_\-/+=]{16,}")
-        for root_name in ("reports","tests","registry"):
-            for path in (extract/root_name).rglob("*"):
-                if path.is_file() and path.stat().st_size<5_000_000:
-                    if secret_pattern.search(path.read_text(errors="ignore")):secret_hits.append(path.relative_to(extract).as_posix())
-        if secret_hits:errors.append("secret scan found credential-shaped values")
-    return {"schema_version":"review-handoff-validation-v1","status":"passed" if not errors else "failed","zip_sha256":sha256_file(zip_path),"zip_bytes":zip_path.stat().st_size,"manifest_entry_count":len(manifest["entries"]),"manifest_root_sha256":manifest["manifest_root_sha256"],"evidence_uris_resolved":uri_count,"secret_scan":{"status":"passed" if not secret_hits else "failed","hits":secret_hits},"errors":errors}
-
+def validate(zip_path:Path)->dict[str,Any]:
+ errors=[]
+ with tempfile.TemporaryDirectory() as td:
+  root=Path(td)/'extract'
+  with zipfile.ZipFile(zip_path) as z:safe_extract_zip(z,root)
+  manifest=json.loads((root/'review-handoff-manifest.json').read_text());expected={x['path'] for x in manifest['entries']}|{'review-handoff-manifest.json'};actual={p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file() or p.is_symlink()}
+  if expected!=actual:errors.append('member set mismatch')
+  for row in manifest['entries']:
+   p=root/row['path']
+   if not p.is_file() or p.stat().st_size!=row['bytes'] or sha256_file(p)!=row['sha256']:errors.append(f'manifest mismatch: {row["path"]}')
+  if canonical_root(manifest['entries'])!=manifest['manifest_root']:errors.append('manifest root mismatch')
+  if sha256_file(root/'immutable-evidence/canonical-suite-bundle.zip')!=CANONICAL_SHA:errors.append('canonical hash mismatch')
+  if sha256_file(root/'immutable-evidence/canonical-publication-supplement.zip')!=SUPPLEMENT_SHA:errors.append('supplement hash mismatch')
+  reconstruction=reconstruct_tree((root/'source/git-archive.tar').read_bytes(),manifest['source_tree'])
+  if not reconstruction['exact_match']:errors.append('source tree mismatch')
+  for p in root.rglob('*'):
+   if p.is_file() and not p.name.endswith(('.zip','.tar')):errors+=scan_text(p.relative_to(root).as_posix(),p.read_bytes())
+  mandatory={'agent-response.md','audit/pre-cleanup-independent-findings.json','audit/private-pre-release-cleanup.json','audit/compatibility-term-classification.json','audit/dead-code-report.json','methodology/token-accounting-current.json','methodology/correctness-current.json','methodology/mutation-calibration.json','methodology/end-to-end-fixture.json'}
+  if not mandatory<=actual:errors.append('mandatory artifact missing')
+ return {'schema_id':'review-handoff-validation-current','status':'passed' if not errors else 'failed','errors':errors,'zip_bytes':zip_path.stat().st_size,'zip_sha256':sha256_file(zip_path),'manifest_entry_count':len(manifest['entries']),'manifest_root':manifest['manifest_root'],'source_tree_reconstruction':reconstruction,'secret_and_host_path_scan':'passed' if not errors else 'failed'}
 
 def main()->int:
-    parser=argparse.ArgumentParser(); parser.add_argument("--repo",type=Path,default=Path(__file__).resolve().parents[1]); parser.add_argument("--canonical",type=Path,required=True); parser.add_argument("--supplement",type=Path,required=True); parser.add_argument("--output-dir",type=Path,required=True); parser.add_argument("--agent-response",type=Path,required=True)
-    args=parser.parse_args(); path,validation=build_handoff(args.repo.resolve(),args.canonical,args.supplement,args.output_dir,args.agent_response); print(json.dumps({"path":str(path),**validation},indent=2,sort_keys=True)); return 0
-
-
-if __name__=="__main__":raise SystemExit(main())
+ p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[1]);p.add_argument('--canonical',type=Path,required=True);p.add_argument('--supplement',type=Path,required=True);p.add_argument('--reports',type=Path,required=True);p.add_argument('--agent-response',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args();path,result=build(a.repo.resolve(),a.canonical,a.supplement,a.reports,a.agent_response,a.output);print(json.dumps({'path':str(path),**result},indent=2,sort_keys=True));return 0
+if __name__=='__main__':raise SystemExit(main())

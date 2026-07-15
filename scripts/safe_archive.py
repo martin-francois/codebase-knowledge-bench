@@ -1,92 +1,68 @@
 #!/usr/bin/env python3
-"""Portable archive extraction without traversal, device, or escaping-link hazards."""
-
+"""Bounded archive inspection and extraction used at every trust boundary."""
 from __future__ import annotations
+import os,shutil,stat,tarfile,zipfile
+from collections.abc import Iterable
+from pathlib import Path,PurePosixPath
 
-import os
-import shutil
-import stat
-import tarfile
-import zipfile
-from pathlib import Path, PurePosixPath
-from typing import Iterable
+MAX_MEMBERS=20000;MAX_TOTAL_BYTES=800_000_000;MAX_MEMBER_BYTES=250_000_000;MAX_COMPRESSION_RATIO=500
 
+def _path(name:str)->PurePosixPath:
+ p=PurePosixPath(name)
+ if not name or p.is_absolute() or '..' in p.parts or '\\' in name: raise ValueError(f'unsafe archive path: {name}')
+ return p
 
-def _safe_relative(name: str) -> PurePosixPath:
-    value = PurePosixPath(name)
-    if value.is_absolute() or not value.parts or any(part in {"", ".", ".."} for part in value.parts):
-        raise ValueError(f"unsafe archive path: {name}")
-    return value
+def _collisions(names:list[str])->None:
+ seen=set();folded=set()
+ for name in names:
+  clean=str(_path(name)).rstrip('/')
+  if clean in seen or clean.casefold() in folded: raise ValueError(f'duplicate or case-fold collision: {name}')
+  parts=PurePosixPath(clean).parts
+  if any('/'.join(parts[:i]) in seen for i in range(1,len(parts))): raise ValueError(f'file/directory collision: {name}')
+  seen.add(clean);folded.add(clean.casefold())
 
+def _safe_link(member:str,target:str)->None:
+ base=PurePosixPath(member).parent; resolved=base/PurePosixPath(target)
+ if PurePosixPath(target).is_absolute() or '..' in resolved.parts: raise ValueError(f'escaping archive link: {member}')
 
-def _inside(root: Path, path: Path) -> bool:
-    try:
-        path.resolve(strict=False).relative_to(root.resolve())
-        return True
-    except ValueError:
-        return False
+def safe_extract_tar(archive:tarfile.TarFile,destination:Path,members:Iterable[tarfile.TarInfo]|None=None)->None:
+ members=list(archive.getmembers() if members is None else members)
+ if len(members)>MAX_MEMBERS: raise ValueError('tar member limit exceeded')
+ _collisions([m.name for m in members]);total=0
+ for m in members:
+  if m.size>MAX_MEMBER_BYTES: raise ValueError('tar member size limit exceeded')
+  total+=m.size
+  if total>MAX_TOTAL_BYTES: raise ValueError('tar expanded-size limit exceeded')
+  if m.ischr() or m.isblk() or m.isfifo() or m.isdev(): raise ValueError('special tar member rejected')
+  if m.issym() or m.islnk(): _safe_link(m.name,m.linkname)
+ destination.mkdir(parents=True,exist_ok=True)
+ for m in members:
+  target=destination/_path(m.name)
+  if m.isdir(): target.mkdir(parents=True,exist_ok=True);target.chmod(m.mode&0o755);continue
+  target.parent.mkdir(parents=True,exist_ok=True)
+  if m.issym(): os.symlink(m.linkname,target);continue
+  if m.islnk():
+   source=destination/_path(m.linkname);os.link(source,target);continue
+  stream=archive.extractfile(m)
+  if stream is None: raise ValueError(f'missing tar payload: {m.name}')
+  with target.open('wb') as out: shutil.copyfileobj(stream,out)
+  target.chmod(m.mode&0o755)
 
-
-def safe_extract_tar(archive: tarfile.TarFile, destination: Path, members: Iterable[tarfile.TarInfo] | None = None) -> None:
-    root = destination.resolve()
-    root.mkdir(parents=True, exist_ok=True)
-    selected = list(archive.getmembers() if members is None else members)
-    links: list[tuple[tarfile.TarInfo, Path]] = []
-    for member in selected:
-        relative = _safe_relative(member.name)
-        target = root.joinpath(*relative.parts)
-        if not _inside(root, target):
-            raise ValueError(f"archive member escapes destination: {member.name}")
-        if member.ischr() or member.isblk() or member.isfifo() or member.isdev():
-            raise ValueError(f"special archive member is forbidden: {member.name}")
-        if member.isdir():
-            target.mkdir(parents=True, exist_ok=True)
-            target.chmod(0o755)
-        elif member.isfile():
-            target.parent.mkdir(parents=True, exist_ok=True)
-            stream = archive.extractfile(member)
-            if stream is None:
-                raise ValueError(f"regular member has no payload: {member.name}")
-            with stream, target.open("wb") as output:
-                shutil.copyfileobj(stream, output)
-            target.chmod(0o755 if member.mode & stat.S_IXUSR else 0o644)
-        elif member.issym() or member.islnk():
-            links.append((member, target))
-        else:
-            raise ValueError(f"unsupported archive member: {member.name}")
-    for member, target in links:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        link_name = PurePosixPath(member.linkname)
-        link_target = root.joinpath(*_safe_relative(member.linkname).parts) if member.islnk() else target.parent.joinpath(*link_name.parts)
-        if link_name.is_absolute() or not _inside(root, link_target):
-            raise ValueError(f"archive link escapes destination: {member.name} -> {member.linkname}")
-        if member.islnk():
-            if not link_target.is_file():
-                raise ValueError(f"hardlink target is unavailable: {member.linkname}")
-            os.link(link_target, target)
-        else:
-            target.symlink_to(member.linkname)
-
-
-def safe_extract_zip(archive: zipfile.ZipFile, destination: Path) -> None:
-    root = destination.resolve()
-    root.mkdir(parents=True, exist_ok=True)
-    for info in archive.infolist():
-        raw = info.filename.rstrip("/")
-        if not raw:
-            continue
-        relative = _safe_relative(raw)
-        target = root.joinpath(*relative.parts)
-        if not _inside(root, target):
-            raise ValueError(f"ZIP member escapes destination: {info.filename}")
-        mode = (info.external_attr >> 16) & 0xFFFF
-        if stat.S_ISLNK(mode) or stat.S_ISCHR(mode) or stat.S_ISBLK(mode) or stat.S_ISFIFO(mode):
-            raise ValueError(f"ZIP links and special files are forbidden: {info.filename}")
-        if info.is_dir():
-            target.mkdir(parents=True, exist_ok=True)
-            target.chmod(0o755)
-        else:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            with archive.open(info) as stream, target.open("wb") as output:
-                shutil.copyfileobj(stream, output)
-            target.chmod(0o755 if mode & stat.S_IXUSR else 0o644)
+def safe_extract_zip(archive:zipfile.ZipFile,destination:Path)->None:
+ infos=archive.infolist()
+ if len(infos)>MAX_MEMBERS: raise ValueError('ZIP member limit exceeded')
+ _collisions([i.filename for i in infos]);total=0
+ for info in infos:
+  mode=(info.external_attr>>16)&0o170000
+  if mode==stat.S_IFLNK: raise ValueError('ZIP symlink rejected')
+  if info.file_size>MAX_MEMBER_BYTES: raise ValueError('ZIP member size limit exceeded')
+  total+=info.file_size
+  if total>MAX_TOTAL_BYTES: raise ValueError('ZIP expanded-size limit exceeded')
+  if info.compress_size and info.file_size/info.compress_size>MAX_COMPRESSION_RATIO: raise ValueError('ZIP compression-ratio limit exceeded')
+ destination.mkdir(parents=True,exist_ok=True)
+ for info in infos:
+  target=destination/_path(info.filename)
+  if info.is_dir():target.mkdir(parents=True,exist_ok=True);continue
+  target.parent.mkdir(parents=True,exist_ok=True)
+  with archive.open(info) as source,target.open('wb') as out:shutil.copyfileobj(source,out)
+  target.chmod(0o644)

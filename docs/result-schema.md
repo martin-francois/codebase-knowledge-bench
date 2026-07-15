@@ -36,8 +36,12 @@ Dashboard data uses `schemas/dashboard-data.schema.json`. Its aggregate points M
 canonical operational trade-off object exactly.
 
 Future methodology documents use separate strict schemas:
-`token-usage-vnext.schema.json`, `requirement-contract-vnext.schema.json`,
-`mutation-calibration-vnext.schema.json`, and `issue-diversity-vnext.schema.json`. They are not
+`token-usage-current.schema.json`, `requirement-contract-current.schema.json`,
+`mutation-readiness-current.schema.json`, and `issue-diversity-current.schema.json`. They are not
 accepted as aliases inside historical canonical results. Cache-write and pricing fields remain null
 with explicit reasons when telemetry is incomplete. Requirement vectors, critical failures, common
 regression, patch quality, composite quality, and reference diagnostics are independent fields.
+
+## Private pre-release compatibility policy
+
+Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration commands, and parallel scoring or token paths are prohibited. A provenance identifier is accepted at exactly one value and never dispatches to another implementation. Immutable experiment ZIPs are opaque external evidence, not supported runtime input. Breaking internal changes replace obsolete behavior in place.

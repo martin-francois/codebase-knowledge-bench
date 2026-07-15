@@ -28,5 +28,5 @@ The reviewer is the implementing coding agent unless an actual independent revie
 - `LLM-011`: verify reasoning is a subset of output, v2 does not double-count or double-charge it, and the historical v1 field is immutable and explicitly labeled.
 - `LLM-012`: verify every automated ID invokes a distinct checker and source subject/report-envelope binding passes.
 - `LLM-013`: verify handoff completeness, URI portability, detached identity, and secret scanning.
-- `LLM-014`: verify mutants are materialized and executed and vNext remains gated on future qualification.
+- `LLM-014`: verify mutants are materialized and executed and current methodology remains gated on future qualification.
 - `LLM-015`: verify implementing-agent self-review is disclosed and not described as independent assurance.
