@@ -86,12 +86,14 @@ class ReviewHandoffTest(unittest.TestCase):
 
     def test_generated_text_is_portable_and_secret_redacted(self):
         data, notes = portable_generated_text(
-            b"/home/server/git-projects/codebase-knowledge-graph-benchmark api_key=abcdefghijklmnop"
+            b"/home/server/git-projects/codebase-knowledge-graph-benchmark /home/alice/private api_key=abcdefghijklmnop"
         )
         self.assertIn(b"$REPO", data)
         self.assertIn(b"$REDACTED_TEST_SECRET", data)
         self.assertEqual([], scan_text("source/full-diff.patch", data))
-        self.assertEqual(2, len(notes))
+        self.assertGreaterEqual(len(notes), 3)
+        self.assertNotIn("/home/", " ".join(notes))
+        self.assertNotIn("abcdefghijklmnop", " ".join(notes))
 
     def test_explicit_directories_are_not_file_collisions(self):
         from safe_archive import safe_extract_tar

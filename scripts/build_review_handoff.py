@@ -15,6 +15,7 @@ SOURCE_SCAN_ALLOWLIST={
  'scripts/run_benchmark.py':{'host-only path':'enforced benchmark sandbox and cache paths'},
  'scripts/validate_benchmark_run.py':{'host-only path':'validation of enforced sandbox paths'},
  'scripts/validate_published_archive.py':{'host-only path':'host-path rejection pattern'},
+ 'scripts/build_review_handoff.py':{'host-only path':'portable-redaction implementation','secret-shaped value':'portable-redaction implementation'},
  'scripts/verification_checkers.py':{'host-only path':'negative scanner fixture','secret-shaped value':'negative scanner fixture'},
  'tests/test_anti_leak_cache_probes.py':{'host-only path':'anti-leak negative fixture'},
  'tests/test_harness.py':{'host-only path':'isolated temporary fixture path'},
@@ -77,8 +78,12 @@ def portable_generated_text(data:bytes)->tuple[bytes,list[str]]:
   b'password=super-secret-value':b'password=$REDACTED_TEST_SECRET',
  }
  notes=[]
- for old,new in replacements.items():
-  if old in data:data=data.replace(old,new);notes.append(f'{old.decode()} -> {new.decode()}')
+ for index,(old,new) in enumerate(replacements.items(),1):
+  if old in data:data=data.replace(old,new);notes.append(f'literal replacement {index}: applied')
+ host_pattern=re.compile(rb'/(?:home|Users)/[^/\s]+/')
+ if host_pattern.search(data):data=host_pattern.sub(b'$HOST_HOME/',data);notes.append('generic host-home prefix: redacted')
+ secret_pattern=re.compile(rb'(?i)((?:api[_-]?key|access[_-]?token|password|private[_-]?key)\s*[:=]\s*[\'\"]?)[A-Za-z0-9_\-/+=]{16,}')
+ if secret_pattern.search(data):data=secret_pattern.sub(rb'\1$REDACTED_TEST_SECRET',data);notes.append('secret-shaped fixture value: redacted')
  return data,notes
 
 def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:Path,output:Path)->tuple[Path,dict[str,Any]]:
