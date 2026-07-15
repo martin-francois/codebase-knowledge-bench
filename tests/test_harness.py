@@ -63,6 +63,7 @@ class RetryPolicyTest(unittest.TestCase):
             result = runner.run(
                 ["/bin/sh", "-c", f"sleep 30 & echo $! > {pid_file}; wait"],
                 timeout=0.2,
+                cwd=Path(tmp),
             )
             child_pid = int(pid_file.read_text(encoding="utf-8"))
             deadline = time.monotonic() + 2

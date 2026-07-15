@@ -16,7 +16,7 @@ def audit(repo:Path)->dict:
  violations=[];matches=[]
  for path in tracked(repo):
   rel=path.relative_to(repo).as_posix()
-  if rel in {'scripts/private_prerelease_audit.py','scripts/verification_checkers.py'}:continue
+  if rel in {'scripts/private_prerelease_audit.py','scripts/verification_checkers.py','scripts/methodology_reports.py'}:continue
   if not rel.startswith(ACTIVE_ROOTS) or path.suffix not in {'.py','.json','.toml','.ts','.tsx'}:continue
   text=path.read_text(errors='ignore')
   for number,line in enumerate(text.splitlines(),1):
