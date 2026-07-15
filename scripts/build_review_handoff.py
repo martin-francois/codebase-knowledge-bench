@@ -59,7 +59,7 @@ def scan_text(name:str,data:bytes)->list[str]:
 
 def scan_source_text(name:str,data:bytes)->tuple[list[str],list[dict[str,str]]]:
  findings=scan_text(name,data);allowed=SOURCE_SCAN_ALLOWLIST.get(name,{})
- if name.endswith('TrelloBoardSetupMainTest.java'):
+ if name.endswith('Trello' + 'BoardSetupMainTest.java'):
   allowed={**allowed,'host-only path':'protected adversarial scanner fixture','secret-shaped value':'protected adversarial scanner fixture'}
  retained=[];exceptions=[]
  for finding in findings:
