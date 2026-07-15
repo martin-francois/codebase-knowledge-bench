@@ -21,7 +21,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Use requirement weights rather than test counts",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -53,7 +53,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Keep duplicate tests from changing score",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -85,7 +85,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Prevent critical failures from averaging away",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -117,7 +117,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Exclude candidate tests from protected correctness",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -149,7 +149,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Treat non-evaluable reference behavior as diagnostic",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -181,7 +181,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Fail source-similar behaviorally wrong code",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -213,7 +213,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Pass source-different behaviorally correct code",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -245,7 +245,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Represent partial requirements partially",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -277,7 +277,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Distinguish over-broad rejection from correct negative behavior",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -309,7 +309,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Fail side effects before critical validation",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -341,7 +341,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Represent regression-safe issue-incomplete results",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -373,7 +373,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Publish requirement vectors alongside scalar scores",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -405,7 +405,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Reproduce historical methodology unchanged",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -437,7 +437,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Prevent vNext from overwriting historical outputs",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -469,7 +469,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Expose requirement dimensions in dashboard",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -501,7 +501,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Derive task success from critical/direct/common rules",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -533,7 +533,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Detect ceiling tasks",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -565,7 +565,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Detect floor tasks",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -597,7 +597,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Warn when one issue supplies all quality differentiation",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -629,7 +629,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Report issue-skill coverage",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -661,7 +661,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Make minimum issue-cluster policy explicit",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -693,7 +693,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Require diversity for broad claims",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -725,7 +725,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Require minimum independent behavior cases",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -757,7 +757,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Keep issue-selection rationale source-controlled",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -787,7 +787,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Cross-artifact semantic consistency",
       "kind": "llm_manual",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/llm-verification-report.json",
         "verification/llm-verification-report.md"
@@ -818,7 +818,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Issue-contract fidelity",
       "kind": "llm_manual",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/llm-verification-report.json",
         "verification/llm-verification-report.md"
@@ -849,7 +849,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Correctness-weight and criticality review",
       "kind": "llm_manual",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/llm-verification-report.json",
         "verification/llm-verification-report.md"
@@ -880,7 +880,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Mutation adequacy review",
       "kind": "llm_manual",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/llm-verification-report.json",
         "verification/llm-verification-report.md"
@@ -911,7 +911,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Cache interpretation and fairness review",
       "kind": "llm_manual",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/llm-verification-report.json",
         "verification/llm-verification-report.md"
@@ -942,7 +942,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Statistical-claim calibration",
       "kind": "llm_manual",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/llm-verification-report.json",
         "verification/llm-verification-report.md"
@@ -973,7 +973,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Operational-versus-attribution separation",
       "kind": "llm_manual",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/llm-verification-report.json",
         "verification/llm-verification-report.md"
@@ -1004,7 +1004,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Archive and provenance completeness",
       "kind": "llm_manual",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/llm-verification-report.json",
         "verification/llm-verification-report.md"
@@ -1035,7 +1035,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Recommendation calibration",
       "kind": "llm_manual",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/llm-verification-report.json",
         "verification/llm-verification-report.md"
@@ -1066,7 +1066,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Regression-risk and reward-hacking review",
       "kind": "llm_manual",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/llm-verification-report.json",
         "verification/llm-verification-report.md"
@@ -1096,7 +1096,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Verify canonical ZIP SHA-256 before supplement generation",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1125,7 +1125,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Verify canonical manifest count and root",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1154,7 +1154,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Verify every canonical manifest path, size, and SHA-256",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1183,7 +1183,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Discover and validate every embedded review manifest dynamically",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1212,7 +1212,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Parse all 63 primary JSONL streams and reconcile usage",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1241,7 +1241,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Reconcile 63 terminal arms and 64 actual child spawns",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1270,7 +1270,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Bind operator summary to one archive and canonical result",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1299,7 +1299,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Recompute every displayed operator-summary value from canonical JSON",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1328,7 +1328,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Label arithmetic aggregates descriptive",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1357,7 +1357,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Label paired geometric effects primary matched effects",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1386,7 +1386,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Distinguish intended-tool totals and means per task",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1415,7 +1415,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Package all seven referenced retry-provenance artifacts",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1444,7 +1444,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Match retry-provenance hashes to completed-retry evidence",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1473,7 +1473,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Validate semantic invariants in retry provenance",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1502,7 +1502,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Validate dashboard schema and canonical join",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1531,7 +1531,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Reject external dashboard dependencies",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1560,7 +1560,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Validate browser rendering and synchronized accessible table",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1589,7 +1589,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Reconstruct all source roles",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1618,7 +1618,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Validate detached checksums and receipts",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1647,7 +1647,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Require non-inferiority, heterogeneity, cache/retry sensitivity, attribution, cost limits, and cluster warning",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1676,7 +1676,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Validate supplement manifest paths and root",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1705,7 +1705,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Require generator source, tests, and schemas to be tracked and archived",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1734,7 +1734,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Require no task-related untracked or modified publication source",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1763,7 +1763,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Reject values from another archive identity",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1793,7 +1793,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Prohibit model or child-process launch during supplement generation",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "canonical-publication-supplement.validation.json"
       ],
@@ -1819,7 +1819,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Hard external-egress denial remains an explicit external capability limitation.",
       "kind": "external_capability",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -1849,7 +1849,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Parse authoritative turn.completed token fields",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -1879,7 +1879,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Enforce input equals cached plus observed non-cached",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -1909,7 +1909,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Distinguish unavailable cache writes from zero",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -1939,7 +1939,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Suppress pricing cost when cache writes or prices are incomplete",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -1969,7 +1969,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Handle zero-input cache-hit rate",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -1999,7 +1999,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Publish cache-weight winner sensitivity",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2029,7 +2029,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Summarize repetition and serial-position cache effects",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2059,7 +2059,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Describe 30-minute TTL as a minimum, not eviction",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2089,7 +2089,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Record natural mode when isolation is unavailable",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2119,7 +2119,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Use per-arm cache keys only after official feature detection",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2151,7 +2151,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Expose cached and observed non-cached dashboard views",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2183,7 +2183,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Keep arithmetic and paired token effects distinct",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2213,7 +2213,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Parse canonical historical usage with nullable future fields",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2243,7 +2243,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Use cache-write telemetry when present",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2275,7 +2275,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Surface unavailable telemetry in reports and tooltips",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2307,7 +2307,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Make cache-share and position/gap analysis deterministic",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2337,7 +2337,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Reproduce canonical cache analysis without model calls",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "verification/current-canonical-verification-report.json"
       ],
@@ -2365,7 +2365,7 @@
       "introduced_by": "external-review-2026-07",
       "invariant": "Verification IDs, paths, enforcement, and rendered documentation remain synchronized.",
       "kind": "automated",
-      "last_verified_commit": null,
+      "last_verified_commit": "87a8426e496a23fbf80b2a9ec13f76b86db90528",
       "output_artifacts": [
         "docs/verification-registry.md"
       ],
