@@ -253,7 +253,7 @@ def materialize_snapshot(source: Path, output: Path, original_path: str, prompt_
         "materialized_path": destination.relative_to(output).as_posix(),
         "materialized_bytes": destination.stat().st_size,
         "original_path": original_path,
-        "original_path_exists": Path(original_path).exists(),
+        "original_path_exists": bool(original_path) and Path(original_path).exists(),
         "source_artifact_sha256": sha_file(source),
         "solve_prompt_sha256": PROMPT_SHA,
         "prompt_generation_proof": {"prompt_path": "executions/issue-488-repetition-3/runs/run-007/solve-prompt.txt", "prompt_sha256": sha_file(prompt_path)},
@@ -348,7 +348,7 @@ def build_derived_row(template: dict[str, Any], legacy: dict[str, Any], evidence
     solve_seconds = timing["solve_wall_seconds"]
     warm_seconds = sum(value for value in (setup_seconds, index_seconds, smoke_seconds, solve_seconds) if value is not None) if solve_seconds is not None else None
     row.update({
-        "status": "solve_completed", "workflow_completed": True,
+        "status": "solve_completed", "terminal": True, "workflow_completed": True,
         "implementation_produced": True, "implementation_evaluated": True,
         "trust_valid": True, "treatment_adherent": True,
         "operational_rank_eligible": True, "artifact_integrity_valid": True,
