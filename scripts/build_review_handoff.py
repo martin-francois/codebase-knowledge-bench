@@ -188,7 +188,8 @@ def validate(zip_path:Path)->dict[str,Any]:
   reconstruction=reconstruct_tree((root/'source/git-archive.tar').read_bytes(),manifest['source_tree'])
   if not reconstruction['exact_match']:errors.append('source tree mismatch')
   for p in root.rglob('*'):
-   if p.is_file() and not p.name.endswith(('.zip','.tar')):errors+=scan_text(p.relative_to(root).as_posix(),p.read_bytes())
+   if p.is_file() and not p.name.endswith(('.zip','.tar')):
+    found,_=scan_source_text(p.relative_to(root).as_posix(),p.read_bytes());errors+=found
   mandatory={'agent-response.md','audit/current-methodology-pre-fix-audit.json','audit/private-pre-release-cleanup.json','audit/normative-document-audit.json','methodology/contract-provenance.json','methodology/live-pipeline-qualification.json','methodology/mutation-calibration/mutation-calibration.json','methodology/readiness.json','dashboard/dashboard-data.json','dashboard/dashboard-data.schema.json','dashboard/index.html','dashboard/browser-result.json','verification/current-verification-report.json','verification/checker-fault-injection.json','verification/llm-verification-report.json','tests/test-results.json','tests/command-log.txt','review-handoff-validation.json'}
   if not mandatory<=actual:errors.append('mandatory artifact missing')
  return {'schema_id':'review-handoff-validation-current','status':'passed' if not errors else 'failed','errors':errors,'zip_bytes':zip_path.stat().st_size,'zip_sha256':sha256_file(zip_path),'manifest_entry_count':len(manifest['entries']),'manifest_root':manifest['manifest_root'],'source_tree_reconstruction':reconstruction,'secret_and_host_path_scan':'passed' if not errors else 'failed'}
