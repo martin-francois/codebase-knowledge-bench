@@ -1,0 +1,595 @@
+{
+  "automated_checker_classification": [
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "AUD-001",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "AUD-002",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "AUD-003",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "AUD-004",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "AUD-005",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "AUD-006",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "AUD-007",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "AUD-008",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "AUD-009",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "AUD-010",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "TOK-CURRENT-001",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "TOK-CURRENT-002",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "TOK-CURRENT-003",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "TOK-CURRENT-004",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "TOK-CURRENT-005",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "TOK-CURRENT-006",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "TOK-CURRENT-007",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "TOK-CURRENT-008",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "TOK-CURRENT-009",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "COR-CURRENT-001",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "COR-CURRENT-002",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "COR-CURRENT-003",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "COR-CURRENT-004",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "COR-CURRENT-005",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "COR-CURRENT-006",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "COR-CURRENT-007",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "COR-CURRENT-008",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "COR-CURRENT-009",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "COR-CURRENT-010",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "MUT-CURRENT-001",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "MUT-CURRENT-002",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "MUT-CURRENT-003",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "MUT-CURRENT-004",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "MUT-CURRENT-005",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "runtime behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "MUT-CURRENT-006",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "artifact behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "HANDOFF-CURRENT-001",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "artifact behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "HANDOFF-CURRENT-002",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "artifact behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "HANDOFF-CURRENT-003",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "artifact behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "HANDOFF-CURRENT-004",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "artifact behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "HANDOFF-CURRENT-005",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "artifact behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "HANDOFF-CURRENT-006",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "artifact behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "HANDOFF-CURRENT-007",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "artifact behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "HANDOFF-CURRENT-008",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "artifact behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "HANDOFF-CURRENT-009",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "artifact behavioral",
+      "dedicated_defect_injection_fixture": true,
+      "id": "HANDOFF-CURRENT-010",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "CLEAN-CURRENT-001",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "CLEAN-CURRENT-002",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "CLEAN-CURRENT-003",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "CLEAN-CURRENT-004",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    },
+    {
+      "classification": "AST/static structural",
+      "dedicated_defect_injection_fixture": true,
+      "id": "CLEAN-CURRENT-005",
+      "recorded_negative_fixture": [
+        "tests/test_private_prerelease_cleanup.py"
+      ]
+    }
+  ],
+  "decision": "DEFECTS_REPRODUCED",
+  "findings": [
+    {
+      "evidence": [
+        {
+          "lines": "5283-5292",
+          "observation": "Reads protected_requirement_case_results to score the current contract.",
+          "path": "scripts/run_benchmark.py"
+        },
+        {
+          "lines": "current-methodology scoring fixtures",
+          "observation": "Tests inject protected_requirement_case_results directly.",
+          "path": "tests/test_hardening.py"
+        }
+      ],
+      "id": "DATAFLOW-001",
+      "planned_correction": "Add a production JUnit-to-requirement evidence derivation function and call it from the live runner and independent validator.",
+      "planned_negative_fixture": "Omit one required protected JUnit selector and require live scoring to fail closed.",
+      "status": "reproduced",
+      "why": "No production producer binds raw protected JUnit evidence to requirement scores, so live rows can omit or manufacture the map."
+    },
+    {
+      "evidence": [
+        {
+          "lines": "requirements[*].protected_test_cases",
+          "observation": "Uses abstract case aliases without JUnit selector, source path/hash, base/reference outcome, or evidence rule.",
+          "path": "verification/methodology-current/contracts/issue-486.json"
+        },
+        {
+          "lines": "requirements[*].protected_test_cases",
+          "observation": "Uses abstract aliases.",
+          "path": "verification/methodology-current/contracts/issue-488.json"
+        },
+        {
+          "lines": "requirements[*].protected_test_cases",
+          "observation": "Uses abstract aliases.",
+          "path": "verification/methodology-current/contracts/issue-498.json"
+        }
+      ],
+      "id": "CONTRACT-001",
+      "planned_correction": "Replace aliases with selector-bound evidence objects and content provenance.",
+      "planned_negative_fixture": "Change a protected source hash or selector and require derivation to fail.",
+      "status": "reproduced",
+      "why": "Aliases cannot prove that protected evidence corresponds to immutable benchmark-owned test bytes."
+    },
+    {
+      "evidence": [
+        {
+          "lines": "requirements",
+          "observation": "Contains unrelated disabled-list behavior and minimum_fraction=0.5 for repeated-option behavior.",
+          "path": "verification/methodology-current/contracts/issue-486.json"
+        },
+        {
+          "lines": "acceptance text",
+          "observation": "Requests repeated active/terminal options in import-board and setup-local; does not request disabled-list creation behavior.",
+          "path": "immutable canonical issue-486 sanitized issue"
+        }
+      ],
+      "id": "CONTRACT-002",
+      "planned_correction": "Bind requested behavior to import-board/setup-local repeated active/terminal evidence, remove disabled-list behavior, and require all requested cases.",
+      "planned_negative_fixture": "Fail one repeated-option selector and require task_success=false.",
+      "status": "reproduced",
+      "why": "The contract can award task success for half the requested repeated-option behavior and contaminate issue scope."
+    },
+    {
+      "evidence": [
+        {
+          "lines": "scoped_cases",
+          "observation": "Setup-import ambiguity and duplicate-name explicit-ID cases exceed the explicit runtime ambiguous-name/no-write acceptance criterion.",
+          "path": "canonical issue-488 correctness-preflight matrix"
+        },
+        {
+          "lines": "scoped_cases",
+          "observation": "Custom in-progress rejection cases are broader reference diagnostics beyond the combined explicit no-in-progress acceptance path.",
+          "path": "canonical issue-498 correctness-preflight matrix"
+        }
+      ],
+      "id": "CONTRACT-003",
+      "planned_correction": "Classify evidence as requested_behavior, required_regression, or reference_diagnostic from issue text.",
+      "planned_negative_fixture": "Make a reference diagnostic non-evaluable and require task success to remain based on requested/common evidence.",
+      "status": "reproduced",
+      "why": "Historical reference breadth must not silently become requested task success scope."
+    },
+    {
+      "evidence": [
+        {
+          "lines": "current token metrics emission",
+          "observation": "Emits reasoning_output_tokens.",
+          "path": "scripts/run_benchmark.py"
+        },
+        {
+          "lines": "token metric fields",
+          "observation": "Expects reasoning_output_tokens_including_reasoning.",
+          "path": "scripts/dashboard.py"
+        },
+        {
+          "lines": "numeric suite fields",
+          "observation": "Lists reasoning_output_tokens_including_reasoning.",
+          "path": "scripts/run_benchmark_suite.py"
+        }
+      ],
+      "id": "DASH-001",
+      "planned_correction": "Generate all token fields from one authoritative descriptor.",
+      "planned_negative_fixture": "Remove or rename one descriptor-backed field and require parity validation to fail.",
+      "status": "reproduced",
+      "why": "The same metric has incompatible names across runner, suite, and dashboard."
+    },
+    {
+      "evidence": [
+        {
+          "lines": "run metric properties",
+          "observation": "Still requires non_cached_input_tokens, output_tokens, and reasoning_output_tokens.",
+          "path": "schemas/dashboard-data.schema.json"
+        },
+        {
+          "lines": "generation/validation flow",
+          "observation": "Does not execute Draft202012Validator against generated dashboard data.",
+          "path": "scripts/dashboard.py"
+        }
+      ],
+      "id": "DASH-002",
+      "planned_correction": "Validate generated data with Draft202012Validator and enforce descriptor/schema parity.",
+      "planned_negative_fixture": "Mutate a generated token field and require schema validation to reject it.",
+      "status": "reproduced",
+      "why": "A copied stale schema can coexist with invalid generated dashboard data."
+    },
+    {
+      "evidence": [
+        {
+          "lines": "fixture scoring stage",
+          "observation": "Calls score_requirement_contract directly rather than running protected-JUnit derivation through live runner/suite/report/dashboard entry points.",
+          "path": "scripts/methodology_fixture.py"
+        }
+      ],
+      "id": "PIPELINE-001",
+      "planned_correction": "Build a no-model fixture that invokes production entry points from raw JSONL/JUnit through handoff validation.",
+      "planned_negative_fixture": "Inject a defect at every pipeline stage and require failure at that stage.",
+      "status": "reproduced",
+      "why": "Helper-level tests cannot prove the production dataflow."
+    },
+    {
+      "evidence": [
+        {
+          "lines": "checker implementations",
+          "observation": "Several checks trust report booleans, source strings, filename globs, or family-wide status rather than executing invariant-specific faults.",
+          "path": "scripts/verification_checkers.py"
+        }
+      ],
+      "id": "VERIFY-001",
+      "planned_correction": "Require one checker, positive fixture, and dedicated negative fault injection per automated ID.",
+      "planned_negative_fixture": "Delete/mutate one invariant at a time and require only its checker/family to fail.",
+      "status": "reproduced",
+      "why": "A uniquely named checker can still be incapable of detecting the defect it claims to cover."
+    },
+    {
+      "evidence": [
+        {
+          "lines": "419-421",
+          "observation": "Normative formula adds output_tokens and reasoning_output_tokens.",
+          "path": "SPEC.md"
+        },
+        {
+          "lines": "87-102",
+          "observation": "Calls internal schemas and field names public compatibility contracts.",
+          "path": "CONTRIBUTING.md"
+        },
+        {
+          "lines": "methodology status",
+          "observation": "Uses future-methodology wording.",
+          "path": "README.md"
+        },
+        {
+          "lines": "historical chronology",
+          "observation": "Retains old formula and one-off recovery/migration guidance as normative/current.",
+          "path": "docs/prompt-history-traceability.md"
+        }
+      ],
+      "id": "DOC-001",
+      "planned_correction": "Rewrite normative docs for one current methodology and move immutable experiment history to detached evidence notes only.",
+      "planned_negative_fixture": "No-shim/normative audit rejects old formula, migration mandates, future-methodology wording, and public compatibility promises.",
+      "status": "reproduced",
+      "why": "Normative guidance contradicts the private pre-release one-methodology policy and live token semantics."
+    }
+  ],
+  "schema_version": "current-methodology-pre-fix-audit-v1",
+  "source_commit": "fe2fad65065606e5b2e4f9ed697566981a75cb4f",
+  "summary": {
+    "automated_checkers_classified": 50,
+    "checkers_without_recorded_dedicated_negative_fixture": 0,
+    "findings_reproduced": 9
+  }
+}

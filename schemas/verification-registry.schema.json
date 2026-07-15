@@ -1,1 +1,38 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","additionalProperties":false,"required":["schema_id","entries"],"properties":{"schema_id":{"const":"verification-registry-current"},"entries":{"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"required":["id","title","area","invariant","why","kind","implementation","checker_id","checker_implementation","checker_version","positive_fixture","negative_fixture","commands","output_artifacts","failure_severity","status","last_reviewed_subject_tree"],"properties":{"id":{"type":"string"},"title":{"type":"string"},"area":{"type":"string"},"invariant":{"type":"string"},"why":{"type":"string"},"kind":{"enum":["automated","llm_manual","external_capability"]},"implementation":{"type":"array","items":{"type":"string"}},"checker_id":{"type":["string","null"]},"checker_implementation":{"type":["string","null"]},"checker_version":{"type":["string","null"]},"positive_fixture":{"type":"array","items":{"type":"string"}},"negative_fixture":{"type":"array","items":{"type":"string"}},"commands":{"type":"array","items":{"type":"string"}},"output_artifacts":{"type":"array","items":{"type":"string"}},"failure_severity":{"enum":["blocker","high","medium","informational"]},"status":{"enum":["implemented","documented","not_automatable"]},"last_reviewed_subject_tree":{"type":["string","null"]}}}}}}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "verification-registry.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "entries"],
+  "properties": {
+    "schema_id": {"const": "verification-registry-current"},
+    "entries": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/entry"}}
+  },
+  "$defs": {
+    "entry": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "title", "area", "invariant", "why", "kind", "checker_id", "checker_implementation", "checker_version", "expected_evidence_schema", "implementation", "test_files", "fixture_files", "positive_fixture", "negative_fixture", "commands", "output_artifacts", "failure_severity", "status"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Z][A-Z0-9-]+$"},
+        "title": {"type": "string", "minLength": 1},
+        "area": {"enum": ["publication", "tokens", "correctness", "statistics", "treatment", "attribution", "retry", "security", "source", "dashboard", "documentation", "verification"]},
+        "invariant": {"type": "string", "minLength": 1},
+        "why": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["automated", "llm_manual", "external_capability"]},
+        "checker_id": {"type": ["string", "null"]},
+        "checker_implementation": {"type": ["string", "null"]},
+        "checker_version": {"type": ["string", "null"]},
+        "expected_evidence_schema": {"type": ["string", "null"]},
+        "implementation": {"type": "array", "items": {"type": "string"}},
+        "test_files": {"type": "array", "items": {"type": "string"}},
+        "fixture_files": {"type": "array", "items": {"type": "string"}},
+        "positive_fixture": {"type": ["string", "null"]},
+        "negative_fixture": {"type": ["string", "null"]},
+        "commands": {"type": "array", "items": {"type": "string"}},
+        "output_artifacts": {"type": "array", "items": {"type": "string"}},
+        "failure_severity": {"enum": ["blocker", "high", "medium", "informational"]},
+        "status": {"enum": ["implemented", "documented", "external_limitation"]}
+      }
+    }
+  }
+}

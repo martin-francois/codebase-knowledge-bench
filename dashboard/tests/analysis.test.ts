@@ -5,7 +5,7 @@ const metrics = (tokens: number, time: number, calls: number, cost: number | nul
   modeled_weighted_token_load: tokens,
   observed_non_cached_input_tokens: tokens * .8,
   output_tokens_including_reasoning: tokens * .1,
-  reasoning_output_tokens_including_reasoning: tokens * .05,
+  reasoning_output_tokens: tokens * .05,
   solve_wall_seconds: time,
   warm_workflow_seconds: time + 10,
   execution_calls_started: calls,
@@ -127,7 +127,7 @@ describe("dashboard derivation", () => {
   });
   it("exposes token views and keeps unknown cache writes unavailable", () => {
     expect(Object.keys(TOKEN_VIEWS)).toContain("cache_writes");
-    expect(TOKEN_VIEWS.cache_writes.metric).toBeNull();
+    expect(TOKEN_VIEWS.cache_writes.metric).toBe("cache_write_tokens");
     expect(TOKEN_VIEWS.observed_non_cached_input.metric).toBe("observed_non_cached_input_tokens");
   });
   it("keeps quality dimensions separate instead of exposing a scalar composite", () => {

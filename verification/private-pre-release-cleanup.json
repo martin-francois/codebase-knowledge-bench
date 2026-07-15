@@ -1,0 +1,439 @@
+{
+  "active_runtime_blockers": [],
+  "files_scanned": 118,
+  "matches": 61,
+  "old_input_translation_supported": false,
+  "one_live_correctness_methodology": true,
+  "one_live_token_methodology": true,
+  "retained_matches": [
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "legacy",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "compatibility",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "migration",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "migrate",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "deprecated",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "deprecation",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "shim",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "alias",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "dual_read",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "dual_write",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "vNext",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "old format",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 61,
+      "path": "scripts/methodology_reports.py",
+      "term": "historical_methodology",
+      "text": "terms = re.compile(r\"\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|old format|historical_methodology)\\b\", re.I)"
+    },
+    {
+      "classification": "false_positive",
+      "line": 8,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "legacy",
+      "text": "BANNED_NAMES=re.compile(r'(^|_)(legacy|migrate|migration|deprecated|deprecation|shim|dual_read|dual_write|vnext|v1|v2)($|_)',re.I)"
+    },
+    {
+      "classification": "false_positive",
+      "line": 8,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "migrate",
+      "text": "BANNED_NAMES=re.compile(r'(^|_)(legacy|migrate|migration|deprecated|deprecation|shim|dual_read|dual_write|vnext|v1|v2)($|_)',re.I)"
+    },
+    {
+      "classification": "false_positive",
+      "line": 8,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "migration",
+      "text": "BANNED_NAMES=re.compile(r'(^|_)(legacy|migrate|migration|deprecated|deprecation|shim|dual_read|dual_write|vnext|v1|v2)($|_)',re.I)"
+    },
+    {
+      "classification": "false_positive",
+      "line": 8,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "deprecated",
+      "text": "BANNED_NAMES=re.compile(r'(^|_)(legacy|migrate|migration|deprecated|deprecation|shim|dual_read|dual_write|vnext|v1|v2)($|_)',re.I)"
+    },
+    {
+      "classification": "false_positive",
+      "line": 8,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "deprecation",
+      "text": "BANNED_NAMES=re.compile(r'(^|_)(legacy|migrate|migration|deprecated|deprecation|shim|dual_read|dual_write|vnext|v1|v2)($|_)',re.I)"
+    },
+    {
+      "classification": "false_positive",
+      "line": 8,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "shim",
+      "text": "BANNED_NAMES=re.compile(r'(^|_)(legacy|migrate|migration|deprecated|deprecation|shim|dual_read|dual_write|vnext|v1|v2)($|_)',re.I)"
+    },
+    {
+      "classification": "false_positive",
+      "line": 8,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "dual_read",
+      "text": "BANNED_NAMES=re.compile(r'(^|_)(legacy|migrate|migration|deprecated|deprecation|shim|dual_read|dual_write|vnext|v1|v2)($|_)',re.I)"
+    },
+    {
+      "classification": "false_positive",
+      "line": 8,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "dual_write",
+      "text": "BANNED_NAMES=re.compile(r'(^|_)(legacy|migrate|migration|deprecated|deprecation|shim|dual_read|dual_write|vnext|v1|v2)($|_)',re.I)"
+    },
+    {
+      "classification": "false_positive",
+      "line": 8,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "vnext",
+      "text": "BANNED_NAMES=re.compile(r'(^|_)(legacy|migrate|migration|deprecated|deprecation|shim|dual_read|dual_write|vnext|v1|v2)($|_)',re.I)"
+    },
+    {
+      "classification": "false_positive",
+      "line": 9,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "vNext",
+      "text": "BANNED_TEXT=('token-accounting-v2','behavioral-correctness-vNext','methodology-vnext','future_methodology','old format','fallback parser')"
+    },
+    {
+      "classification": "false_positive",
+      "line": 9,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "vnext",
+      "text": "BANNED_TEXT=('token-accounting-v2','behavioral-correctness-vNext','methodology-vnext','future_methodology','old format','fallback parser')"
+    },
+    {
+      "classification": "false_positive",
+      "line": 9,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "old format",
+      "text": "BANNED_TEXT=('token-accounting-v2','behavioral-correctness-vNext','methodology-vnext','future_methodology','old format','fallback parser')"
+    },
+    {
+      "classification": "false_positive",
+      "line": 10,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "compatibility",
+      "text": "ALLOWED_DOMAIN=[re.compile(r'\"category\"\\s*:\\s*\"compatibility\"'),re.compile(r'compatibility behavior',re.I)]"
+    },
+    {
+      "classification": "false_positive",
+      "line": 10,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "compatibility",
+      "text": "ALLOWED_DOMAIN=[re.compile(r'\"category\"\\s*:\\s*\"compatibility\"'),re.compile(r'compatibility behavior',re.I)]"
+    },
+    {
+      "classification": "false_positive",
+      "line": 27,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "compatibility",
+      "text": "if 'compatibility' in lowered:"
+    },
+    {
+      "classification": "false_positive",
+      "line": 33,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "compatibility",
+      "text": "matches.append({'path':rel,'line':number,'term':'compatibility','classification':classification})"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "legacy",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "compatibility",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "migration",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "migrate",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "deprecated",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "deprecation",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "shim",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "alias",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "dual_read",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "dual_write",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "vNext",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 56,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "historical_methodology",
+      "text": "pattern=re.compile(r'\\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\\b',re.I);rows=[]"
+    },
+    {
+      "classification": "false_positive",
+      "line": 63,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "compatibility",
+      "text": "if term.lower()=='compatibility' and ('\"category\"' in line or 'behavior' in line.lower()):classification='domain_behavior_term'"
+    },
+    {
+      "classification": "false_positive",
+      "line": 67,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "compatibility",
+      "text": "return {'schema_id':'compatibility-term-classification-current','matches_found':len(rows),'retained_matches':rows,'active_runtime_compatibility_paths':0}"
+    },
+    {
+      "classification": "false_positive",
+      "line": 72,
+      "path": "scripts/private_prerelease_audit.py",
+      "term": "compatibility",
+      "text": "a.output_dir.mkdir(parents=True,exist_ok=True);(a.output_dir/'private-pre-release-cleanup.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\\n');(a.output_dir/'dead-code-report.json').write_text(json.dumps(dead,indent=2,sort_keys=True)+'\\n');(a.output_dir/'compatibility-term-classificati"
+    },
+    {
+      "classification": "false_positive",
+      "line": 157,
+      "path": "scripts/verification_checkers.py",
+      "term": "compatibility",
+      "text": "banned = (\"output_tokens + reasoning_output_tokens\", \"public compatibility contract\", \"future methodology\", \"behavioral-correctness-vNext\")"
+    },
+    {
+      "classification": "false_positive",
+      "line": 157,
+      "path": "scripts/verification_checkers.py",
+      "term": "vNext",
+      "text": "banned = (\"output_tokens + reasoning_output_tokens\", \"public compatibility contract\", \"future methodology\", \"behavioral-correctness-vNext\")"
+    },
+    {
+      "classification": "false_positive",
+      "line": 94,
+      "path": "tests/test_current_methodology.py",
+      "term": "alias",
+      "text": "contract[\"requirements\"][0][\"protected_test_cases\"] = [\"alias\"]"
+    },
+    {
+      "classification": "false_positive",
+      "line": 393,
+      "path": "tests/test_hardening.py",
+      "term": "migration",
+      "text": "self.assertFalse((ROOT / \"configs/preserved-pilot-migration.json\").exists())"
+    },
+    {
+      "classification": "false_positive",
+      "line": 434,
+      "path": "tests/test_hardening.py",
+      "term": "deprecated",
+      "text": "message = \"warning: --dangerously-bypass-hook-trust is deprecated\""
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 85,
+      "path": "docs/methodology.md",
+      "term": "compatibility",
+      "text": "Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration "
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 85,
+      "path": "docs/methodology.md",
+      "term": "deprecated",
+      "text": "Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration "
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 85,
+      "path": "docs/methodology.md",
+      "term": "migration",
+      "text": "Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration "
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 91,
+      "path": "docs/methodology.md",
+      "term": "alias",
+      "text": "The project is private and pre-release. There is no live schema translation, alias, dual reader/writer, or old/current selector. Published experiment ZIPs remain immutable evidence only."
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 2525,
+      "path": "docs/prompt-history-traceability.md",
+      "term": "compatibility",
+      "text": "| [x] | `P115.U001` | 115 | Accept only no argument for default.toml or one TOML path; move every public setting into TOML and remove compatibility, flags, environment configuration, JSON/matrix indirection, and unused surface. | `immutable-experiment-history` | Explicit issue #2 requirement superse"
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 47,
+      "path": "docs/result-schema.md",
+      "term": "compatibility",
+      "text": "Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration "
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 47,
+      "path": "docs/result-schema.md",
+      "term": "deprecated",
+      "text": "Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration "
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 47,
+      "path": "docs/result-schema.md",
+      "term": "migration",
+      "text": "Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration "
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 3,
+      "path": "docs/schema-v3-hardening-note.md",
+      "term": "compatibility",
+      "text": "This repository is not public and carries no compatibility or migration shims. Current derived evidence is recomputed in place into the current schema while raw evidence remains immutable."
+    },
+    {
+      "classification": "immutable_external_evidence_note",
+      "line": 3,
+      "path": "docs/schema-v3-hardening-note.md",
+      "term": "migration",
+      "text": "This repository is not public and carries no compatibility or migration shims. Current derived evidence is recomputed in place into the current schema while raw evidence remains immutable."
+    },
+    {
+      "classification": "false_positive",
+      "line": 21,
+      "path": "docs/spec-compliance.md",
+      "term": "migration",
+      "text": "| `MOD-003` | Current schema output MUST reject obsolete aliases and contain no migration or compatibility path. | SPEC.md; schemas; runner; validator | schema and source-contract fixtures | conforming | None | Current-schema validation only |"
+    },
+    {
+      "classification": "false_positive",
+      "line": 21,
+      "path": "docs/spec-compliance.md",
+      "term": "compatibility",
+      "text": "| `MOD-003` | Current schema output MUST reject obsolete aliases and contain no migration or compatibility path. | SPEC.md; schemas; runner; validator | schema and source-contract fixtures | conforming | None | Current-schema validation only |"
+    }
+  ],
+  "schema_id": "private-pre-release-cleanup-current",
+  "status": "passed"
+}

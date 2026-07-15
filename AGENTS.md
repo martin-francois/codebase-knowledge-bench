@@ -404,3 +404,13 @@ Until the owner explicitly declares this project public, internal compatibility 
 ## LLM-based semantic verification after deterministic checks
 
 The implementing coding agent must record `LLM-001` through `LLM-015`: cross-artifact consistency, issue-contract fidelity, requirement weights and criticality, real-mutant adequacy, cache interpretation, statistical calibration, operational-versus-attribution separation, archive provenance, recommendation calibration, reward-hacking review, current live token formula, absence of compatibility paths, behavioral checker depth, exact Git-tree handoff reconstruction, and final-source/generated-output separation. Record `reviewer_kind=implementing_coding_agent`, `self_review=true`, `independent_review=false`, and `additional_model_calls=0`. This self-review is not independent verification and must never be invoked by CI or benchmark runtime.
+
+## LLM-based semantic verification after deterministic checks
+
+This repository is private and pre-release. Live code accepts one current schema, one token formula, and one requirement methodology. Do not add translators, deprecated aliases, dual readers/writers, or historical recovery paths. Immutable published ZIPs are opaque external evidence, not supported runtime input.
+
+After deterministic checks, an implementing coding agent changing methodology, evidence derivation, reports, dashboard, publication, or verification must generate `verification/llm-verification-report.json` and `.md`. This is self-review, not independent verification; record `reviewer_kind=implementing_coding_agent`, `self_review=true`, `independent_review=false`, and `additional_model_calls=0` when no separate model was invoked.
+
+Run `LLM-001` through `LLM-022` from `verification/verification-registry.json`. In particular, review live JUnit-to-requirement dataflow, issue-text fidelity, required versus diagnostic scope, token/dashboard/schema parity, actual target-code mutation evidence, per-checker fault depth, normative private pre-release consistency, archive portability, statistical claim calibration, operational-versus-attribution separation, recommendation calibration, and reward-hacking paths. Candidate tests and source similarity never control protected correctness.
+
+When external review would help, produce one manifest-bound ZIP with source modes/symlinks, machine reports, schemas, tests, immutable evidence, exact `agent-response.md`, detached checksum, extracted validation receipt, and secret/host-path scan. The final response must point to that ZIP.

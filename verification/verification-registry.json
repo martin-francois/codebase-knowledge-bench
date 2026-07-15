@@ -1,1933 +1,1569 @@
 {
   "entries": [
     {
-      "area": "publication",
-      "checker_id": "aud-001",
-      "checker_implementation": "scripts/verification_checkers.py#AUD-001",
-      "checker_version": "current",
+      "area": "correctness",
+      "checker_id": "dataflow_producer",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
-      "id": "AUD-001",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "DATAFLOW-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Uploaded finding AUD-001 is reproduced and dispositioned",
+      "invariant": "DATAFLOW-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::DATAFLOW-001:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::DATAFLOW-001:positive",
       "status": "implemented",
-      "title": "Uploaded finding AUD-001 is reproduced and dispositioned",
-      "why": "Independent findings must not be silently ignored."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Dataflow 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "publication",
-      "checker_id": "aud-002",
-      "checker_implementation": "scripts/verification_checkers.py#AUD-002",
-      "checker_version": "current",
+      "area": "correctness",
+      "checker_id": "contract_binding",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
-      "id": "AUD-002",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "CONTRACT-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Uploaded finding AUD-002 is reproduced and dispositioned",
+      "invariant": "CONTRACT-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::CONTRACT-001:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::CONTRACT-001:positive",
       "status": "implemented",
-      "title": "Uploaded finding AUD-002 is reproduced and dispositioned",
-      "why": "Independent findings must not be silently ignored."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Contract 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "publication",
-      "checker_id": "aud-003",
-      "checker_implementation": "scripts/verification_checkers.py#AUD-003",
-      "checker_version": "current",
+      "area": "correctness",
+      "checker_id": "issue_scope",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
-      "id": "AUD-003",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "CONTRACT-002",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Uploaded finding AUD-003 is reproduced and dispositioned",
+      "invariant": "CONTRACT-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::CONTRACT-002:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::CONTRACT-002:positive",
       "status": "implemented",
-      "title": "Uploaded finding AUD-003 is reproduced and dispositioned",
-      "why": "Independent findings must not be silently ignored."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Contract 002",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "publication",
-      "checker_id": "aud-004",
-      "checker_implementation": "scripts/verification_checkers.py#AUD-004",
-      "checker_version": "current",
+      "area": "correctness",
+      "checker_id": "issue_scope",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
-      "id": "AUD-004",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "CONTRACT-003",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Uploaded finding AUD-004 is reproduced and dispositioned",
+      "invariant": "CONTRACT-003 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::CONTRACT-003:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::CONTRACT-003:positive",
       "status": "implemented",
-      "title": "Uploaded finding AUD-004 is reproduced and dispositioned",
-      "why": "Independent findings must not be silently ignored."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Contract 003",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "publication",
-      "checker_id": "aud-005",
-      "checker_implementation": "scripts/verification_checkers.py#AUD-005",
-      "checker_version": "current",
+      "area": "dashboard",
+      "checker_id": "token_fields",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
-      "id": "AUD-005",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "DASH-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Uploaded finding AUD-005 is reproduced and dispositioned",
+      "invariant": "DASH-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::DASH-001:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::DASH-001:positive",
       "status": "implemented",
-      "title": "Uploaded finding AUD-005 is reproduced and dispositioned",
-      "why": "Independent findings must not be silently ignored."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Dash 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "publication",
-      "checker_id": "aud-006",
-      "checker_implementation": "scripts/verification_checkers.py#AUD-006",
-      "checker_version": "current",
+      "area": "dashboard",
+      "checker_id": "dashboard_schema",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
-      "id": "AUD-006",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "DASH-002",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Uploaded finding AUD-006 is reproduced and dispositioned",
+      "invariant": "DASH-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::DASH-002:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::DASH-002:positive",
       "status": "implemented",
-      "title": "Uploaded finding AUD-006 is reproduced and dispositioned",
-      "why": "Independent findings must not be silently ignored."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Dash 002",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "publication",
-      "checker_id": "aud-007",
-      "checker_implementation": "scripts/verification_checkers.py#AUD-007",
-      "checker_version": "current",
+      "area": "verification",
+      "checker_id": "pipeline",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
-      "id": "AUD-007",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "PIPELINE-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Uploaded finding AUD-007 is reproduced and dispositioned",
+      "invariant": "PIPELINE-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::PIPELINE-001:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::PIPELINE-001:positive",
       "status": "implemented",
-      "title": "Uploaded finding AUD-007 is reproduced and dispositioned",
-      "why": "Independent findings must not be silently ignored."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Pipeline 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "publication",
-      "checker_id": "aud-008",
-      "checker_implementation": "scripts/verification_checkers.py#AUD-008",
-      "checker_version": "current",
+      "area": "verification",
+      "checker_id": "pipeline",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
-      "id": "AUD-008",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "VERIFY-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Uploaded finding AUD-008 is reproduced and dispositioned",
+      "invariant": "VERIFY-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::VERIFY-001:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::VERIFY-001:positive",
       "status": "implemented",
-      "title": "Uploaded finding AUD-008 is reproduced and dispositioned",
-      "why": "Independent findings must not be silently ignored."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Verify 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "publication",
-      "checker_id": "aud-009",
-      "checker_implementation": "scripts/verification_checkers.py#AUD-009",
-      "checker_version": "current",
+      "area": "documentation",
+      "checker_id": "normative_docs",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
-      "id": "AUD-009",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "DOC-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Uploaded finding AUD-009 is reproduced and dispositioned",
+      "invariant": "DOC-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::DOC-001:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::DOC-001:positive",
       "status": "implemented",
-      "title": "Uploaded finding AUD-009 is reproduced and dispositioned",
-      "why": "Independent findings must not be silently ignored."
-    },
-    {
-      "area": "publication",
-      "checker_id": "aud-010",
-      "checker_implementation": "scripts/verification_checkers.py#AUD-010",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
+      "test_files": [
+        "tests/test_verification_registry.py"
       ],
-      "failure_severity": "blocker",
-      "id": "AUD-010",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Uploaded finding AUD-010 is reproduced and dispositioned",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Uploaded finding AUD-010 is reproduced and dispositioned",
-      "why": "Independent findings must not be silently ignored."
+      "title": "Doc 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "tokens",
-      "checker_id": "tok-current-001",
-      "checker_implementation": "scripts/verification_checkers.py#TOK-CURRENT-001",
-      "checker_version": "current",
+      "checker_id": "token_reasoning",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "TOK-CURRENT-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current token invariant 1",
+      "invariant": "TOK-CURRENT-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-001:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-001:positive",
       "status": "implemented",
-      "title": "Current token invariant 1",
-      "why": "The live runner must use one non-double-counted token model."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "tokens",
-      "checker_id": "tok-current-002",
-      "checker_implementation": "scripts/verification_checkers.py#TOK-CURRENT-002",
-      "checker_version": "current",
+      "checker_id": "token_reasoning",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "TOK-CURRENT-002",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current token invariant 2",
+      "invariant": "TOK-CURRENT-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-002:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-002:positive",
       "status": "implemented",
-      "title": "Current token invariant 2",
-      "why": "The live runner must use one non-double-counted token model."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 002",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "tokens",
-      "checker_id": "tok-current-003",
-      "checker_implementation": "scripts/verification_checkers.py#TOK-CURRENT-003",
-      "checker_version": "current",
+      "checker_id": "token_fields",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "TOK-CURRENT-003",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current token invariant 3",
+      "invariant": "TOK-CURRENT-003 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-003:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-003:positive",
       "status": "implemented",
-      "title": "Current token invariant 3",
-      "why": "The live runner must use one non-double-counted token model."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 003",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "tokens",
-      "checker_id": "tok-current-004",
-      "checker_implementation": "scripts/verification_checkers.py#TOK-CURRENT-004",
-      "checker_version": "current",
+      "checker_id": "token_fields",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "TOK-CURRENT-004",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current token invariant 4",
+      "invariant": "TOK-CURRENT-004 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-004:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-004:positive",
       "status": "implemented",
-      "title": "Current token invariant 4",
-      "why": "The live runner must use one non-double-counted token model."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 004",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "tokens",
-      "checker_id": "tok-current-005",
-      "checker_implementation": "scripts/verification_checkers.py#TOK-CURRENT-005",
-      "checker_version": "current",
+      "checker_id": "token_fields",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "TOK-CURRENT-005",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current token invariant 5",
+      "invariant": "TOK-CURRENT-005 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-005:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-005:positive",
       "status": "implemented",
-      "title": "Current token invariant 5",
-      "why": "The live runner must use one non-double-counted token model."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 005",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "tokens",
-      "checker_id": "tok-current-006",
-      "checker_implementation": "scripts/verification_checkers.py#TOK-CURRENT-006",
-      "checker_version": "current",
+      "checker_id": "token_cache_null",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "TOK-CURRENT-006",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current token invariant 6",
+      "invariant": "TOK-CURRENT-006 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-006:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-006:positive",
       "status": "implemented",
-      "title": "Current token invariant 6",
-      "why": "The live runner must use one non-double-counted token model."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 006",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "tokens",
-      "checker_id": "tok-current-007",
-      "checker_implementation": "scripts/verification_checkers.py#TOK-CURRENT-007",
-      "checker_version": "current",
+      "checker_id": "token_cache_null",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "TOK-CURRENT-007",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current token invariant 7",
+      "invariant": "TOK-CURRENT-007 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-007:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-007:positive",
       "status": "implemented",
-      "title": "Current token invariant 7",
-      "why": "The live runner must use one non-double-counted token model."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 007",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "tokens",
-      "checker_id": "tok-current-008",
-      "checker_implementation": "scripts/verification_checkers.py#TOK-CURRENT-008",
-      "checker_version": "current",
+      "checker_id": "normative_docs",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "TOK-CURRENT-008",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current token invariant 8",
+      "invariant": "TOK-CURRENT-008 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-008:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-008:positive",
       "status": "implemented",
-      "title": "Current token invariant 8",
-      "why": "The live runner must use one non-double-counted token model."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 008",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "tokens",
-      "checker_id": "tok-current-009",
-      "checker_implementation": "scripts/verification_checkers.py#TOK-CURRENT-009",
-      "checker_version": "current",
+      "checker_id": "token_fields",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "TOK-CURRENT-009",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current token invariant 9",
+      "invariant": "TOK-CURRENT-009 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::TOK-CURRENT-009:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::TOK-CURRENT-009:positive",
       "status": "implemented",
-      "title": "Current token invariant 9",
-      "why": "The live runner must use one non-double-counted token model."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Tok Current 009",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "cor-current-001",
-      "checker_implementation": "scripts/verification_checkers.py#COR-CURRENT-001",
-      "checker_version": "current",
+      "checker_id": "contract_binding",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "COR-CURRENT-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current correctness invariant 1",
+      "invariant": "COR-CURRENT-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::COR-CURRENT-001:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::COR-CURRENT-001:positive",
       "status": "implemented",
-      "title": "Current correctness invariant 1",
-      "why": "Protected behavior, requirement ownership, thresholds, and critical gates must fail closed."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cor Current 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "cor-current-002",
-      "checker_implementation": "scripts/verification_checkers.py#COR-CURRENT-002",
-      "checker_version": "current",
+      "checker_id": "duplicate_evidence",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "COR-CURRENT-002",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current correctness invariant 2",
+      "invariant": "COR-CURRENT-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::COR-CURRENT-002:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::COR-CURRENT-002:positive",
       "status": "implemented",
-      "title": "Current correctness invariant 2",
-      "why": "Protected behavior, requirement ownership, thresholds, and critical gates must fail closed."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cor Current 002",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "cor-current-003",
-      "checker_implementation": "scripts/verification_checkers.py#COR-CURRENT-003",
-      "checker_version": "current",
+      "checker_id": "correctness_gate",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "COR-CURRENT-003",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current correctness invariant 3",
+      "invariant": "COR-CURRENT-003 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::COR-CURRENT-003:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::COR-CURRENT-003:positive",
       "status": "implemented",
-      "title": "Current correctness invariant 3",
-      "why": "Protected behavior, requirement ownership, thresholds, and critical gates must fail closed."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cor Current 003",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "cor-current-004",
-      "checker_implementation": "scripts/verification_checkers.py#COR-CURRENT-004",
-      "checker_version": "current",
+      "checker_id": "correctness_gate",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "COR-CURRENT-004",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current correctness invariant 4",
+      "invariant": "COR-CURRENT-004 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::COR-CURRENT-004:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::COR-CURRENT-004:positive",
       "status": "implemented",
-      "title": "Current correctness invariant 4",
-      "why": "Protected behavior, requirement ownership, thresholds, and critical gates must fail closed."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cor Current 004",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "cor-current-005",
-      "checker_implementation": "scripts/verification_checkers.py#COR-CURRENT-005",
-      "checker_version": "current",
+      "checker_id": "correctness_gate",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "COR-CURRENT-005",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current correctness invariant 5",
+      "invariant": "COR-CURRENT-005 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::COR-CURRENT-005:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::COR-CURRENT-005:positive",
       "status": "implemented",
-      "title": "Current correctness invariant 5",
-      "why": "Protected behavior, requirement ownership, thresholds, and critical gates must fail closed."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cor Current 005",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "cor-current-006",
-      "checker_implementation": "scripts/verification_checkers.py#COR-CURRENT-006",
-      "checker_version": "current",
+      "checker_id": "candidate_isolation",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "COR-CURRENT-006",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current correctness invariant 6",
+      "invariant": "COR-CURRENT-006 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::COR-CURRENT-006:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::COR-CURRENT-006:positive",
       "status": "implemented",
-      "title": "Current correctness invariant 6",
-      "why": "Protected behavior, requirement ownership, thresholds, and critical gates must fail closed."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cor Current 006",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "cor-current-007",
-      "checker_implementation": "scripts/verification_checkers.py#COR-CURRENT-007",
-      "checker_version": "current",
+      "checker_id": "correctness_gate",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "COR-CURRENT-007",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current correctness invariant 7",
+      "invariant": "COR-CURRENT-007 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::COR-CURRENT-007:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::COR-CURRENT-007:positive",
       "status": "implemented",
-      "title": "Current correctness invariant 7",
-      "why": "Protected behavior, requirement ownership, thresholds, and critical gates must fail closed."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cor Current 007",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "cor-current-008",
-      "checker_implementation": "scripts/verification_checkers.py#COR-CURRENT-008",
-      "checker_version": "current",
+      "checker_id": "correctness_gate",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "COR-CURRENT-008",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current correctness invariant 8",
+      "invariant": "COR-CURRENT-008 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::COR-CURRENT-008:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::COR-CURRENT-008:positive",
       "status": "implemented",
-      "title": "Current correctness invariant 8",
-      "why": "Protected behavior, requirement ownership, thresholds, and critical gates must fail closed."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cor Current 008",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "cor-current-009",
-      "checker_implementation": "scripts/verification_checkers.py#COR-CURRENT-009",
-      "checker_version": "current",
+      "checker_id": "contract_binding",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "COR-CURRENT-009",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current correctness invariant 9",
+      "invariant": "COR-CURRENT-009 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::COR-CURRENT-009:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::COR-CURRENT-009:positive",
       "status": "implemented",
-      "title": "Current correctness invariant 9",
-      "why": "Protected behavior, requirement ownership, thresholds, and critical gates must fail closed."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cor Current 009",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "cor-current-010",
-      "checker_implementation": "scripts/verification_checkers.py#COR-CURRENT-010",
-      "checker_version": "current",
+      "checker_id": "dashboard_schema",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "COR-CURRENT-010",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Current correctness invariant 10",
+      "invariant": "COR-CURRENT-010 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::COR-CURRENT-010:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::COR-CURRENT-010:positive",
       "status": "implemented",
-      "title": "Current correctness invariant 10",
-      "why": "Protected behavior, requirement ownership, thresholds, and critical gates must fail closed."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cor Current 010",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "mut-current-001",
-      "checker_implementation": "scripts/verification_checkers.py#MUT-CURRENT-001",
-      "checker_version": "current",
+      "checker_id": "mutation_artifacts",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "MUT-CURRENT-001",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Mutation readiness invariant 1",
+      "invariant": "MUT-CURRENT-001 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-001:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-001:positive",
       "status": "implemented",
-      "title": "Mutation readiness invariant 1",
-      "why": "Scorer simulations must never masquerade as target-code mutation calibration."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Mut Current 001",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "mut-current-002",
-      "checker_implementation": "scripts/verification_checkers.py#MUT-CURRENT-002",
-      "checker_version": "current",
+      "checker_id": "mutation_process",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "MUT-CURRENT-002",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Mutation readiness invariant 2",
+      "invariant": "MUT-CURRENT-002 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-002:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-002:positive",
       "status": "implemented",
-      "title": "Mutation readiness invariant 2",
-      "why": "Scorer simulations must never masquerade as target-code mutation calibration."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Mut Current 002",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "mut-current-003",
-      "checker_implementation": "scripts/verification_checkers.py#MUT-CURRENT-003",
-      "checker_version": "current",
+      "checker_id": "mutation_process",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "MUT-CURRENT-003",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Mutation readiness invariant 3",
+      "invariant": "MUT-CURRENT-003 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-003:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-003:positive",
       "status": "implemented",
-      "title": "Mutation readiness invariant 3",
-      "why": "Scorer simulations must never masquerade as target-code mutation calibration."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Mut Current 003",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
       "area": "correctness",
-      "checker_id": "mut-current-004",
-      "checker_implementation": "scripts/verification_checkers.py#MUT-CURRENT-004",
-      "checker_version": "current",
+      "checker_id": "mutation_process",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
       "commands": [
-        "uv run python scripts/verification_registry.py run"
+        "python scripts/verification_registry.py run"
       ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
       "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
       "id": "MUT-CURRENT-004",
       "implementation": [
         "scripts/verification_checkers.py"
       ],
-      "invariant": "Mutation readiness invariant 4",
+      "invariant": "MUT-CURRENT-004 is evaluated by its concrete behavioral checker and rejects its dedicated injected defect.",
       "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-004:fault",
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/checker-fault-injection.json"
       ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
+      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-004:positive",
       "status": "implemented",
-      "title": "Mutation readiness invariant 4",
-      "why": "Scorer simulations must never masquerade as target-code mutation calibration."
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Mut Current 004",
+      "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
-      "area": "correctness",
-      "checker_id": "mut-current-005",
-      "checker_implementation": "scripts/verification_checkers.py#MUT-CURRENT-005",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "MUT-CURRENT-005",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Mutation readiness invariant 5",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Mutation readiness invariant 5",
-      "why": "Scorer simulations must never masquerade as target-code mutation calibration."
-    },
-    {
-      "area": "correctness",
-      "checker_id": "mut-current-006",
-      "checker_implementation": "scripts/verification_checkers.py#MUT-CURRENT-006",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "MUT-CURRENT-006",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Mutation readiness invariant 6",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Mutation readiness invariant 6",
-      "why": "Scorer simulations must never masquerade as target-code mutation calibration."
-    },
-    {
-      "area": "security",
-      "checker_id": "handoff-current-001",
-      "checker_implementation": "scripts/verification_checkers.py#HANDOFF-CURRENT-001",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "HANDOFF-CURRENT-001",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Review handoff invariant 1",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Review handoff invariant 1",
-      "why": "Review archives must preserve source identity and reject hostile archive structures."
-    },
-    {
-      "area": "security",
-      "checker_id": "handoff-current-002",
-      "checker_implementation": "scripts/verification_checkers.py#HANDOFF-CURRENT-002",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "HANDOFF-CURRENT-002",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Review handoff invariant 2",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Review handoff invariant 2",
-      "why": "Review archives must preserve source identity and reject hostile archive structures."
-    },
-    {
-      "area": "security",
-      "checker_id": "handoff-current-003",
-      "checker_implementation": "scripts/verification_checkers.py#HANDOFF-CURRENT-003",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "HANDOFF-CURRENT-003",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Review handoff invariant 3",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Review handoff invariant 3",
-      "why": "Review archives must preserve source identity and reject hostile archive structures."
-    },
-    {
-      "area": "security",
-      "checker_id": "handoff-current-004",
-      "checker_implementation": "scripts/verification_checkers.py#HANDOFF-CURRENT-004",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "HANDOFF-CURRENT-004",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Review handoff invariant 4",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Review handoff invariant 4",
-      "why": "Review archives must preserve source identity and reject hostile archive structures."
-    },
-    {
-      "area": "security",
-      "checker_id": "handoff-current-005",
-      "checker_implementation": "scripts/verification_checkers.py#HANDOFF-CURRENT-005",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "HANDOFF-CURRENT-005",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Review handoff invariant 5",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Review handoff invariant 5",
-      "why": "Review archives must preserve source identity and reject hostile archive structures."
-    },
-    {
-      "area": "security",
-      "checker_id": "handoff-current-006",
-      "checker_implementation": "scripts/verification_checkers.py#HANDOFF-CURRENT-006",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "HANDOFF-CURRENT-006",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Review handoff invariant 6",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Review handoff invariant 6",
-      "why": "Review archives must preserve source identity and reject hostile archive structures."
-    },
-    {
-      "area": "security",
-      "checker_id": "handoff-current-007",
-      "checker_implementation": "scripts/verification_checkers.py#HANDOFF-CURRENT-007",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "HANDOFF-CURRENT-007",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Review handoff invariant 7",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Review handoff invariant 7",
-      "why": "Review archives must preserve source identity and reject hostile archive structures."
-    },
-    {
-      "area": "security",
-      "checker_id": "handoff-current-008",
-      "checker_implementation": "scripts/verification_checkers.py#HANDOFF-CURRENT-008",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "HANDOFF-CURRENT-008",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Review handoff invariant 8",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Review handoff invariant 8",
-      "why": "Review archives must preserve source identity and reject hostile archive structures."
-    },
-    {
-      "area": "security",
-      "checker_id": "handoff-current-009",
-      "checker_implementation": "scripts/verification_checkers.py#HANDOFF-CURRENT-009",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "HANDOFF-CURRENT-009",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Review handoff invariant 9",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Review handoff invariant 9",
-      "why": "Review archives must preserve source identity and reject hostile archive structures."
-    },
-    {
-      "area": "security",
-      "checker_id": "handoff-current-010",
-      "checker_implementation": "scripts/verification_checkers.py#HANDOFF-CURRENT-010",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "HANDOFF-CURRENT-010",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Review handoff invariant 10",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Review handoff invariant 10",
-      "why": "Review archives must preserve source identity and reject hostile archive structures."
-    },
-    {
-      "area": "source",
-      "checker_id": "clean-current-001",
-      "checker_implementation": "scripts/verification_checkers.py#CLEAN-CURRENT-001",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "CLEAN-CURRENT-001",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Private pre-release cleanup invariant 1",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Private pre-release cleanup invariant 1",
-      "why": "Live code must expose one methodology without translation or completed-recovery paths."
-    },
-    {
-      "area": "source",
-      "checker_id": "clean-current-002",
-      "checker_implementation": "scripts/verification_checkers.py#CLEAN-CURRENT-002",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "CLEAN-CURRENT-002",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Private pre-release cleanup invariant 2",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Private pre-release cleanup invariant 2",
-      "why": "Live code must expose one methodology without translation or completed-recovery paths."
-    },
-    {
-      "area": "source",
-      "checker_id": "clean-current-003",
-      "checker_implementation": "scripts/verification_checkers.py#CLEAN-CURRENT-003",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "CLEAN-CURRENT-003",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Private pre-release cleanup invariant 3",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Private pre-release cleanup invariant 3",
-      "why": "Live code must expose one methodology without translation or completed-recovery paths."
-    },
-    {
-      "area": "source",
-      "checker_id": "clean-current-004",
-      "checker_implementation": "scripts/verification_checkers.py#CLEAN-CURRENT-004",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "CLEAN-CURRENT-004",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Private pre-release cleanup invariant 4",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Private pre-release cleanup invariant 4",
-      "why": "Live code must expose one methodology without translation or completed-recovery paths."
-    },
-    {
-      "area": "source",
-      "checker_id": "clean-current-005",
-      "checker_implementation": "scripts/verification_checkers.py#CLEAN-CURRENT-005",
-      "checker_version": "current",
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "blocker",
-      "id": "CLEAN-CURRENT-005",
-      "implementation": [
-        "scripts/verification_checkers.py"
-      ],
-      "invariant": "Private pre-release cleanup invariant 5",
-      "kind": "automated",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_private_prerelease_cleanup.py"
-      ],
-      "status": "implemented",
-      "title": "Private pre-release cleanup invariant 5",
-      "why": "Live code must expose one methodology without translation or completed-recovery paths."
-    },
-    {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-001",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 1",
+      "invariant": "cross-artifact consistency",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 1",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "cross-artifact consistency",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-002",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 2",
+      "invariant": "issue-contract fidelity",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 2",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "issue-contract fidelity",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-003",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 3",
+      "invariant": "requirement weights and criticality",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 3",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "requirement weights and criticality",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-004",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 4",
+      "invariant": "real mutant adequacy",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 4",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "real mutant adequacy",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-005",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 5",
+      "invariant": "cache interpretation",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 5",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "cache interpretation",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-006",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 6",
+      "invariant": "statistical claim calibration",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 6",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "statistical claim calibration",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-007",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 7",
+      "invariant": "operational versus attribution separation",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 7",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "operational versus attribution separation",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-008",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 8",
+      "invariant": "archive and provenance completeness",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 8",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "archive and provenance completeness",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-009",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 9",
+      "invariant": "recommendation calibration",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 9",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "recommendation calibration",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-010",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 10",
+      "invariant": "reward-hacking review",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 10",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "reward-hacking review",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-011",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 11",
+      "invariant": "current live token formula review",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 11",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "current live token formula review",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-012",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 12",
+      "invariant": "no compatibility or migration path review",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 12",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "no compatibility or migration path review",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-013",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 13",
+      "invariant": "behavioral checker depth review",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 13",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "behavioral checker depth review",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-014",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 14",
+      "invariant": "review-handoff Git-tree reconstruction review",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 14",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "review-handoff Git-tree reconstruction review",
+      "why": "Semantic review complements deterministic checks."
     },
     {
-      "area": "documentation",
+      "area": "verification",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
       "failure_severity": "high",
+      "fixture_files": [],
       "id": "LLM-015",
       "implementation": [
-        "AGENTS.md",
-        "docs/llm-maintenance-verification.md"
+        "AGENTS.md"
       ],
-      "invariant": "LLM semantic check 15",
+      "invariant": "final-source and generated-output separation review",
       "kind": "llm_manual",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "negative_fixture": null,
       "output_artifacts": [
-        "current-verification-report.json"
+        "verification/llm-verification-report.json"
       ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
+      "positive_fixture": null,
       "status": "documented",
-      "title": "LLM semantic check 15",
-      "why": "Schemas cannot establish every semantic relationship."
+      "test_files": [],
+      "title": "final-source and generated-output separation review",
+      "why": "Semantic review complements deterministic checks."
+    },
+    {
+      "area": "verification",
+      "checker_id": null,
+      "checker_implementation": null,
+      "checker_version": null,
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-016",
+      "implementation": [
+        "AGENTS.md"
+      ],
+      "invariant": "live requirement-evidence dataflow",
+      "kind": "llm_manual",
+      "negative_fixture": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json"
+      ],
+      "positive_fixture": null,
+      "status": "documented",
+      "test_files": [],
+      "title": "live requirement-evidence dataflow",
+      "why": "Semantic review complements deterministic checks."
+    },
+    {
+      "area": "verification",
+      "checker_id": null,
+      "checker_implementation": null,
+      "checker_version": null,
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-017",
+      "implementation": [
+        "AGENTS.md"
+      ],
+      "invariant": "issue-contract fidelity against sanitized issue text",
+      "kind": "llm_manual",
+      "negative_fixture": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json"
+      ],
+      "positive_fixture": null,
+      "status": "documented",
+      "test_files": [],
+      "title": "issue-contract fidelity against sanitized issue text",
+      "why": "Semantic review complements deterministic checks."
+    },
+    {
+      "area": "verification",
+      "checker_id": null,
+      "checker_implementation": null,
+      "checker_version": null,
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-018",
+      "implementation": [
+        "AGENTS.md"
+      ],
+      "invariant": "reference-diagnostic versus task-success scope",
+      "kind": "llm_manual",
+      "negative_fixture": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json"
+      ],
+      "positive_fixture": null,
+      "status": "documented",
+      "test_files": [],
+      "title": "reference-diagnostic versus task-success scope",
+      "why": "Semantic review complements deterministic checks."
+    },
+    {
+      "area": "verification",
+      "checker_id": null,
+      "checker_implementation": null,
+      "checker_version": null,
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-019",
+      "implementation": [
+        "AGENTS.md"
+      ],
+      "invariant": "dashboard schema and metric parity",
+      "kind": "llm_manual",
+      "negative_fixture": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json"
+      ],
+      "positive_fixture": null,
+      "status": "documented",
+      "test_files": [],
+      "title": "dashboard schema and metric parity",
+      "why": "Semantic review complements deterministic checks."
+    },
+    {
+      "area": "verification",
+      "checker_id": null,
+      "checker_implementation": null,
+      "checker_version": null,
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-020",
+      "implementation": [
+        "AGENTS.md"
+      ],
+      "invariant": "mutation evidence target-code execution",
+      "kind": "llm_manual",
+      "negative_fixture": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json"
+      ],
+      "positive_fixture": null,
+      "status": "documented",
+      "test_files": [],
+      "title": "mutation evidence target-code execution",
+      "why": "Semantic review complements deterministic checks."
+    },
+    {
+      "area": "verification",
+      "checker_id": null,
+      "checker_implementation": null,
+      "checker_version": null,
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-021",
+      "implementation": [
+        "AGENTS.md"
+      ],
+      "invariant": "checker fault-injection depth",
+      "kind": "llm_manual",
+      "negative_fixture": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json"
+      ],
+      "positive_fixture": null,
+      "status": "documented",
+      "test_files": [],
+      "title": "checker fault-injection depth",
+      "why": "Semantic review complements deterministic checks."
+    },
+    {
+      "area": "verification",
+      "checker_id": null,
+      "checker_implementation": null,
+      "checker_version": null,
+      "commands": [],
+      "expected_evidence_schema": "schemas/llm-verification-report.schema.json",
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-022",
+      "implementation": [
+        "AGENTS.md"
+      ],
+      "invariant": "private pre-release normative consistency",
+      "kind": "llm_manual",
+      "negative_fixture": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json"
+      ],
+      "positive_fixture": null,
+      "status": "documented",
+      "test_files": [],
+      "title": "private pre-release normative consistency",
+      "why": "Semantic review complements deterministic checks."
     },
     {
       "area": "security",
       "checker_id": null,
       "checker_implementation": null,
       "checker_version": null,
-      "commands": [
-        "uv run python scripts/verification_registry.py run"
-      ],
-      "failure_severity": "informational",
-      "id": "SEC-001",
+      "commands": [],
+      "expected_evidence_schema": null,
+      "failure_severity": "medium",
+      "fixture_files": [],
+      "id": "EXT-001",
       "implementation": [
-        "SPEC.md"
+        "docs/methodology.md"
       ],
-      "invariant": "Hard external-egress denial",
+      "invariant": "External egress is denied by a capability outside this repository.",
       "kind": "external_capability",
-      "last_reviewed_subject_tree": null,
-      "negative_fixture": [
-        "tests/test_verification_registry.py"
-      ],
-      "output_artifacts": [
-        "current-verification-report.json"
-      ],
-      "positive_fixture": [
-        "tests/test_verification_registry.py"
-      ],
-      "status": "not_automatable",
-      "title": "Hard external-egress denial",
-      "why": "The local platform cannot enforce hard egress denial."
+      "negative_fixture": null,
+      "output_artifacts": [],
+      "positive_fixture": null,
+      "status": "external_limitation",
+      "test_files": [],
+      "title": "Hard external egress denial",
+      "why": "Repository checks cannot create a host network sandbox."
     }
   ],
   "schema_id": "verification-registry-current"

@@ -23,7 +23,7 @@ const publishedDescriptors = Object.fromEntries(Object.entries(descriptorSource)
 
 const metricValues = (tokens: number, time: number, calls: number) => ({
   modeled_weighted_token_load: tokens, observed_non_cached_input_tokens: tokens * .8,
-  output_tokens_including_reasoning: tokens * .1, reasoning_output_tokens_including_reasoning: tokens * .05,
+  output_tokens_including_reasoning: tokens * .1, reasoning_output_tokens: tokens * .05,
   solve_wall_seconds: time, warm_workflow_seconds: time + 10,
   execution_calls_started: calls, intended_tool_successful_calls: 2,
   estimated_monetary_cost: null,

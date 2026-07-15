@@ -1,0 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="protected-common"><testcase name="movesCurrentCardToAllowedListIdWhenNamesAreDuplicated" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.473" />
+  <testcase name="movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.473" />
+  </testsuite>

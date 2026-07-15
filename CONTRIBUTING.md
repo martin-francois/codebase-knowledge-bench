@@ -89,7 +89,7 @@ Never recursively include an older `suite-bundle.zip` in a new archive.
 - Sort paths, mappings, issues, variants, and report rows before serialization.
 - Never depend on Python hash or set iteration order.
 - Resolve basenames only when uniquely identifiable.
-- Treat schemas and machine-readable field names as public compatibility contracts.
+- Treat schemas and machine-readable field names as private pre-release internal formats.
 - Preserve raw evidence and old derived meaning when changing scoring.
 - Validate deterministic behavior across multiple `PYTHONHASHSEED` values when relevant.
 
