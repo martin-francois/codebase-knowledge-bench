@@ -157,6 +157,9 @@ class FreshWorkspaceRetryLaunchTests(unittest.TestCase):
             self.assertEqual(record["phase"], "smoke")
             self.assertEqual(record["evidence_source"], "fresh_workspace_direct_python_api")
             self.assertIn('"phase":"solve"', (run_dir / "tool-invocations.jsonl").read_text())
+            raw = json.loads((run_dir / "tool-smoke.jsonl").read_text())
+            self.assertEqual(raw["type"], "fresh_workspace_direct_smoke")
+            self.assertFalse(raw["model_used"])
 
 
 if __name__ == "__main__":

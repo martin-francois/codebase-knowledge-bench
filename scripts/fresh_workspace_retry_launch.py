@@ -263,6 +263,16 @@ def project_fresh_smoke_telemetry(output: Path, run_dir: Path) -> None:
         "evidence_source": "fresh_workspace_direct_python_api",
     }
     smoke_line = json.dumps(record, sort_keys=True) + "\n"
+    raw_event = {
+        "type": "fresh_workspace_direct_smoke",
+        "schema_version": smoke.get("schema_version", "fresh-workspace-direct-smoke-v1"),
+        "model_used": False,
+        "successful": True,
+        "issue_relevant": True,
+        "normalized_output_sha256": smoke.get("normalized_output_sha256"),
+        "evidence_source": "selected-smoke-result.json",
+    }
+    atomic_text(run_dir / "tool-smoke.jsonl", json.dumps(raw_event, sort_keys=True) + "\n")
     atomic_text(run_dir / "tool-invocations-smoke.jsonl", smoke_line)
     solve = run_dir / "tool-invocations-solve.jsonl"
     solve_text = solve.read_text(encoding="utf-8") if solve.is_file() else ""
