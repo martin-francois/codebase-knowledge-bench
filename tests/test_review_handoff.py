@@ -40,5 +40,12 @@ class ReviewHandoffTest(unittest.TestCase):
     def test_agent_response_is_required_member(self):
         text=Path(ROOT/"scripts/build_review_handoff.py").read_text(); self.assertIn('"agent-response.md":agent_response.read_bytes()',text)
 
+    def test_published_repo_evidence_uris_resolve_to_files(self):
+        report=json.loads((ROOT/"verification/current-canonical-verification-report.json").read_text())
+        for check in report["checks"]:
+            for uri in check["evidence"]:
+                if uri.startswith("repo://"):
+                    self.assertTrue((ROOT/uri[7:]).is_file(), f"non-file evidence URI: {uri}")
+
 
 if __name__=="__main__":unittest.main()

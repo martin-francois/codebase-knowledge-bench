@@ -149,7 +149,9 @@ def build_facts(repo: Path, canonical: Path, supplement: Path) -> tuple[dict[str
         "COR-025": vnext["mutation_calibration"]["declared_mutants"] == vnext["mutation_calibration"]["materialized_mutants"],
         "COR-026": vnext_ok, "COR-027": vnext["diversity"]["broad_comparative_claims_supported"] and not vnext["zero_mutant_detection_diversity"]["broad_comparative_claims_supported"],
     }
-    for identifier, passed in cor_conditions.items(): facts[identifier] = passed; evidence[identifier] = ["repo://scripts/vnext_fixture.py", "repo://verification/vnext/"]
+    for identifier, passed in cor_conditions.items():
+        facts[identifier] = passed
+        evidence[identifier] = ["repo://scripts/vnext_fixture.py", "repo://verification/vnext-readiness.json"]
     issue = vnext["diversity"]
     issue_conditions = [
         any(row["ceiling_risk"] for row in issue["issue_diversity_matrix"]), any(row["floor_risk"] for row in issue["issue_diversity_matrix"]),
