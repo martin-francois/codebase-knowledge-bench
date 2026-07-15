@@ -143,6 +143,17 @@ def load_frozen_runner(frozen: Path):
 def materialize_selected_state(module: Any, output: Path, source_output: Path,
                                execution: Path) -> Any:
     run_root = module.RUN_ROOT
+    if run_root.exists():
+        archive_root = output / "pre-spawn-attempts"
+        archive_root.mkdir(parents=True, exist_ok=True)
+        sequence = len([path for path in archive_root.iterdir() if path.is_dir()]) + 1
+        archived = archive_root / f"attempt-{sequence:03d}"
+        shutil.move(str(run_root), archived)
+        atomic_json(archived / "archive-receipt.json", {
+            "schema_version": "fresh-retry-pre-spawn-archive-v1",
+            "reason": "fresh materialization did not reach child spawn",
+            "source_run_root": str(run_root),
+        })
     module.ensure_dirs()
     with tempfile.TemporaryDirectory() as temporary:
         restored = Path(temporary)
