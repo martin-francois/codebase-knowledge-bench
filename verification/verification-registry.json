@@ -1,0 +1,2381 @@
+{
+  "entries": [
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-001",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Use requirement weights rather than test counts",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Use requirement weights rather than test counts",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-002",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Keep duplicate tests from changing score",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Keep duplicate tests from changing score",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-003",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Prevent critical failures from averaging away",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Prevent critical failures from averaging away",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-004",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Exclude candidate tests from protected correctness",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Exclude candidate tests from protected correctness",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-005",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Treat non-evaluable reference behavior as diagnostic",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Treat non-evaluable reference behavior as diagnostic",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-006",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Fail source-similar behaviorally wrong code",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Fail source-similar behaviorally wrong code",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-007",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Pass source-different behaviorally correct code",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Pass source-different behaviorally correct code",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-008",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Represent partial requirements partially",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Represent partial requirements partially",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-009",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Distinguish over-broad rejection from correct negative behavior",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Distinguish over-broad rejection from correct negative behavior",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-010",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Fail side effects before critical validation",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Fail side effects before critical validation",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-011",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Represent regression-safe issue-incomplete results",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Represent regression-safe issue-incomplete results",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-012",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Publish requirement vectors alongside scalar scores",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Publish requirement vectors alongside scalar scores",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-013",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Reproduce historical methodology unchanged",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Reproduce historical methodology unchanged",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-014",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Prevent vNext from overwriting historical outputs",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Prevent vNext from overwriting historical outputs",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-015",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Expose requirement dimensions in dashboard",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Expose requirement dimensions in dashboard",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "behavioral-correctness-vNext"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-016",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Derive task success from critical/direct/common rules",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Derive task success from critical/direct/common rules",
+      "why": "Protected correctness must reward observable requirements without test-count or source-similarity gaming."
+    },
+    {
+      "applies_to": [
+        "future suites"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-ISSUE-001",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Detect ceiling tasks",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Detect ceiling tasks",
+      "why": "Issue selection determines generalizability and must expose ceiling, floor, sparsity, and diversity risk."
+    },
+    {
+      "applies_to": [
+        "future suites"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-ISSUE-002",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Detect floor tasks",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Detect floor tasks",
+      "why": "Issue selection determines generalizability and must expose ceiling, floor, sparsity, and diversity risk."
+    },
+    {
+      "applies_to": [
+        "future suites"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-ISSUE-003",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Warn when one issue supplies all quality differentiation",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Warn when one issue supplies all quality differentiation",
+      "why": "Issue selection determines generalizability and must expose ceiling, floor, sparsity, and diversity risk."
+    },
+    {
+      "applies_to": [
+        "future suites"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-ISSUE-004",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Report issue-skill coverage",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Report issue-skill coverage",
+      "why": "Issue selection determines generalizability and must expose ceiling, floor, sparsity, and diversity risk."
+    },
+    {
+      "applies_to": [
+        "future suites"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-ISSUE-005",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Make minimum issue-cluster policy explicit",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Make minimum issue-cluster policy explicit",
+      "why": "Issue selection determines generalizability and must expose ceiling, floor, sparsity, and diversity risk."
+    },
+    {
+      "applies_to": [
+        "future suites"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-ISSUE-006",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Require diversity for broad claims",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Require diversity for broad claims",
+      "why": "Issue selection determines generalizability and must expose ceiling, floor, sparsity, and diversity risk."
+    },
+    {
+      "applies_to": [
+        "future suites"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-ISSUE-007",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Require minimum independent behavior cases",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Require minimum independent behavior cases",
+      "why": "Issue selection determines generalizability and must expose ceiling, floor, sparsity, and diversity risk."
+    },
+    {
+      "applies_to": [
+        "future suites"
+      ],
+      "area": "correctness",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [
+        "fixtures/methodology-vnext/issue-486-requirements.json",
+        "fixtures/methodology-vnext/issue-498-requirements.json",
+        "fixtures/methodology-vnext/issue-488-requirements.json"
+      ],
+      "id": "COR-ISSUE-008",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Keep issue-selection rationale source-controlled",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Keep issue-selection rationale source-controlled",
+      "why": "Issue selection determines generalizability and must expose ceiling, floor, sparsity, and diversity risk."
+    },
+    {
+      "applies_to": [
+        "maintenance changes"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-001",
+      "implementation": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "schemas/llm-verification-report.schema.json"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Cross-artifact semantic consistency",
+      "kind": "llm_manual",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json",
+        "verification/llm-verification-report.md"
+      ],
+      "status": "documented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cross-artifact semantic consistency",
+      "why": "Schemas cannot prove every semantic relationship; a recorded maintenance review closes that gap."
+    },
+    {
+      "applies_to": [
+        "maintenance changes"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-002",
+      "implementation": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "schemas/llm-verification-report.schema.json"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Issue-contract fidelity",
+      "kind": "llm_manual",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json",
+        "verification/llm-verification-report.md"
+      ],
+      "status": "documented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Issue-contract fidelity",
+      "why": "Schemas cannot prove every semantic relationship; a recorded maintenance review closes that gap."
+    },
+    {
+      "applies_to": [
+        "maintenance changes"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-003",
+      "implementation": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "schemas/llm-verification-report.schema.json"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Correctness-weight and criticality review",
+      "kind": "llm_manual",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json",
+        "verification/llm-verification-report.md"
+      ],
+      "status": "documented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Correctness-weight and criticality review",
+      "why": "Schemas cannot prove every semantic relationship; a recorded maintenance review closes that gap."
+    },
+    {
+      "applies_to": [
+        "maintenance changes"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-004",
+      "implementation": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "schemas/llm-verification-report.schema.json"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Mutation adequacy review",
+      "kind": "llm_manual",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json",
+        "verification/llm-verification-report.md"
+      ],
+      "status": "documented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Mutation adequacy review",
+      "why": "Schemas cannot prove every semantic relationship; a recorded maintenance review closes that gap."
+    },
+    {
+      "applies_to": [
+        "maintenance changes"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-005",
+      "implementation": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "schemas/llm-verification-report.schema.json"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Cache interpretation and fairness review",
+      "kind": "llm_manual",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json",
+        "verification/llm-verification-report.md"
+      ],
+      "status": "documented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Cache interpretation and fairness review",
+      "why": "Schemas cannot prove every semantic relationship; a recorded maintenance review closes that gap."
+    },
+    {
+      "applies_to": [
+        "maintenance changes"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-006",
+      "implementation": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "schemas/llm-verification-report.schema.json"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Statistical-claim calibration",
+      "kind": "llm_manual",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json",
+        "verification/llm-verification-report.md"
+      ],
+      "status": "documented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Statistical-claim calibration",
+      "why": "Schemas cannot prove every semantic relationship; a recorded maintenance review closes that gap."
+    },
+    {
+      "applies_to": [
+        "maintenance changes"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-007",
+      "implementation": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "schemas/llm-verification-report.schema.json"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Operational-versus-attribution separation",
+      "kind": "llm_manual",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json",
+        "verification/llm-verification-report.md"
+      ],
+      "status": "documented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Operational-versus-attribution separation",
+      "why": "Schemas cannot prove every semantic relationship; a recorded maintenance review closes that gap."
+    },
+    {
+      "applies_to": [
+        "maintenance changes"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-008",
+      "implementation": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "schemas/llm-verification-report.schema.json"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Archive and provenance completeness",
+      "kind": "llm_manual",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json",
+        "verification/llm-verification-report.md"
+      ],
+      "status": "documented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Archive and provenance completeness",
+      "why": "Schemas cannot prove every semantic relationship; a recorded maintenance review closes that gap."
+    },
+    {
+      "applies_to": [
+        "maintenance changes"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-009",
+      "implementation": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "schemas/llm-verification-report.schema.json"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Recommendation calibration",
+      "kind": "llm_manual",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json",
+        "verification/llm-verification-report.md"
+      ],
+      "status": "documented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Recommendation calibration",
+      "why": "Schemas cannot prove every semantic relationship; a recorded maintenance review closes that gap."
+    },
+    {
+      "applies_to": [
+        "maintenance changes"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "LLM-010",
+      "implementation": [
+        "AGENTS.md",
+        "docs/llm-maintenance-verification.md",
+        "schemas/llm-verification-report.schema.json"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Regression-risk and reward-hacking review",
+      "kind": "llm_manual",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/llm-verification-report.json",
+        "verification/llm-verification-report.md"
+      ],
+      "status": "documented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Regression-risk and reward-hacking review",
+      "why": "Schemas cannot prove every semantic relationship; a recorded maintenance review closes that gap."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-001",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Verify canonical ZIP SHA-256 before supplement generation",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Canonical archive identity",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-002",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Verify canonical manifest count and root",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Canonical manifest identity",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-003",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Verify every canonical manifest path, size, and SHA-256",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Canonical entry integrity",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-004",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Discover and validate every embedded review manifest dynamically",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Dynamic embedded manifests",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-005",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Parse all 63 primary JSONL streams and reconcile usage",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Primary JSONL reconciliation",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-006",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Reconcile 63 terminal arms and 64 actual child spawns",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Matrix lifecycle reconciliation",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-007",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Bind operator summary to one archive and canonical result",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Archive-bound summary",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-008",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Recompute every displayed operator-summary value from canonical JSON",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Recomputed summary values",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-009",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Label arithmetic aggregates descriptive",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Descriptive arithmetic labels",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-010",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Label paired geometric effects primary matched effects",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Primary paired labels",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-011",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Distinguish intended-tool totals and means per task",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Intended-call units",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-012",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Package all seven referenced retry-provenance artifacts",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Retry proof completeness",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-013",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Match retry-provenance hashes to completed-retry evidence",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Retry proof hashes",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-014",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Validate semantic invariants in retry provenance",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Retry proof semantics",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-015",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Validate dashboard schema and canonical join",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Dashboard canonical join",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-016",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Reject external dashboard dependencies",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Offline dashboard",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-017",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Validate browser rendering and synchronized accessible table",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Accessible browser rendering",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-018",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Reconstruct all source roles",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Source reconstruction",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-019",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Validate detached checksums and receipts",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Detached publication integrity",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-020",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Require non-inferiority, heterogeneity, cache/retry sensitivity, attribution, cost limits, and cluster warning",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Corrected report completeness",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-021",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Validate supplement manifest paths and root",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Supplement manifest integrity",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-022",
+      "implementation": [
+        "scripts/verification_registry.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Require generator source, tests, and schemas to be tracked and archived",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Publication source provenance",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-023",
+      "implementation": [
+        "scripts/verification_registry.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Require no task-related untracked or modified publication source",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Publication worktree cleanliness",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-024",
+      "implementation": [
+        "scripts/publication_supplement.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Reject values from another archive identity",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_publication_supplement.py"
+      ],
+      "title": "Stale-run rejection",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "canonical publication",
+        "future publications"
+      ],
+      "area": "publication",
+      "commands": [
+        "python3 -m unittest tests.test_publication_supplement tests.test_verification_registry"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "PUB-025",
+      "implementation": [
+        "scripts/publication_supplement.py",
+        "scripts/verification_registry.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Prohibit model or child-process launch during supplement generation",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "canonical-publication-supplement.validation.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Publication-only execution",
+      "why": "Publication must remain reproducible, archive-bound, and resistant to stale or partial validation."
+    },
+    {
+      "applies_to": [
+        "all suites"
+      ],
+      "area": "security",
+      "commands": [],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "SEC-001",
+      "implementation": [
+        "SECURITY.md"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Hard external-egress denial remains an explicit external capability limitation.",
+      "kind": "external_capability",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "not_automatable",
+      "test_files": [
+        "tests/test_harness.py"
+      ],
+      "title": "Hard external-egress denial",
+      "why": "The repository must not claim a platform capability it cannot enforce."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-001",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Parse authoritative turn.completed token fields",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Parse authoritative turn.completed token fields",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-002",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Enforce input equals cached plus observed non-cached",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Enforce input equals cached plus observed non-cached",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-003",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Distinguish unavailable cache writes from zero",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Distinguish unavailable cache writes from zero",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-004",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Suppress pricing cost when cache writes or prices are incomplete",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Suppress pricing cost when cache writes or prices are incomplete",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-005",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Handle zero-input cache-hit rate",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Handle zero-input cache-hit rate",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-006",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Publish cache-weight winner sensitivity",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Publish cache-weight winner sensitivity",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-007",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Summarize repetition and serial-position cache effects",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Summarize repetition and serial-position cache effects",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-008",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Describe 30-minute TTL as a minimum, not eviction",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Describe 30-minute TTL as a minimum, not eviction",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-009",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Record natural mode when isolation is unavailable",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Record natural mode when isolation is unavailable",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-010",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Use per-arm cache keys only after official feature detection",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Use per-arm cache keys only after official feature detection",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-011",
+      "implementation": [
+        "scripts/future_methodology.py",
+        "dashboard/src/analysis.ts",
+        "dashboard/src/main.tsx"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Expose cached and observed non-cached dashboard views",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py",
+        "dashboard/tests/analysis.test.ts",
+        "dashboard/tests/browser.spec.ts"
+      ],
+      "title": "Expose cached and observed non-cached dashboard views",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-012",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Keep arithmetic and paired token effects distinct",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Keep arithmetic and paired token effects distinct",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-013",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Parse canonical historical usage with nullable future fields",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Parse canonical historical usage with nullable future fields",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-014",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Use cache-write telemetry when present",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Use cache-write telemetry when present",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-015",
+      "implementation": [
+        "scripts/future_methodology.py",
+        "dashboard/src/analysis.ts",
+        "dashboard/src/main.tsx"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Surface unavailable telemetry in reports and tooltips",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py",
+        "dashboard/tests/analysis.test.ts",
+        "dashboard/tests/browser.spec.ts"
+      ],
+      "title": "Surface unavailable telemetry in reports and tooltips",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-016",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Make cache-share and position/gap analysis deterministic",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Make cache-share and position/gap analysis deterministic",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "future methodology",
+        "canonical compatibility"
+      ],
+      "area": "tokens",
+      "commands": [
+        "python3 -m unittest tests.test_future_methodology",
+        "npm test --prefix dashboard -- --run"
+      ],
+      "failure_severity": "high",
+      "fixture_files": [],
+      "id": "TOK-017",
+      "implementation": [
+        "scripts/future_methodology.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Reproduce canonical cache analysis without model calls",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "verification/current-canonical-verification-report.json"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_future_methodology.py"
+      ],
+      "title": "Reproduce canonical cache analysis without model calls",
+      "why": "Cache telemetry and modeled token effects must be honest, deterministic, and comparison-safe."
+    },
+    {
+      "applies_to": [
+        "repository maintenance"
+      ],
+      "area": "documentation",
+      "commands": [
+        "python3 scripts/verification_registry.py validate"
+      ],
+      "failure_severity": "blocker",
+      "fixture_files": [],
+      "id": "VER-001",
+      "implementation": [
+        "scripts/verification_registry.py"
+      ],
+      "introduced_by": "external-review-2026-07",
+      "invariant": "Verification IDs, paths, enforcement, and rendered documentation remain synchronized.",
+      "kind": "automated",
+      "last_verified_commit": null,
+      "output_artifacts": [
+        "docs/verification-registry.md"
+      ],
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Registry structural integrity",
+      "why": "A durable registry replaces prompt memory with fail-closed source-controlled checks."
+    }
+  ],
+  "schema_version": "verification-registry-v1"
+}

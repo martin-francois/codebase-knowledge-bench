@@ -30,6 +30,7 @@ const metricValues = (tokens: number, time: number, calls: number) => ({
 });
 const makeRun = (treatment: string, issue: string, repetition: number, correctness: number, tokens: number, time: number, calls: number, eligible = true) => ({
   treatment, issue_id: issue, repetition, correctness, operational_eligible: eligible,
+  composite_quality: correctness,
   exclusion_reason: eligible ? null : "trust-invalid", task_success: false,
   strict_attribution_supported: treatment === "baseline-none" ? null : false,
   metrics: metricValues(tokens, time, calls),
@@ -64,6 +65,12 @@ test("offline dashboard controls and table remain synchronized", async ({page}) 
   fs.writeFileSync(target, template.replace("__DASHBOARD_DATA__", JSON.stringify(data).replaceAll("<", "\\u003c")));
   await page.goto(pathToFileURL(target).href);
   await expect(page.getByTestId("data-table")).toBeVisible();
+  await expect(page.getByLabel("Quality axis")).toBeVisible();
+  await expect(page.getByLabel("Token view")).toBeVisible();
+  await expect(page.getByLabel("Quality axis").locator('option[value="requested_behavior"]')).toHaveAttribute("disabled", "");
+  await expect(page.getByLabel("Token view").locator('option[value="cache_writes"]')).toHaveAttribute("disabled", "");
+  await expect(page.getByText(/minimum eligibility period, not an eviction guarantee/)).toBeVisible();
+  await expect(page.getByText(/does not retroactively rescore historical suites/)).toBeVisible();
   await expect(page.locator('tr[data-treatment="tool"]')).toContainText("460.00");
   await page.getByRole("button", {name: "Relative to baseline"}).click();
   await page.getByLabel("X-axis metric").selectOption("solve_wall_seconds");

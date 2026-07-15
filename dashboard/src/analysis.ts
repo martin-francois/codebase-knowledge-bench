@@ -26,6 +26,35 @@ import descriptorSource from "./metric-descriptors.json";
 export const METRICS = descriptorSource as Record<MetricKey, MetricDescriptor>;
 /* The checked-in JSON is also consumed by Python publication code. */
 
+export type QualityAxis =
+  | "behavioral_correctness" | "requested_behavior" | "critical_requirement_pass_rate"
+  | "common_regression" | "patch_quality" | "composite_quality" | "reference_behavior_match";
+
+export const QUALITY_AXES: Record<QualityAxis, {label: string; futureOnly: boolean}> = {
+  behavioral_correctness: {label: "Behavioral correctness", futureOnly: false},
+  requested_behavior: {label: "Requested behavior", futureOnly: true},
+  critical_requirement_pass_rate: {label: "Critical requirement pass rate", futureOnly: true},
+  common_regression: {label: "Common regression", futureOnly: true},
+  patch_quality: {label: "Patch quality", futureOnly: true},
+  composite_quality: {label: "Composite quality", futureOnly: false},
+  reference_behavior_match: {label: "Reference behavior match (diagnostic)", futureOnly: true},
+};
+
+export type TokenView = "total_input" | "cached_input" | "observed_non_cached_input" | "cache_writes"
+  | "output" | "reasoning" | "cache_hit_rate" | "weighted_load" | "pricing_cost";
+
+export const TOKEN_VIEWS: Record<TokenView, {label: string; metric: MetricKey | null; caveat?: string}> = {
+  total_input: {label: "Total input tokens", metric: null},
+  cached_input: {label: "Cached input tokens", metric: null},
+  observed_non_cached_input: {label: "Observed non-cached input", metric: "non_cached_input_tokens"},
+  cache_writes: {label: "Cache writes", metric: null, caveat: "Unavailable when Codex JSONL omits cache_write_tokens"},
+  output: {label: "Output tokens", metric: "output_tokens"},
+  reasoning: {label: "Reasoning output tokens", metric: "reasoning_output_tokens"},
+  cache_hit_rate: {label: "Cache hit rate", metric: null},
+  weighted_load: {label: "Modeled weighted token load", metric: "modeled_weighted_token_load"},
+  pricing_cost: {label: "Pricing-based cost", metric: "estimated_monetary_cost", caveat: "Available only with complete pinned price and cache-write telemetry"},
+};
+
 export type DashboardRun = {
   issue_id: string;
   repetition: number;
@@ -36,6 +65,11 @@ export type DashboardRun = {
   strict_attribution_supported: boolean | null;
   correctness: number | null;
   composite_quality: number | null;
+  requested_behavior?: number | null;
+  critical_requirement_pass_rate?: number | null;
+  common_regression?: number | null;
+  patch_quality?: number | null;
+  reference_behavior_match?: number | null;
   protected_direct_full_pass: boolean | null;
   protected_common_full_pass: boolean | null;
   reference_conformance_evaluable: boolean | null;
@@ -163,6 +197,7 @@ export type ViewPoint = {
 };
 
 export type IndividualViewPoint = DashboardRun & {
+  selectedQuality: number | null;
   correctnessDelta: number | null;
   metricChangePercent: number | null;
   matched: boolean;
@@ -179,6 +214,25 @@ const median = (values: number[]) => {
 const summarize = (values: number[], statistic: "mean" | "median") =>
   statistic === "mean" ? average(values) : median(values);
 const blockId = (run: DashboardRun) => `${run.issue_id}::${run.repetition}`;
+
+export function qualityValue(run: DashboardRun, axis: QualityAxis): number | null {
+  const fields: Record<QualityAxis, number | null | undefined> = {
+    behavioral_correctness: run.correctness,
+    requested_behavior: run.requested_behavior,
+    critical_requirement_pass_rate: run.critical_requirement_pass_rate,
+    common_regression: run.common_regression,
+    patch_quality: run.patch_quality,
+    composite_quality: run.composite_quality,
+    reference_behavior_match: run.reference_behavior_match,
+  };
+  return fields[axis] ?? null;
+}
+
+export function qualityAvailability(data: DashboardData): Record<QualityAxis, boolean> {
+  return Object.fromEntries((Object.keys(QUALITY_AXES) as QualityAxis[]).map(axis => [
+    axis, data.individual_runs.some(run => qualityValue(run, axis) != null),
+  ])) as Record<QualityAxis, boolean>;
+}
 
 export function metricAvailability(data: DashboardData, relative: boolean): Record<MetricKey, boolean> {
   const baseline = data.individual_runs.filter(run => run.treatment === "baseline-none" && run.operational_eligible);
@@ -208,6 +262,7 @@ export function deriveView(
   metric: MetricKey,
   filters: Filters,
   view: "absolute" | "relative" = "absolute",
+  qualityAxis: QualityAxis = "behavioral_correctness",
 ): {points: ViewPoint[]; individualRuns: IndividualViewPoint[]; frontier: string[]; objectiveWinners: Record<string, string[]>} {
   if (!data.tolerance_grid.includes(filters.tolerance)) {
     throw new Error(`unsupported correctness tolerance: ${filters.tolerance}`);
@@ -239,13 +294,15 @@ export function deriveView(
       : treatmentRows;
     const visibleRows = displayed.filter(run => run.treatment === treatment);
     const matched = rows.filter(run => baselineByBlock.has(blockId(run)));
-    const correctnessValues = rows.flatMap(run => run.correctness == null ? [] : [run.correctness]);
+    const correctnessValues = rows.flatMap(run => qualityValue(run, qualityAxis) == null ? [] : [qualityValue(run, qualityAxis) as number]);
     const metricValues = rows.flatMap(run => run.metrics[metric] == null ? [] : [run.metrics[metric] as number]);
     const correctnessDeltas: number[] = [];
     const metricRatios: number[] = [];
     for (const run of matched) {
       const baseline = baselineByBlock.get(blockId(run))!;
-      if (run.correctness != null && baseline.correctness != null) correctnessDeltas.push(run.correctness - baseline.correctness);
+      const runQuality = qualityValue(run, qualityAxis);
+      const baselineQuality = qualityValue(baseline, qualityAxis);
+      if (runQuality != null && baselineQuality != null) correctnessDeltas.push(runQuality - baselineQuality);
       const treatmentValue = run.metrics[metric];
       const baselineValue = baseline.metrics[metric];
       if (treatmentValue != null && baselineValue != null && baselineValue !== 0) {
@@ -272,7 +329,7 @@ export function deriveView(
       metricUpper: null,
     };
     const canonical = data.canonical.comparisons[treatment];
-    if (canonicalScope && view === "relative" && treatment !== "baseline-none" && canonical) {
+    if (canonicalScope && qualityAxis === "behavioral_correctness" && view === "relative" && treatment !== "baseline-none" && canonical) {
       const descriptor = CANONICAL_METRIC[metric];
       const correctnessInterval = canonical.paired_intervals.correctness_delta_points;
       const metricInterval = canonical.paired_intervals[descriptor.interval];
@@ -287,7 +344,7 @@ export function deriveView(
       point.metricLower = metricInterval?.lower_95 == null ? null : 100 * (metricInterval.lower_95 - 1);
       point.metricUpper = metricInterval?.upper_95 == null ? null : 100 * (metricInterval.upper_95 - 1);
     }
-    if (canonicalScope && view === "absolute") {
+    if (canonicalScope && qualityAxis === "behavioral_correctness" && view === "absolute") {
       const published = data.points.find(candidate => candidate.treatment === treatment);
       if (published) {
         point.correctness = published.correctness;
@@ -313,11 +370,14 @@ export function deriveView(
     const baseline = baselineByBlock.get(blockId(run));
     const baselineMetric = baseline?.metrics[metric];
     const runMetric = run.metrics[metric];
+    const runQuality = qualityValue(run, qualityAxis);
+    const baselineQuality = baseline ? qualityValue(baseline, qualityAxis) : null;
     return {
       ...run,
+      selectedQuality: runQuality,
       matched: run.treatment === "baseline-none" || Boolean(baseline),
       correctnessDelta: run.treatment === "baseline-none" ? 0 :
-        baseline && run.correctness != null && baseline.correctness != null ? run.correctness - baseline.correctness : null,
+        baseline && runQuality != null && baselineQuality != null ? runQuality - baselineQuality : null,
       metricChangePercent: run.treatment === "baseline-none" ? 0 :
         baselineMetric != null && baselineMetric !== 0 && runMetric != null ? 100 * (runMetric / baselineMetric - 1) : null,
     };

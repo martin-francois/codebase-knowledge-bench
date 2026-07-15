@@ -1,0 +1,12 @@
+{
+  "schema_version": "publication-supplement-implementation-audit-v1",
+  "files": [
+    {"path": "scripts/publication_supplement.py", "classification": "source", "track": true, "role": "generation and independent validation"},
+    {"path": "tests/test_publication_supplement.py", "classification": "test", "track": true, "role": "publication regression contracts"},
+    {"path": "schemas/publication-supplement-validation.schema.json", "classification": "schema", "track": true, "role": "detached receipt validation"}
+  ],
+  "generated_output_tracked": false,
+  "clean_checkout_reproducible_with_external_immutable_inputs": true,
+  "source_provenance_recorded": true,
+  "unrelated_user_changes_detected": false
+}

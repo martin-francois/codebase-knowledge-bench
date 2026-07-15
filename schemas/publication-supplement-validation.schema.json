@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical publication supplement validation receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "canonical_archive_sha256", "canonical_manifest_root",
+    "supplement_archive", "supplement_archive_sha256", "supplement_archive_bytes",
+    "supplement_manifest_root", "supplement_manifest_entry_count",
+    "retry_provenance_complete", "evidence_gaps", "independent_archive_validation",
+    "operator_summary_validation", "corrected_report_validation", "errors",
+    "validation_result", "new_model_calls", "new_child_processes"
+  ],
+  "properties": {
+    "schema_version": {"const": "canonical-publication-supplement-v1"},
+    "canonical_archive_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "canonical_manifest_root": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "supplement_archive": {"const": "canonical-publication-supplement.zip"},
+    "supplement_archive_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "supplement_archive_bytes": {"type": "integer", "minimum": 1},
+    "supplement_manifest_root": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "supplement_manifest_entry_count": {"type": "integer", "minimum": 1},
+    "retry_provenance_complete": {"type": "boolean"},
+    "evidence_gaps": {"type": "array", "items": {"type": "object"}},
+    "independent_archive_validation": {"enum": ["passed", "failed"]},
+    "operator_summary_validation": {"enum": ["passed", "failed"]},
+    "corrected_report_validation": {"enum": ["passed", "failed"]},
+    "errors": {"type": "array", "items": {"type": "string"}},
+    "validation_result": {"enum": ["passed", "failed"]},
+    "new_model_calls": {"const": 0},
+    "new_child_processes": {"const": 0}
+  }
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DashboardData, DashboardRun, METRICS, deriveView, metricAvailability } from "../src/analysis";
+import { DashboardData, DashboardRun, METRICS, QUALITY_AXES, TOKEN_VIEWS, deriveView, metricAvailability, qualityAvailability } from "../src/analysis";
 
 const metrics = (tokens: number, time: number, calls: number, cost: number | null = null) => ({
   modeled_weighted_token_load: tokens,
@@ -14,6 +14,7 @@ const metrics = (tokens: number, time: number, calls: number, cost: number | nul
 });
 const run = (treatment: string, issue: string, repetition: number, correctness: number, tokens: number, time: number, calls: number, eligible = true): DashboardRun => ({
   treatment, issue_id: issue, repetition, correctness, operational_eligible: eligible,
+  composite_quality: correctness,
   exclusion_reason: eligible ? null : "trust-invalid", task_success: false,
   strict_attribution_supported: treatment === "baseline-none" ? null : false,
   metrics: metrics(tokens, time, calls),
@@ -115,5 +116,26 @@ describe("dashboard derivation", () => {
     expect(point.correctnessLower).toBe(10);
     expect(point.metricLower).toBeCloseTo(-25);
     expect(point.intervalStatus).toBe("estimable");
+  });
+  it("exposes every future quality selector and unavailable state", () => {
+    expect(Object.keys(QUALITY_AXES)).toEqual([
+      "behavioral_correctness", "requested_behavior", "critical_requirement_pass_rate",
+      "common_regression", "patch_quality", "composite_quality", "reference_behavior_match",
+    ]);
+    const available = qualityAvailability(fixture());
+    expect(available.behavioral_correctness).toBe(true);
+    expect(available.composite_quality).toBe(true);
+    expect(available.requested_behavior).toBe(false);
+  });
+  it("exposes token views and keeps unknown cache writes unavailable", () => {
+    expect(Object.keys(TOKEN_VIEWS)).toContain("cache_writes");
+    expect(TOKEN_VIEWS.cache_writes.metric).toBeNull();
+    expect(TOKEN_VIEWS.observed_non_cached_input.metric).toBe("non_cached_input_tokens");
+  });
+  it("can select composite quality without using canonical behavioral intervals", () => {
+    const data = fixture();
+    data.individual_runs.find(run => run.treatment === "tool")!.composite_quality = 88;
+    const result = deriveView(data, "modeled_weighted_token_load", {issue: "all", repetition: "all", statistic: "mean", tolerance: 0, includeInvalid: false}, "absolute", "composite_quality");
+    expect(result.points.find(point => point.treatment === "tool")?.correctness).not.toBeNull();
   });
 });

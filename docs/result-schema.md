@@ -34,3 +34,10 @@ Scalar composite ordering remains `secondary_descriptive_only`.
 
 Dashboard data uses `schemas/dashboard-data.schema.json`. Its aggregate points MUST match the
 canonical operational trade-off object exactly.
+
+Future methodology documents use separate strict schemas:
+`token-usage-vnext.schema.json`, `requirement-contract-vnext.schema.json`,
+`mutation-calibration-vnext.schema.json`, and `issue-diversity-vnext.schema.json`. They are not
+accepted as aliases inside historical canonical results. Cache-write and pricing fields remain null
+with explicit reasons when telemetry is incomplete. Requirement vectors, critical failures, common
+regression, patch quality, composite quality, and reference diagnostics are independent fields.
