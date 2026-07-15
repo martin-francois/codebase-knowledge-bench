@@ -1,4 +1,5 @@
 import hashlib
+import json
 import subprocess
 import sys
 import unittest
@@ -18,6 +19,13 @@ class LlmSelfReviewBindingTests(unittest.TestCase):
         actual = verification_subject_tree_sha256(ROOT)
         self.assertEqual(hashlib.sha256(manifest).hexdigest(), actual)
         self.assertEqual(64, len(actual))
+
+    def test_current_llm_report_schema_covers_all_23_checks(self) -> None:
+        schema = json.loads((ROOT / "schemas/llm-verification-report.schema.json").read_text())
+        checks = schema["properties"]["checks"]
+        self.assertEqual(23, checks["minItems"])
+        self.assertEqual(23, checks["maxItems"])
+        self.assertIn("02[0-3]", checks["items"]["properties"]["id"]["pattern"])
 
 
 if __name__ == "__main__":

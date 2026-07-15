@@ -7,8 +7,8 @@
     "reviewed_subject_tree_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "report_envelope_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "review_session_description": {"type": "string", "minLength": 1},
     "reviewed_artifacts": {"type": "array", "items": {"type": "string", "pattern": "^(repo|zip)://"}, "minItems": 1},
-    "checks": {"type": "array", "minItems": 22, "maxItems": 22, "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "evidence", "findings", "residual_uncertainty"], "properties": {
-      "id": {"pattern": "^LLM-(00[1-9]|01[0-9]|02[0-2])$"}, "status": {"enum": ["passed", "failed", "not_applicable"]},
+    "checks": {"type": "array", "minItems": 23, "maxItems": 23, "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "evidence", "findings", "residual_uncertainty"], "properties": {
+      "id": {"pattern": "^LLM-(00[1-9]|01[0-9]|02[0-3])$"}, "status": {"enum": ["passed", "failed", "not_applicable"]},
       "evidence": {"type": "array", "items": {"type": "string", "pattern": "^(repo|zip)://"}, "minItems": 1},
       "findings": {"type": "array", "items": {"type": "string"}}, "residual_uncertainty": {"type": "string"}
     }}},
