@@ -199,7 +199,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -211,7 +211,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -223,7 +223,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -235,7 +235,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -247,7 +247,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -259,7 +259,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -271,7 +271,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -283,7 +283,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -295,7 +295,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -307,7 +307,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -319,7 +319,7 @@
       "checker_version": "1",
       "evidence": [
         "repo://scripts/vnext_fixture.py",
-        "repo://verification/vnext/"
+        "repo://verification/vnext-readiness.json"
       ],
       "failure_reason": null,
       "invoked": true,
@@ -1400,9 +1400,9 @@
     "supplement_archive_sha256": "2b560a78410e47ee1cec4d9f000cfed4a0c633e6339cbc8c422ebee452bcb387",
     "supplement_manifest_root": "4bbffa63600cef846d069b9405e5acd1bfcda88a8fe36eeeee937212da82a0bd"
   },
-  "reviewed_subject_tree_sha256": "3ba44c5b27504b5e342bd0c01e250bf06c2c82c8df5828e28813ec9d41324f09",
+  "reviewed_subject_tree_sha256": "3ae46508eb81a652f81146ec6e0b46e293e771900a90b47ff2236b6abaf83e24",
   "schema_version": "current-canonical-verification-v2",
-  "source_commit": "62eb0b2371ae70668d0693cf7cb22bf6f075c74d",
+  "source_commit": "8433decea4488dd2d8665fb3ea20df5723f08e72",
   "status": "passed",
   "token_accounting_version": "token-accounting-v2",
   "token_compatibility": {

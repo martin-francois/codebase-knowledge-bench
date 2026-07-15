@@ -1,7 +1,7 @@
 # Current canonical verification report
 
 - Status: `passed`
-- Reviewed source: `62eb0b2371ae70668d0693cf7cb22bf6f075c74d`
+- Reviewed source: `8433decea4488dd2d8665fb3ea20df5723f08e72`
 - Canonical methodology: `matrix-operational-attribution-v7`
 - Future methodology: `behavioral-correctness-vNext` (not applied retroactively)
 - Primary arms: `63`
@@ -28,17 +28,17 @@
 | `COR-014` | automated | passed | repo://scripts/future_methodology.py; repo://verification/vnext-readiness.json |
 | `COR-015` | automated | passed | repo://scripts/future_methodology.py; repo://verification/vnext-readiness.json |
 | `COR-016` | automated | passed | repo://scripts/future_methodology.py; repo://verification/vnext-readiness.json |
-| `COR-017` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
-| `COR-018` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
-| `COR-019` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
-| `COR-020` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
-| `COR-021` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
-| `COR-022` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
-| `COR-023` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
-| `COR-024` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
-| `COR-025` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
-| `COR-026` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
-| `COR-027` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext/ |
+| `COR-017` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
+| `COR-018` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
+| `COR-019` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
+| `COR-020` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
+| `COR-021` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
+| `COR-022` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
+| `COR-023` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
+| `COR-024` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
+| `COR-025` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
+| `COR-026` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
+| `COR-027` | automated | passed | repo://scripts/vnext_fixture.py; repo://verification/vnext-readiness.json |
 | `COR-ISSUE-001` | automated | passed | repo://verification/vnext-readiness.json |
 | `COR-ISSUE-002` | automated | passed | repo://verification/vnext-readiness.json |
 | `COR-ISSUE-003` | automated | passed | repo://verification/vnext-readiness.json |
