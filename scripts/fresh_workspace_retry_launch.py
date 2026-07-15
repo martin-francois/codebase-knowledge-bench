@@ -186,6 +186,7 @@ def launch_retry(args: argparse.Namespace) -> int:
         atomic_json(output / "retry-readiness.json", {"decision": "NO_GO",
                     "reason": "exact model availability probe failed", "implementation_spawned": False})
         return 2
+    kill_switch(canonical)
     frozen = output / "frozen-execution-source"
     extract_frozen_source(repository, frozen)
     configure_frozen_environment(output, canonical, execution, target, frozen)

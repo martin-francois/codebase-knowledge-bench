@@ -21,6 +21,14 @@ class FreshWorkspaceRetryLaunchTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             kill_switch(Path(temporary))
 
+    def test_kill_switch_can_be_rechecked_between_probe_and_child(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            kill_switch(root)
+            (root / "STOP").write_text("operator stop\n", encoding="utf-8")
+            with self.assertRaises(SystemExit):
+                kill_switch(root)
+
     def test_fresh_tool_config_rebinds_only_binary_and_repository(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
