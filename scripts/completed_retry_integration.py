@@ -532,6 +532,12 @@ def create_execution_package(partial_execution: Path, retry_execution: Path, des
     top_result["invalid_run_ids"] = [run_id for run_id in top_result.get("invalid_run_ids", []) if run_id != "run-007"]
     top_result["excluded_run_ids"] = [run_id for run_id in top_result.get("excluded_run_ids", []) if run_id != "run-007"]
     old_snapshot = json.loads((destination / "issue-snapshot-source.json").read_text())
+    packaged_lineage_path = destination / "integration-evidence" / "issue-snapshot-lineage.json"
+    packaged_lineage = json.loads(packaged_lineage_path.read_text())
+    packaged_lineage["materialized_path"] = "issue-sanitized.json"
+    packaged_lineage["original_path_exists"] = False
+    packaged_lineage["prompt_generation_proof"]["prompt_path"] = "runs/run-007/solve-prompt.txt"
+    atomic_json(packaged_lineage_path, packaged_lineage)
     atomic_json(destination / "issue-snapshot-source.json", {
         "mode": "content_addressed_relocation",
         "sha256": old_snapshot["sha256"],
