@@ -116,9 +116,9 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
   mapping={'current-methodology-pre-fix-audit.json':'audit/current-methodology-pre-fix-audit.json','current-methodology-pre-fix-audit.md':'audit/current-methodology-pre-fix-audit.md','private-pre-release-cleanup.json':'audit/private-pre-release-cleanup.json','private-pre-release-cleanup.md':'audit/private-pre-release-cleanup.md','normative-document-audit.json':'audit/normative-document-audit.json','normative-document-audit.md':'audit/normative-document-audit.md','contract-provenance.json':'methodology/contract-provenance.json','contract-provenance.md':'methodology/contract-provenance.md','live-pipeline-qualification.json':'methodology/live-pipeline-qualification.json','live-pipeline-qualification.md':'methodology/live-pipeline-qualification.md','mutation-calibration.json':'methodology/mutation-calibration/mutation-calibration.json','readiness.json':'methodology/readiness.json','readiness.md':'methodology/readiness.md','dashboard-data.json':'dashboard/dashboard-data.json','dashboard-data.schema.json':'dashboard/dashboard-data.schema.json','index.html':'dashboard/index.html','browser-result.json':'dashboard/browser-result.json','test-results.json':'tests/test-results.json','test-results.md':'tests/test-results.md','command-log.txt':'tests/command-log.txt'}
   generated_redactions={'source/full-diff.patch':diff_redactions}
   for name in required_reports:
-   target=mapping.get(name,f'verification/{name}');data=(reports/name).read_bytes()
-   if name=='command-log.txt':data,generated_redactions[target]=portable_generated_text(data)
-   payloads[target]=data
+   published_target=mapping.get(name,f'verification/{name}');data=(reports/name).read_bytes()
+   if name=='command-log.txt':data,generated_redactions[published_target]=portable_generated_text(data)
+   payloads[published_target]=data
   for base, published in (
       (repo/'verification/methodology-current/contracts', 'methodology/contracts'),
       (repo/'verification/methodology-current/mutations', 'methodology/mutation-calibration/mutants'),

@@ -140,6 +140,14 @@ class ReviewHandoffTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "file/directory collision"):
                     safe_extract_tar(archive, root / "out")
 
+    def test_optional_target_repository_parameter_is_not_shadowed(self):
+        import ast
+
+        source = (ROOT / "scripts/build_review_handoff.py").read_text()
+        function = next(node for node in ast.walk(ast.parse(source)) if isinstance(node, ast.FunctionDef) and node.name == "build")
+        stores = [node for node in ast.walk(function) if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store) and node.id == "target"]
+        self.assertEqual([], stores)
+
 
 if __name__ == "__main__":
     unittest.main()
