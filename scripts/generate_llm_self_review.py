@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -38,9 +39,16 @@ TITLES = {
 }
 
 
+def verification_subject_tree_sha256(repo: Path) -> str:
+    manifest = subprocess.check_output(
+        ["git", "-C", str(repo), "ls-tree", "-r", "-z", "HEAD"]
+    )
+    return hashlib.sha256(manifest).hexdigest()
+
+
 def generate(repo: Path, reports: Path, *, handoff_validated: bool) -> dict:
     commit = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
-    tree = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD^{tree}"], text=True).strip()
+    subject_sha256 = verification_subject_tree_sha256(repo)
     coverage = json.loads((reports / "calibration-coverage.json").read_text(encoding="utf-8"))
     checks = []
     for check_id, title in TITLES.items():
@@ -72,7 +80,7 @@ def generate(repo: Path, reports: Path, *, handoff_validated: bool) -> dict:
         "self_review": True,
         "independent_review": False,
         "additional_automated_model_calls": 0,
-        "reviewed_subject_tree_sha256": tree,
+        "reviewed_subject_tree_sha256": subject_sha256,
         "report_envelope_commit": commit,
         "review_session_description": "The implementing coding agent reviewed the deterministic final production shadow after all source-only checks; no additional model was invoked.",
         "reviewed_artifacts": [
