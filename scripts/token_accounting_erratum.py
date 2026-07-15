@@ -167,7 +167,7 @@ def write_outputs(archive: Path, output: Path) -> dict[str, Any]:
     (output / "token-accounting-erratum.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (output / "token-accounting-erratum.md").write_text(render_markdown(report), encoding="utf-8")
     with (output / "token-accounting-corrected-effects.csv").open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader(); writer.writerows(rows)
     return report
 
