@@ -173,6 +173,7 @@ def materialize_selected_state(module: Any, output: Path, source_output: Path,
             shutil.copy2(source, run_root / name)
     run_dir = module.RUNS / "run-007"
     run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "bin").mkdir(parents=True, exist_ok=True)
     shutil.copy2(source_output / "original-solve-prompt.txt", run_dir / "solve-prompt.txt")
     for name in ("tool-version.txt", "tool-config-sanitized.txt", "tool-setup.log"):
         shutil.copy2(execution / "runs/run-007" / name, run_dir / name)

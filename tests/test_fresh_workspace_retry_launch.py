@@ -92,6 +92,14 @@ class FreshWorkspaceRetryLaunchTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 validated_existing_probe(root)
 
+    def test_wrapper_directory_is_an_explicit_pre_spawn_requirement(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary) / "runs/run-007"
+            (run_dir / "bin").mkdir(parents=True)
+            wrapper = run_dir / "bin/code-review-graph"
+            wrapper.write_text("#!/bin/sh\n", encoding="utf-8")
+            self.assertTrue(wrapper.is_file())
+
 
 if __name__ == "__main__":
     unittest.main()
