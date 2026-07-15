@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from build_review_handoff import reconstruct_tree, scan_source_text, scan_text
+from build_review_handoff import portable_generated_text, reconstruct_tree, scan_source_text, scan_text
 
 
 def git(repo: Path, *args: str) -> str:
@@ -83,6 +83,15 @@ class ReviewHandoffTest(unittest.TestCase):
         )
         self.assertTrue(findings)
         self.assertEqual([], exceptions)
+
+    def test_generated_text_is_portable_and_secret_redacted(self):
+        data, notes = portable_generated_text(
+            b"/home/server/git-projects/codebase-knowledge-graph-benchmark api_key=abcdefghijklmnop"
+        )
+        self.assertIn(b"$REPO", data)
+        self.assertIn(b"$REDACTED_TEST_SECRET", data)
+        self.assertEqual([], scan_text("source/full-diff.patch", data))
+        self.assertEqual(2, len(notes))
 
     def test_explicit_directories_are_not_file_collisions(self):
         from safe_archive import safe_extract_tar

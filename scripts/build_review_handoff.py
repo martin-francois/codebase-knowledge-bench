@@ -65,6 +65,22 @@ def scan_source_text(name:str,data:bytes)->tuple[list[str],list[dict[str,str]]]:
   else:retained.append(finding)
  return retained,exceptions
 
+def portable_generated_text(data:bytes)->tuple[bytes,list[str]]:
+ replacements={
+  b'/home/server/git-projects/codebase-knowledge-graph-benchmark':b'$REPO',
+  b'/home/server/git-projects':b'$WORKSPACE',
+  b'/home/server':b'$BENCHMARK_HOME',
+  b'/root/.local/share/uv':b'$UV_HOME',
+  b'/root':b'$ROOT_HOME',
+  b'api_key=abcdefghijklmnop':b'api_key=$REDACTED_TEST_SECRET',
+  b'access_token=abcdefghijklmnop':b'access_token=$REDACTED_TEST_SECRET',
+  b'password=super-secret-value':b'password=$REDACTED_TEST_SECRET',
+ }
+ notes=[]
+ for old,new in replacements.items():
+  if old in data:data=data.replace(old,new);notes.append(f'{old.decode()} -> {new.decode()}')
+ return data,notes
+
 def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:Path,output:Path)->tuple[Path,dict[str,Any]]:
  if sha256_file(canonical)!=CANONICAL_SHA or sha256_file(supplement)!=SUPPLEMENT_SHA:raise ValueError('immutable evidence hash mismatch')
  commit=git(repo,'rev-parse','HEAD').strip();tree=git(repo,'rev-parse','HEAD^{tree}').strip();output.mkdir(parents=True,exist_ok=True)
@@ -75,12 +91,13 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
   required_reports=['current-verification-report.json','current-verification-report.md','llm-verification-report.json','llm-verification-report.md','checker-negative-coverage.json','test-results.json','test-results.md','command-log.txt','token-accounting-current.json','correctness-current.json','mutation-calibration.json','end-to-end-fixture.json','private-pre-release-cleanup.json','private-pre-release-cleanup.md','compatibility-term-classification.json','dead-code-report.json']
   missing=[name for name in required_reports if not (reports/name).is_file()]
   if missing:raise ValueError(f'missing generated reports: {missing}')
+  full_diff,diff_redactions=portable_generated_text(git(repo,'diff','--binary',f'{PRE_CLEANUP_COMMIT}..{commit}',raw=True))
   payloads={
    'agent-response.md':agent_response.read_bytes(),'source/git-archive.tar':tar_bytes,
    'source/git-ls-tree.json':(json.dumps(tree_rows,indent=2,sort_keys=True)+'\n').encode(),
    'source/source-state.json':(json.dumps({'commit':commit,'tree':tree,'branch':git(repo,'branch','--show-current').strip()},indent=2,sort_keys=True)+'\n').encode(),
    'source/source-tree-reconstruction.json':(json.dumps(reconstruction,indent=2,sort_keys=True)+'\n').encode(),
-   'source/full-diff.patch':git(repo,'diff','--binary',f'{PRE_CLEANUP_COMMIT}..{commit}',raw=True),
+   'source/full-diff.patch':full_diff,
    'audit/pre-cleanup-independent-findings.json':(repo/'verification/pre-cleanup-independent-findings.json').read_bytes(),
    'audit/pre-cleanup-independent-findings.md':(repo/'verification/pre-cleanup-independent-findings.md').read_bytes(),
    'verification/verification-registry.json':(repo/'verification/verification-registry.json').read_bytes(),
@@ -90,8 +107,12 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
    'README.md':b'Private pre-release deterministic review handoff. Validate with the detached receipt and scripts/build_review_handoff.py.\n',
   }
   mapping={'private-pre-release-cleanup.json':'audit/private-pre-release-cleanup.json','private-pre-release-cleanup.md':'audit/private-pre-release-cleanup.md','compatibility-term-classification.json':'audit/compatibility-term-classification.json','dead-code-report.json':'audit/dead-code-report.json','token-accounting-current.json':'methodology/token-accounting-current.json','correctness-current.json':'methodology/correctness-current.json','mutation-calibration.json':'methodology/mutation-calibration.json','end-to-end-fixture.json':'methodology/end-to-end-fixture.json','test-results.json':'tests/test-results.json','test-results.md':'tests/test-results.md','command-log.txt':'tests/command-log.txt'}
+  generated_redactions={'source/full-diff.patch':diff_redactions}
   for name in required_reports:
-   target=mapping.get(name,f'verification/{name}');payloads[target]=(reports/name).read_bytes()
+   target=mapping.get(name,f'verification/{name}');data=(reports/name).read_bytes()
+   if name=='command-log.txt':data,generated_redactions[target]=portable_generated_text(data)
+   payloads[target]=data
+  payloads['audit/sanitization-notes.json']=(json.dumps({'schema_id':'handoff-sanitization-current','replacements':generated_redactions},indent=2,sort_keys=True)+'\n').encode()
   # Preserve the static published erratum from the prior supplement; it is never parsed by live runtime.
   with zipfile.ZipFile(supplement) as z:
    for name in ('token-accounting-erratum.json','token-accounting-erratum.md','token-accounting-corrected-effects.csv'):
