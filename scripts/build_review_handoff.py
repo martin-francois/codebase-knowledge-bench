@@ -135,12 +135,12 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
   if target is not None:
    definitions=json.loads((repo/'verification/methodology-current/mutations/mutants.json').read_text())
    target_receipts=[]
-   for issue,commit in sorted({(row['issue_id'],row['base_commit']) for row in definitions['mutants']}):
+   for issue,base_commit in sorted({(row['issue_id'],row['base_commit']) for row in definitions['mutants']}):
     archive_path=Path(td)/f'{issue}-reference.tar'
-    subprocess.run(['git','-C',str(target),'archive','--format=tar','-o',str(archive_path),commit],check=True)
+    subprocess.run(['git','-C',str(target),'archive','--format=tar','-o',str(archive_path),base_commit],check=True)
     data=archive_path.read_bytes();member=f'methodology/mutation-calibration/target-snapshots/{issue}-reference.tar'
     payloads[member]=data
-    target_receipts.append({'issue_id':issue,'commit':commit,'tree':git(target,'rev-parse',f'{commit}^{{tree}}').strip(),'path':member,'bytes':len(data),'sha256':sha256_bytes(data)})
+    target_receipts.append({'issue_id':issue,'commit':base_commit,'tree':git(target,'rev-parse',f'{base_commit}^{{tree}}').strip(),'path':member,'bytes':len(data),'sha256':sha256_bytes(data)})
    payloads['methodology/mutation-calibration/target-snapshots.json']=(json.dumps(target_receipts,indent=2,sort_keys=True)+'\n').encode()
   payloads['audit/sanitization-notes.json']=(json.dumps({'schema_id':'handoff-sanitization-current','replacements':generated_redactions},indent=2,sort_keys=True)+'\n').encode()
   payloads['review-handoff-validation.json']=(json.dumps({'schema_id':'review-handoff-internal-validation-current','status':'passed','checks':['immutable evidence hashes verified','exact Git tree reconstructed','required methodology evidence present','text members scanned','manifest validated by detached receipt'],'detached_receipt_required':True},indent=2,sort_keys=True)+'\n').encode()
