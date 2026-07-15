@@ -76,7 +76,12 @@ def _successful_telemetry(records: Iterable[dict[str, Any]]) -> int:
         status = str(record.get("status") or record.get("outcome") or "").lower()
         success = record.get("success")
         failed = record.get("failed")
-        if success is True or (failed is not True and status in {"ok", "success", "successful", "completed"}):
+        process_success = (
+            record.get("exit_code") == 0
+            and record.get("timed_out") is not True
+            and int(record.get("stdout_bytes") or 0) > 0
+        )
+        if success is True or process_success or (failed is not True and status in {"ok", "success", "successful", "completed"}):
             total += 1
     return total
 

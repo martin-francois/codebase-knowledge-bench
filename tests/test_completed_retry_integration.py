@@ -45,6 +45,21 @@ class CompletedRetryIntegrationTest(unittest.TestCase):
         self.assertEqual(71.0, result["usage"]["modeled_weighted_token_load"])
         self.assertEqual({"successful_intended_total": 2, "successful_issue_specific": 1}, result["tool_calls"])
 
+    def test_structured_mcp_exit_record_is_successful_telemetry(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            events = [
+                {"type": "thread.started"}, {"type": "turn.started"},
+                {"type": "turn.completed", "usage": {"input_tokens": 10, "cached_input_tokens": 0, "output_tokens": 1, "reasoning_output_tokens": 0}},
+            ]
+            (run / "run.jsonl").write_text("\n".join(json.dumps(item) for item in events) + "\n")
+            (run / "child-final-message.txt").write_text("{}")
+            telemetry = {"tool": "code-review-graph", "exit_code": 0, "timed_out": False, "stdout_bytes": 12}
+            (run / "tool-invocations-solve.jsonl").write_text(json.dumps(telemetry) + "\n")
+            (run / "solve-tool-relevance.json").write_text(json.dumps({"relevance": {"successful_output_call_count": 1, "focused_call_count": 1}}))
+            result = parse_retry_evidence(run)
+        self.assertEqual(1, result["tool_calls"]["successful_intended_total"])
+
     def test_protected_formula_excludes_extended_reference(self) -> None:
         direct = {"evaluable": True, "exit_code": 0, "protected_tree_unchanged": True}
         common = {"evaluable": True, "exit_code": 0, "protected_tree_unchanged": True}
