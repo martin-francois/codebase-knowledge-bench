@@ -72,16 +72,38 @@ def model_probe(output: Path) -> dict[str, Any]:
     return payload
 
 
-def extract_frozen_source(repository: Path, destination: Path) -> None:
+def validated_existing_probe(output: Path) -> dict[str, Any] | None:
+    probe = output / "model-availability-probes/probe-001"
+    receipt = probe / "probe.json"
+    if not receipt.is_file():
+        return None
+    payload = load_json(receipt)
+    if not payload.get("passed"):
+        return None
+    if payload.get("final_message") != "MODEL_READY":
+        raise RuntimeError("passing probe receipt has an invalid final message")
+    for name, field in (("run.jsonl", "jsonl_sha256"), ("stderr.txt", "stderr_sha256")):
+        path = probe / name
+        if not path.is_file() or sha256_file(path) != payload.get(field):
+            raise RuntimeError(f"passing probe evidence hash mismatch: {name}")
+    final = probe / "final-message.txt"
+    if not final.is_file() or final.read_text(encoding="utf-8").strip() != "MODEL_READY":
+        raise RuntimeError("passing probe final-message artifact mismatch")
+    return payload
+
+
+def extract_frozen_source(repository: Path, destination: Path,
+                          commit: str = EXECUTION_COMMIT) -> None:
     if destination.exists():
         shutil.rmtree(destination)
-    destination.mkdir(parents=True)
-    archive = subprocess.Popen(["git", "-C", str(repository), "archive", EXECUTION_COMMIT],
-                               stdout=subprocess.PIPE)
-    extraction = subprocess.run(["tar", "-xf", "-", "-C", str(destination)], stdin=archive.stdout)
-    archive.wait()
-    if archive.returncode or extraction.returncode:
-        raise RuntimeError("frozen execution source extraction failed")
+    subprocess.run(["git", "clone", "-q", "--no-checkout", "--shared",
+                    str(repository), str(destination)], check=True)
+    subprocess.run(["git", "checkout", "-q", "--detach", commit],
+                   cwd=destination, check=True)
+    actual = subprocess.run(["git", "rev-parse", "HEAD"], cwd=destination,
+                            text=True, stdout=subprocess.PIPE, check=True).stdout.strip()
+    if actual != commit:
+        raise RuntimeError("frozen execution source checkout mismatch")
 
 
 def configure_frozen_environment(output: Path, canonical: Path, execution: Path,
@@ -181,7 +203,7 @@ def launch_retry(args: argparse.Namespace) -> int:
     if readiness.get("decision") != "GO":
         raise SystemExit("pre-model readiness is not GO")
     kill_switch(canonical)
-    probe = model_probe(output)
+    probe = validated_existing_probe(output) or model_probe(output)
     if not probe["passed"]:
         atomic_json(output / "retry-readiness.json", {"decision": "NO_GO",
                     "reason": "exact model availability probe failed", "implementation_spawned": False})
