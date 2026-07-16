@@ -4675,6 +4675,36 @@ final class TrelloBoardSetupMainTest {
     }
 
     @Test
+    void importBoardPreservesAllRepeatedActiveValues() throws Exception {
+        Path workflow = tempDir.resolve("focused-import-active.WORKFLOW.md");
+        Path env = tempDir.resolve(".env.focused-import-active");
+        CliRunResult result = runCli(
+                "import-board", "--endpoint", endpoint(), "--key", "key", "--token", "token",
+                "--board", "https://trello.com/b/input/existing-board",
+                "--active", "Queue for Codex", "--active", "Doing", "--in-progress", "Doing",
+                "--terminal", "Released", "--terminal", "Review",
+                "--workflow", workflow.toString(), "--manifest",
+                tempDir.resolve(ConnectedBoardManifest.FILE_NAME).toString(), "--env", env.toString());
+        result.assertSuccess().stdoutContains("Active lists: \"Queue for Codex\", \"Doing\"");
+        assertThat(workflow).content(StandardCharsets.UTF_8).contains("- \"Queue for Codex\"", "- \"Doing\"");
+    }
+
+    @Test
+    void importBoardPreservesAllRepeatedTerminalValues() throws Exception {
+        Path workflow = tempDir.resolve("focused-import-terminal.WORKFLOW.md");
+        Path env = tempDir.resolve(".env.focused-import-terminal");
+        CliRunResult result = runCli(
+                "import-board", "--endpoint", endpoint(), "--key", "key", "--token", "token",
+                "--board", "https://trello.com/b/input/existing-board",
+                "--active", "Queue for Codex", "--active", "Doing", "--in-progress", "Doing",
+                "--terminal", "Released", "--terminal", "Review",
+                "--workflow", workflow.toString(), "--manifest",
+                tempDir.resolve(ConnectedBoardManifest.FILE_NAME).toString(), "--env", env.toString());
+        result.assertSuccess().stdoutContains("Terminal lists: \"Released\", \"Review\"");
+        assertThat(workflow).content(StandardCharsets.UTF_8).contains("- \"Released\"", "- \"Review\"");
+    }
+
+    @Test
     void importBoardRejectsSeparateOptionTokenAsMissingListSelectorBeforeTrelloRequest() {
         // given
         Path workflow = tempDir.resolve("missing-list-selector.WORKFLOW.md");

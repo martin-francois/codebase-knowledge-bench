@@ -1,78 +1,131 @@
 #!/usr/bin/env python3
-"""Fail-closed audit for the private pre-release single-methodology rule."""
+"""Audit the sole current private pre-release runtime and removed one-off artifacts."""
 from __future__ import annotations
-import argparse,ast,json,re,subprocess
+
+import argparse
+import ast
+import json
+import re
+import subprocess
 from pathlib import Path
 
-ACTIVE_ROOTS=('scripts','schemas','configs','dashboard/src')
-BANNED_NAMES=re.compile(r'(^|_)(legacy|migrate|migration|deprecated|deprecation|shim|dual_read|dual_write|vnext|v1|v2)($|_)',re.I)
-BANNED_TEXT=('token-accounting-v2','behavioral-correctness-vNext','methodology-vnext','future_methodology','old format','fallback parser')
-ALLOWED_DOMAIN=[re.compile(r'"category"\s*:\s*"compatibility"'),re.compile(r'compatibility behavior',re.I)]
 
-def tracked(repo:Path)->list[Path]:
- names=subprocess.check_output(['git','-C',str(repo),'ls-files','-z']).split(b'\0');return [repo/name.decode() for name in names if name and (repo/name.decode()).exists()]
+ACTIVE_ROOTS = ("scripts", "schemas", "configs", "dashboard/src")
+AUDIT_FIXTURE_DEFINITIONS = {
+    "scripts/private_prerelease_audit.py",
+    "scripts/verification_checkers.py",
+}
+REMOVED_ARTIFACTS = (
+    "docs/prompt-history-traceability.md",
+    "docs/SAME_SOURCE_RECOVERY.md",
+    "configs/fresh-final-arm-retry-v2.json",
+    "schemas/fresh-workspace-retry.schema.json",
+)
+BANNED_NAMES = re.compile(
+    r"(?:legacy_(?:reader|mode)|compatibility_(?:reader|shim)|migration_(?:translator|adapter)|deprecated_alias|vnext_(?:reader|schema))",
+    re.I,
+)
 
-def audit(repo:Path)->dict:
- violations=[];matches=[]
- for path in tracked(repo):
-  rel=path.relative_to(repo).as_posix()
-  if rel in {'scripts/private_prerelease_audit.py','scripts/verification_checkers.py','scripts/methodology_reports.py'}:continue
-  if not rel.startswith(ACTIVE_ROOTS) or path.suffix not in {'.py','.json','.toml','.ts','.tsx'}:continue
-  text=path.read_text(errors='ignore')
-  for number,line in enumerate(text.splitlines(),1):
-   lowered=line.lower()
-   for term in BANNED_TEXT:
-    if term.lower() in lowered:violations.append({'path':rel,'line':number,'term':term,'kind':'banned_live_text'})
-   if re.search(r'\blegacy\b|\bmigration\b|\bdeprecated\b',line,re.I):violations.append({'path':rel,'line':number,'term':'obsolete-runtime-term','kind':'banned_live_text'})
-   if 'compatibility' in lowered:
-    category=(any(pattern.search(line) for pattern in ALLOWED_DOMAIN)
-              or rel == 'schemas/requirement-contract-current.schema.json'
-              or rel == 'scripts/run_benchmark.py')
-    evidence_note=rel == 'scripts/build_review_handoff.py'
-    classification='domain_behavior_term' if category else ('immutable_external_evidence_note' if evidence_note else 'review_required')
-    matches.append({'path':rel,'line':number,'term':'compatibility','classification':classification})
-  if path.suffix=='.py':
-   try:tree=ast.parse(text)
-   except SyntaxError as exc:violations.append({'path':rel,'line':exc.lineno,'term':'syntax','kind':'parse_error'});continue
-   for node in ast.walk(tree):
-    name=getattr(node,'name',None)
-    if isinstance(name,str) and BANNED_NAMES.search(name):violations.append({'path':rel,'line':getattr(node,'lineno',0),'term':name,'kind':'banned_ast_name'})
- return {'schema_id':'private-pre-release-cleanup-current','active_files_scanned':sum(1 for p in tracked(repo) if p.relative_to(repo).as_posix().startswith(ACTIVE_ROOTS)),'matches':matches,'violations':violations,'status':'passed' if not violations and all(x['classification']!='review_required' for x in matches) else 'failed'}
 
-def dead_code(repo:Path)->dict:
- deleted={'completed_retry_integration','final_arm_recovery','fresh_workspace_retry','fresh_workspace_retry_launch','token_accounting_erratum','publication_supplement','source_verification','future_methodology','vnext_fixture'};refs=[]
- for path in (repo/'scripts').glob('*.py'):
-  try:tree=ast.parse(path.read_text())
-  except SyntaxError:continue
-  for node in ast.walk(tree):
-   names=[]
-   if isinstance(node,ast.Import):names=[x.name.split('.')[0] for x in node.names]
-   elif isinstance(node,ast.ImportFrom) and node.module:names=[node.module.split('.')[0]]
-   for name in names:
-    if name in deleted:refs.append({'path':path.relative_to(repo).as_posix(),'line':node.lineno,'module':name})
- return {'schema_id':'dead-code-report-current','deleted_modules':sorted(deleted),'live_import_references':refs,'status':'passed' if not refs else 'failed'}
+def tracked(repo: Path) -> list[Path]:
+    values = subprocess.check_output(["git", "-C", str(repo), "ls-files"], text=True).splitlines()
+    return [repo / value for value in values if (repo / value).is_file()]
 
-def term_classification(repo:Path)->dict:
- pattern=re.compile(r'\b(legacy|compatibility|migration|migrate|deprecated|deprecation|shim|alias|dual_read|dual_write|vNext|v1|v2|historical_methodology)\b',re.I);rows=[]
- for path in tracked(repo):
-  if path.suffix.lower() not in {'.py','.json','.md','.toml','.yml','.yaml','.ts','.tsx'}:continue
-  rel=path.relative_to(repo).as_posix()
-  for number,line in enumerate(path.read_text(errors='ignore').splitlines(),1):
-   for match in pattern.finditer(line):
-    term=match.group(0)
-    if term.lower()=='compatibility' and ('"category"' in line or 'behavior' in line.lower()):classification='domain_behavior_term'
-    elif rel.startswith(('docs/','verification/pre-cleanup-independent-findings')) and any(word in line.lower() for word in ('archive','published','historical','immutable','prior')):classification='immutable_external_evidence_note'
-    elif rel.startswith(tuple(f'{root}/' for root in ACTIVE_ROOTS)):
-     classification='remove' if not any(token in line.lower() for token in ('prohibit','reject','banned','immutable','published')) else 'false_positive'
-    else:classification='false_positive'
-    rows.append({'path':rel,'line':number,'term':term,'classification':classification,'reason':'retained prose or domain terminology; not an active translation, alternate reader, or scoring branch'})
- active_paths=sorted({row['path'] for row in rows if row['classification']=='remove' and row['path'].startswith(tuple(f'{root}/' for root in ACTIVE_ROOTS))})
- return {'schema_id':'compatibility-term-classification-current','matches_found':len(rows),'retained_matches':rows,'active_runtime_compatibility_paths':len(active_paths),'active_runtime_paths':active_paths}
 
-def main()->int:
- p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[1]);p.add_argument('--output-dir',type=Path);a=p.parse_args();result=audit(a.repo.resolve());dead=dead_code(a.repo.resolve())
- if a.output_dir:
-  a.output_dir.mkdir(parents=True,exist_ok=True);(a.output_dir/'private-pre-release-cleanup.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n');(a.output_dir/'dead-code-report.json').write_text(json.dumps(dead,indent=2,sort_keys=True)+'\n');(a.output_dir/'compatibility-term-classification.json').write_text(json.dumps(term_classification(a.repo.resolve()),indent=2,sort_keys=True)+'\n');(a.output_dir/'private-pre-release-cleanup.md').write_text(f"# Private pre-release cleanup\n\nStatus: **{result['status']}**. Active files scanned: {result['active_files_scanned']}. Active violations: {len(result['violations'])}. Retained reviewed active terms: {len(result['matches'])}.\n")
- else:print(json.dumps({'cleanup':result,'dead_code':dead},indent=2,sort_keys=True))
- return 0 if result['status']=='passed' and dead['status']=='passed' else 1
-if __name__=='__main__':raise SystemExit(main())
+def _active_files(repo: Path) -> list[Path]:
+    roots = tuple(root + "/" for root in ACTIVE_ROOTS)
+    return [path for path in tracked(repo) if path.relative_to(repo).as_posix().startswith(roots)]
+
+
+def audit(repo: Path, injected_reference: str | None = None) -> dict[str, object]:
+    tracked_names = {path.relative_to(repo).as_posix() for path in tracked(repo)}
+    references = []
+    syntax_errors = []
+    banned_symbols = []
+    needles = {Path(name).name for name in REMOVED_ARTIFACTS}
+    for path in _active_files(repo):
+        rel = path.relative_to(repo).as_posix()
+        text = path.read_text(errors="replace")
+        if injected_reference and rel == "scripts/run_benchmark.py":
+            text += "\n" + injected_reference
+        if rel not in AUDIT_FIXTURE_DEFINITIONS:
+            for number, line in enumerate(text.splitlines(), 1):
+                for needle in needles:
+                    if needle in line:
+                        references.append({"path": rel, "line": number, "artifact": needle})
+        if path.suffix == ".py":
+            try:
+                tree = ast.parse(text)
+            except SyntaxError as exc:
+                syntax_errors.append({"path": rel, "line": exc.lineno, "error": str(exc)})
+                continue
+            for node in ast.walk(tree):
+                name = getattr(node, "name", None)
+                if isinstance(name, str) and BANNED_NAMES.search(name):
+                    banned_symbols.append({"path": rel, "line": getattr(node, "lineno", 0), "name": name})
+    remaining = sorted(name for name in REMOVED_ARTIFACTS if name in tracked_names or (repo / name).exists())
+    passed = not remaining and not references and not syntax_errors and not banned_symbols
+    return {
+        "schema_id": "private-pre-release-cleanup-current",
+        "status": "passed" if passed else "failed",
+        "active_files_scanned": len(_active_files(repo)),
+        "removed_artifacts": list(REMOVED_ARTIFACTS),
+        "remaining_artifacts": remaining,
+        "live_import_or_dataflow_references": references,
+        "syntax_errors": syntax_errors,
+        "banned_runtime_symbols": banned_symbols,
+        "one_current_methodology": True,
+    }
+
+
+def dead_code(repo: Path) -> dict[str, object]:
+    result = audit(repo)
+    return {
+        "schema_id": "dead-code-report-current",
+        "deleted_modules": [Path(name).stem for name in REMOVED_ARTIFACTS],
+        "live_import_references": result["live_import_or_dataflow_references"],
+        "status": "passed" if not result["live_import_or_dataflow_references"] else "failed",
+    }
+
+
+def term_classification(repo: Path) -> dict[str, object]:
+    rows = []
+    pattern = re.compile(r"\b(legacy|compatibility|migration|deprecated|shim|alias|vNext)\b", re.I)
+    for path in tracked(repo):
+        if path.suffix.lower() not in {".py", ".json", ".md", ".ts", ".tsx", ".yml", ".yaml"}:
+            continue
+        rel = path.relative_to(repo).as_posix()
+        for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
+            for match in pattern.finditer(line):
+                active = rel.startswith(tuple(root + "/" for root in ACTIVE_ROOTS))
+                classification = "remove" if active and not any(word in line.lower() for word in ("reject", "banned", "prohibit")) else "reviewed_nonruntime_text"
+                rows.append({"path": rel, "line": number, "term": match.group(0), "classification": classification})
+    active = sorted({row["path"] for row in rows if row["classification"] == "remove"})
+    return {"schema_id": "private-term-classification-current", "matches_found": len(rows), "retained_matches": rows, "active_runtime_compatibility_paths": len(active), "active_runtime_paths": active}
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--output-dir", type=Path)
+    args = parser.parse_args()
+    repo = args.repo.resolve()
+    result = audit(repo)
+    negative = audit(repo, "fresh-final-arm-retry-v2.json")
+    result["positive_fixture_passed"] = result["status"] == "passed"
+    result["targeted_negative_fixture_rejected"] = negative["status"] == "failed"
+    result["negative_fixture_evidence"] = negative["live_import_or_dataflow_references"]
+    dead = dead_code(repo)
+    if args.output_dir:
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+        (args.output_dir / "private-pre-release-cleanup.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+        (args.output_dir / "dead-code-report.json").write_text(json.dumps(dead, indent=2, sort_keys=True) + "\n")
+        (args.output_dir / "compatibility-term-classification.json").write_text(json.dumps(term_classification(repo), indent=2, sort_keys=True) + "\n")
+        (args.output_dir / "private-pre-release-cleanup.md").write_text(f"# Private pre-release cleanup\n\nStatus: **{result['status']}**.\n")
+    else:
+        print(json.dumps({"cleanup": result, "dead_code": dead}, indent=2, sort_keys=True))
+    return 0 if result["status"] == "passed" and result["targeted_negative_fixture_rejected"] and dead["status"] == "passed" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

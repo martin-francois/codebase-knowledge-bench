@@ -1,3 +1,4 @@
 <?xml version='1.0' encoding='utf-8'?>
-<testsuite name="protected-direct"><testcase name="rejectsAmbiguousListNameMoveWithoutCallingTrelloWriteEndpoint" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.388" />
+<testsuite name="protected-direct"><testcase name="ambiguousListNamePerformsNoTrelloWrite" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.427" />
+  <testcase name="rejectsAmbiguousListNameMove" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.427" />
   </testsuite>

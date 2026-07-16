@@ -28,9 +28,8 @@ the retry on the selected workspace's own restored digest, not the unreconstruct
 ## Authority and scope
 
 Read `SPEC.md` before changing benchmark behavior. `SPEC.md` is the normative,
-implementation-independent contract; `docs/prompt-history-traceability.md` records why
-that contract exists. If an intentionally approved behavior change conflicts with the
-specification, update the specification and traceability in the same commit. Never edit
+implementation-independent contract. If an intentionally approved behavior change conflicts with the
+specification, update the specification in the same commit. Never edit
 the specification merely to excuse an implementation defect.
 
 All active source lives at repository-root paths such as `scripts/`, `tests/`,
@@ -248,9 +247,6 @@ contract check available.
   same change. Keep instructions repository-specific, executable, and consistent with `SPEC.md`.
 - If a prompt changes both behavior and agent workflow, update both files. Neither code nor tests are
   complete until their governing documentation agrees.
-- Update `docs/prompt-history-traceability.md` when new prompt evidence materially changes or
-  supersedes a requirement. Add stable source-unit IDs, classification, destination, implementation
-  evidence, and verification status; never rewrite prior source evidence as though it never existed.
 - Update `docs/spec-compliance.md`, schemas, fixtures, README, and scoring documentation whenever the
   affected requirement is represented there. Machine-readable outputs and narrative documentation
   MUST use the same terminology and semantics.

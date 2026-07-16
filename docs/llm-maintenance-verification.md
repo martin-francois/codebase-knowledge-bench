@@ -23,7 +23,7 @@ The report schema is `schemas/llm-verification-report.schema.json`. Evidence mus
 
 ## Final-source and handoff checks
 
-The reviewer is the implementing coding agent unless an actual independent reviewer is named. Record `self_review=true`, `independent_review=false`, and `additional_automated_model_calls=0`; this means no additional automated model was launched, not that the implementing agent ceased to be an LLM. Evidence uses portable `repo://` and `zip://...!/member` URIs and must resolve in the review handoff.
+The reviewer is the implementing coding agent unless an actual independent reviewer is named. Record `self_review=true`, `independent_review=false`, and `additional_model_calls=0`; this means no additional automated model was launched, not that the implementing agent ceased to be an LLM. Evidence uses portable `repo://` and `zip://...!/member` URIs and must resolve in the review handoff.
 
 - `LLM-011`: verify reasoning is a subset of output, v2 does not double-count or double-charge it, and the historical v1 field is immutable and explicitly labeled.
 - `LLM-012`: verify every automated ID invokes a distinct checker and source subject/report-envelope binding passes.

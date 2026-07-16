@@ -617,6 +617,36 @@ final class TrelloHandoffToolHandlerTest {
     }
 
     @Test
+    void rejectsAmbiguousListNameMove() {
+        replaceBoardLists(
+                trelloList("list-ready", "Ready for Codex", 1),
+                trelloList("list-duplicate-review", "Review", 2),
+                trelloList("list-review", "Review", 3));
+        var result = handler().handle(
+                config(List.of("Review"), List.of()),
+                TestCards.card("card-1", "TRELLO-abc", "Ready for Codex"),
+                json.createObjectNode().put("tool", TrelloHandoffToolHandler.MOVE_CURRENT_CARD)
+                        .set("arguments", json.createObjectNode().put("list_name", "Review")));
+        assertThat(result.path("success").asBoolean()).isFalse();
+        assertThat(result.path("contentItems").get(0).path("text").asText())
+                .contains("trello_move_not_allowed", "matches multiple open Trello lists", "list_id");
+    }
+
+    @Test
+    void ambiguousListNamePerformsNoTrelloWrite() {
+        replaceBoardLists(
+                trelloList("list-ready", "Ready for Codex", 1),
+                trelloList("list-duplicate-review", "Review", 2),
+                trelloList("list-review", "Review", 3));
+        handler().handle(
+                config(List.of("Review"), List.of()),
+                TestCards.card("card-1", "TRELLO-abc", "Ready for Codex"),
+                json.createObjectNode().put("tool", TrelloHandoffToolHandler.MOVE_CURRENT_CARD)
+                        .set("arguments", json.createObjectNode().put("list_name", "Review")));
+        assertThat(movedToListId.get()).isNull();
+    }
+
+    @Test
     void movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured() {
         // given
         TrelloHandoffToolHandler handler = handler();

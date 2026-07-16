@@ -1,4 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
-<testsuite name="protected-common"><testcase name="movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.462" />
-  <testcase name="movesCurrentCardToAllowedListIdWhenNamesAreDuplicated" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.462" />
-  </testsuite>
+<testsuite name="protected-common"><testcase name="movesCurrentCardToAllowedListIdWhenNamesAreDuplicated" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.444" />
+  <testcase name="movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.263" />
+  <testcase name="rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.263">
+    <failure message="&#10;Expecting value to be false but was true" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
+
+Expecting value to be false but was true
+	at ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed(TrelloHandoffToolHandlerTest.java:697)
+</failure>
+  </testcase>
+</testsuite>

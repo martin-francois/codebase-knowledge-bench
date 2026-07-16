@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "additionalProperties": false,
-  "required": ["source_commit", "reviewer_kind", "self_review", "independent_review", "additional_automated_model_calls", "reviewed_subject_tree_sha256", "report_envelope_commit", "review_session_description", "reviewed_artifacts", "checks", "overall_status", "limitations"],
+  "required": ["source_commit", "reviewer_kind", "self_review", "independent_review", "additional_model_calls", "reviewed_subject_tree_sha256", "report_envelope_commit", "review_session_description", "reviewed_artifacts", "checks", "overall_status", "limitations"],
   "properties": {
     "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "reviewer_kind": {"const": "implementing_coding_agent"},
-    "self_review": {"const": true}, "independent_review": {"const": false}, "additional_automated_model_calls": {"const": 0},
+    "self_review": {"const": true}, "independent_review": {"const": false}, "additional_model_calls": {"const": 0},
     "reviewed_subject_tree_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "report_envelope_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "review_session_description": {"type": "string", "minLength": 1},
     "reviewed_artifacts": {"type": "array", "items": {"type": "string", "pattern": "^(repo|zip)://"}, "minItems": 1},
-    "checks": {"type": "array", "minItems": 23, "maxItems": 23, "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "evidence", "findings", "residual_uncertainty"], "properties": {
-      "id": {"pattern": "^LLM-(00[1-9]|01[0-9]|02[0-3])$"}, "status": {"enum": ["passed", "failed", "not_applicable"]},
+    "checks": {"type": "array", "minItems": 30, "maxItems": 30, "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "evidence", "findings", "residual_uncertainty"], "properties": {
+      "id": {"pattern": "^LLM-(00[1-9]|01[0-9]|02[0-9]|030)$"}, "status": {"enum": ["passed", "failed", "not_applicable"]},
       "evidence": {"type": "array", "items": {"type": "string", "pattern": "^(repo|zip)://"}, "minItems": 1},
       "findings": {"type": "array", "items": {"type": "string"}}, "residual_uncertainty": {"type": "string"}
     }}},

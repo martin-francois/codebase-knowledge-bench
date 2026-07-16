@@ -1,0 +1,317 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="protected-direct"><testcase name="dryRunConflictIsRejectedBeforeSideEffects" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.677" />
+  <testcase name="nonInteractiveConflictIsRejected" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.677" />
+  <testcase name="nonInteractiveConflictIsRejectedBeforeSideEffects" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.04" />
+  <testcase name="interactiveConflictIsRejectedBeforeSideEffects" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.05" />
+  <testcase name="interactiveConflictIsRejected" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.05" />
+  <testcase name="dryRunConflictIsRejected" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.029" />
+  <testcase name="noInProgressOmitsWorkflowState" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.991" />
+  <testcase name="noInProgressOmitsActiveAndMoveConfiguration" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.268" />
+  <testcase name="noInProgressOmitsPhysicalInProgressList" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="2.002" />
+  <testcase name="noInProgressOmitsPickupSideEffect" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.329">
+    <failure message="&#10;Expecting actual:&#10;  &quot;---&#10;tracker:&#10;  kind: trello&#10;  api_key: $TRELLO_API_KEY&#10;  api_token: $TRELLO_API_TOKEN&#10;  board_id: &quot;abc123&quot;&#10;  active_states:&#10;    - &quot;Ready for Codex&quot;&#10;&#10;  blocked_state: &quot;Blocked&quot;&#10;  blocker_enforced_states:&#10;    - &quot;Ready for Codex&quot;&#10;  terminal_states:&#10;    - &quot;Done&quot;&#10;    - &quot;Archived&quot;&#10;    - &quot;ArchivedList&quot;&#10;    - &quot;ArchivedBoard&quot;&#10;    - &quot;Deleted&quot;&#10;workspace:&#10;  root: &quot;./workspaces&quot;&#10;repository:&#10;  default_url: null&#10;  default_path: null&#10;server:&#10;  port: 20014&#10;polling:&#10;  interval_ms: 5000&#10;trello_tools:&#10;  enabled: true&#10;  allow_writes: true&#10;  allowed_move_list_names:&#10;    - &quot;Human Review&quot;&#10;    - &quot;Blocked&quot;&#10;    - &quot;Done&quot;&#10;  allow_comments: true&#10;  allow_checklists: false&#10;  allow_url_attachments: false&#10;agent:&#10;  max_concurrent_agents: 1&#10;codex:&#10;  command: codex app-server&#10;  model: &quot;gpt-5.5&quot;&#10;  reasoning_effort: &quot;medium&quot;&#10;  turn_sandbox_policy:&#10;    type: workspaceWrite&#10;&#10;  approval_policy: never&#10;  turn_timeout_ms: 3600000&#10;  read_timeout_ms: 5000&#10;  stall_timeout_ms: 300000&#10;---&#10;# Trello Card&#10;&#10;You are working on {{ card.identifier }}: {{ card.title }}.&#10;&#10;## Description&#10;&#10;{{ card.description }}&#10;&#10;## Trello Comments&#10;&#10;{% for comment in card.comments %}&#10;- {{ comment.created_at }}{% if comment.author %} {{ comment.author }}{% endif %}: {{ comment.text }}&#10;{% endfor %}&#10;&#10;## Trello Checklists&#10;&#10;{% for checklist in card.checklists %}&#10;- {{ checklist.name }}&#10;{% for item in checklist.items %}&#10;  - complete={{ item.complete }} text={{ item.text }}&#10;{% endfor %}&#10;{% endfor %}&#10;&#10;## Trello Relationship Context&#10;&#10;Scheduler-enforced prerequisites come only from normal Trello checklists whose non-blank items are&#10;exactly one bare Trello card reference each. Ordinary description links, Trello comments, attachment&#10;links, and Markdown checklist links are context unless the text clearly says they must block this card.&#10;&#10;Parsed prerequisite problems:&#10;{% for problem in card.prerequisite_problems %}&#10;- code={{ problem.code }} checklist={{ problem.checklist }} guidance={{ problem.message }}&#10;{% endfor %}&#10;&#10;Trello card references found on this card:&#10;{% for reference in card.trello_references %}&#10;- source={{ reference.source }} status={{ reference.status }} terminal={{ reference.terminal }} identifier={{ reference.identifier }} state={{ reference.state }} title={{ reference.title }} url={{ reference.url }} text={{ reference.text }}&#10;{% endfor %}&#10;&#10;Before editing, review this context for credible missed prerequisites. If the description, a Trello&#10;comment, an attachment, or a Markdown checklist link appears to say another Trello card must finish&#10;first, stop before code changes and use the normal Trello-visible blocker or workpad path. Explain&#10;where the signal appeared, that the durable convention is a prerequisite checklist whose items are&#10;exactly one bare Trello card reference each, and that Markdown links and prose references are ordinary&#10;context unless they are clearly dependency instructions. A later Trello comment such as `Proceed anyway`&#10;may override only this agent-side safety net; it must not bypass scheduler-enforced&#10;prerequisite checklists, ambiguous prerequisite checklists, unresolved prerequisite references, or&#10;other hard blockers.&#10;&#10;&#10;## Codex Workpad&#10;&#10;Maintain one Trello workpad comment for this card by calling trello_upsert_workpad. Reuse the&#10;existing comment that starts with &quot;## Codex Workpad&quot;; do not create separate progress comments.&#10;Keep it current with the plan, acceptance criteria, progress, validation evidence, blockers, and&#10;handoff notes. Do not include private host paths; use sanitized workspace or repository names when&#10;context is needed.&#10;&#10;&#10;## Repository Skills&#10;&#10;Use the workspace-local skills under `.codex/skills/symphony-trello-*` when they fit.&#10;Symphony installs these skill files in the per-card workspace after workspace sync hooks&#10;and before Codex starts, so they are available even when the target repository does not&#10;provide its own skills:&#10;&#10;- `.codex/skills/symphony-trello-trello-workpad/SKILL.md` for workpad updates.&#10;- `.codex/skills/symphony-trello-trello-handoff/SKILL.md` for Trello pickup, review, blocked, and done handoff.&#10;- `.codex/skills/symphony-trello-repo-sync/SKILL.md` and `.codex/skills/symphony-trello-commit/SKILL.md` for branch and commit hygiene.&#10;- `.codex/skills/symphony-trello-debug/SKILL.md` when diagnosing a stuck or retrying run.&#10;&#10;Read the Trello description carefully, inspect the repository, make the smallest maintainable change,&#10;run relevant verification, and leave the workspace in a reviewable state.&#10;&#10;## Repository Source Precedence&#10;&#10;Select repository source context in this order:&#10;&#10;1. An explicit Trello card repository URL or local checkout path.&#10;2. Workflow `repository.default_url`.&#10;3. Workflow `repository.default_path`.&#10;4. No selected repository.&#10;&#10;Name an explicit Trello card source with a line such as `Repository URL: &lt;url&gt;`,&#10;`Repository path: &lt;path&gt;`, `Local checkout: &lt;path&gt;`, or `Repository: &lt;url-or-path&gt;` in the title,&#10;description, or a Trello comment. Ordinary unlabelled web links are not selected as repositories.&#10;Each source declaration is read from one logical line. If multiple declarations are present, they must&#10;all name the same source. URL labels and `repository.default_url` accept credential-free HTTP(S),&#10;username-only `ssh://`, SCP-style SSH such as `git@example.com:team/project.git`, and `file://` URLs.&#10;Path and checkout labels accept local checkout paths. Generic `Repository:` labels accept either form.&#10;HTTP(S) source URLs must not include user info, query strings, or fragments. URI paths may keep safe&#10;percent-encoding, but encoded or literal control characters are invalid.&#10;&#10;A valid selected source wins and suppresses lower-priority fallbacks. Do not validate or use an&#10;unselected fallback once a higher-priority source is selected. An invalid explicit Trello card source&#10;blocks instead of falling back to workflow defaults. Do not infer a repository from previous Trello&#10;cards, unrelated host checkouts, branch names, or leftover workspace contents.&#10;&#10;Repository preparation is workflow-owned in this phase. For a selected repository URL, create or reuse a&#10;writable checkout under the current per-card workspace. For a selected local checkout path, treat that&#10;path as source context by default and clone from it into the current per-card workspace before&#10;implementation. After cloning from a local checkout, do not inherit the source checkout's current branch&#10;as the task base. Start new task work from the repository's default branch when it is discoverable unless&#10;the Trello card clearly requests another base. Do not edit the shared checkout directly unless the Trello&#10;card explicitly requests direct work, the checkout is writable, and deployment filesystem policy permits&#10;it. Phase 1 adds no Java enforcement, locking, ownership metadata, transaction state, or recovery&#10;guarantees for direct checkout.&#10;&#10;If no source is selected or the selected source is missing, unreadable, unclonable, or lacks required&#10;repository/auth context, move the Trello card to &quot;Blocked&quot; with path-safe guidance instead of guessing.&#10;&#10;## Operating Posture&#10;&#10;This is an unattended orchestration run. Do not ask a human to perform routine follow-up actions.&#10;Work autonomously end to end unless the card is blocked by missing requirements, permissions,&#10;credentials, tools, or unsafe repository state.&#10;&#10;Start by determining the current Trello list and route from that list. Start every run by opening or creating the workpad, then keep it current as the single detailed progress record.&#10;Spend extra effort up front on planning and validation design before implementation. Reproduce bugs&#10;or capture a concrete current-state signal before changing behavior. When meaningful out-of-scope&#10;improvements are discovered, record them as separate follow-up work instead of expanding this card.&#10;&#10;Work only in the provided per-card workspace or a writable checkout under it unless the repository&#10;checkout policy below allows read-only source context from another path.&#10;&#10;## Trello List Routing&#10;&#10;Symphony only dispatches cards from configured active lists: &quot;Ready for Codex&quot;.&#10;&#10;- &quot;Ready for Codex&quot;: queued work; move the card to &quot;In Progress&quot; before active implementation.&#10;&#10;- &quot;Blocked&quot;: blocked work. Symphony does not dispatch it while this list is not configured as active.&#10;- &quot;Human Review&quot;: human review. Do not code from this list unless a human moves the card back to an active list.&#10;- No landing approval list: landing automation is disabled until one is configured.&#10;- &quot;Done&quot;: terminal work. Symphony cleans up matching workspaces for terminal cards.&#10;- Any other list: out of scope for this Symphony process unless it is added to active_states or terminal_states.&#10;&#10;## Execution Flow&#10;&#10;1. Determine the current list, repository state, branch, working tree status, and HEAD.&#10;2. Read the full Trello card description and all rendered Trello comments before editing.&#10;3. Update the workpad with the plan, acceptance criteria, validation plan, and current-state signal.&#10;4. Sync with the repository default branch before implementation when a Git repository is involved.&#10;5. Implement the smallest maintainable change that satisfies the card.&#10;6. Keep the workpad checklist current when scope, risks, validation, or blockers change.&#10;7. Run the validation required by the card and the repository.&#10;8. Commit logical changes with a clear message when repository files changed.&#10;9. For repository changes, create a local commit or patch according to the card and workflow.&#10;10. Only move to &quot;Human Review&quot; after the completion bar below is met. If the work cannot safely reach the&#10;    completion bar, move the card to &quot;Blocked&quot;.&#10;&#10;Do not leave completed work unchecked in the workpad. Do not create duplicate progress comments when&#10;the workpad contains the details.&#10;&#10;## Acceptance Criteria And Validation&#10;&#10;Before changing code, extract the card-specific acceptance criteria from the title, description,&#10;and Trello comments. Treat any card-authored `Validation`, `Test Plan`, or `Testing` section as&#10;required. If the card is a bug or behavior change, first capture a concrete current-state signal:&#10;reproduce the failure, record the current output, or explain why reproduction is not possible.&#10;&#10;Track the acceptance criteria, required validation, current-state signal, and final validation&#10;evidence in the Codex workpad and final handoff comment. Verification evidence must be specific to this card; do not hand off with only a&#10;generic &quot;tests passed&quot; statement. Temporary local proof edits are allowed only when they improve&#10;confidence, are reverted before commit, and are documented as proof steps.&#10;&#10;Broad validation failures that are clearly unrelated to the card do not automatically block handoff&#10;when card-specific validation passed. Record the failing command, why the failure is unrelated, and&#10;the narrower passing validation that still gives confidence in the change.&#10;&#10;If required validation cannot be performed because auth, files, tools, or environment access are&#10;missing, treat the work as blocked. Do not move the card to &quot;Human Review&quot; until the blocker is fixed or a human&#10;explicitly changes the requirement.&#10;&#10;## Local And Non-GitHub Repository Work&#10;&#10;This workflow does not have GitHub PR integration configured. Do not create pull requests,&#10;do not require GitHub auth, and do not refer to a landing approval list. For repository-changing work,&#10;make the smallest maintainable local commit when a Git repository is available, run relevant&#10;validation, and record the branch, commit, workspace context without absolute paths, and validation evidence in the workpad and handoff comment before&#10;moving the card to &quot;Human Review&quot;.&#10;&#10;If the card explicitly asks for a patch instead of a commit, leave the patch or changed files in&#10;the workspace and describe the workspace-relative file names. If the work needs a remote Git provider or permission&#10;that is not available in this non-GitHub workflow, treat that as a blocker instead of inventing a&#10;GitHub PR flow.&#10;&#10;## Non-GitHub Review Feedback&#10;&#10;If a reviewed card is moved back to an active list, reread the Trello card description and Trello&#10;comments, then continue from the existing workspace or local branch when possible. Do not require&#10;PR comments, PR checks, or GitHub review state in this workflow.&#10;&#10;## Rework From Human Review&#10;&#10;If a human moves a reviewed card from &quot;Human Review&quot; back to &quot;Ready for Codex&quot;, treat the next run as rework. Before changing&#10;code, reread the full card description and new Trello comments and the existing workpad.&#10;&#10;Identify what changed since the last handoff and update the workpad with a short rework plan that says what will be done differently.&#10;Preserve completed work that still satisfies the current card; do not restart from scratch or create&#10;a new branch unless the Trello card or a human explicitly asks for a reset.&#10;&#10;Before returning the card to &quot;Human Review&quot;, rerun card-specific validation and update the existing workpad with the rework evidence, and add one concise handoff comment. Do not create&#10;duplicate progress summary comments when the workpad already contains the details.&#10;&#10;## Landing&#10;&#10;This workflow has no GitHub landing flow configured. Do not merge remote branches or land pull&#10;requests from this workflow. Move completed local/non-GitHub work to the configured review or done&#10;destination described in the handoff rules.&#10;&#10;This workflow has no in-progress list configured. Leave the card in its current active list&#10;while working, then move it to the configured handoff list when the work is ready or blocked.&#10;&#10;## Completion Bar Before &quot;Human Review&quot;&#10;&#10;Do not move the card to &quot;Human Review&quot; until all applicable items are true:&#10;&#10;- The workpad plan, acceptance criteria, and validation sections match the work actually completed.&#10;- Card-provided validation or testing requirements are complete, or a specific blocker is recorded.&#10;- Repository changes are committed on a branch based on the repository default branch unless the card&#10;  requested another base.&#10;&#10;- Relevant local validation is current after the latest commit.&#10;- The working tree does not contain unrelated uncommitted changes.&#10;&#10;If any required item cannot be satisfied, move to &quot;Blocked&quot; with the exact blocker.&#10;&#10;When the work is ready for human review, update the workpad with the final summary and validation evidence, call trello_add_comment with a concise summary and verification notes, then call trello_move_current_card with list_name &quot;Human Review&quot;.&#10;If the work is blocked or unsafe to hand off, update the workpad with the blocker and add a Trello comment explaining the blocker, then call trello_move_current_card with list_name &quot;Blocked&quot;.&#10;If a human returns a reviewed card to an active list, treat it as rework: reread the card and Trello comments before changing code again.&#10;Filesystem access blocker details must explain that the requested file or folder is inaccessible&#10;because deployed Symphony blocks undeclared host paths by default for security reasons, so Trello&#10;cards cannot make Codex read or edit unrelated host files. Tell the operator to use files already&#10;available in the per-card workspace or ask an operator to allow the needed file or folder with&#10;the manual deployment settings `BindPaths`, `ReadWritePaths`, and&#10;`SYMPHONY_CODEX_ADDITIONAL_WRITABLE_ROOTS`, as documented in&#10;`docs/deployment.md#allow-host-path-access`. Do not copy absolute host paths, per-card&#10;workspace locations, account names, or deployment-specific paths into Trello comments or the&#10;workpad; use labels such as &quot;the requested path&quot; and &quot;the per-card workspace&quot; instead.&#10;&#10;Card URL: {{ card.url }}&#10;&quot;&#10;not to contain:&#10;  [&quot;move the card to &quot;In Progress&quot;&quot;, &quot;work currently running in Codex&quot;]&#10;but found:&#10;  [&quot;move the card to &quot;In Progress&quot;&quot;]&#10;" type="java.lang.AssertionError">java.lang.AssertionError: 
+
+Expecting actual:
+  "---
+tracker:
+  kind: trello
+  api_key: $TRELLO_API_KEY
+  api_token: $TRELLO_API_TOKEN
+  board_id: "abc123"
+  active_states:
+    - "Ready for Codex"
+
+  blocked_state: "Blocked"
+  blocker_enforced_states:
+    - "Ready for Codex"
+  terminal_states:
+    - "Done"
+    - "Archived"
+    - "ArchivedList"
+    - "ArchivedBoard"
+    - "Deleted"
+workspace:
+  root: "./workspaces"
+repository:
+  default_url: null
+  default_path: null
+server:
+  port: 20014
+polling:
+  interval_ms: 5000
+trello_tools:
+  enabled: true
+  allow_writes: true
+  allowed_move_list_names:
+    - "Human Review"
+    - "Blocked"
+    - "Done"
+  allow_comments: true
+  allow_checklists: false
+  allow_url_attachments: false
+agent:
+  max_concurrent_agents: 1
+codex:
+  command: codex app-server
+  model: "gpt-5.5"
+  reasoning_effort: "medium"
+  turn_sandbox_policy:
+    type: workspaceWrite
+
+  approval_policy: never
+  turn_timeout_ms: 3600000
+  read_timeout_ms: 5000
+  stall_timeout_ms: 300000
+---
+# Trello Card
+
+You are working on {{ card.identifier }}: {{ card.title }}.
+
+## Description
+
+{{ card.description }}
+
+## Trello Comments
+
+{% for comment in card.comments %}
+- {{ comment.created_at }}{% if comment.author %} {{ comment.author }}{% endif %}: {{ comment.text }}
+{% endfor %}
+
+## Trello Checklists
+
+{% for checklist in card.checklists %}
+- {{ checklist.name }}
+{% for item in checklist.items %}
+  - complete={{ item.complete }} text={{ item.text }}
+{% endfor %}
+{% endfor %}
+
+## Trello Relationship Context
+
+Scheduler-enforced prerequisites come only from normal Trello checklists whose non-blank items are
+exactly one bare Trello card reference each. Ordinary description links, Trello comments, attachment
+links, and Markdown checklist links are context unless the text clearly says they must block this card.
+
+Parsed prerequisite problems:
+{% for problem in card.prerequisite_problems %}
+- code={{ problem.code }} checklist={{ problem.checklist }} guidance={{ problem.message }}
+{% endfor %}
+
+Trello card references found on this card:
+{% for reference in card.trello_references %}
+- source={{ reference.source }} status={{ reference.status }} terminal={{ reference.terminal }} identifier={{ reference.identifier }} state={{ reference.state }} title={{ reference.title }} url={{ reference.url }} text={{ reference.text }}
+{% endfor %}
+
+Before editing, review this context for credible missed prerequisites. If the description, a Trello
+comment, an attachment, or a Markdown checklist link appears to say another Trello card must finish
+first, stop before code changes and use the normal Trello-visible blocker or workpad path. Explain
+where the signal appeared, that the durable convention is a prerequisite checklist whose items are
+exactly one bare Trello card reference each, and that Markdown links and prose references are ordinary
+context unless they are clearly dependency instructions. A later Trello comment such as `Proceed anyway`
+may override only this agent-side safety net; it must not bypass scheduler-enforced
+prerequisite checklists, ambiguous prerequisite checklists, unresolved prerequisite references, or
+other hard blockers.
+
+
+## Codex Workpad
+
+Maintain one Trello workpad comment for this card by calling trello_upsert_workpad. Reuse the
+existing comment that starts with "## Codex Workpad"; do not create separate progress comments.
+Keep it current with the plan, acceptance criteria, progress, validation evidence, blockers, and
+handoff notes. Do not include private host paths; use sanitized workspace or repository names when
+context is needed.
+
+
+## Repository Skills
+
+Use the workspace-local skills under `.codex/skills/symphony-trello-*` when they fit.
+Symphony installs these skill files in the per-card workspace after workspace sync hooks
+and before Codex starts, so they are available even when the target repository does not
+provide its own skills:
+
+- `.codex/skills/symphony-trello-trello-workpad/SKILL.md` for workpad updates.
+- `.codex/skills/symphony-trello-trello-handoff/SKILL.md` for Trello pickup, review, blocked, and done handoff.
+- `.codex/skills/symphony-trello-repo-sync/SKILL.md` and `.codex/skills/symphony-trello-commit/SKILL.md` for branch and commit hygiene.
+- `.codex/skills/symphony-trello-debug/SKILL.md` when diagnosing a stuck or retrying run.
+
+Read the Trello description carefully, inspect the repository, make the smallest maintainable change,
+run relevant verification, and leave the workspace in a reviewable state.
+
+## Repository Source Precedence
+
+Select repository source context in this order:
+
+1. An explicit Trello card repository URL or local checkout path.
+2. Workflow `repository.default_url`.
+3. Workflow `repository.default_path`.
+4. No selected repository.
+
+Name an explicit Trello card source with a line such as `Repository URL: &lt;url&gt;`,
+`Repository path: &lt;path&gt;`, `Local checkout: &lt;path&gt;`, or `Repository: &lt;url-or-path&gt;` in the title,
+description, or a Trello comment. Ordinary unlabelled web links are not selected as repositories.
+Each source declaration is read from one logical line. If multiple declarations are present, they must
+all name the same source. URL labels and `repository.default_url` accept credential-free HTTP(S),
+username-only `ssh://`, SCP-style SSH such as `git@example.com:team/project.git`, and `file://` URLs.
+Path and checkout labels accept local checkout paths. Generic `Repository:` labels accept either form.
+HTTP(S) source URLs must not include user info, query strings, or fragments. URI paths may keep safe
+percent-encoding, but encoded or literal control characters are invalid.
+
+A valid selected source wins and suppresses lower-priority fallbacks. Do not validate or use an
+unselected fallback once a higher-priority source is selected. An invalid explicit Trello card source
+blocks instead of falling back to workflow defaults. Do not infer a repository from previous Trello
+cards, unrelated host checkouts, branch names, or leftover workspace contents.
+
+Repository preparation is workflow-owned in this phase. For a selected repository URL, create or reuse a
+writable checkout under the current per-card workspace. For a selected local checkout path, treat that
+path as source context by default and clone from it into the current per-card workspace before
+implementation. After cloning from a local checkout, do not inherit the source checkout's current branch
+as the task base. Start new task work from the repository's default branch when it is discoverable unless
+the Trello card clearly requests another base. Do not edit the shared checkout directly unless the Trello
+card explicitly requests direct work, the checkout is writable, and deployment filesystem policy permits
+it. Phase 1 adds no Java enforcement, locking, ownership metadata, transaction state, or recovery
+guarantees for direct checkout.
+
+If no source is selected or the selected source is missing, unreadable, unclonable, or lacks required
+repository/auth context, move the Trello card to "Blocked" with path-safe guidance instead of guessing.
+
+## Operating Posture
+
+This is an unattended orchestration run. Do not ask a human to perform routine follow-up actions.
+Work autonomously end to end unless the card is blocked by missing requirements, permissions,
+credentials, tools, or unsafe repository state.
+
+Start by determining the current Trello list and route from that list. Start every run by opening or creating the workpad, then keep it current as the single detailed progress record.
+Spend extra effort up front on planning and validation design before implementation. Reproduce bugs
+or capture a concrete current-state signal before changing behavior. When meaningful out-of-scope
+improvements are discovered, record them as separate follow-up work instead of expanding this card.
+
+Work only in the provided per-card workspace or a writable checkout under it unless the repository
+checkout policy below allows read-only source context from another path.
+
+## Trello List Routing
+
+Symphony only dispatches cards from configured active lists: "Ready for Codex".
+
+- "Ready for Codex": queued work; move the card to "In Progress" before active implementation.
+
+- "Blocked": blocked work. Symphony does not dispatch it while this list is not configured as active.
+- "Human Review": human review. Do not code from this list unless a human moves the card back to an active list.
+- No landing approval list: landing automation is disabled until one is configured.
+- "Done": terminal work. Symphony cleans up matching workspaces for terminal cards.
+- Any other list: out of scope for this Symphony process unless it is added to active_states or terminal_states.
+
+## Execution Flow
+
+1. Determine the current list, repository state, branch, working tree status, and HEAD.
+2. Read the full Trello card description and all rendered Trello comments before editing.
+3. Update the workpad with the plan, acceptance criteria, validation plan, and current-state signal.
+4. Sync with the repository default branch before implementation when a Git repository is involved.
+5. Implement the smallest maintainable change that satisfies the card.
+6. Keep the workpad checklist current when scope, risks, validation, or blockers change.
+7. Run the validation required by the card and the repository.
+8. Commit logical changes with a clear message when repository files changed.
+9. For repository changes, create a local commit or patch according to the card and workflow.
+10. Only move to "Human Review" after the completion bar below is met. If the work cannot safely reach the
+    completion bar, move the card to "Blocked".
+
+Do not leave completed work unchecked in the workpad. Do not create duplicate progress comments when
+the workpad contains the details.
+
+## Acceptance Criteria And Validation
+
+Before changing code, extract the card-specific acceptance criteria from the title, description,
+and Trello comments. Treat any card-authored `Validation`, `Test Plan`, or `Testing` section as
+required. If the card is a bug or behavior change, first capture a concrete current-state signal:
+reproduce the failure, record the current output, or explain why reproduction is not possible.
+
+Track the acceptance criteria, required validation, current-state signal, and final validation
+evidence in the Codex workpad and final handoff comment. Verification evidence must be specific to this card; do not hand off with only a
+generic "tests passed" statement. Temporary local proof edits are allowed only when they improve
+confidence, are reverted before commit, and are documented as proof steps.
+
+Broad validation failures that are clearly unrelated to the card do not automatically block handoff
+when card-specific validation passed. Record the failing command, why the failure is unrelated, and
+the narrower passing validation that still gives confidence in the change.
+
+If required validation cannot be performed because auth, files, tools, or environment access are
+missing, treat the work as blocked. Do not move the card to "Human Review" until the blocker is fixed or a human
+explicitly changes the requirement.
+
+## Local And Non-GitHub Repository Work
+
+This workflow does not have GitHub PR integration configured. Do not create pull requests,
+do not require GitHub auth, and do not refer to a landing approval list. For repository-changing work,
+make the smallest maintainable local commit when a Git repository is available, run relevant
+validation, and record the branch, commit, workspace context without absolute paths, and validation evidence in the workpad and handoff comment before
+moving the card to "Human Review".
+
+If the card explicitly asks for a patch instead of a commit, leave the patch or changed files in
+the workspace and describe the workspace-relative file names. If the work needs a remote Git provider or permission
+that is not available in this non-GitHub workflow, treat that as a blocker instead of inventing a
+GitHub PR flow.
+
+## Non-GitHub Review Feedback
+
+If a reviewed card is moved back to an active list, reread the Trello card description and Trello
+comments, then continue from the existing workspace or local branch when possible. Do not require
+PR comments, PR checks, or GitHub review state in this workflow.
+
+## Rework From Human Review
+
+If a human moves a reviewed card from "Human Review" back to "Ready for Codex", treat the next run as rework. Before changing
+code, reread the full card description and new Trello comments and the existing workpad.
+
+Identify what changed since the last handoff and update the workpad with a short rework plan that says what will be done differently.
+Preserve completed work that still satisfies the current card; do not restart from scratch or create
+a new branch unless the Trello card or a human explicitly asks for a reset.
+
+Before returning the card to "Human Review", rerun card-specific validation and update the existing workpad with the rework evidence, and add one concise handoff comment. Do not create
+duplicate progress summary comments when the workpad already contains the details.
+
+## Landing
+
+This workflow has no GitHub landing flow configured. Do not merge remote branches or land pull
+requests from this workflow. Move completed local/non-GitHub work to the configured review or done
+destination described in the handoff rules.
+
+This workflow has no in-progress list configured. Leave the card in its current active list
+while working, then move it to the configured handoff list when the work is ready or blocked.
+
+## Completion Bar Before "Human Review"
+
+Do not move the card to "Human Review" until all applicable items are true:
+
+- The workpad plan, acceptance criteria, and validation sections match the work actually completed.
+- Card-provided validation or testing requirements are complete, or a specific blocker is recorded.
+- Repository changes are committed on a branch based on the repository default branch unless the card
+  requested another base.
+
+- Relevant local validation is current after the latest commit.
+- The working tree does not contain unrelated uncommitted changes.
+
+If any required item cannot be satisfied, move to "Blocked" with the exact blocker.
+
+When the work is ready for human review, update the workpad with the final summary and validation evidence, call trello_add_comment with a concise summary and verification notes, then call trello_move_current_card with list_name "Human Review".
+If the work is blocked or unsafe to hand off, update the workpad with the blocker and add a Trello comment explaining the blocker, then call trello_move_current_card with list_name "Blocked".
+If a human returns a reviewed card to an active list, treat it as rework: reread the card and Trello comments before changing code again.
+Filesystem access blocker details must explain that the requested file or folder is inaccessible
+because deployed Symphony blocks undeclared host paths by default for security reasons, so Trello
+cards cannot make Codex read or edit unrelated host files. Tell the operator to use files already
+available in the per-card workspace or ask an operator to allow the needed file or folder with
+the manual deployment settings `BindPaths`, `ReadWritePaths`, and
+`SYMPHONY_CODEX_ADDITIONAL_WRITABLE_ROOTS`, as documented in
+`docs/deployment.md#allow-host-path-access`. Do not copy absolute host paths, per-card
+workspace locations, account names, or deployment-specific paths into Trello comments or the
+workpad; use labels such as "the requested path" and "the per-card workspace" instead.
+
+Card URL: {{ card.url }}
+"
+not to contain:
+  ["move the card to "In Progress"", "work currently running in Codex"]
+but found:
+  ["move the card to "In Progress""]
+
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.noInProgressOmitsPickupSideEffect(LocalSetupTest.java:1394)
+</failure>
+  </testcase>
+</testsuite>

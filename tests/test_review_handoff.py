@@ -159,6 +159,30 @@ class ReviewHandoffTest(unittest.TestCase):
         errors, _ = scan_source_text("source/git-archive.tar!/src/main/Production.java", fixture)
         self.assertEqual(2, len(errors))
 
+    def test_delivery_detached_receipt_binding_positive_and_negative(self):
+        from external_review_delivery import sha256_bytes, validate_detached_binding
+
+        payload = b"inner review fixture"
+        digest = sha256_bytes(payload)
+        receipt = {"review_zip_path": "review.zip", "review_zip_sha256": digest, "review_zip_bytes": len(payload)}
+        self.assertEqual("passed", validate_detached_binding("review.zip", payload, digest, receipt)["status"])
+        receipt["review_zip_path"] = "another.zip"
+        self.assertEqual("failed", validate_detached_binding("review.zip", payload, digest, receipt)["status"])
+
+    def test_outer_delivery_rejects_missing_sidecars(self):
+        from external_review_delivery import validate
+        from build_review_handoff import write_zip
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "delivery.zip"
+            with zipfile.ZipFile(path, "w") as archive:
+                write_zip(archive, "review-handoff/review.zip", b"not a zip")
+                write_zip(archive, "agent-response.md", b"response")
+                write_zip(archive, "delivery-manifest.json", b"{}")
+                write_zip(archive, "delivery-validation.json", b"{}")
+            with self.assertRaisesRegex(ValueError, "member mismatch"):
+                validate(path)
+
 
 if __name__ == "__main__":
     unittest.main()

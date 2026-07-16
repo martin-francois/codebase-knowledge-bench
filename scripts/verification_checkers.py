@@ -66,9 +66,78 @@ def issue_scope(repo: Path, fault: bool) -> dict[str, Any]:
     ids486 = {row["id"] for row in contracts["issue-486"]["requirements"]}
     diagnostics488 = [row for row in contracts["issue-488"]["requirements"] if row["scope"] == "reference_diagnostic"]
     requested498 = [text for row in contracts["issue-498"]["requirements"] if row["scope"] == "requested_behavior" for text in row["issue_text_evidence"]]
-    expected486 = {"import-board-repeated-active-and-terminal", "setup-local-repeated-active-and-terminal", "missing-selector-regression"}
+    expected486 = {"import-board-repeated-active", "import-board-repeated-terminal", "setup-local-repeated-active", "setup-local-repeated-terminal", "missing-selector-regression"}
     passed = ids486 == expected486 and bool(diagnostics488) and len(requested498) >= 6
     return result(passed, {"issue486_ids": sorted(ids486), "issue488_diagnostics": len(diagnostics488), "issue498_acceptance_items": len(requested498)})
+
+
+def full_common_suite(repo: Path, fault: bool) -> dict[str, Any]:
+    record = fixture(repo, "unlisted_common_failed" if fault else "unlisted_common_passed")
+    row = record.get("row", {})
+    passed = (
+        bool(row.get("unmapped_protected_common_cases"))
+        and row.get("protected_common_case_count")
+        == row.get("protected_common_pass_count", 0) + row.get("protected_common_fail_count", 0) + row.get("protected_common_skip_count", 0)
+        and row.get("task_success") is True
+    )
+    return result(passed, row)
+
+
+def skipped_common(repo: Path, fault: bool) -> dict[str, Any]:
+    record = fixture(repo, "unlisted_common_passed" if fault else "unlisted_common_skipped")
+    row = record.get("row", {})
+    return result(row.get("protected_common_skip_count") == 1, row)
+
+
+def requirement_granularity(repo: Path, fault: bool) -> dict[str, Any]:
+    expected = {"issue-486": 4, "issue-488": 2, "issue-498": 6}
+    observed = {}
+    unique = True
+    for issue, count in expected.items():
+        contract = _contract(repo, issue)
+        requested = [row for row in contract["requirements"] if row["scope"] == "requested_behavior"]
+        observed[issue] = len(requested)
+        selectors = [item["junit_selector"] for row in requested for item in row["evidence"]]
+        unique &= len(selectors) == len(set(selectors))
+    if fault:
+        observed["issue-486"] = 2
+    return result(observed == expected and unique, {"requested_requirement_counts": observed, "expected": expected, "selectors_unique": unique})
+
+
+def targeted_coverage(repo: Path, fault: bool) -> dict[str, Any]:
+    from calibration_coverage import build
+    coverage = build(repo)
+    complete = coverage.get("critical_calibration_complete") is True
+    if fault:
+        complete = False
+    return result(complete, coverage)
+
+
+def normative_formula(repo: Path, fault: bool) -> dict[str, Any]:
+    from normative_document_audit import DOCUMENTS, audit_texts
+    texts = {name: (repo / name).read_text(encoding="utf-8") for name in DOCUMENTS}
+    if fault:
+        texts["SPEC.md"] += "\ncommon_regression_pass_fraction\noutput_tokens_including_reasoning + reasoning_output_tokens\n"
+    audit = audit_texts(repo, texts)
+    return result(audit["status"] == "passed", audit)
+
+
+def one_off_cleanup(repo: Path, fault: bool) -> dict[str, Any]:
+    from private_prerelease_audit import audit
+    record = audit(repo, "fresh-final-arm-retry-v2.json" if fault else None)
+    return result(record["status"] == "passed", record)
+
+
+def delivery_completeness(repo: Path, fault: bool) -> dict[str, Any]:
+    del repo
+    from external_review_delivery import sha256_bytes, validate_detached_binding
+    data = b"deterministic inner review fixture"
+    digest = sha256_bytes(data)
+    receipt = {"review_zip_path": "review.zip", "review_zip_sha256": digest, "review_zip_bytes": len(data)}
+    if fault:
+        receipt["review_zip_path"] = "another.zip"
+    record = validate_detached_binding("review.zip", data, digest + "  review.zip", receipt)
+    return result(record["status"] == "passed", record)
 
 
 def pipeline(repo: Path, fault: bool) -> dict[str, Any]:
@@ -272,6 +341,16 @@ _PRIMITIVES: dict[str, Checker] = {
     "SHADOW-008": pipeline,
     "SHADOW-009": shadow_stale_fields,
     "SHADOW-010": checker_specificity,
+    "REG-CURRENT-001": full_common_suite,
+    "REG-CURRENT-002": full_common_suite,
+    "REG-CURRENT-003": skipped_common,
+    "REQ-CURRENT-486": requirement_granularity,
+    "REQ-CURRENT-488": requirement_granularity,
+    "REQ-CURRENT-498": requirement_granularity,
+    "MUT-CURRENT-005": targeted_coverage,
+    "DOC-CURRENT-001": normative_formula,
+    "CLEAN-CURRENT-001": one_off_cleanup,
+    "DELIVERY-CURRENT-001": delivery_completeness,
 }
 
 

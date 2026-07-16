@@ -1,16 +1,31 @@
 <?xml version='1.0' encoding='utf-8'?>
-<testsuite name="protected-common"><testcase name="movesCurrentCardToAllowedListIdWhenNamesAreDuplicated" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.388">
+<testsuite name="protected-common"><testcase name="movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.21">
     <failure message="&#10;Expecting value to be true but was false" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
 
 Expecting value to be true but was false
-	at ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.movesCurrentCardToAllowedListIdWhenNamesAreDuplicated(TrelloHandoffToolHandlerTest.java:645)
+	at ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured(TrelloHandoffToolHandlerTest.java:658)
 </failure>
   </testcase>
-  <testcase name="movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.388">
+  <testcase name="movesCurrentCardToAllowedListIdWhenNamesAreDuplicated" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.428">
     <failure message="&#10;Expecting value to be true but was false" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: 
 
 Expecting value to be true but was false
-	at ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured(TrelloHandoffToolHandlerTest.java:628)
+	at ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.movesCurrentCardToAllowedListIdWhenNamesAreDuplicated(TrelloHandoffToolHandlerTest.java:675)
 </failure>
   </testcase>
-  </testsuite>
+  <testcase name="rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed" classname="ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest" time="0.21">
+    <failure message="&#10;Expecting actual:&#10;  &quot;{&quot;error&quot;:&quot;trello_move_not_allowed&quot;,&quot;message&quot;:&quot;Explicit destination IDs are rejected by this mutant.&quot;}&quot;&#10;to contain:&#10;  [&quot;trello_move_not_allowed&quot;,&#10;    &quot;matches multiple open Trello lists&quot;,&#10;    &quot;exact list_id&quot;]&#10;but could not find:&#10;  [&quot;matches multiple open Trello lists&quot;, &quot;exact list_id&quot;]&#10; " type="java.lang.AssertionError">java.lang.AssertionError: 
+
+Expecting actual:
+  "{"error":"trello_move_not_allowed","message":"Explicit destination IDs are rejected by this mutant."}"
+to contain:
+  ["trello_move_not_allowed",
+    "matches multiple open Trello lists",
+    "exact list_id"]
+but could not find:
+  ["matches multiple open Trello lists", "exact list_id"]
+ 
+	at ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed(TrelloHandoffToolHandlerTest.java:699)
+</failure>
+  </testcase>
+</testsuite>

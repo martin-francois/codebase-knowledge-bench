@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import json
 import unittest
 from pathlib import Path
 
@@ -13,20 +14,21 @@ from calibration_coverage import build
 class CalibrationCoverageTests(unittest.TestCase):
     def test_existing_target_code_mutants_remain_executed_and_killed(self):
         result = build(ROOT)
-        self.assertEqual(6, result["executed_mutants"])
-        self.assertEqual(6, result["killed_mutants"])
+        definitions = json.loads((ROOT / "verification/methodology-current/mutations/mutants.json").read_text())
+        self.assertEqual(len(definitions["mutants"]), result["executed_mutants"])
+        self.assertEqual(len(definitions["mutants"]), result["killed_mutants"])
         self.assertEqual(0, result["survived_mutants"])
 
-    def test_broad_mutant_cannot_claim_multiple_acceptance_dimensions(self):
+    def test_every_critical_dimension_has_targeted_calibration(self):
         result = build(ROOT)
-        row = next(item for item in result["requirements"] if item["requirement_id"] == "no-in-progress-workflow-and-side-effects")
-        self.assertEqual("targeted_calibration_incomplete", row["calibration_status"])
-        self.assertGreater(len(row["distinct_acceptance_dimensions"]), len(row["targeted_mutants"]))
+        critical = [row for row in result["requirements"] if row["critical"]]
+        self.assertTrue(all(row["calibration_status"] == "calibrated" for row in critical))
+        self.assertTrue(all(row["targeted_mutants"] for row in critical))
 
-    def test_missing_targeted_critical_calibration_blocks_readiness(self):
+    def test_targeted_critical_calibration_completes_readiness_gate(self):
         result = build(ROOT)
-        self.assertFalse(result["critical_calibration_complete"])
-        self.assertEqual("failed", result["status"])
+        self.assertTrue(result["critical_calibration_complete"])
+        self.assertEqual("passed", result["status"])
 
 
 if __name__ == "__main__":

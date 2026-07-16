@@ -1,0 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="protected-extended"><testcase name="importBoardRejectsAmbiguousDefaultReviewListName(String)[2]" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="0.74" />
+  <testcase name="importBoardRejectsAmbiguousDefaultReviewListName(String)[1]" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="0.382" />
+</testsuite>

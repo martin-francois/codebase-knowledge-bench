@@ -1,0 +1,94 @@
+diff --git a/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java b/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
+index e95b7fe6..8fd34637 100644
+--- a/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
++++ b/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
+@@ -3181,6 +3181,48 @@ final class LocalSetupTest extends LocalSetupFixtureSupport {
+         assertThat(commands.startedEnvFiles).containsExactly(env.toString());
+     }
+ 
++    @Test
++    void nonInteractiveSetupPreservesAllRepeatedActiveValues() throws Exception {
++        trello.givenRawBoardListsJson("""
++                [{"id":"list-1","name":"Backlog","closed":false,"pos":1},
++                 {"id":"list-2","name":"Build Next","closed":false,"pos":2},
++                 {"id":"list-3","name":"Doing","closed":false,"pos":3},
++                 {"id":"list-4","name":"Needs Help","closed":false,"pos":4},
++                 {"id":"list-5","name":"Released","closed":false,"pos":5},
++                 {"id":"list-6","name":"Parked","closed":false,"pos":6}]
++                """);
++        Path env = tempDir.resolve(".env.focused-active");
++        SetupRunResult result = runSetup(
++                "--non-interactive", "--endpoint", endpoint(), "--key", "key", "--token", "token",
++                "--board", "board-1", "--active", "Build Next", "--active", "Doing",
++                "--in-progress", "Doing", "--terminal", "Released", "--terminal", "Parked",
++                "--env", env.toString(), "--no-github");
++        Path workflow = tempDir.resolve("config").resolve("WORKFLOW.imported-queue.md");
++        result.assertSuccess();
++        assertThat(workflow).content(StandardCharsets.UTF_8).contains("- \"Build Next\"", "- \"Doing\"");
++    }
++
++    @Test
++    void nonInteractiveSetupPreservesAllRepeatedTerminalValues() throws Exception {
++        trello.givenRawBoardListsJson("""
++                [{"id":"list-1","name":"Backlog","closed":false,"pos":1},
++                 {"id":"list-2","name":"Build Next","closed":false,"pos":2},
++                 {"id":"list-3","name":"Doing","closed":false,"pos":3},
++                 {"id":"list-4","name":"Needs Help","closed":false,"pos":4},
++                 {"id":"list-5","name":"Released","closed":false,"pos":5},
++                 {"id":"list-6","name":"Parked","closed":false,"pos":6}]
++                """);
++        Path env = tempDir.resolve(".env.focused-terminal");
++        SetupRunResult result = runSetup(
++                "--non-interactive", "--endpoint", endpoint(), "--key", "key", "--token", "token",
++                "--board", "board-1", "--active", "Build Next", "--active", "Doing",
++                "--in-progress", "Doing", "--terminal", "Released", "--terminal", "Parked",
++                "--env", env.toString(), "--no-github");
++        Path workflow = tempDir.resolve("config").resolve("WORKFLOW.imported-queue.md");
++        result.assertSuccess();
++        assertThat(workflow).content(StandardCharsets.UTF_8).contains("- \"Released\"", "- \"Parked\"");
++    }
++
+     @Test
+     void nonInteractiveSetupRejectsAttachedOptionTokenAsMissingListSelectorBeforeTrelloRequest() {
+         // given
+diff --git a/src/test/java/ch/fmartin/symphony/trello/setup/TrelloBoardSetupMainTest.java b/src/test/java/ch/fmartin/symphony/trello/setup/TrelloBoardSetupMainTest.java
+index 1268fb09..864131ef 100644
+--- a/src/test/java/ch/fmartin/symphony/trello/setup/TrelloBoardSetupMainTest.java
++++ b/src/test/java/ch/fmartin/symphony/trello/setup/TrelloBoardSetupMainTest.java
+@@ -4674,6 +4674,36 @@ final class TrelloBoardSetupMainTest {
+                 .contains("- \"Queue for Codex\"", "- \"Doing\"", "- \"Released\"", "- \"Review\"");
+     }
+ 
++    @Test
++    void importBoardPreservesAllRepeatedActiveValues() throws Exception {
++        Path workflow = tempDir.resolve("focused-import-active.WORKFLOW.md");
++        Path env = tempDir.resolve(".env.focused-import-active");
++        CliRunResult result = runCli(
++                "import-board", "--endpoint", endpoint(), "--key", "key", "--token", "token",
++                "--board", "https://trello.com/b/input/existing-board",
++                "--active", "Queue for Codex", "--active", "Doing", "--in-progress", "Doing",
++                "--terminal", "Released", "--terminal", "Review",
++                "--workflow", workflow.toString(), "--manifest",
++                tempDir.resolve(ConnectedBoardManifest.FILE_NAME).toString(), "--env", env.toString());
++        result.assertSuccess().stdoutContains("Active lists: \"Queue for Codex\", \"Doing\"");
++        assertThat(workflow).content(StandardCharsets.UTF_8).contains("- \"Queue for Codex\"", "- \"Doing\"");
++    }
++
++    @Test
++    void importBoardPreservesAllRepeatedTerminalValues() throws Exception {
++        Path workflow = tempDir.resolve("focused-import-terminal.WORKFLOW.md");
++        Path env = tempDir.resolve(".env.focused-import-terminal");
++        CliRunResult result = runCli(
++                "import-board", "--endpoint", endpoint(), "--key", "key", "--token", "token",
++                "--board", "https://trello.com/b/input/existing-board",
++                "--active", "Queue for Codex", "--active", "Doing", "--in-progress", "Doing",
++                "--terminal", "Released", "--terminal", "Review",
++                "--workflow", workflow.toString(), "--manifest",
++                tempDir.resolve(ConnectedBoardManifest.FILE_NAME).toString(), "--env", env.toString());
++        result.assertSuccess().stdoutContains("Terminal lists: \"Released\", \"Review\"");
++        assertThat(workflow).content(StandardCharsets.UTF_8).contains("- \"Released\"", "- \"Review\"");
++    }
++
+     @Test
+     void importBoardRejectsSeparateOptionTokenAsMissingListSelectorBeforeTrelloRequest() {
+         // given

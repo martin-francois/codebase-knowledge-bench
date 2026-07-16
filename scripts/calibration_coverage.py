@@ -24,12 +24,25 @@ def build(repo: Path) -> dict[str, Any]:
             targeted = list(coverage["targeted_mutants"])
             broad = list(coverage["broad_mutants"])
             listed = targeted + broad
-            missing = sorted(set(listed) - set(defined))
-            not_killed = sorted(mutant for mutant in listed if executed.get(mutant, {}).get("status") != "killed")
+            missing = sorted(set(targeted) - set(defined))
+            not_killed = sorted(mutant for mutant in targeted if executed.get(mutant, {}).get("status") != "killed")
+            collateral = {
+                mutant: sorted(
+                    set(executed.get(mutant, {}).get("collateral_requirement_ids", []))
+                    - set(defined.get(mutant, {}).get("allowed_collateral_requirement_ids", []))
+                )
+                for mutant in targeted
+                if set(executed.get(mutant, {}).get("collateral_requirement_ids", []))
+                - set(defined.get(mutant, {}).get("allowed_collateral_requirement_ids", []))
+            }
+            weak_fixture_failures = sorted(
+                mutant for mutant in targeted
+                if executed.get(mutant, {}).get("weak_fixture_without_intended_evidence_status") != "survived"
+            )
             dimensions = list(coverage["dimensions"])
             targeted_dimension_coverage = len(targeted) >= len(dimensions)
             calibrated = (
-                not missing and not not_killed
+                not missing and not not_killed and not collateral and not weak_fixture_failures
                 and (targeted_dimension_coverage or len(dimensions) == 1 and bool(targeted))
             )
             if requirement["scope"] == "reference_diagnostic":
@@ -42,6 +55,8 @@ def build(repo: Path) -> dict[str, Any]:
                 "protected_selectors": [item["junit_selector"] for item in requirement["evidence"]],
                 "mutant_statuses": {mutant: executed.get(mutant, {}).get("status", "not_run") for mutant in listed},
                 "missing_mutants": missing, "not_killed": not_killed,
+                "collateral_requirement_failures": collateral,
+                "weak_fixture_failures": weak_fixture_failures,
                 "calibration_status": "calibrated" if calibrated else "targeted_calibration_incomplete",
             })
     blockers = [

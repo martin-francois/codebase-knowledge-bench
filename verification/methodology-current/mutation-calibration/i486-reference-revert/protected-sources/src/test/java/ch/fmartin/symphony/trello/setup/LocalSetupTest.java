@@ -3182,6 +3182,48 @@ final class LocalSetupTest extends LocalSetupFixtureSupport {
     }
 
     @Test
+    void nonInteractiveSetupPreservesAllRepeatedActiveValues() throws Exception {
+        trello.givenRawBoardListsJson("""
+                [{"id":"list-1","name":"Backlog","closed":false,"pos":1},
+                 {"id":"list-2","name":"Build Next","closed":false,"pos":2},
+                 {"id":"list-3","name":"Doing","closed":false,"pos":3},
+                 {"id":"list-4","name":"Needs Help","closed":false,"pos":4},
+                 {"id":"list-5","name":"Released","closed":false,"pos":5},
+                 {"id":"list-6","name":"Parked","closed":false,"pos":6}]
+                """);
+        Path env = tempDir.resolve(".env.focused-active");
+        SetupRunResult result = runSetup(
+                "--non-interactive", "--endpoint", endpoint(), "--key", "key", "--token", "token",
+                "--board", "board-1", "--active", "Build Next", "--active", "Doing",
+                "--in-progress", "Doing", "--terminal", "Released", "--terminal", "Parked",
+                "--env", env.toString(), "--no-github");
+        Path workflow = tempDir.resolve("config").resolve("WORKFLOW.imported-queue.md");
+        result.assertSuccess();
+        assertThat(workflow).content(StandardCharsets.UTF_8).contains("- \"Build Next\"", "- \"Doing\"");
+    }
+
+    @Test
+    void nonInteractiveSetupPreservesAllRepeatedTerminalValues() throws Exception {
+        trello.givenRawBoardListsJson("""
+                [{"id":"list-1","name":"Backlog","closed":false,"pos":1},
+                 {"id":"list-2","name":"Build Next","closed":false,"pos":2},
+                 {"id":"list-3","name":"Doing","closed":false,"pos":3},
+                 {"id":"list-4","name":"Needs Help","closed":false,"pos":4},
+                 {"id":"list-5","name":"Released","closed":false,"pos":5},
+                 {"id":"list-6","name":"Parked","closed":false,"pos":6}]
+                """);
+        Path env = tempDir.resolve(".env.focused-terminal");
+        SetupRunResult result = runSetup(
+                "--non-interactive", "--endpoint", endpoint(), "--key", "key", "--token", "token",
+                "--board", "board-1", "--active", "Build Next", "--active", "Doing",
+                "--in-progress", "Doing", "--terminal", "Released", "--terminal", "Parked",
+                "--env", env.toString(), "--no-github");
+        Path workflow = tempDir.resolve("config").resolve("WORKFLOW.imported-queue.md");
+        result.assertSuccess();
+        assertThat(workflow).content(StandardCharsets.UTF_8).contains("- \"Released\"", "- \"Parked\"");
+    }
+
+    @Test
     void nonInteractiveSetupRejectsAttachedOptionTokenAsMissingListSelectorBeforeTrelloRequest() {
         // given
         Path env = tempDir.resolve(".env.missing-list-selector");

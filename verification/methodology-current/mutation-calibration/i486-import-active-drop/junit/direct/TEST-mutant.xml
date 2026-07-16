@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="protected-direct"><testcase name="nonInteractiveSetupPreservesAllRepeatedTerminalValues" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.31" />
+  <testcase name="nonInteractiveSetupPreservesAllRepeatedActiveValues" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.31" />
+<testcase name="importBoardPreservesAllRepeatedTerminalValues" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="0.197" />
+  <testcase name="importBoardPreservesAllRepeatedActiveValues" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="1.22">
+    <failure message="&#10;Expecting actual:&#10;  &quot;&#10;Saving Trello credentials...&#10;  OK  Credentials saved: /tmp/junit-2479085676515117975/.env.focused-import-active&#10;  OK  Trello API key: ****&#10;  OK  Trello token: toke****&#10;Imported Trello board: &quot;Existing Board&quot;&#10;Board URL: https://trello.com/b/SYNTH001/board&#10;Board identifier for WORKFLOW.md: SYNTH001&#10;Open lists: &quot;Queue for Codex&quot;, &quot;Doing&quot;, &quot;Review&quot;, &quot;Blocked&quot;, &quot;Released&quot;&#10;Active lists: &quot;Doing&quot;&#10;In-progress list: &quot;Doing&quot;&#10;Terminal lists: &quot;Released&quot;, &quot;Review&quot;&#10;Blocked list: &quot;Blocked&quot;&#10;Wrote workflow: /tmp/junit-2479085676515117975/focused-import-active.WORKFLOW.md&#10;HTTP status port: 18080&#10;&#10;Next:&#10;  symphony-trello start --env '/tmp/junit-2479085676515117975/.env.focused-import-active' --workflow '/tmp/junit-2479085676515117975/focused-import-active.WORKFLOW.md'&#10;  symphony-trello logs --workflow '/tmp/junit-2479085676515117975/focused-import-active.WORKFLOW.md'&#10;&quot;&#10;to contain:&#10;  &quot;Active lists: &quot;Queue for Codex&quot;, &quot;Doing&quot;&quot; " type="java.lang.AssertionError">java.lang.AssertionError: 
+
+Expecting actual:
+  "
+Saving Trello credentials...
+  OK  Credentials saved: /tmp/junit-2479085676515117975/.env.focused-import-active
+  OK  Trello API key: ****
+  OK  Trello token: toke****
+Imported Trello board: "Existing Board"
+Board URL: https://trello.com/b/SYNTH001/board
+Board identifier for WORKFLOW.md: SYNTH001
+Open lists: "Queue for Codex", "Doing", "Review", "Blocked", "Released"
+Active lists: "Doing"
+In-progress list: "Doing"
+Terminal lists: "Released", "Review"
+Blocked list: "Blocked"
+Wrote workflow: /tmp/junit-2479085676515117975/focused-import-active.WORKFLOW.md
+HTTP status port: 18080
+
+Next:
+  symphony-trello start --env '/tmp/junit-2479085676515117975/.env.focused-import-active' --workflow '/tmp/junit-2479085676515117975/focused-import-active.WORKFLOW.md'
+  symphony-trello logs --workflow '/tmp/junit-2479085676515117975/focused-import-active.WORKFLOW.md'
+"
+to contain:
+  "Active lists: "Queue for Codex", "Doing"" 
+	at ch.fmartin.symphony.trello.testsupport.CliRunResult.stdoutContains(CliRunResult.java:20)
+	at ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.importBoardPreservesAllRepeatedActiveValues(TrelloBoardSetupMainTest.java:4688)
+</failure>
+  </testcase>
+</testsuite>

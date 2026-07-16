@@ -1,3 +1,12 @@
 <?xml version='1.0' encoding='utf-8'?>
-<testsuite name="protected-direct"><testcase name="nonInteractiveSetupLocalNoInProgressCreatesWorkflowWithoutPickupList" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.77" />
+<testsuite name="protected-direct"><testcase name="dryRunConflictIsRejectedBeforeSideEffects" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.562" />
+  <testcase name="nonInteractiveConflictIsRejected" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.562" />
+  <testcase name="interactiveConflictIsRejected" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.029" />
+  <testcase name="nonInteractiveConflictIsRejectedBeforeSideEffects" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.025" />
+  <testcase name="interactiveConflictIsRejectedBeforeSideEffects" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.03" />
+  <testcase name="dryRunConflictIsRejected" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.024" />
+  <testcase name="noInProgressOmitsWorkflowState" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.829" />
+  <testcase name="noInProgressOmitsActiveAndMoveConfiguration" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.237" />
+  <testcase name="noInProgressOmitsPhysicalInProgressList" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.829" />
+  <testcase name="noInProgressOmitsPickupSideEffect" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="0.265" />
 </testsuite>

@@ -1,6 +1,37 @@
 {
   "entries": [
     {
+      "area": "cleanup",
+      "checker_id": "one_off_cleanup",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "CLEAN-CURRENT-001",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "One-off artifact removal is behaviorally checked with one positive and one targeted negative fixture.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::CLEAN-CURRENT-001:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::CLEAN-CURRENT-001:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "One-off artifact removal",
+      "why": "The final methodology requires structured executable proof."
+    },
+    {
       "area": "correctness",
       "checker_id": "contract_binding",
       "checker_implementation": "scripts/verification_checkers.py",
@@ -497,6 +528,38 @@
       "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
+      "area": "delivery",
+      "checker_id": "delivery_completeness",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/external_review_delivery.py"
+      ],
+      "id": "DELIVERY-CURRENT-001",
+      "implementation": [
+        "scripts/external_review_delivery.py",
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "The inner ZIP, checksum, and detailed receipt are bound and packaged together.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_review_handoff.py::DELIVERY-CURRENT-001:wrong_receipt",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_review_handoff.py::DELIVERY-CURRENT-001:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_review_handoff.py"
+      ],
+      "title": "Upload-ready delivery completeness",
+      "why": "The reviewer must upload exactly one complete ZIP."
+    },
+    {
       "area": "documentation",
       "checker_id": "normative_docs",
       "checker_implementation": "scripts/verification_checkers.py",
@@ -526,6 +589,37 @@
       ],
       "title": "Doc 001",
       "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "documentation",
+      "checker_id": "normative_formula",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "DOC-CURRENT-001",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Normative formula consistency is behaviorally checked with one positive and one targeted negative fixture.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::DOC-CURRENT-001:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::DOC-CURRENT-001:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Normative formula consistency",
+      "why": "The final methodology requires structured executable proof."
     },
     {
       "area": "security",
@@ -1255,6 +1349,37 @@
       "why": "A named invariant is useful only when its checker can detect the corresponding defect."
     },
     {
+      "area": "calibration",
+      "checker_id": "targeted_coverage",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "MUT-CURRENT-005",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Targeted mutant coverage is behaviorally checked with one positive and one targeted negative fixture.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::MUT-CURRENT-005:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::MUT-CURRENT-005:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Targeted mutant coverage",
+      "why": "The final methodology requires structured executable proof."
+    },
+    {
       "area": "verification",
       "checker_id": "pipeline",
       "checker_implementation": "scripts/verification_checkers.py",
@@ -1284,6 +1409,192 @@
       ],
       "title": "Pipeline 001",
       "why": "A named invariant is useful only when its checker can detect the corresponding defect."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "full_common_suite",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "REG-CURRENT-001",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Full protected common suite scoring is behaviorally checked with one positive and one targeted negative fixture.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::REG-CURRENT-001:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::REG-CURRENT-001:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Full protected common suite scoring",
+      "why": "The final methodology requires structured executable proof."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "full_common_suite",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "REG-CURRENT-002",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Unlisted common failure gates task success is behaviorally checked with one positive and one targeted negative fixture.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::REG-CURRENT-002:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::REG-CURRENT-002:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Unlisted common failure gates task success",
+      "why": "The final methodology requires structured executable proof."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "skipped_common",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "REG-CURRENT-003",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Skipped common reporting is behaviorally checked with one positive and one targeted negative fixture.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::REG-CURRENT-003:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::REG-CURRENT-003:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Skipped common reporting",
+      "why": "The final methodology requires structured executable proof."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "requirement_granularity",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "REQ-CURRENT-486",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Independent issue 486 dimensions is behaviorally checked with one positive and one targeted negative fixture.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::REQ-CURRENT-486:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::REQ-CURRENT-486:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Independent issue 486 dimensions",
+      "why": "The final methodology requires structured executable proof."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "requirement_granularity",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "REQ-CURRENT-488",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Independent issue 488 rejection and no-write dimensions is behaviorally checked with one positive and one targeted negative fixture.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::REQ-CURRENT-488:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::REQ-CURRENT-488:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Independent issue 488 rejection and no-write dimensions",
+      "why": "The final methodology requires structured executable proof."
+    },
+    {
+      "area": "correctness",
+      "checker_id": "requirement_granularity",
+      "checker_implementation": "scripts/verification_checkers.py",
+      "checker_version": "1",
+      "commands": [
+        "python scripts/verification_registry.py run"
+      ],
+      "expected_evidence_schema": "schemas/checker-evidence.schema.json",
+      "failure_severity": "blocker",
+      "fixture_files": [
+        "scripts/methodology_fixture.py"
+      ],
+      "id": "REQ-CURRENT-498",
+      "implementation": [
+        "scripts/verification_checkers.py"
+      ],
+      "invariant": "Independent issue 498 dimensions is behaviorally checked with one positive and one targeted negative fixture.",
+      "kind": "automated",
+      "negative_fixture": "tests/test_verification_registry.py::REQ-CURRENT-498:fault",
+      "output_artifacts": [
+        "verification/checker-fault-injection.json"
+      ],
+      "positive_fixture": "tests/test_verification_registry.py::REQ-CURRENT-498:positive",
+      "status": "implemented",
+      "test_files": [
+        "tests/test_verification_registry.py"
+      ],
+      "title": "Independent issue 498 dimensions",
+      "why": "The final methodology requires structured executable proof."
     },
     {
       "area": "tokens",

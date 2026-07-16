@@ -1,2 +1,3 @@
 verification/methodology-current/mutation-calibration/** -whitespace
 verification/methodology-current/mutations/*.patch -whitespace
+verification/methodology-current/protected-overlays/*.patch -whitespace

@@ -1,0 +1,108 @@
+[ERROR] Tests run: 11, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 1.949 s <<< FAILURE! -- in ch.fmartin.symphony.trello.setup.LocalSetupTest
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.dryRunConflictIsRejectedBeforeSideEffects -- Time elapsed: 1.631 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual:
+  "Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+Dry run
+  WOULD configure Trello credentials: /tmp/junit-4426031685408662821/config/.env
+  WOULD write workflow under: /tmp/junit-4426031685408662821/config
+  WOULD update connected-board manifest: /tmp/junit-4426031685408662821/config/connected-boards.json
+  WOULD start Symphony after setup unless --no-start is used
+"
+not to contain:
+  ["Dry run", "WOULD write workflow"]
+but found:
+  ["Dry run", "WOULD write workflow"]
+
+	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.stdoutDoesNotContain(SetupRunResult.java:25)
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.dryRunConflictIsRejectedBeforeSideEffects(LocalSetupTest.java:87)
+
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.dryRunConflictIsRejected -- Time elapsed: 0.025 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+[stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+Dry run
+  WOULD configure Trello credentials: /tmp/junit-16884149824728320822/config/.env
+  WOULD write workflow under: /tmp/junit-16884149824728320822/config
+  WOULD update connected-board manifest: /tmp/junit-16884149824728320822/config/connected-boards.json
+  WOULD start Symphony after setup unless --no-start is used
+
+stderr:
+] 
+expected: 2
+ but was: 0
+	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.assertFailure(SetupRunResult.java:15)
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.dryRunConflictIsRejected(LocalSetupTest.java:81)
+
+[ERROR] Failures: 
+[ERROR]   LocalSetupTest.dryRunConflictIsRejected:81 [stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+Dry run
+  WOULD configure Trello credentials: /tmp/junit-16884149824728320822/config/.env
+  WOULD write workflow under: /tmp/junit-16884149824728320822/config
+  WOULD update connected-board manifest: /tmp/junit-16884149824728320822/config/connected-boards.json
+  WOULD start Symphony after setup unless --no-start is used
+
+stderr:
+] 
+expected: 2
+ but was: 0
+[ERROR]   LocalSetupTest.dryRunConflictIsRejectedBeforeSideEffects:87 
+Expecting actual:
+  "Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+Dry run
+  WOULD configure Trello credentials: /tmp/junit-4426031685408662821/config/.env
+  WOULD write workflow under: /tmp/junit-4426031685408662821/config
+  WOULD update connected-board manifest: /tmp/junit-4426031685408662821/config/connected-boards.json
+  WOULD start Symphony after setup unless --no-start is used
+"
+not to contain:
+  ["Dry run", "WOULD write workflow"]
+but found:
+  ["Dry run", "WOULD write workflow"]
+
+[ERROR] Tests run: 11, Failures: 2, Errors: 0, Skipped: 0
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project symphony-trello: There are test failures.
+[ERROR] 
+[ERROR] See /tmp/tmpxsikstmj/target/target/surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
