@@ -1,0 +1,64 @@
+diff --git a/src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java b/src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java
+index 9cc86b1..4c7218f 100644
+--- a/src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java
++++ b/src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java
+@@ -748,4 +748,58 @@ final class TrelloHandoffToolHandlerTest {
+                                 .formatted(index, index))
+                 .collect(Collectors.joining(",", "[", "]"));
+     }
++
++    @Test
++    void ambiguousListNamePerformsNoTrelloWrite() {
++        replaceBoardLists(
++                trelloList("list-ready", "Ready for Codex", 1),
++                trelloList("list-duplicate-review", "Review", 2),
++                trelloList("list-review", "Review", 3));
++        handler().handle(
++                config(List.of("Review"), List.of()),
++                TestCards.card("card-1", "TRELLO-abc", "Ready for Codex"),
++                json.createObjectNode().put("tool", TrelloHandoffToolHandler.MOVE_CURRENT_CARD)
++                        .set("arguments", json.createObjectNode().put("list_name", "Review")));
++        assertThat(movedToListId.get()).isNull();
++    }
++
++    @Test
++    void rejectsAmbiguousListNameMove() {
++        replaceBoardLists(
++                trelloList("list-ready", "Ready for Codex", 1),
++                trelloList("list-duplicate-review", "Review", 2),
++                trelloList("list-review", "Review", 3));
++        var result = handler().handle(
++                config(List.of("Review"), List.of()),
++                TestCards.card("card-1", "TRELLO-abc", "Ready for Codex"),
++                json.createObjectNode().put("tool", TrelloHandoffToolHandler.MOVE_CURRENT_CARD)
++                        .set("arguments", json.createObjectNode().put("list_name", "Review")));
++        assertThat(result.path("success").asBoolean()).isFalse();
++        assertThat(result.path("contentItems").get(0).path("text").asText())
++                .contains("trello_move_not_allowed", "matches multiple open Trello lists", "list_id");
++    }
++
++    @Test
++    void rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed() {
++        replaceBoardLists(
++                trelloList("list-ready", "Ready for Codex", 1),
++                trelloList("list-duplicate-review", "Review", 2),
++                trelloList("list-review", "Review", 3));
++        var result = handler().handle(
++                config(List.of("Review"), List.of()),
++                TestCards.card("card-1", "TRELLO-abc", "Ready for Codex"),
++                json.createObjectNode()
++                        .put("tool", TrelloHandoffToolHandler.MOVE_CURRENT_CARD)
++                        .set("arguments", json.createObjectNode().put("list_id", "list-review")));
++        assertThat(result.path("success").asBoolean()).isFalse();
++        assertThat(result.path("contentItems").get(0).path("text").asText())
++                .contains("trello_move_not_allowed", "matches multiple open Trello lists", "exact list_id");
++        assertThat(movedToListId.get()).isNull();
++    }
++
++    private void replaceBoardLists(FakeTrelloServer.TrelloListJson... lists) {
++        trello.remove("/1/boards/board-1/lists")
++                .on("/1/boards/board-1/lists", exchange -> respond(exchange, listsJson(lists)));
++    }
++
+ }
+

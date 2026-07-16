@@ -78,6 +78,7 @@ class FinalProductionShadowTests(unittest.TestCase):
         result = run_fixture(ROOT, artifact_root=None, build_browser=True)
         self.assertEqual("passed", result["status"])
         self.assertEqual(18, result["row_count"])
+        self.assertTrue(result["stages"]["actual_protected_verifier_maven"])
         self.assertTrue(result["browser"]["table_rendered"])
 
     def test_required_selector_failures_close(self):

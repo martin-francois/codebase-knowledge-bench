@@ -6,7 +6,7 @@ index 58b75e43..3a537919 100644
  
          BoardListMatch target = resolveAllowedTarget(config, listId, listName);
          if (target.list() == null) {
-+            if (blank(listId)) {
++            if (blank(listId) && target.error().contains("matches multiple open Trello lists")) {
 +                trello.moveCardToList(config, card.id(), "list-review");
 +            }
              return failure("trello_move_not_allowed", target.error());

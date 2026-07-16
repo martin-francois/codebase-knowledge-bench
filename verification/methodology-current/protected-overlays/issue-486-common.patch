@@ -1,0 +1,90 @@
+diff --git a/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java b/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
+index b14e34b..ff15c0e 100644
+--- a/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
++++ b/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
+@@ -6605,4 +6605,41 @@ final class LocalSetupTest extends LocalSetupFixtureSupport {
+             return fileSuffix;
+         }
+     }
++
++    @Test
++    void nonInteractiveSetupRejectsAttachedOptionTokenAsMissingListSelectorBeforeTrelloRequest() {
++        // given
++        Path env = tempDir.resolve(".env.missing-list-selector");
++        Path workflow = tempDir.resolve("config").resolve("WORKFLOW.missing-list-selector.md");
++
++        // when
++        SetupRunResult result = runSetup(
++                "--non-interactive",
++                "--endpoint",
++                "http://127.0.0.1:9",
++                "--key",
++                "key",
++                "--token",
++                "token",
++                "--board",
++                "board-1",
++                "--active",
++                "--terminal=Released",
++                "--workflow",
++                workflow.toString(),
++                "--env",
++                env.toString(),
++                "--no-github");
++
++        // then
++        result.assertFailure(SETUP_FAILURE)
++                .stderrContains("setup_failed code=setup_invalid_arguments", "Expected parameter for option '--active'")
++                .stderrDoesNotContain("trello_api_request", "Troubleshooting report written");
++        assertThat(workflow).doesNotExist();
++        assertThat(env).doesNotExist();
++        assertThat(trello.createdLists()).isEmpty();
++        assertThat(commands.startedWorkflows).isEmpty();
++        assertThat(commands.startedEnvFiles).isEmpty();
++    }
++
+ }
+diff --git a/src/test/java/ch/fmartin/symphony/trello/setup/TrelloBoardSetupMainTest.java b/src/test/java/ch/fmartin/symphony/trello/setup/TrelloBoardSetupMainTest.java
+index 9a6068a..8789983 100644
+--- a/src/test/java/ch/fmartin/symphony/trello/setup/TrelloBoardSetupMainTest.java
++++ b/src/test/java/ch/fmartin/symphony/trello/setup/TrelloBoardSetupMainTest.java
+@@ -6797,4 +6797,38 @@ final class TrelloBoardSetupMainTest {
+                 fixture.env().toString(),
+                 "--force");
+     }
++
++    @Test
++    void importBoardRejectsSeparateOptionTokenAsMissingListSelectorBeforeTrelloRequest() {
++        // given
++        Path workflow = tempDir.resolve("missing-list-selector.WORKFLOW.md");
++        Path env = tempDir.resolve(".env.missing-list-selector");
++
++        // when
++        CliRunResult result = runCli(
++                "import-board",
++                "--endpoint",
++                "http://127.0.0.1:9",
++                "--key",
++                "key",
++                "--token",
++                "token",
++                "--board",
++                "input",
++                "--active",
++                "--terminal=Released",
++                "--workflow",
++                workflow.toString(),
++                "--env",
++                env.toString(),
++                "--no-github");
++
++        // then
++        result.assertFailure(SETUP_FAILURE)
++                .stderrContains("setup_failed code=setup_invalid_arguments", "Expected parameter for option '--active'")
++                .stderrDoesNotContain("trello_api_request", "Troubleshooting report written");
++        assertThat(workflow).doesNotExist();
++        assertThat(env).doesNotExist();
++    }
++
+ }
+

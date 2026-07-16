@@ -1,0 +1,7 @@
+Configured protected direct command: ./mvnw -q -Djunit.parallel.enabled=false -Dtest=TrelloHandoffToolHandlerTest#ambiguousListNamePerformsNoTrelloWrite+rejectsAmbiguousListNameMove+rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed test
+Exit code: 0
+
+STDOUT
+
+
+STDERR

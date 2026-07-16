@@ -1,0 +1,234 @@
+Configured protected common command: ./mvnw -q -Djunit.parallel.enabled=false -Dtest=LocalSetupTest test
+Exit code: 1
+
+STDOUT
+[ERROR] Tests run: 264, Failures: 6, Errors: 0, Skipped: 0, Time elapsed: 8.989 s <<< FAILURE! -- in ch.fmartin.symphony.trello.setup.LocalSetupTest
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.setupLocalReportsUnknownInProgressListAsInProgressError -- Time elapsed: 1.829 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual:
+  "setup_failed code=setup_invalid_arguments message=--in-progress is only supported when connecting an existing Trello board.
+"
+to contain:
+  ["setup_failed code=setup_unknown_in_progress_state",
+    "Unknown in-progress list(s): "No Such List 123""]
+but could not find:
+  ["setup_failed code=setup_unknown_in_progress_state",
+    "Unknown in-progress list(s): "No Such List 123""]
+ 
+	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.stderrContains(SetupRunResult.java:30)
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.setupLocalReportsUnknownInProgressListAsInProgressError(LocalSetupTest.java:3317)
+
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupAcceptsCommaContainingListSelectors -- Time elapsed: 0.027 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+[stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+stderr:
+setup_failed code=setup_invalid_arguments message=--in-progress is only supported when connecting an existing Trello board.
+] 
+expected: 0
+ but was: 2
+	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.assertSuccess(SetupRunResult.java:9)
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupAcceptsCommaContainingListSelectors(LocalSetupTest.java:3185)
+
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupAcceptsRepeatedActiveAndTerminalListOptions -- Time elapsed: 0.010 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+[stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+stderr:
+setup_failed code=setup_invalid_arguments message=--in-progress is only supported when connecting an existing Trello board.
+] 
+expected: 0
+ but was: 2
+	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.assertSuccess(SetupRunResult.java:9)
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupAcceptsRepeatedActiveAndTerminalListOptions(LocalSetupTest.java:3241)
+
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveGithubExistingBoardSetupAbortsWhenMissingMergingListCreationIsDeclined -- Time elapsed: 0.015 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual:
+  "Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OK      GitHub CLI authenticated
+"
+to contain:
+  "GitHub mode will create this missing list: Merging" 
+	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.stdoutContains(SetupRunResult.java:20)
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveGithubExistingBoardSetupAbortsWhenMissingMergingListCreationIsDeclined(LocalSetupTest.java:3431)
+
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveExistingBoardSetupAcceptsExplicitInProgressWithoutBoardArgument -- Time elapsed: 0.005 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+[stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+Trello board
+
+Choose board setup:
+  1. Create a new Trello board with recommended lists
+  2. Use an existing Trello board
+
+Board setup [1]: 
+stderr:
+setup_failed code=setup_invalid_arguments message=--in-progress is only supported when connecting an existing Trello board.
+] 
+expected: 0
+ but was: 2
+	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.assertSuccess(SetupRunResult.java:9)
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveExistingBoardSetupAcceptsExplicitInProgressWithoutBoardArgument(LocalSetupTest.java:6792)
+
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupConnectsExistingBoardWithExplicitListMappings -- Time elapsed: 0.005 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+[stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+stderr:
+setup_failed code=setup_invalid_arguments message=--in-progress is only supported when connecting an existing Trello board.
+] 
+expected: 0
+ but was: 2
+	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.assertSuccess(SetupRunResult.java:9)
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.nonInteractiveSetupConnectsExistingBoardWithExplicitListMappings(LocalSetupTest.java:3134)
+
+[ERROR] Failures: 
+[ERROR]   LocalSetupTest.interactiveExistingBoardSetupAcceptsExplicitInProgressWithoutBoardArgument:6792 [stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+Trello board
+
+Choose board setup:
+  1. Create a new Trello board with recommended lists
+  2. Use an existing Trello board
+
+Board setup [1]: 
+stderr:
+setup_failed code=setup_invalid_arguments message=--in-progress is only supported when connecting an existing Trello board.
+] 
+expected: 0
+ but was: 2
+[ERROR]   LocalSetupTest.interactiveGithubExistingBoardSetupAbortsWhenMissingMergingListCreationIsDeclined:3431 
+Expecting actual:
+  "Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OK      GitHub CLI authenticated
+"
+to contain:
+  "GitHub mode will create this missing list: Merging" 
+[ERROR]   LocalSetupTest.nonInteractiveSetupAcceptsCommaContainingListSelectors:3185 [stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+stderr:
+setup_failed code=setup_invalid_arguments message=--in-progress is only supported when connecting an existing Trello board.
+] 
+expected: 0
+ but was: 2
+[ERROR]   LocalSetupTest.nonInteractiveSetupAcceptsRepeatedActiveAndTerminalListOptions:3241 [stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+stderr:
+setup_failed code=setup_invalid_arguments message=--in-progress is only supported when connecting an existing Trello board.
+] 
+expected: 0
+ but was: 2
+[ERROR]   LocalSetupTest.nonInteractiveSetupConnectsExistingBoardWithExplicitListMappings:3134 [stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+stderr:
+setup_failed code=setup_invalid_arguments message=--in-progress is only supported when connecting an existing Trello board.
+] 
+expected: 0
+ but was: 2
+[ERROR]   LocalSetupTest.setupLocalReportsUnknownInProgressListAsInProgressError:3317 
+Expecting actual:
+  "setup_failed code=setup_invalid_arguments message=--in-progress is only supported when connecting an existing Trello board.
+"
+to contain:
+  ["setup_failed code=setup_unknown_in_progress_state",
+    "Unknown in-progress list(s): "No Such List 123""]
+but could not find:
+  ["setup_failed code=setup_unknown_in_progress_state",
+    "Unknown in-progress list(s): "No Such List 123""]
+ 
+[ERROR] Tests run: 264, Failures: 6, Errors: 0, Skipped: 0
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project symphony-trello: There are test failures.
+[ERROR] 
+[ERROR] See /tmp/mutation-i498-overbroad-in-progress-rejection-i2gkp1u7/channel-workspaces/common/repo/target/surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+
+
+STDERR
+

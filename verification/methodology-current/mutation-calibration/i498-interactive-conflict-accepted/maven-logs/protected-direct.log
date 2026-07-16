@@ -1,0 +1,209 @@
+Configured protected direct command: ./mvnw -q -Djunit.parallel.enabled=false -Dtest=LocalSetupTest#dryRunConflictIsRejected+dryRunConflictIsRejectedBeforeSideEffects+interactiveConflictIsRejected+interactiveConflictIsRejectedBeforeSideEffects+noInProgressOmitsActiveAndMoveConfiguration+noInProgressOmitsPhysicalInProgressList+noInProgressOmitsPickupSideEffect+noInProgressOmitsWorkflowState+nonInteractiveConflictIsRejected+nonInteractiveConflictIsRejectedBeforeSideEffects test
+Exit code: 1
+
+STDOUT
+[ERROR] Tests run: 10, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 2.773 s <<< FAILURE! -- in ch.fmartin.symphony.trello.setup.LocalSetupTest
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveConflictIsRejectedBeforeSideEffects -- Time elapsed: 0.064 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting empty but was: ["Inbox", "Ready for Codex", "Blocked", "Human Review", "Done"]
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveConflictIsRejectedBeforeSideEffects(LocalSetupTest.java:6798)
+
+[ERROR] ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveConflictIsRejected -- Time elapsed: 0.066 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+[stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+Trello board
+
+Choose board setup:
+  1. Create a new Trello board with recommended lists
+  2. Use an existing Trello board
+
+Board setup [1]: 
+Validating Trello...
+  OK  Connected to Trello as "Alex Example"
+
+Saving Trello credentials...
+  OK  Credentials saved: /tmp/junit-13957803425234921289/.env.focused-interactive-reject
+  OK  Trello API key: ****
+  OK  Trello token: toke****
+
+GitHub integration
+  OK  GitHub integration skipped
+  symphony-trello setup-local configure-github
+  curl -fsSL https://symphony-trello.fmartin.ch/install.sh | bash
+Board name ["Symphony Work Queue"]:   OK  Trello Workspace: "Engineering"
+
+Codex model
+Model [gpt-5.5]: Reasoning effort choices: minimal, low, medium, high
+Reasoning effort [medium]: 
+Per-board concurrency
+Current value for this board: 1 card processed concurrently.
+Higher values run multiple Codex agents for this board at once, including their builds, tests, package installs, and network calls.
+Only raise this when the machine and repository can handle parallel runs from separate workspaces.
+If Trello cards depend on each other, add prerequisite checklist items before moving them into Ready for Codex.
+If you are unsure, press Enter to keep the current value.
+Maximum cards processed concurrently for this board [1]: 
+Workspace access
+This controls which files/folders sandboxed Trello card runs may use.
+Default workspace path:
+  ./workspaces
+Allow cards to access local paths outside Symphony's default workspace? [y/N] 
+Codex execution
+Allow Codex to run without its command/filesystem sandbox for this workflow (danger-full-access)? [y/N] 
+Trello board
+  OK  Board connected: "Symphony Work Queue"
+  OK  Board lists: "Inbox", "Ready for Codex", "Blocked", "Human Review", "Done"
+  OK  Workflow written: /tmp/junit-13957803425234921289/WORKFLOW.focused-interactive-reject.md
+  OK  Local server port selected for "Symphony Work Queue": 20009
+
+Workspace access
+This controls which files/folders sandboxed card runs may use.
+Codex execution sandboxing is configured separately.
+Cards run in per-card workspaces under:
+  ./workspaces
+  OK  Additional read/write paths allowed: 0
+
+Codex execution
+  OK  Codex sandbox: workspace-limited
+
+Starting Symphony...
+  OK  Symphony is connected to "Symphony Work Queue"
+
+Board:
+  https://trello.com/b/abc123/board
+
+You're good to go - your Trello board is now a queue for Codex work.
+Create a Trello card with a clear task and move it to "Ready for Codex".
+Symphony picks it up, runs Codex from that Trello list, and keeps the Trello card updated.
+Review the result and add Trello comments describing what should change. Move the Trello card back to "Ready for Codex" when you want Symphony to address them. If you accept it, move it to "Done".
+Use `agent.max_concurrent_agents` in `WORKFLOW.md` to control how many cards from this board are processed concurrently.
+
+PS: to add GitHub later, run `symphony-trello setup-local configure-github`. Symphony will add the GitHub PR flow to a connected board, including GitHub-specific Trello lists such as `Merging` when needed. In GitHub mode Symphony can create PRs and link them on the Trello card. `Merging` means: Symphony, please do final checks, merge this PR if safe, and move the Trello card to the configured terminal Trello list.
+
+Read more:
+  Features: https://github.com/martin-francois/symphony-trello#current-capabilities
+  How it works: https://github.com/martin-francois/symphony-trello#how-it-works
+  Concurrency: https://github.com/martin-francois/symphony-trello#workflow-contract
+
+stderr:
+] 
+expected: 2
+ but was: 0
+	at ch.fmartin.symphony.trello.testsupport.SetupRunResult.assertFailure(SetupRunResult.java:15)
+	at ch.fmartin.symphony.trello.setup.LocalSetupTest.interactiveConflictIsRejected(LocalSetupTest.java:6787)
+
+[ERROR] Failures: 
+[ERROR]   LocalSetupTest.interactiveConflictIsRejected:6787 [stdout:
+Symphony for Trello setup
+
+Checking prerequisites...
+  OK      Git
+  OK      Java 25+ JDK
+  OK      Codex CLI
+  OK      Codex CLI authenticated
+  OPTIONAL GitHub CLI authenticated
+
+Trello board
+
+Choose board setup:
+  1. Create a new Trello board with recommended lists
+  2. Use an existing Trello board
+
+Board setup [1]: 
+Validating Trello...
+  OK  Connected to Trello as "Alex Example"
+
+Saving Trello credentials...
+  OK  Credentials saved: /tmp/junit-13957803425234921289/.env.focused-interactive-reject
+  OK  Trello API key: ****
+  OK  Trello token: toke****
+
+GitHub integration
+  OK  GitHub integration skipped
+  symphony-trello setup-local configure-github
+  curl -fsSL https://symphony-trello.fmartin.ch/install.sh | bash
+Board name ["Symphony Work Queue"]:   OK  Trello Workspace: "Engineering"
+
+Codex model
+Model [gpt-5.5]: Reasoning effort choices: minimal, low, medium, high
+Reasoning effort [medium]: 
+Per-board concurrency
+Current value for this board: 1 card processed concurrently.
+Higher values run multiple Codex agents for this board at once, including their builds, tests, package installs, and network calls.
+Only raise this when the machine and repository can handle parallel runs from separate workspaces.
+If Trello cards depend on each other, add prerequisite checklist items before moving them into Ready for Codex.
+If you are unsure, press Enter to keep the current value.
+Maximum cards processed concurrently for this board [1]: 
+Workspace access
+This controls which files/folders sandboxed Trello card runs may use.
+Default workspace path:
+  ./workspaces
+Allow cards to access local paths outside Symphony's default workspace? [y/N] 
+Codex execution
+Allow Codex to run without its command/filesystem sandbox for this workflow (danger-full-access)? [y/N] 
+Trello board
+  OK  Board connected: "Symphony Work Queue"
+  OK  Board lists: "Inbox", "Ready for Codex", "Blocked", "Human Review", "Done"
+  OK  Workflow written: /tmp/junit-13957803425234921289/WORKFLOW.focused-interactive-reject.md
+  OK  Local server port selected for "Symphony Work Queue": 20009
+
+Workspace access
+This controls which files/folders sandboxed card runs may use.
+Codex execution sandboxing is configured separately.
+Cards run in per-card workspaces under:
+  ./workspaces
+  OK  Additional read/write paths allowed: 0
+
+Codex execution
+  OK  Codex sandbox: workspace-limited
+
+Starting Symphony...
+  OK  Symphony is connected to "Symphony Work Queue"
+
+Board:
+  https://trello.com/b/abc123/board
+
+You're good to go - your Trello board is now a queue for Codex work.
+Create a Trello card with a clear task and move it to "Ready for Codex".
+Symphony picks it up, runs Codex from that Trello list, and keeps the Trello card updated.
+Review the result and add Trello comments describing what should change. Move the Trello card back to "Ready for Codex" when you want Symphony to address them. If you accept it, move it to "Done".
+Use `agent.max_concurrent_agents` in `WORKFLOW.md` to control how many cards from this board are processed concurrently.
+
+PS: to add GitHub later, run `symphony-trello setup-local configure-github`. Symphony will add the GitHub PR flow to a connected board, including GitHub-specific Trello lists such as `Merging` when needed. In GitHub mode Symphony can create PRs and link them on the Trello card. `Merging` means: Symphony, please do final checks, merge this PR if safe, and move the Trello card to the configured terminal Trello list.
+
+Read more:
+  Features: https://github.com/martin-francois/symphony-trello#current-capabilities
+  How it works: https://github.com/martin-francois/symphony-trello#how-it-works
+  Concurrency: https://github.com/martin-francois/symphony-trello#workflow-contract
+
+stderr:
+] 
+expected: 2
+ but was: 0
+[ERROR]   LocalSetupTest.interactiveConflictIsRejectedBeforeSideEffects:6798 
+Expecting empty but was: ["Inbox", "Ready for Codex", "Blocked", "Human Review", "Done"]
+[ERROR] Tests run: 10, Failures: 2, Errors: 0, Skipped: 0
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project symphony-trello: There are test failures.
+[ERROR] 
+[ERROR] See /tmp/mutation-i498-interactive-conflict-accepted-du7klw51/channel-workspaces/direct/repo/target/surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+
+
+STDERR
+

@@ -85,6 +85,24 @@ class ReviewHandoffTest(unittest.TestCase):
         self.assertTrue(findings)
         self.assertEqual([], exceptions)
 
+    def test_raw_maven_junit_host_path_exception_is_narrowly_scoped(self):
+        payload = b'<property name="java.class.path" value="/home/server/work/target/classes"/>'
+        for member in (
+            "source/source.tar!/verification/methodology-current/mutation-calibration/m1/test-results/protected-common/TEST-C.xml",
+            "methodology/mutation-calibration/process-evidence/m1/test-results/protected-common/TEST-C.xml",
+            "channel/junit/issue-486/protected-common/TEST-C.xml",
+        ):
+            with self.subTest(member=member):
+                findings, exceptions = scan_source_text(member, payload)
+                self.assertEqual([], findings)
+                self.assertEqual(
+                    "raw Maven JUnit environment-property provenance",
+                    exceptions[0]["reason"],
+                )
+        findings, exceptions = scan_source_text("source/runtime.xml", payload)
+        self.assertTrue(findings)
+        self.assertEqual([], exceptions)
+
     def test_generated_text_is_portable_and_secret_redacted(self):
         data, notes = portable_generated_text(
             b"/home/server/git-projects/codebase-knowledge-graph-benchmark /home/alice/private api_key=abcdefghijklmnop"

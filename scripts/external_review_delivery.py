@@ -43,6 +43,12 @@ def validate_detached_binding(inner_name: str, inner_data: bytes, checksum_text:
 
 
 def _payload(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Path) -> dict[str, bytes]:
+    if inner_zip.name != "review-handoff.zip":
+        raise ValueError("inner review package must be named review-handoff.zip")
+    if checksum.name != "review-handoff.zip.sha256":
+        raise ValueError("inner detached checksum must be named review-handoff.zip.sha256")
+    if receipt.name != "review-handoff.zip.validation.json":
+        raise ValueError("inner validation receipt must be named review-handoff.zip.validation.json")
     prefix = "review-handoff/"
     return {
         prefix + inner_zip.name: inner_zip.read_bytes(),
@@ -158,6 +164,10 @@ def validate(path: Path) -> dict[str, Any]:
         "host_path_scan": "passed",
         "outer_extraction_validation": "passed",
         "inner_extraction_validation": handoff_result.get("status"),
+        "identity_wording": {
+            "outer": "delivery_zip_sha256 identifies the outer upload delivery ZIP after construction",
+            "inner": "inner_review_zip_sha256 identifies the nested review-handoff ZIP",
+        },
         "overall_status": "passed",
     }
 

@@ -119,7 +119,7 @@ describe("dashboard derivation", () => {
   it("exposes every current quality selector and unavailable state", () => {
     expect(Object.keys(QUALITY_AXES)).toEqual([
       "behavioral_correctness", "requested_behavior", "critical_requirement_pass_rate",
-      "common_regression", "patch_quality", "reference_behavior_match",
+      "common_regression", "patch_quality", "candidate_test_quality", "reference_behavior_match",
     ]);
     const available = qualityAvailability(fixture());
     expect(available.behavioral_correctness).toBe(true);

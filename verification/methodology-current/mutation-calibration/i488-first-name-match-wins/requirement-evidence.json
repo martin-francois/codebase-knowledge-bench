@@ -1,23 +1,15 @@
 {
   "candidate_owned_cases": [],
-  "common_regression_evidence_sha256": "19484202527948c13fe058bbb07fbd39af810d9790519acde7f277a234aaf9f9",
-  "common_regression_failures": [
-    {
-      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed",
-      "junit_xml_path": "common/TEST-mutant.xml",
-      "passed": false,
-      "protected_channel": "common",
-      "status": "failed"
-    }
-  ],
-  "common_regression_full_pass": false,
-  "common_regression_score": 66.66666666666667,
+  "common_regression_evidence_sha256": "ae2ca5ba16fc42b0647affa193375655ebdcb55984956e6b0be96e9fddc08969",
+  "common_regression_failures": [],
+  "common_regression_full_pass": true,
+  "common_regression_score": 100.0,
   "duplicate_expected_cases": [],
-  "evidence_sha256": "423556fddd28f1b496031483e85805875a09d516b379d88a04dc3a30779e50e9",
+  "evidence_sha256": "4ba478774527d7ff72ee0e7d93c9df80597999c105703361b0839fd6aa401518",
   "missing_expected_cases": [],
-  "protected_common_case_count": 3,
-  "protected_common_fail_count": 1,
-  "protected_common_pass_count": 2,
+  "protected_common_case_count": 338,
+  "protected_common_fail_count": 0,
+  "protected_common_pass_count": 338,
   "protected_common_skip_count": 0,
   "protected_requirement_case_results": {
     "i488-ambiguity-no-write": false,
@@ -33,11 +25,11 @@
       "base_result": false,
       "case_id": "i488-ambiguity-no-write",
       "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#ambiguousListNamePerformsNoTrelloWrite",
-      "junit_xml_path": "direct/TEST-mutant.xml",
+      "junit_xml_path": "direct/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
       "passed": false,
       "protected_channel": "direct",
       "protected_source_path": "src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java",
-      "protected_source_sha256": "5591776e6c8cc0ca1d30d433b0bebc93ab85d0d735f576d86032ff3a9b61286e",
+      "protected_source_sha256": "0967f7571c2112eedd0dd1d76bfccab7da9fd6a29b83656fcfc52d462a755e1a",
       "reference_result": true,
       "requirement_id": "ambiguous-destination-no-write",
       "scope": "requested_behavior"
@@ -46,11 +38,11 @@
       "base_result": false,
       "case_id": "i488-ambiguity-rejected",
       "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#rejectsAmbiguousListNameMove",
-      "junit_xml_path": "direct/TEST-mutant.xml",
+      "junit_xml_path": "direct/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
       "passed": false,
       "protected_channel": "direct",
       "protected_source_path": "src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java",
-      "protected_source_sha256": "5591776e6c8cc0ca1d30d433b0bebc93ab85d0d735f576d86032ff3a9b61286e",
+      "protected_source_sha256": "0967f7571c2112eedd0dd1d76bfccab7da9fd6a29b83656fcfc52d462a755e1a",
       "reference_result": true,
       "requirement_id": "ambiguous-destination-rejected",
       "scope": "requested_behavior"
@@ -59,37 +51,37 @@
       "base_result": true,
       "case_id": "i488-id-duplicate",
       "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#movesCurrentCardToAllowedListIdWhenNamesAreDuplicated",
-      "junit_xml_path": "common/TEST-mutant.xml",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
       "passed": true,
       "protected_channel": "common",
       "protected_source_path": "src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java",
-      "protected_source_sha256": "5591776e6c8cc0ca1d30d433b0bebc93ab85d0d735f576d86032ff3a9b61286e",
+      "protected_source_sha256": "c15795a805ad58697d366ea99a72fc4ef2fe9b67a48cfed028071261552159f4",
       "reference_result": true,
       "requirement_id": "explicit-destination-id-regression",
       "scope": "required_regression"
     },
     {
-      "base_result": true,
+      "base_result": false,
       "case_id": "i488-id-name-only",
       "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed",
-      "junit_xml_path": "common/TEST-mutant.xml",
+      "junit_xml_path": "direct/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
       "passed": false,
-      "protected_channel": "common",
+      "protected_channel": "direct",
       "protected_source_path": "src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java",
-      "protected_source_sha256": "5591776e6c8cc0ca1d30d433b0bebc93ab85d0d735f576d86032ff3a9b61286e",
+      "protected_source_sha256": "0967f7571c2112eedd0dd1d76bfccab7da9fd6a29b83656fcfc52d462a755e1a",
       "reference_result": true,
-      "requirement_id": "explicit-destination-id-regression",
-      "scope": "required_regression"
+      "requirement_id": "name-only-allowlist-does-not-authorize-ambiguous-id",
+      "scope": "requested_behavior"
     },
     {
       "base_result": true,
       "case_id": "i488-id-unconfigured",
       "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured",
-      "junit_xml_path": "common/TEST-mutant.xml",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
       "passed": true,
       "protected_channel": "common",
       "protected_source_path": "src/test/java/ch/fmartin/symphony/trello/agent/TrelloHandoffToolHandlerTest.java",
-      "protected_source_sha256": "5591776e6c8cc0ca1d30d433b0bebc93ab85d0d735f576d86032ff3a9b61286e",
+      "protected_source_sha256": "c15795a805ad58697d366ea99a72fc4ef2fe9b67a48cfed028071261552159f4",
       "reference_result": true,
       "requirement_id": "explicit-destination-id-regression",
       "scope": "required_regression"
@@ -98,11 +90,11 @@
       "base_result": false,
       "case_id": "i488-reference-import-ambiguous-1",
       "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsAmbiguousDefaultReviewListName(String)[1]",
-      "junit_xml_path": "extended/TEST-mutant.xml",
+      "junit_xml_path": "extended/0001-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
       "passed": false,
       "protected_channel": "extended",
       "protected_source_path": "src/test/java/ch/fmartin/symphony/trello/setup/TrelloBoardSetupMainTest.java",
-      "protected_source_sha256": "8fae734098e7f0a1320afd67e90e85b344be789b547eb59e316c790cb071110b",
+      "protected_source_sha256": "03b8ae48a7101c80bc5edd7951154e80437e7e94e97784b3d03be39136d1d500",
       "reference_result": true,
       "requirement_id": "reference-setup-breadth",
       "scope": "reference_diagnostic"
@@ -111,11 +103,11 @@
       "base_result": false,
       "case_id": "i488-reference-import-ambiguous-2",
       "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsAmbiguousDefaultReviewListName(String)[2]",
-      "junit_xml_path": "extended/TEST-mutant.xml",
+      "junit_xml_path": "extended/0001-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
       "passed": false,
       "protected_channel": "extended",
       "protected_source_path": "src/test/java/ch/fmartin/symphony/trello/setup/TrelloBoardSetupMainTest.java",
-      "protected_source_sha256": "8fae734098e7f0a1320afd67e90e85b344be789b547eb59e316c790cb071110b",
+      "protected_source_sha256": "03b8ae48a7101c80bc5edd7951154e80437e7e94e97784b3d03be39136d1d500",
       "reference_result": true,
       "requirement_id": "reference-setup-breadth",
       "scope": "reference_diagnostic"
@@ -124,5 +116,2358 @@
   "schema_id": "protected-requirement-evidence-current",
   "unexpected_direct_cases": [],
   "unexpected_extended_cases": [],
-  "unmapped_protected_common_cases": []
+  "unmapped_protected_common_cases": [
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#createsWorkpadCommentWhenNoMarkerCommentExists",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#keepsTheUpsertSuccessfulAndReportsDuplicatesWhoseDeleteFailed",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#rejectsMoveOutsideAllowlistWithoutCallingTrelloWriteEndpoint",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#preservesWorkpadMarkerWhileEscapingLeadingHashtagsInWorkpadBody",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#addsCommentToCurrentCard",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#failsWorkpadUpsertWhenCardRefreshFailsWithoutCreatingDuplicate",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#removesAllAddressableDuplicatesDeterministically",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#removesDuplicateWorkpadsOnlyAfterTheAuthoritativeUpdateSucceeded",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#movesCurrentCardToAllowedListName",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#updatesExistingWorkpadCommentInsteadOfCreatingDuplicate",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#withholdsToolsWhenWritesAreDisabled",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#updatesFirstWorkpadAndReportsDuplicatesVisiblyWithoutDestructiveOperationsOptIn",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#countsUnaddressableDuplicatesAsFailedCleanup",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#failsWorkpadCreateWhenFetchedCommentWindowMayBeIncomplete",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#dropsAnEchoedCleanupNoteOnceTheDuplicatesAreGone",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#advertisesCommentAndMoveToolsWhenWritesAreEnabledAndMoveAllowlistExists",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#escapesLeadingHashtagsBeforeAddingCommentToCurrentCard",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#reportsMissingActionIdWithoutDeletingAnyWorkpad",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#doesNotDeleteAnyDuplicateWhenTheAuthoritativeUpdateFails",
+      "junit_xml_path": "common/0001-TEST-ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsControlCharactersInCredentialsBeforeHttpHeaderConstruction(String, String, String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsControlCharactersInCredentialsBeforeHttpHeaderConstruction(String, String, String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsControlCharactersInCredentialsBeforeHttpHeaderConstruction(String, String, String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsControlCharactersInCredentialsBeforeHttpHeaderConstruction(String, String, String, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardWritesFallbackReasoningForExplicitModelWhenDiscoveryDoesNotSupportFirstClassFields",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsWhitespaceChangedListSelectorsThatDoNotExist",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardWritesExplicitCodexModelOverrides",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardPersistsCommandLineCredentialsToConfiguredRuntimeEnvFile",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#startRejectsSpecialFileWorkflowBeforeLaunchingWorker",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesTreatsUnreachableEndpointAsExpectedFailureWithoutReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#forceImportBoardPreservesEnvironmentBackedServerPortFromSelectedEnv",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsSpecialFileConfigDirWithoutRenderingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsManifestReservedServerPortBeforeCreatingTrelloBoard",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsMissingRuntimeEnvParentBeforeImportingBoard",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBoardAndWorkflowTogetherWithoutWritingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#exitsWithMainProcessStatus(MainProcessCase)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#exitsWithMainProcessStatus(MainProcessCase)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#exitsWithMainProcessStatus(MainProcessCase)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#exitsWithMainProcessStatus(MainProcessCase)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#exitsWithMainProcessStatus(MainProcessCase)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#exitsWithMainProcessStatus(MainProcessCase)[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankSelectorsBeforeSelection(String, String, String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankSelectorsBeforeSelection(String, String, String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankSelectorsBeforeSelection(String, String, String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankSelectorsBeforeSelection(String, String, String, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankSelectorsBeforeSelection(String, String, String, String)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankSelectorsBeforeSelection(String, String, String, String)[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankSelectorsBeforeSelection(String, String, String, String)[7]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankSelectorsBeforeSelection(String, String, String, String)[8]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsPowerShellSafeNextStepsWhenRequestedByWrapper",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardAcceptsRepeatedActiveAndTerminalListOptions",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectNewBoardNameBeforeTrelloRequest",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesReadsCredentialsBehindAByteOrderMark",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#startRejectsMissingExplicitWorkflowWithoutTroubleshootingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importsExistingBoardWithExplicitListsAndPrintsSelection",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#doesNotResolveCodexModelDefaultsForCommandsThatDoNotWriteWorkflows(String, String[])[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#doesNotResolveCodexModelDefaultsForCommandsThatDoNotWriteWorkflows(String, String[])[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#doesNotResolveCodexModelDefaultsForCommandsThatDoNotWriteWorkflows(String, String[])[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#doesNotResolveCodexModelDefaultsForCommandsThatDoNotWriteWorkflows(String, String[])[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#doesNotResolveCodexModelDefaultsForCommandsThatDoNotWriteWorkflows(String, String[])[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsOutputSymlinkChainResolvingToStandardStreamWithoutRenderingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsRepeatedWorkflowSelectorsWithoutLeakingValues",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardPreservesExistingReasoningForExplicitModelOverride",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directSetupRejectsInvalidWorkspaceRootBeforeTrelloWork(InvalidDirectWorkspaceRootScenario)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directSetupRejectsInvalidWorkspaceRootBeforeTrelloWork(InvalidDirectWorkspaceRootScenario)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directSetupRejectsInvalidWorkspaceRootBeforeTrelloWork(InvalidDirectWorkspaceRootScenario)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directSetupRejectsInvalidWorkspaceRootBeforeTrelloWork(InvalidDirectWorkspaceRootScenario)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directSetupRejectsInvalidWorkspaceRootBeforeTrelloWork(InvalidDirectWorkspaceRootScenario)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#startRejectsInvalidLiteralServerPortWithoutLeakingWorkflowPath",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectInvalidRuntimeEnvPathWithSpecificMessage(String, InvalidRuntimeEnvPathScenario)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectInvalidRuntimeEnvPathWithSpecificMessage(String, InvalidRuntimeEnvPathScenario)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectInvalidRuntimeEnvPathWithSpecificMessage(String, InvalidRuntimeEnvPathScenario)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectInvalidRuntimeEnvPathWithSpecificMessage(String, InvalidRuntimeEnvPathScenario)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectInvalidRuntimeEnvPathWithSpecificMessage(String, InvalidRuntimeEnvPathScenario)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectInvalidRuntimeEnvPathWithSpecificMessage(String, InvalidRuntimeEnvPathScenario)[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectInvalidRuntimeEnvPathWithSpecificMessage(String, InvalidRuntimeEnvPathScenario)[7]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectInvalidRuntimeEnvPathWithSpecificMessage(String, InvalidRuntimeEnvPathScenario)[8]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsUnsafeConfiguredRuntimeEnvPathEvenWhenCredentialsComeFromEnvironment",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardSkipsEnvironmentBackedSiblingWorkflowPortFromSelectedEnv",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#startHelpDocumentsTheAllOption",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsRepeatedBoardSelectorsWithoutLeakingValues",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectControlCharactersInBoardSelectorBeforeSelection(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectControlCharactersInBoardSelectorBeforeSelection(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectControlCharactersInBoardSelectorBeforeSelection(String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectControlCharactersInBoardSelectorBeforeSelection(String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesReadsCredentialsFromConfigDirEnvFile",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectMissingExplicitWorkflowBeforeReadingManagedState(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectMissingExplicitWorkflowBeforeReadingManagedState(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectMissingExplicitWorkflowBeforeReadingManagedState(String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectMissingExplicitWorkflowWithoutLeakingPath(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectMissingExplicitWorkflowWithoutLeakingPath(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectMissingExplicitWorkflowWithoutLeakingPath(String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsBlankSetupOptionValuesBeforeTrelloRequest(BlankDirectSetupOption)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsBlankSetupOptionValuesBeforeTrelloRequest(BlankDirectSetupOption)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsMissingOrNullBoardsManifestFieldBeforeCreatingTrelloBoard(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsMissingOrNullBoardsManifestFieldBeforeCreatingTrelloBoard(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardWritesExplicitCodexReasoningOverride",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardDoesNotWriteRuntimeEnvWhenWorkflowPreflightFails",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardTreatsMalformedPostResponseAsUnknownWriteOutcomeWithoutWritingWorkflow",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardMissingCredentialsHintUsesSelectedRuntimeEnvFile",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsFifoOutputWithoutRenderingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardAcceptsCommaContainingListSelectors",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsUnusableWorkflowSelectorsWithoutWritingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsVersionForCommands(String[])[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsVersionForCommands(String[])[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsVersionForCommands(String[])[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsVersionForCommands(String[])[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsVersionForCommands(String[])[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsVersionForCommands(String[])[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsVersionForCommands(String[])[7]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsVersionForCommands(String[])[8]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsVersionForCommands(String[])[9]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesMissingCredentialsHintUsesSelectedEnvFile(ListWorkspacesMissingCredentialSource)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesMissingCredentialsHintUsesSelectedEnvFile(ListWorkspacesMissingCredentialSource)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directSetupRejectsControlCharactersInCodexModelOverridesBeforeTrelloRequest(String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directSetupRejectsControlCharactersInCodexModelOverridesBeforeTrelloRequest(String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directSetupRejectsControlCharactersInCodexModelOverridesBeforeTrelloRequest(String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directSetupRejectsControlCharactersInCodexModelOverridesBeforeTrelloRequest(String, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#startReportsMissingWorkerCredentialsBeforeLaunchingWorker(String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#startReportsMissingWorkerCredentialsBeforeLaunchingWorker(String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#startReportsMissingWorkerCredentialsBeforeLaunchingWorker(String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsSeparateOptionTokenAsMissingListSelectorBeforeTrelloRequest",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsBlankSetupOptionValuesBeforeTrelloRequest(BlankDirectSetupOption)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsBlankSetupOptionValuesBeforeTrelloRequest(BlankDirectSetupOption)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsBlankSetupOptionValuesBeforeTrelloRequest(BlankDirectSetupOption)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsBlankSetupOptionValuesBeforeTrelloRequest(BlankDirectSetupOption)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsBlankSetupOptionValuesBeforeTrelloRequest(BlankDirectSetupOption)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsBlankSetupOptionValuesBeforeTrelloRequest(BlankDirectSetupOption)[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsBlankSetupOptionValuesBeforeTrelloRequest(BlankDirectSetupOption)[7]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsBlankSetupOptionValuesBeforeTrelloRequest(BlankDirectSetupOption)[8]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsNameLikeBoardSelectorsWithoutContactingTrello",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsRelativeOutputPathResolvingToStandardStreamWithoutRenderingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardForceAllowsCurrentManagedWorkerServerPortForSameWorkflow",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardPersistsAbsolutePathsWhenWorkflowAndEnvOptionsAreRelative",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsPrivateContextWritesPrivateTroubleshootingContextWithoutPrintingOutputPath",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[7]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[8]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[9]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[10]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[11]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[12]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[13]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[14]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[15]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[16]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[17]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[18]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[19]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[20]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[21]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[22]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[23]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectBlankAndFileDirectoryOptionsBeforeWorkerHandling(InvalidLifecycleDirectoryOptionScenario)[24]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsInvalidCliArguments(String, String[], int, String[])[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsInvalidCliArguments(String, String[], int, String[])[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsInvalidCliArguments(String, String[], int, String[])[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsInvalidCliArguments(String, String[], int, String[])[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsInvalidCliArguments(String, String[], int, String[])[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsInvalidCliArguments(String, String[], int, String[])[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsInvalidCliArguments(String, String[], int, String[])[7]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsInvalidCliArguments(String, String[], int, String[])[8]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsInvalidCliArguments(String, String[], int, String[])[9]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsInvalidCliArguments(String, String[], int, String[])[10]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardPersistsCommandLineCredentialsToDefaultRuntimeEnvFile",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankPathOptionsWithoutRenderingReport(String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankPathOptionsWithoutRenderingReport(String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankPathOptionsWithoutRenderingReport(String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankPathOptionsWithoutRenderingReport(String, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankPathOptionsWithoutRenderingReport(String, String)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankPathOptionsWithoutRenderingReport(String, String)[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankPathOptionsWithoutRenderingReport(String, String)[7]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankPathOptionsWithoutRenderingReport(String, String)[8]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsUnsafeRuntimeEnvPathEvenWhenCredentialsWouldNotBePersisted",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsSeparateOptionTokenAsMissingScalarListSelectorBeforeTrelloRequest",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#parameterErrorsNeutralizeControlCharactersInMessages",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directCredentialOptionsWinOverEnvFileAndConfigDirCredentials",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsOutputWriteFailureDoesNotLeakPrivatePath",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsStandardStreamOutputPathsWithoutRenderingReport(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsStandardStreamOutputPathsWithoutRenderingReport(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsStandardStreamOutputPathsWithoutRenderingReport(String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsStandardStreamOutputPathsWithoutRenderingReport(String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsStandardStreamOutputPathsWithoutRenderingReport(String)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardPersistsExternalWorkflowIntoInstalledManifestByDefault",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsInvalidEndpointsBeforeTrelloRequest(String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsInvalidEndpointsBeforeTrelloRequest(String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsInvalidEndpointsBeforeTrelloRequest(String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsInvalidEndpointsBeforeTrelloRequest(String, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsInvalidEndpointsBeforeTrelloRequest(String, String)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsInvalidEndpointsBeforeTrelloRequest(String, String)[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsInvalidEndpointsBeforeTrelloRequest(String, String)[7]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardReportsEnvWriteCauseWhenRuntimeEnvParentBecomesFileAfterValidation",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#missingTrelloApiKeyPrintsHintWithoutTroubleshootingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsDirectoryWorkflowPathAsExpectedInputError",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardWritesFallbackReasoningForExplicitModelWhenUnsupportedDiscoveryPreservesExistingOmission",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsLiveServerPortBeforeContactingTrello",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardTreatsUnreachableEndpointAsExpectedFailureWithoutReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardWritesResolverBackedCodexModelDefaults",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectSetupAndLifecyclePathOptions(InvalidPathOptionCase)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectSetupAndLifecyclePathOptions(InvalidPathOptionCase)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectSetupAndLifecyclePathOptions(InvalidPathOptionCase)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectSetupAndLifecyclePathOptions(InvalidPathOptionCase)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardStopsReplacedManifestWorkflowBeforeSavingReplacement",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsOutputPathThroughSymlinkedParentResolvingToStandardStream",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsDuplicateListRoleSelectors",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#createsNonGithubBoardWithoutMergingList",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsHelpWithoutRequiringCredentials",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardTreatsPostServerErrorAsUnknownWriteOutcomeWithoutWritingWorkflow",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardReportsUnknownInProgressListAsInProgressError",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectBlankWorkflowPathBeforeTrelloRequest(String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectBlankWorkflowPathBeforeTrelloRequest(String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectBlankWorkflowPathBeforeTrelloRequest(String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#setupCommandsRejectBlankWorkflowPathBeforeTrelloRequest(String, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsConfigDirPointingAtAFileBeforeAnyTrelloRequest",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardPreflightsUnusableConnectedBoardManifestBeforeCreatingTrelloBoard",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsReservedServerPortBeforeCreatingTrelloBoard",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardAcceptsAttachedOptionLikeListSelectors",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardPreservesReasoningOmissionForUnknownExplicitModelWhenDiscoverySupportsFirstClassFields",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesNormalizesRootEndpointToTrelloRestApiBase",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsMalformedRuntimeEnvFileBeforeCreatingBoard",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsUnsafeConfiguredRuntimeEnvPathBeforeWritingCredentials",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#startRejectsDirectoryEnvPathBeforeLaunchingWorker",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#startRejectsDuplicateRunningBoardWithoutLeakingWorkflowPaths",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsCapturesAndSanitizesToolProbeStderr",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsReservedServerPortBeforeContactingTrello",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardDisplaysTrelloProvidedDirtyListNamesEscaped",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsOverDeepOutputSymlinkChainWithoutRenderingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#statusRejectsTrelloCardUrlSelectors",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsUnwritableRuntimeEnvFileBeforeCreatingBoard",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directImportBoardAllowsFilesystemRootWorkspaceRoot",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#startRejectsSpecialFileEnvPathBeforeLaunchingWorker",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsNestedSetupLocalHelp",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectImportListSelectorsBeforeTrelloRequest(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectImportListSelectorsBeforeTrelloRequest(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectImportListSelectorsBeforeTrelloRequest(String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectImportListSelectorsBeforeTrelloRequest(String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsLookupRequiresPrivateContext",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesTreatsMalformedTrelloPayloadAsUnexpectedFailureWithReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsBlankCodexModelOverridesBeforeTrelloRequest(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsBlankCodexModelOverridesBeforeTrelloRequest(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listsWorkspacesFromCommandLineCredentials",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsOverlappingListRoles(String, List, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsOverlappingListRoles(String, List, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsOverlappingListRoles(String, List, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsOverlappingListRoles(String, List, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsOverlappingListRoles(String, List, String)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardPersistsExternalWorkflowIntoInstalledManifestByDefault",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardStripsAccidentalQueryOrFragmentFromBareBoardSelectors(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardStripsAccidentalQueryOrFragmentFromBareBoardSelectors(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardStripsAccidentalQueryOrFragmentFromBareBoardSelectors(String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardDoesNotContactTrelloWhenWorkflowPreflightFails",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsUrlOrPathWorkspaceIdBeforeTrelloRequest(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsUrlOrPathWorkspaceIdBeforeTrelloRequest(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsUrlOrPathWorkspaceIdBeforeTrelloRequest(String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardPreflightsConnectedBoardManifestBeforeCreatingTrelloBoard",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsAmbiguousBoardNameWithoutWritingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsMissingRuntimeEnvParentBeforeCreatingBoard",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRestartsPreviouslyRunningReplacedWorker",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardSkipsEnvironmentBackedSiblingWorkflowPortFromSelectedEnv",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsLiveServerPortBeforeCreatingTrelloBoard",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsWritesSanitizedJsonOutputFile",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsMalformedDirectImportBoardSelectorsBeforeTrelloRequest(String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsMalformedDirectImportBoardSelectorsBeforeTrelloRequest(String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsMalformedDirectImportBoardSelectorsBeforeTrelloRequest(String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsMalformedDirectImportBoardSelectorsBeforeTrelloRequest(String, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsMalformedDirectImportBoardSelectorsBeforeTrelloRequest(String, String)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsMalformedDirectImportBoardSelectorsBeforeTrelloRequest(String, String)[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsMalformedDirectImportBoardSelectorsBeforeTrelloRequest(String, String)[7]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsMalformedDirectImportBoardSelectorsBeforeTrelloRequest(String, String)[8]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsMalformedDirectImportBoardSelectorsBeforeTrelloRequest(String, String)[9]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsMalformedDirectImportBoardSelectorsBeforeTrelloRequest(String, String)[10]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsPrivateContextLookupResolvesOneToken",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsSpecialFileWorkflowWithoutRenderingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsControlCharactersInPathOptionsWithoutRenderingReport(InvalidPathOptionCase)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsControlCharactersInPathOptionsWithoutRenderingReport(InvalidPathOptionCase)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsControlCharactersInPathOptionsWithoutRenderingReport(InvalidPathOptionCase)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsControlCharactersInPathOptionsWithoutRenderingReport(InvalidPathOptionCase)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsControlCharactersInPathOptionsWithoutRenderingReport(InvalidPathOptionCase)[5]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsControlCharactersInPathOptionsWithoutRenderingReport(InvalidPathOptionCase)[6]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsMultilineRuntimeCredentialBeforeCreatingBoard",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#createsRecommendedBoardAndPrintsNextSteps",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#statusRejectsNonTrelloBoardUrlSelectors",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsAllowsPosixOutputFilenameContainingBackslashes",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsAmbiguousDuplicateOpenListNames(String, String, String, String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsAmbiguousDuplicateOpenListNames(String, String, String, String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsAmbiguousDuplicateOpenListNames(String, String, String, String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsAmbiguousDuplicateOpenListNames(String, String, String, String, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectSpecialFileWorkflowBeforeReading(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#lifecycleCommandsRejectSpecialFileWorkflowBeforeReading(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsOutputSymlinkResolvingToStandardStreamWithoutRenderingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsWorkflowUnderFileParentWithoutBlamingManifest",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardPersistsCommandLineCredentialsToRuntimeEnvFile",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankSelectorsWithoutRenderingReport(String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankSelectorsWithoutRenderingReport(String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankSelectorsWithoutRenderingReport(String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsBlankSelectorsWithoutRenderingReport(String, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsAmbiguousDefaultActiveListName",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsUnsafeRuntimeEnvPathBeforeWritingCredentials",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesReadsCredentialsFromExplicitEnvFile",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsCmdSafeNextStepsWhenRequestedByCmdShim",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#explicitEnvFileWinsOverConfigDirCredentials",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardNextStepsUseWrapperCommandWhenProvided",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsSetupLocalHelpWithoutRequiringCredentials",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#directCredentialOptionsWinOverReferenceLookingCredentialFileValues",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsControlCharactersInBoardSelectorWithoutRenderingReport",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsBlankCodexModelOverridesBeforeTrelloRequest(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardRejectsBlankCodexModelOverridesBeforeTrelloRequest(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectWorkspaceIdBeforeTrelloRequest",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardUsesSelectedRuntimeEnvFileAsCredentialSource",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardPersistsExternalWorkflowIntoExplicitManifest",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsDashOutputWithoutCreatingDashFile",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsRejectsNumericProcFdStandardStreamOutputPath",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsManifestReservedServerPortBeforeContactingTrello",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsDirectCommandHelp(String, String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsDirectCommandHelp(String, String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsDirectCommandHelp(String, String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#printsDirectCommandHelp(String, String)[4]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#usesConfiguredDefaultWorkflowDirectoryWithoutDisablingBoardNameFallback",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsReferenceLookingCredentialFileValuesBeforeAnyTrelloRequest(String)[1]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsReferenceLookingCredentialFileValuesBeforeAnyTrelloRequest(String)[2]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsReferenceLookingCredentialFileValuesBeforeAnyTrelloRequest(String)[3]",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#unmatchedArgumentErrorsOmitInternalArgumentIndexes",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardPrintsRecoveryStepWhenReplacedWorkerRestartFails",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardPreservesWhitespaceInListSelectors",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardTreatsIncompletePostResponseAsUnknownWriteOutcomeWithoutWritingWorkflow",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#newBoardTreatsDroppedPostResponseAsUnknownWriteOutcomeWithoutWritingWorkflow",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#logsDoesNotReadSymlinkedWorkerLogTargets",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsWithoutConfigDirCreatesTokenKeyInDefaultWorkingDirectory",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#diagnosticsAllowsDeepOutputSymlinkChainResolvingToRegularFile",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#rejectsControlCharactersInDirectBoardSelectorBeforeTrelloRequest",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#explicitDefaultWorkflowPathDoesNotUseBoardNameFallback",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    },
+    {
+      "junit_selector": "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#listWorkspacesRejectsOptionTokenAsMissingKeyValueBeforeTrelloRequest",
+      "junit_xml_path": "common/0002-TEST-ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest.xml",
+      "passed": true,
+      "protected_channel": "common",
+      "status": "passed"
+    }
+  ]
 }

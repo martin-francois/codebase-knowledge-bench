@@ -1,0 +1,10 @@
+Configured protected common command: ./mvnw -q -Djunit.parallel.enabled=false -Dtest=TrelloHandoffToolHandlerTest,TrelloBoardSetupMainTest test
+Exit code: 0
+
+STDOUT
+2026-07-16 20:24:46,037 WARN  [ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandler] (main) workpad_duplicate_delete outcome=failed action_id=action-workpad-older
+2026-07-16 20:24:46,274 WARN  [ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandler] (main) workpad_duplicate_delete outcome=missing_action_id
+
+
+STDERR
+

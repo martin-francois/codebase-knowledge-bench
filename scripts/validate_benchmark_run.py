@@ -14,13 +14,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark_hardening import (
-    apply_absolute_quality_status,
-    attribution_record,
     context_call_counts,
     execution_call_lifecycle,
-    invocation_records_from_codex_jsonl,
-    invocation_summary,
-    operational_rank_eligible,
     validate_manifest,
     validate_taxonomy_matrix,
 )
@@ -275,39 +270,10 @@ def validate_schema_value(
                 validate_schema_value(item, items, f"{path}[{index}]", errors, root_schema)
 
 
-def jsonl_usage(path: Path) -> dict[str, float | int]:
-    usage = {
-        "input_tokens": 0,
-        "cached_input_tokens": 0,
-        "output_tokens": 0,
-        "reasoning_output_tokens": 0,
-    }
-    if path.exists():
-        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-            try:
-                obj = json.loads(line)
-            except (json.JSONDecodeError, TypeError):
-                continue
-            if obj.get("type") != "turn.completed" or not isinstance(obj.get("usage"), dict):
-                continue
-            for key in usage:
-                value = obj["usage"].get(key)
-                if isinstance(value, (int, float)):
-                    usage[key] = int(value)
-    usage["observed_non_cached_input_tokens"] = usage["input_tokens"] - usage["cached_input_tokens"]
-    usage["output_tokens_including_reasoning"] = usage.pop("output_tokens")
-    if usage["observed_non_cached_input_tokens"] < 0 or usage["reasoning_output_tokens"] > usage["output_tokens_including_reasoning"]:
-        raise ValueError("invalid token subset relationship")
-    usage["non_reasoning_output_tokens"] = usage["output_tokens_including_reasoning"] - usage["reasoning_output_tokens"]
-    usage["total_reported_tokens"] = usage["input_tokens"] + usage["output_tokens_including_reasoning"]
-    usage["modeled_weighted_token_load"] = (
-        usage["observed_non_cached_input_tokens"]
-        + usage["output_tokens_including_reasoning"]
-        + 0.1 * usage["cached_input_tokens"]
-    )
-    usage["cache_write_tokens"] = None
-    usage["uncached_nonwrite_input_tokens"] = None
-    return usage
+def jsonl_usage(path: Path) -> dict[str, Any]:
+    from current_methodology import token_usage_from_codex_jsonl
+
+    return token_usage_from_codex_jsonl(path)
 
 
 TEST_SUMMARY_PATTERN = re.compile(
@@ -704,103 +670,24 @@ def validate_suite_derived_rows(data: dict[str, Any], errors: list[str]) -> None
 
 
 def validate_current_variant(row: dict[str, Any], run_dir: Path, errors: list[str]) -> None:
-    """Independently derive the one current requirement-based correctness record."""
+    """Independently rederive every current execution field from raw evidence."""
     run_id = str(row.get("run_id") or "")
     variant = str(row.get("variant") or "")
     prefix = f"{run_id}/{variant}"
     try:
-        from requirement_evidence import derive_and_score_from_run_metadata
-        issue_id = str(row["issue_id"])
-        contract = json.loads((Path(__file__).resolve().parents[1] / "verification" / "methodology-current" / "contracts" / f"{issue_id}.json").read_text())
-        derived = derive_and_score_from_run_metadata(
-            row, run_dir, contract,
-            trust_valid=bool(row["trust_valid"]),
-            candidate_test_quality=row.get("candidate_test_quality"),
-            patch_quality_score=None,
+        from current_pipeline import validate_rederived_row
+
+        validate_rederived_row(
+            row,
+            run_dir,
+            schema_path=(
+                Path(__file__).resolve().parents[1]
+                / "schemas"
+                / "raw-run-metadata.schema.json"
+            ),
         )
-        if row.get("protected_requirement_case_results") != derived["protected_requirement_case_results"]:
-            raise ValueError("published protected requirement outcomes differ from raw JUnit derivation")
-        if row.get("requirement_evidence_trace") != derived["requirement_evidence_trace"]:
-            raise ValueError("published requirement trace differs from raw JUnit derivation")
-    except (OSError, ValueError, json.JSONDecodeError) as exc:
-        fail(errors, f"{prefix}: requirement correctness derivation failed: {exc}")
-        return
-    expected_fields = {
-        "requested_behavior_score": derived["requested_behavior_score"],
-        "critical_requirement_status": derived["critical_requirement_status"],
-        "critical_requirement_failures": derived["critical_requirement_failures"],
-        "requirement_vector": derived["requirement_vector"],
-        "behavioral_correctness_score": derived["behavioral_correctness_score"],
-        "task_success": derived["task_success"],
-            }
-    for key, expected in expected_fields.items():
-        actual = row.get(key)
-        if isinstance(expected, float):
-            if not isinstance(actual, (int, float)) or not math.isclose(
-                float(actual), expected, rel_tol=0, abs_tol=1e-9
-            ):
-                fail(errors, f"{prefix}: {key} disagrees with protected requirement evidence")
-        elif actual != expected:
-            fail(errors, f"{prefix}: {key} disagrees with protected requirement evidence")
-    records = (
-        invocation_records_from_codex_jsonl(
-            run_dir / "run.jsonl",
-            treatment=variant,
-            expected_cli={
-                "graphify": "graphify", "sverklo": "sverklo",
-                "code-review-graph": "code-review-graph", "gitnexus": "gitnexus",
-                "jcodemunch-mcp": "jcodemunch", "serena": "serena",
-            }.get(variant, variant),
-            intended_mcp_servers={
-                "sverklo": {"sverklo"},
-                "code-review-graph": {"code-review-graph"},
-                "gitnexus": {"gitnexus"},
-                "jcodemunch-mcp": {"jcodemunch"},
-                "serena": {"serena"},
-            }.get(variant, set()),
-            phase="solve",
-        )
-        if variant != "baseline-none"
-        else []
-    )
-    summary = invocation_summary(records)
-    successful = int(summary["intended_tool_successful_solve_invocation_count"])
-    if int(row.get("intended_tool_successful_solve_invocation_count") or 0) != successful:
-        fail(errors, f"{prefix}: intended-tool successful count disagrees with structured evidence")
-    expected_eligible = operational_rank_eligible({
-        **row,
-        "intended_tool_successful_solve_invocation_count": successful,
-    })
-    if row.get("operational_rank_eligible") is not expected_eligible:
-        fail(errors, f"{prefix}: operational_rank_eligible violates canonical adherence policy")
-    expected_quality = dict(row)
-    apply_absolute_quality_status(expected_quality)
-    for key in ("task_success", "task_quality_class"):
-        if row.get(key) != expected_quality.get(key):
-            fail(errors, f"{prefix}: {key} violates canonical absolute-quality policy")
-    lifecycle = execution_call_lifecycle(run_dir / "run.jsonl")
-    for key, expected in lifecycle.items():
-        if key == "execution_call_lifecycle":
-            continue
-        if row.get(key) != expected:
-            fail(errors, f"{prefix}: {key} disagrees with JSONL lifecycle evidence")
-    for list_key, count_key in (
-        ("native_search_commands", "native_search_call_count"),
-        ("native_file_read_commands", "native_file_read_count"),
-    ):
-        values = row.get(list_key)
-        if not isinstance(values, list) or len(values) != row.get(count_key):
-            fail(errors, f"{prefix}: {list_key} length disagrees with {count_key}")
-    forbidden_legacy = {
-        "fallback_search_calls", "fallback_search_commands", "fallback_only",
-        "attempted_shell_command_calls", "attempted_mcp_tool_calls",
-        "attempted_web_search_calls", "shell_command_calls", "mcp_tool_calls",
-        "web_search_calls",
-    }
-    if forbidden_legacy.intersection(row):
-        fail(errors, f"{prefix}: obsolete call/fallback fields remain in canonical output")
-    if row.get("attribution") != attribution_record(row):
-        fail(errors, f"{prefix}: attribution dimensions are not canonical")
+    except (OSError, RuntimeError, ValueError, KeyError, json.JSONDecodeError) as exc:
+        fail(errors, f"{prefix}: complete current-row rederivation failed: {exc}")
 
 
 def validate_execution(
@@ -1172,7 +1059,13 @@ def validate_execution(
                         fail(errors, f"{run_id}/{variant}: protected {channel} ran zero cases")
                     if not (run_dir / "test-results" / f"protected-{channel}").is_dir():
                         fail(errors, f"{run_id}/{variant}: protected {channel} JUnit directory is missing")
-        validate_current_variant(row, run_dir, errors)
+        if row.get("correctness_evidence_available"):
+            validate_current_variant(row, run_dir, errors)
+        elif row.get("status") == "solve_completed":
+            fail(
+                errors,
+                f"{run_id}/{variant}: published solve row lacks complete raw-evidence rederivation",
+            )
     issue_url = None
     issue = results.get("issue")
     if isinstance(issue, dict):

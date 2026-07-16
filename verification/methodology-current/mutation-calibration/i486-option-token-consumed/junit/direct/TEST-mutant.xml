@@ -1,6 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<testsuite name="protected-direct"><testcase name="nonInteractiveSetupPreservesAllRepeatedActiveValues" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.314" />
-  <testcase name="nonInteractiveSetupPreservesAllRepeatedTerminalValues" classname="ch.fmartin.symphony.trello.setup.LocalSetupTest" time="1.315" />
-<testcase name="importBoardPreservesAllRepeatedActiveValues" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="1.276" />
-  <testcase name="importBoardPreservesAllRepeatedTerminalValues" classname="ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest" time="0.288" />
-  </testsuite>

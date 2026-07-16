@@ -1,0 +1,48 @@
+diff --git a/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java b/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
+index eef938a..9c1a3d9 100644
+--- a/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
++++ b/src/test/java/ch/fmartin/symphony/trello/setup/LocalSetupTest.java
+@@ -6759,4 +6759,42 @@ final class LocalSetupTest extends LocalSetupFixtureSupport {
+             return fileSuffix;
+         }
+     }
++
++    @Test
++    void interactiveExistingBoardSetupAcceptsExplicitInProgressWithoutBoardArgument() throws Exception {
++        // given
++        trello.givenRawBoardListsJson(
++                """
++                [
++                  {"id":"list-1","name":"Queue","closed":false,"pos":1},
++                  {"id":"list-2","name":"Working","closed":false,"pos":2},
++                  {"id":"list-3","name":"Blocked","closed":false,"pos":3},
++                  {"id":"list-4","name":"Human Review","closed":false,"pos":4},
++                  {"id":"list-5","name":"Finished","closed":false,"pos":5}
++                ]
++                """);
++
++        // when
++        SetupRunResult result = runSetupWithInput(
++                "2\nboard-1\nQueue\nFinished\nBlocked\n\n\n\nn\nn\n",
++                "--endpoint",
++                endpoint(),
++                "--key",
++                "key",
++                "--token",
++                "token",
++                "--in-progress",
++                "Working",
++                "--no-github");
++
++        // then
++        Path workflow = tempDir.resolve("config").resolve("WORKFLOW.imported-queue.md");
++        result.assertSuccess()
++                .stdoutContains("Choose board setup:", "Existing board lists", "moves it to \"Working\"")
++                .stdoutDoesNotContain("In-progress list name");
++        assertThat(workflow)
++                .content(StandardCharsets.UTF_8)
++                .contains("- \"Queue\"", "in_progress_state: \"Working\"", "- \"Finished\"", "list_name \"Blocked\"");
++    }
++
+ }
+

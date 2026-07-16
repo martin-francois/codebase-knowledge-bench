@@ -5,17 +5,26 @@ Status: **passed**
 ```json
 {
   "blockers": [],
+  "collateral_regression_mutants": 3,
   "critical_calibration_complete": true,
-  "executed_mutants": 22,
+  "executed_mutants": 23,
   "infrastructure_errors": 0,
-  "killed_mutants": 22,
+  "killed_mutants": 20,
   "requirements": [
     {
       "broad_mutants": [
         "i486-reference-revert"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i486-import-active-drop",
+        "i486-import-terminal-drop",
+        "i486-setup-active-drop",
+        "i486-setup-terminal-drop"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "import-board repeated active"
@@ -26,7 +35,7 @@ Status: **passed**
         "i486-import-active-drop": "killed",
         "i486-reference-revert": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardPreservesAllRepeatedActiveValues"
       ],
@@ -34,15 +43,22 @@ Status: **passed**
       "scope": "requested_behavior",
       "targeted_mutants": [
         "i486-import-active-drop"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
       "broad_mutants": [
         "i486-reference-revert"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i486-import-active-drop",
+        "i486-import-terminal-drop",
+        "i486-setup-active-drop",
+        "i486-setup-terminal-drop"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "import-board repeated terminal"
@@ -53,7 +69,7 @@ Status: **passed**
         "i486-import-terminal-drop": "killed",
         "i486-reference-revert": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardPreservesAllRepeatedTerminalValues"
       ],
@@ -61,40 +77,54 @@ Status: **passed**
       "scope": "requested_behavior",
       "targeted_mutants": [
         "i486-import-terminal-drop"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
-      "broad_mutants": [],
+      "broad_mutants": [
+        "i486-option-token-consumed"
+      ],
+      "calibration_basis": "configured common and regression-gate preservation across every targeted mutant for the issue",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i486-import-active-drop",
+        "i486-import-terminal-drop",
+        "i486-setup-active-drop",
+        "i486-setup-terminal-drop"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
-        "missing-selector regression"
+        "configured common and regression gate preservation"
       ],
       "issue_id": "issue-486",
       "missing_mutants": [],
       "mutant_statuses": {
-        "i486-option-token-consumed": "killed"
+        "i486-option-token-consumed": "collateral_regression"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsSeparateOptionTokenAsMissingListSelectorBeforeTrelloRequest",
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#nonInteractiveSetupRejectsAttachedOptionTokenAsMissingListSelectorBeforeTrelloRequest"
       ],
       "requirement_id": "missing-selector-regression",
       "scope": "required_regression",
-      "targeted_mutants": [
-        "i486-option-token-consumed"
-      ],
-      "weak_fixture_failures": []
+      "targeted_mutants": []
     },
     {
       "broad_mutants": [
         "i486-reference-revert"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i486-import-active-drop",
+        "i486-import-terminal-drop",
+        "i486-setup-active-drop",
+        "i486-setup-terminal-drop"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "setup-local repeated active"
@@ -105,7 +135,7 @@ Status: **passed**
         "i486-reference-revert": "killed",
         "i486-setup-active-drop": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#nonInteractiveSetupPreservesAllRepeatedActiveValues"
       ],
@@ -113,15 +143,22 @@ Status: **passed**
       "scope": "requested_behavior",
       "targeted_mutants": [
         "i486-setup-active-drop"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
       "broad_mutants": [
         "i486-reference-revert"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i486-import-active-drop",
+        "i486-import-terminal-drop",
+        "i486-setup-active-drop",
+        "i486-setup-terminal-drop"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "setup-local repeated terminal"
@@ -132,7 +169,7 @@ Status: **passed**
         "i486-reference-revert": "killed",
         "i486-setup-terminal-drop": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#nonInteractiveSetupPreservesAllRepeatedTerminalValues"
       ],
@@ -140,15 +177,21 @@ Status: **passed**
       "scope": "requested_behavior",
       "targeted_mutants": [
         "i486-setup-terminal-drop"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
       "broad_mutants": [
         "i488-first-name-match-wins"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i488-ambiguity-success-no-write",
+        "i488-ambiguity-write-before-reject",
+        "i488-name-allowlist-authorizes-ambiguous-id"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "no Trello write"
@@ -159,7 +202,7 @@ Status: **passed**
         "i488-ambiguity-write-before-reject": "killed",
         "i488-first-name-match-wins": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#ambiguousListNamePerformsNoTrelloWrite"
       ],
@@ -167,15 +210,21 @@ Status: **passed**
       "scope": "requested_behavior",
       "targeted_mutants": [
         "i488-ambiguity-write-before-reject"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
       "broad_mutants": [
         "i488-first-name-match-wins"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i488-ambiguity-success-no-write",
+        "i488-ambiguity-write-before-reject",
+        "i488-name-allowlist-authorizes-ambiguous-id"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "ambiguity rejection"
@@ -186,7 +235,7 @@ Status: **passed**
         "i488-ambiguity-success-no-write": "killed",
         "i488-first-name-match-wins": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#rejectsAmbiguousListNameMove"
       ],
@@ -194,39 +243,83 @@ Status: **passed**
       "scope": "requested_behavior",
       "targeted_mutants": [
         "i488-ambiguity-success-no-write"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
-      "broad_mutants": [],
+      "broad_mutants": [
+        "i488-reject-explicit-id"
+      ],
+      "calibration_basis": "configured common and regression-gate preservation across every targeted mutant for the issue",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i488-ambiguity-success-no-write",
+        "i488-ambiguity-write-before-reject",
+        "i488-name-allowlist-authorizes-ambiguous-id"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
-        "explicit ID remains supported"
+        "configured common and regression gate preservation"
       ],
       "issue_id": "issue-488",
       "missing_mutants": [],
       "mutant_statuses": {
-        "i488-reject-explicit-id": "killed"
+        "i488-reject-explicit-id": "collateral_regression"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#movesCurrentCardToAllowedListIdWhenNamesAreDuplicated",
-        "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured",
-        "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed"
+        "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#movesCurrentCardToAllowedListIdWhenNamesAreNotConfigured"
       ],
       "requirement_id": "explicit-destination-id-regression",
       "scope": "required_regression",
-      "targeted_mutants": [
-        "i488-reject-explicit-id"
+      "targeted_mutants": []
+    },
+    {
+      "broad_mutants": [
+        "i488-first-name-match-wins"
       ],
-      "weak_fixture_failures": []
+      "calibration_basis": "clean targeted requirement failures",
+      "calibration_status": "calibrated",
+      "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i488-ambiguity-success-no-write",
+        "i488-ambiguity-write-before-reject",
+        "i488-name-allowlist-authorizes-ambiguous-id"
+      ],
+      "critical": true,
+      "distinct_acceptance_dimensions": [
+        "ambiguous ID is not authorized by a name-only allowlist"
+      ],
+      "issue_id": "issue-488",
+      "missing_mutants": [],
+      "mutant_statuses": {
+        "i488-first-name-match-wins": "killed",
+        "i488-name-allowlist-authorizes-ambiguous-id": "killed"
+      },
+      "not_calibrated": [],
+      "protected_selectors": [
+        "ch.fmartin.symphony.trello.agent.TrelloHandoffToolHandlerTest#rejectsListIdMoveWhenOnlyDuplicateListNameIsAllowed"
+      ],
+      "requirement_id": "name-only-allowlist-does-not-authorize-ambiguous-id",
+      "scope": "requested_behavior",
+      "targeted_mutants": [
+        "i488-name-allowlist-authorizes-ambiguous-id"
+      ]
     },
     {
       "broad_mutants": [],
+      "calibration_basis": "reference diagnostics are supplemental and do not define targeted calibration readiness",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i488-ambiguity-success-no-write",
+        "i488-ambiguity-write-before-reject",
+        "i488-name-allowlist-authorizes-ambiguous-id"
+      ],
       "critical": false,
       "distinct_acceptance_dimensions": [
         "reference-only setup breadth"
@@ -234,46 +327,72 @@ Status: **passed**
       "issue_id": "issue-488",
       "missing_mutants": [],
       "mutant_statuses": {},
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsAmbiguousDefaultReviewListName(String)[1]",
         "ch.fmartin.symphony.trello.setup.TrelloBoardSetupMainTest#importBoardRejectsAmbiguousDefaultReviewListName(String)[2]"
       ],
       "requirement_id": "reference-setup-breadth",
       "scope": "reference_diagnostic",
-      "targeted_mutants": [],
-      "weak_fixture_failures": []
+      "targeted_mutants": []
     },
     {
-      "broad_mutants": [],
+      "broad_mutants": [
+        "i498-overbroad-in-progress-rejection"
+      ],
+      "calibration_basis": "configured common and regression-gate preservation across every targeted mutant for the issue",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i498-active-config-remains",
+        "i498-dry-conflict-accepted",
+        "i498-dry-conflict-after-output",
+        "i498-interactive-conflict-accepted",
+        "i498-interactive-conflict-after-side-effects",
+        "i498-noninteractive-conflict-accepted",
+        "i498-noninteractive-conflict-after-side-effects",
+        "i498-physical-list-remains",
+        "i498-pickup-side-effect-remains",
+        "i498-workflow-state-remains"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
-        "existing import-board behavior"
+        "configured common and regression gate preservation"
       ],
       "issue_id": "issue-498",
       "missing_mutants": [],
       "mutant_statuses": {
-        "i498-overbroad-in-progress-rejection": "killed"
+        "i498-overbroad-in-progress-rejection": "collateral_regression"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#interactiveExistingBoardSetupAcceptsExplicitInProgressWithoutBoardArgument"
       ],
       "requirement_id": "existing-board-in-progress-regression",
       "scope": "required_regression",
-      "targeted_mutants": [
-        "i498-overbroad-in-progress-rejection"
-      ],
-      "weak_fixture_failures": []
+      "targeted_mutants": []
     },
     {
       "broad_mutants": [
         "i498-reference-revert"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i498-active-config-remains",
+        "i498-dry-conflict-accepted",
+        "i498-dry-conflict-after-output",
+        "i498-interactive-conflict-accepted",
+        "i498-interactive-conflict-after-side-effects",
+        "i498-noninteractive-conflict-accepted",
+        "i498-noninteractive-conflict-after-side-effects",
+        "i498-physical-list-remains",
+        "i498-pickup-side-effect-remains",
+        "i498-workflow-state-remains"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "dry-run pre-output ordering",
@@ -288,7 +407,7 @@ Status: **passed**
         "i498-noninteractive-conflict-after-side-effects": "killed",
         "i498-reference-revert": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#dryRunConflictIsRejectedBeforeSideEffects",
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#interactiveConflictIsRejectedBeforeSideEffects",
@@ -300,15 +419,28 @@ Status: **passed**
         "i498-dry-conflict-after-output",
         "i498-interactive-conflict-after-side-effects",
         "i498-noninteractive-conflict-after-side-effects"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
       "broad_mutants": [
         "i498-reference-revert"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i498-active-config-remains",
+        "i498-dry-conflict-accepted",
+        "i498-dry-conflict-after-output",
+        "i498-interactive-conflict-accepted",
+        "i498-interactive-conflict-after-side-effects",
+        "i498-noninteractive-conflict-accepted",
+        "i498-noninteractive-conflict-after-side-effects",
+        "i498-physical-list-remains",
+        "i498-pickup-side-effect-remains",
+        "i498-workflow-state-remains"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "dry-run rejection",
@@ -323,7 +455,7 @@ Status: **passed**
         "i498-noninteractive-conflict-accepted": "killed",
         "i498-reference-revert": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#dryRunConflictIsRejected",
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#interactiveConflictIsRejected",
@@ -335,15 +467,28 @@ Status: **passed**
         "i498-dry-conflict-accepted",
         "i498-interactive-conflict-accepted",
         "i498-noninteractive-conflict-accepted"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
       "broad_mutants": [
         "i498-reference-revert"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i498-active-config-remains",
+        "i498-dry-conflict-accepted",
+        "i498-dry-conflict-after-output",
+        "i498-interactive-conflict-accepted",
+        "i498-interactive-conflict-after-side-effects",
+        "i498-noninteractive-conflict-accepted",
+        "i498-noninteractive-conflict-after-side-effects",
+        "i498-physical-list-remains",
+        "i498-pickup-side-effect-remains",
+        "i498-workflow-state-remains"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "active or move configuration omitted"
@@ -354,7 +499,7 @@ Status: **passed**
         "i498-active-config-remains": "killed",
         "i498-reference-revert": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#noInProgressOmitsActiveAndMoveConfiguration"
       ],
@@ -362,15 +507,28 @@ Status: **passed**
       "scope": "requested_behavior",
       "targeted_mutants": [
         "i498-active-config-remains"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
       "broad_mutants": [
         "i498-reference-revert"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i498-active-config-remains",
+        "i498-dry-conflict-accepted",
+        "i498-dry-conflict-after-output",
+        "i498-interactive-conflict-accepted",
+        "i498-interactive-conflict-after-side-effects",
+        "i498-noninteractive-conflict-accepted",
+        "i498-noninteractive-conflict-after-side-effects",
+        "i498-physical-list-remains",
+        "i498-pickup-side-effect-remains",
+        "i498-workflow-state-remains"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "physical list omitted"
@@ -381,7 +539,7 @@ Status: **passed**
         "i498-physical-list-remains": "killed",
         "i498-reference-revert": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#noInProgressOmitsPhysicalInProgressList"
       ],
@@ -389,15 +547,28 @@ Status: **passed**
       "scope": "requested_behavior",
       "targeted_mutants": [
         "i498-physical-list-remains"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
       "broad_mutants": [
         "i498-reference-revert"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i498-active-config-remains",
+        "i498-dry-conflict-accepted",
+        "i498-dry-conflict-after-output",
+        "i498-interactive-conflict-accepted",
+        "i498-interactive-conflict-after-side-effects",
+        "i498-noninteractive-conflict-accepted",
+        "i498-noninteractive-conflict-after-side-effects",
+        "i498-physical-list-remains",
+        "i498-pickup-side-effect-remains",
+        "i498-workflow-state-remains"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "pickup side effect omitted"
@@ -408,7 +579,7 @@ Status: **passed**
         "i498-pickup-side-effect-remains": "killed",
         "i498-reference-revert": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#noInProgressOmitsPickupSideEffect"
       ],
@@ -416,15 +587,28 @@ Status: **passed**
       "scope": "requested_behavior",
       "targeted_mutants": [
         "i498-pickup-side-effect-remains"
-      ],
-      "weak_fixture_failures": []
+      ]
     },
     {
       "broad_mutants": [
         "i498-reference-revert"
       ],
+      "calibration_basis": "clean targeted requirement failures",
       "calibration_status": "calibrated",
       "collateral_requirement_failures": {},
+      "common_regression_safety_failures": [],
+      "common_regression_safety_mutants": [
+        "i498-active-config-remains",
+        "i498-dry-conflict-accepted",
+        "i498-dry-conflict-after-output",
+        "i498-interactive-conflict-accepted",
+        "i498-interactive-conflict-after-side-effects",
+        "i498-noninteractive-conflict-accepted",
+        "i498-noninteractive-conflict-after-side-effects",
+        "i498-physical-list-remains",
+        "i498-pickup-side-effect-remains",
+        "i498-workflow-state-remains"
+      ],
       "critical": true,
       "distinct_acceptance_dimensions": [
         "workflow state omitted"
@@ -435,7 +619,7 @@ Status: **passed**
         "i498-reference-revert": "killed",
         "i498-workflow-state-remains": "killed"
       },
-      "not_killed": [],
+      "not_calibrated": [],
       "protected_selectors": [
         "ch.fmartin.symphony.trello.setup.LocalSetupTest#noInProgressOmitsWorkflowState"
       ],
@@ -443,8 +627,7 @@ Status: **passed**
       "scope": "requested_behavior",
       "targeted_mutants": [
         "i498-workflow-state-remains"
-      ],
-      "weak_fixture_failures": []
+      ]
     }
   ],
   "schema_id": "calibration-coverage-current",

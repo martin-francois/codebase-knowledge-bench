@@ -1,22 +1,3 @@
-# Private pre-release cleanup audit
+# Private pre-release cleanup
 
-Status: **passed**
-
-```json
-{
-  "active_files_scanned": 88,
-  "banned_runtime_symbols": [],
-  "live_import_or_dataflow_references": [],
-  "one_current_methodology": true,
-  "remaining_artifacts": [],
-  "removed_artifacts": [
-    "docs/prompt-history-traceability.md",
-    "docs/SAME_SOURCE_RECOVERY.md",
-    "configs/fresh-final-arm-retry-v2.json",
-    "schemas/fresh-workspace-retry.schema.json"
-  ],
-  "schema_id": "private-pre-release-cleanup-current",
-  "status": "passed",
-  "syntax_errors": []
-}
-```
+Status: **passed**.
