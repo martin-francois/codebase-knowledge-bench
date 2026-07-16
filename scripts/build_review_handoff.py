@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build and independently validate a portable exact-tree review handoff."""
 from __future__ import annotations
-import argparse,hashlib,json,mimetypes,re,subprocess,tarfile,tempfile,zipfile
+import argparse,hashlib,json,mimetypes,platform,re,subprocess,tarfile,tempfile,zipfile
 from pathlib import Path
 from typing import Any
 from safe_archive import safe_extract_tar,safe_extract_zip
@@ -111,7 +111,11 @@ def portable_generated_text(data:bytes)->tuple[bytes,list[str]]:
  if secret_pattern.search(data):data=secret_pattern.sub(rb'\1$REDACTED_TEST_SECRET',data);notes.append('secret-shaped fixture value: redacted')
  return data,notes
 
-def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:Path,output:Path,target:Path|None=None)->tuple[Path,dict[str,Any]]:
+def command_version(*command:str)->str:
+ try:return subprocess.check_output(command,text=True,stderr=subprocess.STDOUT).strip()
+ except (OSError,subprocess.CalledProcessError) as exc:return f'unavailable: {type(exc).__name__}'
+
+def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:Path,output:Path,target:Path|None=None,extras:Path|None=None)->tuple[Path,dict[str,Any]]:
  if sha256_file(canonical)!=CANONICAL_SHA or sha256_file(supplement)!=SUPPLEMENT_SHA:raise ValueError('immutable evidence hash mismatch')
  commit=git(repo,'rev-parse','HEAD').strip();tree=git(repo,'rev-parse','HEAD^{tree}').strip();output.mkdir(parents=True,exist_ok=True)
  with tempfile.TemporaryDirectory() as td:
@@ -126,7 +130,7 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
    'agent-response.md':agent_response.read_bytes(),'source/source.tar':tar_bytes,
    'source/commit-object.txt':git(repo,'cat-file','commit',commit,raw=True),
    'source/git-ls-tree.json':(json.dumps(tree_rows,indent=2,sort_keys=True)+'\n').encode(),
-   'source/source-state.json':(json.dumps({'commit':commit,'tree':tree,'branch':git(repo,'branch','--show-current').strip()},indent=2,sort_keys=True)+'\n').encode(),
+   'source/source-state.json':(json.dumps({'commit':commit,'tree':tree,'branch':git(repo,'branch','--show-current').strip(),'origin_main':git(repo,'rev-parse','origin/main').strip(),'origin_main_equals_head':git(repo,'rev-parse','origin/main').strip()==commit,'worktree_status':git(repo,'status','--porcelain=v1','--untracked-files=all'),'worktree_clean':not git(repo,'status','--porcelain=v1','--untracked-files=all').strip(),'versions':{'python':platform.python_version(),'node':command_version('node','--version'),'npm':command_version('npm','--version'),'uv':command_version('uv','--version')}},indent=2,sort_keys=True)+'\n').encode(),
    'source/source-tree-reconstruction.json':(json.dumps(reconstruction,indent=2,sort_keys=True)+'\n').encode(),
    'source/full-diff.patch':full_diff,
    'verification/verification-registry.json':(repo/'verification/verification-registry.json').read_bytes(),
@@ -160,6 +164,11 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
     target_receipts.append({'issue_id':issue,'commit':base_commit,'tree':git(target,'rev-parse',f'{base_commit}^{{tree}}').strip(),'path':member,'bytes':len(data),'sha256':sha256_bytes(data)})
    payloads['methodology/mutation-calibration/target-snapshots.json']=(json.dumps(target_receipts,indent=2,sort_keys=True)+'\n').encode()
   payloads['audit/sanitization-notes.json']=(json.dumps({'schema_id':'handoff-sanitization-current','replacements':generated_redactions},indent=2,sort_keys=True)+'\n').encode()
+  if extras is not None:
+   for path in sorted(item for item in extras.rglob('*') if item.is_file() or item.is_symlink()):
+    name=path.relative_to(extras).as_posix()
+    if name in payloads and name!='README.md':raise ValueError(f'extra evidence collides with generated member: {name}')
+    payloads[name]=path.read_bytes()
   payloads['review-handoff-validation.json']=(json.dumps({'schema_id':'review-handoff-internal-validation-current','status':'passed','checks':['immutable evidence hashes verified','exact Git tree reconstructed','required methodology evidence present','text members scanned','manifest validated by detached receipt'],'detached_receipt_required':True},indent=2,sort_keys=True)+'\n').encode()
   # Preserve the static published erratum from the prior supplement; it is never parsed by live runtime.
   with zipfile.ZipFile(supplement) as z:
@@ -187,6 +196,7 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
  shadow=json.loads((reports/'production-shadow-result.json').read_text())
  mutation=json.loads((reports/'mutation-calibration.json').read_text())
  browser=json.loads((reports/'browser-result.json').read_text())
+ tests=json.loads((reports/'test-results.json').read_text())
  validation.update({
   'review_zip_path':zip_path.name,'review_zip_bytes':zip_path.stat().st_size,
   'review_zip_sha256':sha256_file(zip_path),'source_commit':commit,'source_tree':tree,
@@ -195,7 +205,8 @@ def build(repo:Path,canonical:Path,supplement:Path,reports:Path,agent_response:P
   'schema_result':'passed' if shadow.get('stages',{}).get('current_execution_schema') and shadow.get('stages',{}).get('current_suite_schema') and shadow.get('stages',{}).get('dashboard_json_schema') else 'failed',
   'production_shadow_result':shadow.get('status'),'mutation_calibration_result':'passed' if mutation.get('critical_calibration_passed') else 'failed',
   'secret_scan_result':validation['secret_and_host_path_scan'],'host_path_scan_result':validation['secret_and_host_path_scan'],
-  'browser_result':browser.get('status'),'overall_status':validation['status'],
+  'browser_result':browser.get('status'),'test_results':tests,
+  'overall_status':'passed' if validation['status']=='passed' and tests.get('effective_release_gates_passed',tests.get('status')=='passed') and shadow.get('status')=='passed' and mutation.get('critical_calibration_passed') is True and browser.get('status')=='passed' else 'failed',
  })
  Path(str(zip_path)+'.sha256').write_text(f'{sha256_file(zip_path)}  {zip_path.name}\n')
  Path(str(zip_path)+'.validation.json').write_text(json.dumps(validation,indent=2,sort_keys=True)+'\n')
@@ -227,5 +238,5 @@ def validate(zip_path:Path)->dict[str,Any]:
  return {'schema_id':'review-handoff-validation-current','status':'passed' if not errors else 'failed','errors':errors,'zip_bytes':zip_path.stat().st_size,'zip_sha256':sha256_file(zip_path),'manifest_entry_count':len(manifest['entries']),'manifest_root':manifest['manifest_root'],'source_commit':manifest['source_commit'],'source_tree':manifest['source_tree'],'commit_object_reconstruction':{'reconstructed_commit':reconstructed_commit,'exact_match':reconstructed_commit==manifest['source_commit']},'source_tree_reconstruction':reconstruction,'secret_and_host_path_scan':'passed' if not errors else 'failed'}
 
 def main()->int:
- p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[1]);p.add_argument('--canonical',type=Path,required=True);p.add_argument('--supplement',type=Path,required=True);p.add_argument('--reports',type=Path,required=True);p.add_argument('--agent-response',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target',type=Path);a=p.parse_args();path,result=build(a.repo.resolve(),a.canonical,a.supplement,a.reports.resolve(),a.agent_response.resolve(),a.output.resolve(),a.target.resolve() if a.target else None);print(json.dumps({'path':str(path),**result},indent=2,sort_keys=True));return 0
+ p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[1]);p.add_argument('--canonical',type=Path,required=True);p.add_argument('--supplement',type=Path,required=True);p.add_argument('--reports',type=Path,required=True);p.add_argument('--agent-response',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target',type=Path);p.add_argument('--extras',type=Path);a=p.parse_args();path,result=build(a.repo.resolve(),a.canonical,a.supplement,a.reports.resolve(),a.agent_response.resolve(),a.output.resolve(),a.target.resolve() if a.target else None,a.extras.resolve() if a.extras else None);print(json.dumps({'path':str(path),**result},indent=2,sort_keys=True));return 0
 if __name__=='__main__':raise SystemExit(main())

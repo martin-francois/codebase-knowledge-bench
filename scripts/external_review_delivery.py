@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
+import mimetypes
 import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any
 
-from build_review_handoff import validate as validate_handoff, write_zip
+from build_review_handoff import scan_text, validate as validate_handoff, write_zip
 from safe_archive import safe_extract_zip
 
 
@@ -20,6 +22,10 @@ def sha256_bytes(data: bytes) -> str:
 
 def canonical_sha256(value: Any) -> str:
     return sha256_bytes(json.dumps(value, sort_keys=True, separators=(",", ":")).encode())
+
+
+def media_type(path: str) -> str:
+    return mimetypes.guess_type(path)[0] or "application/octet-stream"
 
 
 def validate_detached_binding(inner_name: str, inner_data: bytes, checksum_text: str, receipt: dict[str, Any]) -> dict[str, Any]:
@@ -49,7 +55,9 @@ def _payload(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Pat
 def build(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Path, output: Path) -> tuple[Path, dict[str, Any]]:
     members = _payload(inner_zip, checksum, receipt, agent_response)
     entries = [
-        {"path": name, "bytes": len(data), "sha256": sha256_bytes(data)}
+        {"path": name, "bytes": len(data), "sha256": sha256_bytes(data),
+         "media_type": media_type(name), "role": "agent-response" if name == "agent-response.md" else "inner-review-handoff",
+         "source": "generated-or-content-addressed", "required": True}
         for name, data in sorted(members.items())
     ]
     manifest = {
@@ -59,6 +67,13 @@ def build(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Path, 
         "manifest_root": canonical_sha256(entries),
     }
     detailed = json.loads(receipt.read_text(encoding="utf-8"))
+    inner_member = "review-handoff/" + inner_zip.name
+    with zipfile.ZipFile(io.BytesIO(members[inner_member])) as inner_archive:
+        response_matches = inner_archive.read("agent-response.md") == members["agent-response.md"]
+    binding = validate_detached_binding(inner_zip.name, members[inner_member], checksum.read_text(encoding="utf-8"), detailed)
+    if not response_matches or binding["status"] != "passed":
+        raise ValueError("inner response or detached sidecar binding is invalid")
+    inner_status = detailed.get("overall_status", detailed.get("status"))
     validation = {
         "schema_id": "external-review-delivery-validation-current",
         "inner_review_zip_name": inner_zip.name,
@@ -69,7 +84,8 @@ def build(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Path, 
         "delivery_manifest_root": manifest["manifest_root"],
         "required_sidecars_present": True,
         "receipt_bound_to_inner_zip": Path(str(detailed.get("review_zip_path") or detailed.get("zip_path") or "")).name == inner_zip.name,
-        "overall_status": "passed",
+        "agent_response_matches_inner": response_matches,
+        "overall_status": "passed" if inner_status == "passed" else "NO_GO",
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
@@ -110,6 +126,14 @@ def validate(path: Path) -> dict[str, Any]:
         binding = validate_detached_binding(Path(inner_name).name, inner_data, checksum_text, receipt)
         if binding["status"] != "passed":
             raise ValueError("detailed validation receipt or checksum does not bind inner ZIP")
+        with zipfile.ZipFile(io.BytesIO(inner_data)) as inner_archive:
+            inner_response = inner_archive.read("agent-response.md")
+        outer_response = archive.read("agent-response.md")
+        if outer_response != inner_response:
+            raise ValueError("outer and inner agent responses differ")
+        scan_errors = scan_text("agent-response.md", outer_response)
+        if scan_errors:
+            raise ValueError(f"delivery response scan failed: {scan_errors}")
         with tempfile.TemporaryDirectory(prefix="external-review-delivery-") as temporary:
             extracted = Path(temporary)
             safe_extract_zip(archive, extracted)
@@ -129,6 +153,11 @@ def validate(path: Path) -> dict[str, Any]:
         "inner_manifest_root": handoff_result.get("manifest_root"),
         "inner_validation": handoff_result,
         "detailed_receipt_status": receipt.get("overall_status", receipt.get("status")),
+        "agent_response_matches_inner": True,
+        "secret_scan": "passed",
+        "host_path_scan": "passed",
+        "outer_extraction_validation": "passed",
+        "inner_extraction_validation": handoff_result.get("status"),
         "overall_status": "passed",
     }
 
