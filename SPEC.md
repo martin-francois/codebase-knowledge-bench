@@ -101,14 +101,17 @@ negative limits, unknown variants, and model substitution fail before child work
 `reference_diagnostic`. Requested requirements have positive declared weights. Regression and
 diagnostic requirements are unweighted. Every evidence selector has exactly one owner.
 
-`CON-002` A requested-behavior selector MUST be observed failing on the base implementation and
-passing on the reference implementation. A required-regression selector MUST be observed passing on
-both. A reference-diagnostic selector records both observed outcomes and validates its declaration,
-but never gates candidate task success.
+`CON-002` Exact status strings are the sole contract outcome representation. A
+requested-behavior selector MUST declare and be observed with `base_status=failed` and
+`reference_status=passed`. A required-regression selector MUST declare and be observed with
+`base_status=passed` and `reference_status=passed`. A reference-diagnostic selector declares both
+exact statuses, neither of which may be `skipped` or `error`, and validates those observations
+without gating candidate task success. Boolean result declarations are removed and MUST be rejected.
 
 `CON-003` Every contract selector appears exactly once in the current preflight artifact. The set of
 contract evidence selectors equals the relevant preflight selector set, with exact channel, source
-path, source SHA-256, base result, and reference result equality. Extra direct selectors are invalid.
+path, source SHA-256, base status, and reference status equality. Every selector process is valid.
+Extra direct selectors are invalid.
 
 `CON-004` Contract declarations are expectations, never a source of observed preflight results.
 Fixtures, shadow execution, mutation calibration, validators, reports, and handoff generation MUST
@@ -164,9 +167,11 @@ independently rederive this truth table from receipts and JUnit XML.
 9. publishes a strict, content-addressed current preflight artifact.
 
 `PRE-002` Each selector row publishes `junit_selector`, `protected_channel`,
-`protected_source_path`, `protected_source_sha256`, `base_passed`, `reference_passed`,
-base/reference process validity, exit code, and timeout state. Status strings are also retained so
-skips and failures are not conflated.
+`protected_source_path`, `protected_source_sha256`, authoritative `base_status` and
+`reference_status`, base/reference process validity, exit code, and timeout state. `base_passed` and
+`reference_passed` are derived convenience fields equal to whether the corresponding exact status
+is `passed`; a stored status/Boolean disagreement is invalid. `skipped` and `error` never satisfy an
+expected `failed` status.
 
 `PRE-003` The artifact also publishes contract/channel-plan SHA-256, exact commits and trees,
 common/direct/extended inventory hashes, overlap audit, and protected source-manifest root. It
@@ -283,8 +288,9 @@ protected verifier, process rules, and common skip gate. It never creates an out
 contract declarations.
 
 `MUT-002` A targeted mutant is clean only when its intended requirement fails, neighboring requested
-requirements preserve their expected status, regression gates pass, the configured common suite
-fully passes with zero skips, every channel process is valid, and selector overlap is empty. A common
+requirements preserve their exact expected status, regression gates have exact `passed` statuses,
+the configured common suite fully passes with zero skips, every channel process is valid, and
+selector overlap is empty. A skipped or errored contract selector is invalid evidence. A common
 failure is classified as collateral regression rather than clean calibration.
 
 `MUT-003` Mutation evidence records the exact patch, target commit/tree, commands, JUnit artifacts,
@@ -301,21 +307,79 @@ construction/validation.
 
 `QUA-002` The fixture makes zero model calls and launches no implementation children. It injects and
 requires rejection of removed config input, obsolete/missing/wrong selectors, wrong channel,
-wrong observed outcomes, skips, timeout, unexplained nonzero exit, missing process fields, stale
-preflight/contract hashes, row token/correctness tampering, suite aggregation tampering, and dashboard
-schema drift.
+wrong exact observed statuses, requested/regression/diagnostic skips and errors, a false Boolean
+paired with the wrong status, status/Boolean disagreement, timeout, unexplained nonzero exit,
+missing process fields, stale preflight/contract hashes, row token/correctness tampering, suite
+aggregation tampering, and dashboard schema drift.
 
 ## 15. Replayable target evidence
 
-`RPL-001` The external-review handoff contains a Git bundle holding every exact base and reference
-commit, commit/tree manifests, replay configuration, and a network-disabled replay script. Validation
-proves every commit exists, every tree matches, and no mutable branch head is required.
+`RPL-001` The external-review handoff contains a Git bundle holding every exact target base and
+reference commit, commit/tree manifests, replay configuration, and one source-generated qualifying
+replay launcher. Validation proves every commit exists, every tree matches, and no mutable branch
+head is required.
 
 `RPL-002` Independent Maven replay requires a content-addressed minimal offline Maven repository and
 manifest. The replay script runs current issue preflight, protected-channel qualification, targeted
 mutation calibration, and production shadow without network. If the cache cannot legally or
 practically be packaged, the limitation is explicit, independent replay completeness is false, and
 readiness is `NO_GO`.
+
+`RPL-003` `scripts/target_replay.py` owns the sole qualifying replay implementation. Two clean
+generations MUST be byte-identical; every embedded Python body MUST compile; the launcher MUST pass
+`bash -n`; every referenced path and stage MUST validate; and the packaged launcher MUST equal the
+generated bytes. Generated executable and config provenance records generator path/hash, generation
+command, output path/hash, regeneration equality, and `manual_edit_detected=false`. Qualifying replay
+has no finalize, resume, conditional-stage, or previous-output mode.
+
+`RPL-004` The delivery packages content-addressed JDK, Node/npm, Chromium, Python runtime,
+Python environment, Maven repository, and dashboard dependency archives. A strict runtime lock
+records platform/architecture; semantic runtime versions, vendors, executable paths and hashes;
+Maven distribution identity; generic Git, Bash, tar, zstd, and network-launcher identities; and
+shared-library closure roots. Replay sets explicit runtime paths and verifies every locked executable
+hash before substantive work. Host Java, Node, Chromium, Maven cache, and browser paths MUST NOT be
+selected.
+
+`RPL-005` The qualifying launcher creates a new network and mount namespace, enables loopback only,
+mounts an empty resolver configuration, and exposes no external route. Before stages run it records
+namespace identity, interfaces, routes, DNS configuration, a failed external TCP probe, a failed
+external DNS probe, and a successful loopback listener/connect probe. `network_enabled` is derived
+from this receipt. Failure to enforce or measure isolation makes replay and readiness fail.
+
+`RPL-006` Every dependency archive manifest covers the exact member set with path, type, byte count,
+SHA-256, mode, symlink target, and hardlink target. The sole safe archive boundary rejects unexpected,
+missing, duplicate, case-fold-colliding, file/directory-colliding, absolute, traversing, escaping-link,
+special, unsupported, over-sized, over-expanded, over-ratio, mode-mismatched, or link-target-mismatched
+members before materialization. Direct `tar -xf` is not a trusted extraction boundary.
+
+`RPL-007` Replay reconstructs the exact final benchmark commit from packaged Git objects. Before any
+methodology stage, `HEAD`, `HEAD^{tree}`, and the expected commit/tree identities agree and the
+worktree is clean. An uncommitted `git init` workspace cannot qualify.
+
+`RPL-008` One qualifying replay starts from an empty work root and executes all three current issue
+preflights, protected-channel qualification, targeted mutation calibration, production shadow,
+strict schemas, dashboard build/browser validation, and replay handoff generation/validation. It
+persists command/stdout/stderr, runtime resolution and lock, network and source receipts, complete
+stage subtrees, a replay evidence manifest, and a replay result derived only from those artifacts and
+their SHA-256 values.
+
+`RPL-009` `validate_target_package` is executable validation. It validates exact archives and the
+runtime lock, regenerates and compares the launcher, performs a fresh isolated replay in a temporary
+empty root, validates every replay artifact and stage, compares current-preflight semantic hashes
+with the packaged host qualification, validates isolation, and returns `passed` only after the
+replay exits zero. Static string or presence checks cannot qualify a target package.
+
+`RPL-010` The detailed inner handoff validation binds review ZIP identity and manifest, source
+commit/tree reconstruction, generated-artifact equality, runtime lock, network receipt, fresh replay
+exit/evidence root, exact preflight status audit, exact target archives, mutation calibration,
+production shadow, dashboard/browser validation, and immutable evidence identities.
+
+`RPL-011` Final release uses two process boundaries. A builder with final source, immutable evidence,
+target source, and local dependencies creates the outer ZIP. A fresh verifier receives only that ZIP
+plus generic Linux process/network-namespace primitives, has no builder repository/home/caches,
+semantic host runtimes, network, or previous replay output, and independently validates both
+manifests, reconstructs source, executes the source-generated replay, validates all replay evidence
+and handoff semantics, and writes a receipt. `GO` requires this verifier to pass.
 
 ## 16. Isolation, privacy, and security
 
@@ -350,13 +414,19 @@ incompatible methodology identities.
 `VER-001` Every automated verification registry entry has a callable checker, positive fixture,
 narrow negative fixture, structured evidence, and invocation duration. Blocker checks are automated.
 
-`VER-002` The registry covers live contract-driven preflight, exact selector equality, observed
-base/reference outcomes, removed-config rejection, common skip fail-closed behavior, channel process
-validity, field provenance classification, target bundle completeness, and offline replay.
+`VER-002` The registry covers live contract-driven preflight, exact status semantics and
+status/Boolean agreement, exact selector equality, observed base/reference outcomes, removed-config
+rejection, common skip fail-closed behavior, channel process validity, field provenance
+classification, source-generated replay equality and embedded syntax, generated provenance, packaged
+semantic runtimes, enforced/measured network isolation, exact safe archive sets and links, fresh
+one-shot replay without finalization, source commit reconstruction, independent verifier isolation,
+target bundle completeness, and executable offline replay.
 
 `VER-003` After deterministic checks, the active coding agent performs semantic self-review for
-preflight contract fidelity, outcome plausibility, skip policy, process semantics, provenance honesty,
-and replay completeness. Scripts and CI MUST NOT invoke a model for that review.
+status-based base/reference discrimination, runtime-lock completeness, network-isolation honesty,
+generated-artifact provenance, replay-evidence completeness, self-contained review portability,
+preflight contract fidelity, outcome plausibility, skip policy, process semantics, and provenance
+honesty. Scripts and CI MUST NOT invoke a model for that review.
 
 ## 19. Publication and external review
 
@@ -364,23 +434,35 @@ and replay completeness. Scripts and CI MUST NOT invoke a model for that review.
 `git ls-tree`, commit object, full diff, and deterministic tree/commit reconstruction evidence MUST
 agree. Immutable previously published benchmark ZIP bytes remain external and unchanged.
 
-`PUB-002` The inner review handoff contains source, receipt, pre-fix audit, current preflight evidence,
-channel/process evidence, provenance/tamper evidence, contracts, mutation calibration, production
-qualification, reports/dashboard, target replay package, verification results, schemas, command log,
-immutable published evidence, a semantic manifest, and detailed validation.
+`PUB-002` The inner review handoff contains reconstructable source commit/tree objects and full diff;
+receipt and pre-fix audit; exact-status preflight and fault evidence; channel/process evidence;
+generated-artifact provenance; runtime lock, manifests, archives, and bootstrap; network receipt;
+complete fresh replay evidence; contracts; mutation calibration; production qualification;
+reports/dashboard; exact target bundle/package validation; independent verifier code/logs/receipt;
+verification and semantic self-review results; schemas and command logs; unchanged immutable
+published evidence; a semantic manifest; detached checksum; and detailed validation.
 
-`PUB-003` The single outer upload ZIP contains only `agent-response.md`, the inner ZIP and its SHA-256
-and validation sidecars under `review-handoff/`, plus `delivery-manifest.json` and
-`delivery-validation.json`. Both archives use deterministic ordering and extracted validation.
+`PUB-003` The single outer upload ZIP contains `agent-response.md`, the inner ZIP and its SHA-256
+and validation sidecars under `review-handoff/`, the source-identical generic bootstrap launcher
+`independent-verifier.sh`, plus `delivery-manifest.json` and `delivery-validation.json`. Both
+archives use deterministic ordering and extracted validation.
+
+`PUB-004` Final source is committed and pushed before generated delivery construction. Generated
+artifacts are not manually edited and no source commit follows packaging. Outer and inner extracted
+validation, manifest count/root, ZIP hashes, detailed validation, and independent verification are
+reported from bytes computed after construction.
 
 ## 20. Readiness and source finalization
 
 `RDY-001` `GO` requires the obsolete preflight path to be absent; only current config and
-`IssueSpec`; actual base/reference preflight passing; exact selector equality and outcome rules;
-skip-fail-closed common evidence; authoritative process validity; production qualification and
-mutation calibration using actual preflight; strict schemas; complete target replay; no removed
-configuration or taxonomy; and validated review delivery. Missing proof yields `NO_GO` with exact
-blockers.
+`IssueSpec`; actual base/reference preflight passing with exact authoritative statuses and derived
+Boolean agreement; exact selector equality; skip/error fail-closed evidence; authoritative process
+validity; production qualification and mutation calibration using actual preflight; strict schemas;
+source-generated/package replay equality with no manual edit or finalization; locked packaged
+JDK/Node/Chromium selection with unavailable host semantics; measured network isolation; exact safe
+archive sets; exact final source reconstruction; complete replay evidence; executable target-package
+validation; independent outer-only verification; no removed configuration or taxonomy; and validated
+review delivery. Missing proof yields `NO_GO` with exact blockers.
 
 `RDY-002` Before source commit, inspect the complete diff, verify immutable evidence hashes, ensure
 no generated ZIP is staged, ensure no source is untracked, and prove one current preflight
@@ -390,7 +472,9 @@ commit.
 
 `RDY-003` Deterministic validation includes frozen dependency sync, Python compilation and unit
 tests, registry validation, dashboard install/audit/unit/build/browser tests, diff whitespace checks,
-all three actual issue preflights, selector/outcome checks, common/process truth tables, current
-mutation calibration, no-model canonical production qualification, fault injections, strict schemas,
-provenance audit, target bundle validation, offline replay, exact source reconstruction, and
-clean-checkout source-only tests. No model-backed command is part of readiness.
+all three actual issue preflights, exact-status and status/Boolean fault matrices, common/process
+truth tables, current mutation calibration, no-model canonical production qualification, replay
+generation/syntax/provenance checks, runtime-lock and hostile-host selection tests, network namespace
+tests, exact archive/link tests, fault injections, strict schemas, provenance audit, target bundle
+validation, one fresh full replay, independent outer-only verification, exact source tree/commit
+reconstruction, and clean-checkout source-only tests. No model-backed command is part of readiness.

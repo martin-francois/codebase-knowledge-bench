@@ -16,7 +16,8 @@ import benchmark_config
 from execution_field_provenance import registry, validate as validate_provenance
 from protected_verifier import channel_process_validity, effective_channel_command
 from requirement_evidence import common_regression_summary
-from target_replay import _validate_archive, canonical_root, sha256_file
+from safe_archive import build_exact_tar
+from target_replay import _validate_archive
 
 
 def junit_row(selector: str, status: str = "passed") -> dict[str, str]:
@@ -135,38 +136,15 @@ class ReplayDependencyArchiveValidationTest(unittest.TestCase):
             member = payload / "runtime.txt"
             member.write_text("current runtime\n", encoding="utf-8")
             archive = root / "runtime.tar.zst"
-            subprocess.run(
-                ["tar", "--zstd", "-cf", str(archive), "-C", str(root), "payload"],
-                check=True,
-            )
-            row = {
-                "path": "payload/runtime.txt",
-                "bytes": member.stat().st_size,
-                "sha256": sha256_file(member),
-            }
+            value = build_exact_tar(payload, archive, "payload")
             manifest = root / "runtime-manifest.json"
-            manifest.write_text(
-                json.dumps(
-                    {
-                        "archive_sha256": sha256_file(archive),
-                        "manifest_root": canonical_root([row]),
-                        "entries": [row],
-                    }
-                ),
-                encoding="utf-8",
-            )
+            manifest.write_text(json.dumps(value), encoding="utf-8")
             self.assertEqual("passed", _validate_archive(archive, manifest)["status"])
-            row["sha256"] = "0" * 64
-            manifest.write_text(
-                json.dumps(
-                    {
-                        "archive_sha256": sha256_file(archive),
-                        "manifest_root": canonical_root([row]),
-                        "entries": [row],
-                    }
-                ),
-                encoding="utf-8",
-            )
+            value["entries"][1]["sha256"] = "0" * 64
+            value["manifest_root"] = __import__(
+                "safe_archive"
+            ).canonical_root(value["entries"])
+            manifest.write_text(json.dumps(value), encoding="utf-8")
             result = _validate_archive(archive, manifest)
             self.assertEqual("failed", result["status"])
             self.assertTrue(any("archive member mismatch" in error for error in result["errors"]))

@@ -91,6 +91,10 @@ class ReviewHandoffTest(unittest.TestCase):
             "source/source.tar!/verification/methodology-current/mutation-calibration/m1/test-results/protected-common/TEST-C.xml",
             "methodology/mutation-calibration/process-evidence/m1/test-results/protected-common/TEST-C.xml",
             "channel/junit/issue-486/protected-common/TEST-C.xml",
+            "preflight/current-preflight/issue-486/base/test-results/protected-common/TEST-C.xml",
+            "replay/preflight/issue-486/base/test-results/protected-common/TEST-C.xml",
+            "replay/mutation-calibration/m1/test-results/protected-common/TEST-C.xml",
+            "replay/production-shadow/preflight/issue-486/base/test-results/protected-common/TEST-C.xml",
         ):
             with self.subTest(member=member):
                 findings, exceptions = scan_source_text(member, payload)
@@ -102,6 +106,52 @@ class ReviewHandoffTest(unittest.TestCase):
         findings, exceptions = scan_source_text("source/runtime.xml", payload)
         self.assertTrue(findings)
         self.assertEqual([], exceptions)
+        findings, exceptions = scan_source_text(
+            "replay/unrelated/TEST-C.xml", payload
+        )
+        self.assertTrue(findings)
+        self.assertEqual([], exceptions)
+
+    def test_final_replay_provenance_exceptions_are_narrowly_scoped(self):
+        host_path = b"/home/server/work/replay"
+        for member in (
+            "source/source.tar!/scripts/target_replay.py",
+            "replay/command-logs/current-preflight-issue-486.stdout.log",
+            "replay/preflight/issue-486/base/maven-logs/protected-direct.log",
+            "replay/runtime-resolution.json",
+            "target/replay.sh",
+            "tests/command-log.txt",
+            "verification/independent-verifier/stdout.log",
+        ):
+            with self.subTest(member=member):
+                findings, exceptions = scan_source_text(member, host_path)
+                self.assertEqual([], findings)
+                self.assertTrue(exceptions)
+        findings, exceptions = scan_source_text(
+            "replay/unrelated/result.json", host_path
+        )
+        self.assertTrue(findings)
+        self.assertEqual([], exceptions)
+
+    def test_protected_and_runtime_secret_exceptions_are_narrowly_scoped(self):
+        secret = b'api_key="abcdefghijklmnop"'
+        for member in (
+            "preflight/current-preflight/issue-486/base/protected-requirement-evidence-inputs/protected-sources/direct/src/test/Fixture.java",
+            "replay/mutation-calibration/m1/protected-requirement-evidence-inputs/protected-sources/direct/src/test/Fixture.java",
+            "runtime/bootstrap-python/lib/python3.14/http/server.py",
+        ):
+            with self.subTest(member=member):
+                findings, exceptions = scan_source_text(member, secret)
+                self.assertEqual([], findings)
+                self.assertTrue(exceptions)
+        for member in (
+            "preflight/current-preflight/issue-486/base/result.json",
+            "runtime/runtime-lock.json",
+        ):
+            with self.subTest(member=member):
+                findings, exceptions = scan_source_text(member, secret)
+                self.assertTrue(findings)
+                self.assertEqual([], exceptions)
 
     def test_generated_text_is_portable_and_secret_redacted(self):
         data, notes = portable_generated_text(

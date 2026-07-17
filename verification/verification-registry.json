@@ -74,22 +74,142 @@
       "positive_fixture": "passed offline replay receipt", "negative_fixture": "receipt with incomplete replay", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["target/replay-result.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-001", "title": "Preflight contract fidelity", "area": "correctness", "invariant": "Observed selectors faithfully implement sanitized contracts.", "why": "Semantic review complements exact machine binding.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "PREFLIGHT-EXACT-STATUS-001", "title": "Exact preflight status semantics", "area": "correctness",
+      "invariant": "Requested, regression, and diagnostic selectors require exact non-skip, non-error base/reference statuses and derived Boolean agreement.",
+      "why": "Boolean false cannot distinguish a behavioral failure from a skip or infrastructure error.", "kind": "automated",
+      "checker_id": "PREFLIGHT-EXACT-STATUS-001", "checker_implementation": "scripts/verification_checkers.py:preflight_exact_status", "checker_version": "current", "expected_evidence_schema": "current-correctness-preflight.schema.json",
+      "implementation": ["scripts/current_preflight.py", "scripts/preflight_status_faults.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": ["verification/methodology-current/contracts/issue-488.json"],
+      "positive_fixture": "exact requested, regression, and diagnostic status pairs", "negative_fixture": "ten focused skip, error, wrong-status, and Boolean-disagreement faults", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["preflight/status-fault-matrix.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-002", "title": "Base/reference outcome plausibility", "area": "correctness", "invariant": "Observed base/reference behavior is semantically plausible for each issue.", "why": "Machine identity checks cannot judge issue intent.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "GENERATED-REPLAY-EQUALITY-001", "title": "Source-generated replay equality", "area": "verification",
+      "invariant": "The packaged replay launcher is byte-equal to the sole committed generator output.",
+      "why": "Post-generation behavior is not source reproducible.", "kind": "automated",
+      "checker_id": "GENERATED-REPLAY-EQUALITY-001", "checker_implementation": "scripts/verification_checkers.py:generated_replay_equality", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "two byte-equal generations", "negative_fixture": "one appended drift byte", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["target/generated-artifact-provenance.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-003", "title": "Skip-policy appropriateness", "area": "correctness", "invariant": "Fail-closed common skips are methodologically appropriate.", "why": "A skip is absence of regression evidence.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "EMBEDDED-REPLAY-SYNTAX-001", "title": "Embedded replay syntax", "area": "verification",
+      "invariant": "Bash syntax and every embedded Python here-document compile before packaging.",
+      "why": "A syntactically invalid receipt block makes the replay non-executable.", "kind": "automated",
+      "checker_id": "EMBEDDED-REPLAY-SYNTAX-001", "checker_implementation": "scripts/verification_checkers.py:embedded_replay_syntax", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "generated Bash and one compiled Python block", "negative_fixture": "broken newline literal", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["target/generated-artifact-provenance.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-004", "title": "Process-validity semantics", "area": "correctness", "invariant": "Infrastructure invalidity is separated from behavioral failure.", "why": "Process failures must not masquerade as behavior.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "GENERATED-NO-MANUAL-EDIT-001", "title": "No manual generated edits", "area": "verification",
+      "invariant": "Every generated executable/config is source-bound, regeneration-equal, and reports no manual edit.",
+      "why": "Hand-corrected package bytes are not reproducible from the source commit.", "kind": "automated",
+      "checker_id": "GENERATED-NO-MANUAL-EDIT-001", "checker_implementation": "scripts/verification_checkers.py:generated_no_manual_edit", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "provenance with equality true and manual edit false", "negative_fixture": "manual edit flag true", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["target/generated-artifact-provenance.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-005", "title": "Field-provenance honesty", "area": "verification", "invariant": "Measurements and independent derivations are described honestly.", "why": "Provenance labels control validator claims.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "PACKAGED-JDK-001", "title": "Packaged JDK selection", "area": "verification",
+      "invariant": "JAVA_HOME, java, and javac resolve inside the extracted content-addressed JDK and match the lock.",
+      "why": "Host Java cannot qualify an offline replay.", "kind": "automated",
+      "checker_id": "PACKAGED-JDK-001", "checker_implementation": "scripts/verification_checkers.py:packaged_jdk", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "packaged java path and hash", "negative_fixture": "host Java path or wrong hash", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/runtime-resolution.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-006", "title": "Replay package completeness", "area": "delivery", "invariant": "The delivered target and dependency package supports independent offline replay.", "why": "Reviewers must not depend on the host checkout.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "PACKAGED-NODE-001", "title": "Packaged Node selection", "area": "verification",
+      "invariant": "Node and npm resolve inside the extracted content-addressed runtime and match the lock.",
+      "why": "Host Node makes dashboard reproduction environment-dependent.", "kind": "automated",
+      "checker_id": "PACKAGED-NODE-001", "checker_implementation": "scripts/verification_checkers.py:packaged_node", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "packaged node and npm paths and hashes", "negative_fixture": "host Node path or wrong hash", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/runtime-resolution.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "PACKAGED-CHROMIUM-001", "title": "Packaged Chromium selection", "area": "dashboard",
+      "invariant": "Browser validation uses the packaged Chromium executable and exact lock hash.",
+      "why": "A host /usr/bin/chromium dependency breaks independent replay.", "kind": "automated",
+      "checker_id": "PACKAGED-CHROMIUM-001", "checker_implementation": "scripts/verification_checkers.py:packaged_chromium", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py", "scripts/dashboard.py", "dashboard/playwright.config.ts"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "packaged Chromium path and hash", "negative_fixture": "host Chromium path", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/runtime-resolution.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "NETWORK-NAMESPACE-001", "title": "Network namespace enforcement", "area": "security",
+      "invariant": "The source-generated launcher creates a network namespace, enables only loopback, and removes host DNS.",
+      "why": "A declarative offline flag does not enforce isolation.", "kind": "automated",
+      "checker_id": "NETWORK-NAMESPACE-001", "checker_implementation": "scripts/verification_checkers.py:network_namespace", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "unshare, loopback, empty resolv, and bind-mount bindings", "negative_fixture": "network namespace call removed", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/network-isolation-receipt.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "NETWORK-RECEIPT-DERIVATION-001", "title": "Network receipt derivation", "area": "security",
+      "invariant": "network_enabled is rederived from TCP, DNS, and route observations and loopback succeeds.",
+      "why": "A hard-coded false value can conceal external connectivity.", "kind": "automated",
+      "checker_id": "NETWORK-RECEIPT-DERIVATION-001", "checker_implementation": "scripts/verification_checkers.py:network_receipt_derivation", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "failed TCP/DNS, no default route, successful loopback", "negative_fixture": "TCP succeeds while network_enabled remains false", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/network-isolation-receipt.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "EXACT-ARCHIVE-SET-001", "title": "Exact dependency archive set", "area": "security",
+      "invariant": "Every archive member is manifested and no expected or unexpected member is tolerated.",
+      "why": "Unmanifested dependency bytes evade content-addressed review.", "kind": "automated",
+      "checker_id": "EXACT-ARCHIVE-SET-001", "checker_implementation": "scripts/verification_checkers.py:exact_archive_set", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/safe_archive.py", "scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "exact one-file archive", "negative_fixture": "one unmanifested extra member", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["target/dependency-archive-manifests/"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "ARCHIVE-LINK-MODE-001", "title": "Archive link and mode validation", "area": "security",
+      "invariant": "Symlink/hardlink targets and modes match the manifest and cannot escape extraction.",
+      "why": "Escaping links or mode drift bypass the archive trust boundary.", "kind": "automated",
+      "checker_id": "ARCHIVE-LINK-MODE-001", "checker_implementation": "scripts/verification_checkers.py:archive_link_mode", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/safe_archive.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "exact regular member and mode", "negative_fixture": "escaping symlink", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["target/dependency-archive-manifests/"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "FRESH-ONE-SHOT-001", "title": "Fresh one-shot replay", "area": "verification",
+      "invariant": "Qualifying work and evidence roots are empty and the replay runs from start to finish once.",
+      "why": "Previous outputs can conceal a failed or skipped stage.", "kind": "automated",
+      "checker_id": "FRESH-ONE-SHOT-001", "checker_implementation": "scripts/verification_checkers.py:fresh_one_shot", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "fresh command receipt", "negative_fixture": "nonempty prior work root", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/command.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "NO-FINALIZE-001", "title": "No finalize-existing qualification", "area": "cleanup",
+      "invariant": "The qualifying script and receipts contain no resume/finalize mode.",
+      "why": "Finalizing previous output is not a fresh replay.", "kind": "automated",
+      "checker_id": "NO-FINALIZE-001", "checker_implementation": "scripts/verification_checkers.py:no_finalize", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "fresh-only launcher and receipt", "negative_fixture": "finalize-existing receipt field", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/command.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "SOURCE-COMMIT-RECONSTRUCTION-001", "title": "Replay source commit reconstruction", "area": "source",
+      "invariant": "Replay checks out the exact final source commit and tree from the packaged bundle with a clean worktree.",
+      "why": "An uncommitted git-init workspace is not the reviewed source identity.", "kind": "automated",
+      "checker_id": "SOURCE-COMMIT-RECONSTRUCTION-001", "checker_implementation": "scripts/verification_checkers.py:source_commit_reconstruction", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "exact HEAD/tree and clean worktree", "negative_fixture": "source commit mismatch", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/source-identity.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "INDEPENDENT-VERIFIER-ISOLATION-001", "title": "Independent verifier isolation", "area": "delivery",
+      "invariant": "The verifier receives only the outer ZIP and generic process primitives, without builder repositories, caches, semantic runtimes, network, or prior replay output.",
+      "why": "Builder state would invalidate the portability boundary.", "kind": "automated",
+      "checker_id": "INDEPENDENT-VERIFIER-ISOLATION-001", "checker_implementation": "scripts/verification_checkers.py:independent_verifier_isolation", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/independent_verifier.py", "scripts/independent_verifier.sh"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "outer-only isolated verifier receipt", "negative_fixture": "working repository made available", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["verification/independent-verifier-receipt.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "LLM-001", "title": "Status-based base/reference discrimination", "area": "correctness", "invariant": "Exact status semantics distinguish behavioral failure from skip/error on both sides.", "why": "Semantic review checks the methodology meaning beyond field equality.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+    },
+    {
+      "id": "LLM-002", "title": "Runtime-lock completeness", "area": "verification", "invariant": "The runtime lock completely identifies semantic executables, build tools, platform, and shared-library closure.", "why": "Unpinned runtime semantics prevent honest offline reproduction.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+    },
+    {
+      "id": "LLM-003", "title": "Network-isolation honesty", "area": "security", "invariant": "The receipt truthfully derives isolation from namespace, route, DNS, TCP, and loopback observations.", "why": "A hard-coded offline claim is not evidence.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+    },
+    {
+      "id": "LLM-004", "title": "Generated-artifact provenance", "area": "verification", "invariant": "Generated executables and configs are traceable to final source and have no post-generation edits.", "why": "Reviewable source must regenerate packaged behavior.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+    },
+    {
+      "id": "LLM-005", "title": "Replay evidence completeness", "area": "verification", "invariant": "Every replay stage and derived status is backed by logs, hashes, and exact evidence artifacts.", "why": "Broad constant pass fields are not replay proof.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+    },
+    {
+      "id": "LLM-006", "title": "Self-contained review portability", "area": "delivery", "invariant": "An outer-ZIP-only verifier can reconstruct source, replay offline, and validate the handoff without builder state.", "why": "The review delivery must be independently portable.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
     }
   ]
 }

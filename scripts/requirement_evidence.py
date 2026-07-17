@@ -235,13 +235,32 @@ def derive_requirement_evidence(*, contract: Mapping[str, Any], channel_director
             or preflight_row["reference_process_valid"] is not True
         ):
             raise ValueError(f"current preflight selector binding mismatch: {selector}")
-        base = bool(preflight_row["base_passed"])
-        reference = bool(preflight_row["reference_passed"])
-        if (base, reference) != (bool(evidence["base_result"]), bool(evidence["reference_result"])):
+        base_status = str(preflight_row["base_status"])
+        reference_status = str(preflight_row["reference_status"])
+        if preflight_row["base_passed"] is not (base_status == "passed"):
+            raise ValueError(f"base status/Boolean disagreement: {selector}")
+        if preflight_row["reference_passed"] is not (reference_status == "passed"):
+            raise ValueError(f"reference status/Boolean disagreement: {selector}")
+        if (base_status, reference_status) != (
+            str(evidence["base_status"]),
+            str(evidence["reference_status"]),
+        ):
             raise ValueError(f"base/reference discrimination mismatch: {selector}")
         case_id = str(evidence["case_id"])
         results[case_id] = passed
-        trace.append({"case_id": case_id, "requirement_id": requirement["id"], "scope": requirement["scope"], "junit_selector": selector, "protected_channel": channel, "protected_source_path": source_path, "protected_source_sha256": actual_hash, "junit_xml_path": f"{channel}/{Path(xml_path).name}", "passed": passed, "base_result": base, "reference_result": reference})
+        trace.append({
+            "case_id": case_id,
+            "requirement_id": requirement["id"],
+            "scope": requirement["scope"],
+            "junit_selector": selector,
+            "protected_channel": channel,
+            "protected_source_path": source_path,
+            "protected_source_sha256": actual_hash,
+            "junit_xml_path": f"{channel}/{Path(xml_path).name}",
+            "passed": passed,
+            "base_status": base_status,
+            "reference_status": reference_status,
+        })
     trace.sort(key=lambda row: row["case_id"])
     common_rows = sorted(
         (row for row in all_cases if row["protected_channel"] == "common"),

@@ -16,6 +16,12 @@ from build_review_handoff import scan_text, validate as validate_handoff, write_
 from safe_archive import safe_extract_zip
 
 
+DELIVERY_ZIP_MAX_MEMBERS = 10
+DELIVERY_ZIP_MAX_MEMBER_BYTES = 1_500_000_000
+DELIVERY_ZIP_MAX_TOTAL_BYTES = 1_600_000_000
+DELIVERY_ZIP_MAX_COMPRESSION_RATIO = 200
+
+
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -50,11 +56,16 @@ def _payload(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Pat
     if receipt.name != "review-handoff.zip.validation.json":
         raise ValueError("inner validation receipt must be named review-handoff.zip.validation.json")
     prefix = "review-handoff/"
+    with zipfile.ZipFile(inner_zip) as archive:
+        verifier_launcher = archive.read(
+            "verification/independent-verifier/independent_verifier.sh"
+        )
     return {
         prefix + inner_zip.name: inner_zip.read_bytes(),
         prefix + checksum.name: checksum.read_bytes(),
         prefix + receipt.name: receipt.read_bytes(),
         "agent-response.md": agent_response.read_bytes(),
+        "independent-verifier.sh": verifier_launcher,
     }
 
 
@@ -76,9 +87,21 @@ def build(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Path, 
     inner_member = "review-handoff/" + inner_zip.name
     with zipfile.ZipFile(io.BytesIO(members[inner_member])) as inner_archive:
         response_matches = inner_archive.read("agent-response.md") == members["agent-response.md"]
+        verifier_matches = (
+            inner_archive.read(
+                "verification/independent-verifier/independent_verifier.sh"
+            )
+            == members["independent-verifier.sh"]
+        )
     binding = validate_detached_binding(inner_zip.name, members[inner_member], checksum.read_text(encoding="utf-8"), detailed)
-    if not response_matches or binding["status"] != "passed":
-        raise ValueError("inner response or detached sidecar binding is invalid")
+    if (
+        not response_matches
+        or not verifier_matches
+        or binding["status"] != "passed"
+    ):
+        raise ValueError(
+            "inner response, verifier, or detached sidecar binding is invalid"
+        )
     inner_status = detailed.get("overall_status", detailed.get("status"))
     validation = {
         "schema_id": "external-review-delivery-validation-current",
@@ -91,6 +114,7 @@ def build(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Path, 
         "required_sidecars_present": True,
         "receipt_bound_to_inner_zip": Path(str(detailed.get("review_zip_path") or detailed.get("zip_path") or "")).name == inner_zip.name,
         "agent_response_matches_inner": response_matches,
+        "verifier_launcher_matches_inner": verifier_matches,
         "overall_status": "passed" if inner_status == "passed" else "NO_GO",
     }
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -106,7 +130,12 @@ def build(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Path, 
 def validate(path: Path) -> dict[str, Any]:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
-        roots = {"delivery-manifest.json", "delivery-validation.json", "agent-response.md"}
+        roots = {
+            "delivery-manifest.json",
+            "delivery-validation.json",
+            "agent-response.md",
+            "independent-verifier.sh",
+        }
         inner = sorted(name for name in names if name.startswith("review-handoff/") and name.endswith(".zip"))
         if len(inner) != 1:
             raise ValueError("delivery must contain exactly one inner review ZIP")
@@ -134,15 +163,31 @@ def validate(path: Path) -> dict[str, Any]:
             raise ValueError("detailed validation receipt or checksum does not bind inner ZIP")
         with zipfile.ZipFile(io.BytesIO(inner_data)) as inner_archive:
             inner_response = inner_archive.read("agent-response.md")
+            inner_verifier = inner_archive.read(
+                "verification/independent-verifier/independent_verifier.sh"
+            )
         outer_response = archive.read("agent-response.md")
         if outer_response != inner_response:
             raise ValueError("outer and inner agent responses differ")
+        if archive.read("independent-verifier.sh") != inner_verifier:
+            raise ValueError(
+                "outer and inner independent verifier launchers differ"
+            )
         scan_errors = scan_text("agent-response.md", outer_response)
         if scan_errors:
             raise ValueError(f"delivery response scan failed: {scan_errors}")
         with tempfile.TemporaryDirectory(prefix="external-review-delivery-") as temporary:
             extracted = Path(temporary)
-            safe_extract_zip(archive, extracted)
+            safe_extract_zip(
+                archive,
+                extracted,
+                max_members=DELIVERY_ZIP_MAX_MEMBERS,
+                max_member_bytes=DELIVERY_ZIP_MAX_MEMBER_BYTES,
+                max_total_bytes=DELIVERY_ZIP_MAX_TOTAL_BYTES,
+                max_compression_ratio=(
+                    DELIVERY_ZIP_MAX_COMPRESSION_RATIO
+                ),
+            )
             handoff_result = validate_handoff(extracted / inner_name)
     if validation.get("inner_review_zip_name") != Path(inner_name).name:
         raise ValueError("delivery validation names another inner ZIP")
@@ -160,6 +205,7 @@ def validate(path: Path) -> dict[str, Any]:
         "inner_validation": handoff_result,
         "detailed_receipt_status": receipt.get("overall_status", receipt.get("status")),
         "agent_response_matches_inner": True,
+        "verifier_launcher_matches_inner": True,
         "secret_scan": "passed",
         "host_path_scan": "passed",
         "outer_extraction_validation": "passed",

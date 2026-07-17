@@ -509,7 +509,9 @@ def _validate_preflights(suite_dir: Path, data: dict[str, Any], errors: list[str
             fail(errors, f"{issue_id}: current issue preflight validation failed: {exc}")
 
 
-def validate_suite(path: Path) -> list[str]:
+def validate_suite(
+    path: Path, chromium_executable: str | Path | None = None
+) -> list[str]:
     suite_dir = path
     errors: list[str] = []
     suite_path = suite_dir / "suite-results.json"
@@ -549,7 +551,12 @@ def validate_suite(path: Path) -> list[str]:
     if dashboard_root.exists():
         from dashboard import validate_dashboard
 
-        validate_dashboard(suite_dir, data, errors)
+        validate_dashboard(
+            suite_dir,
+            data,
+            errors,
+            chromium_executable=chromium_executable,
+        )
     return errors
 
 

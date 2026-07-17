@@ -8,9 +8,13 @@ import json
 import os
 import shlex
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from safe_archive import safe_extract_tar
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,6 +26,9 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--target", type=Path, required=True)
     parser.add_argument("--maven-home", type=Path, required=True)
+    parser.add_argument(
+        "--chromium-executable", type=Path, required=True
+    )
     parser.add_argument("--current-preflight-root", type=Path)
     parser.add_argument("--clean-checkout", action="store_true")
     args = parser.parse_args()
@@ -37,6 +44,16 @@ def main() -> int:
         ]],
         ["uv", "run", "python", "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py"],
         ["uv", "run", "python", "scripts/verification_registry.py", "validate"],
+        ["uv", "run", "python", "scripts/verification_registry.py", "run"],
+        ["uv", "run", "python", "scripts/preflight_status_faults.py"],
+        [
+            "uv",
+            "run",
+            "python",
+            "-m",
+            "unittest",
+            "tests.test_final_source_replay",
+        ],
         ["npm", "ci", "--prefix", "dashboard"],
         ["npm", "audit", "--prefix", "dashboard", "--package-lock-only"],
         ["npm", "test", "--prefix", "dashboard", "--", "--run"],
@@ -50,8 +67,13 @@ def main() -> int:
     environment = dict(os.environ)
     environment.update({
         "BENCH_TARGET_REPO_PATH": str(args.target.resolve()),
+        "BENCH_CHROMIUM_EXECUTABLE": str(
+            args.chromium_executable.resolve()
+        ),
         "MAVEN_USER_HOME": str(args.maven_home.resolve()),
-        "MAVEN_OPTS": f"-Dmaven.repo.local={args.maven_home.resolve()}/.m2/repository",
+        "MAVEN_OPTS": (
+            f"-Dmaven.repo.local={args.maven_home.resolve()}/repository"
+        ),
     })
     if args.current_preflight_root:
         environment["BENCH_CURRENT_PREFLIGHT_CACHE_ROOT"] = str(
@@ -94,8 +116,13 @@ def main() -> int:
                 ["git", "-C", str(repo), "archive", "--format=tar", "-o", str(archive), "HEAD"],
                 check=True,
             )
-            checkout.mkdir()
-            subprocess.run(["tar", "-xf", str(archive), "-C", str(checkout)], check=True)
+            import tarfile
+
+            with tarfile.open(archive) as source_archive:
+                safe_extract_tar(source_archive, checkout)
+            (checkout / "dashboard/node_modules").symlink_to(
+                repo / "dashboard/node_modules", target_is_directory=True
+            )
             command = [
                 str(repo / ".venv/bin/python"),
                 "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py",

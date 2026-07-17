@@ -13,12 +13,12 @@ from jsonschema import Draft202012Validator
 
 
 TITLES = {
-    "LLM-001": "preflight contract fidelity",
-    "LLM-002": "base/reference outcome plausibility",
-    "LLM-003": "skip-policy appropriateness",
-    "LLM-004": "process-validity semantics",
-    "LLM-005": "field-provenance honesty",
-    "LLM-006": "replay package completeness",
+    "LLM-001": "status-based base/reference discrimination",
+    "LLM-002": "runtime-lock completeness",
+    "LLM-003": "network-isolation honesty",
+    "LLM-004": "generated-artifact provenance",
+    "LLM-005": "replay evidence completeness",
+    "LLM-006": "self-contained review portability",
 }
 
 
@@ -34,35 +34,126 @@ def _load(path: Path) -> dict:
 
 
 def generate(repo: Path, evidence_root: Path, *, handoff_validated: bool) -> dict:
-    del handoff_validated
     commit = subprocess.check_output(
         ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
     ).strip()
-    production = _load(evidence_root / "production-qualification.json")
-    mutation = _load(evidence_root / "methodology/mutation-calibration/mutation-calibration.json")
-    replay = _load(evidence_root / "target/replay-result.json")
-    provenance = _load(evidence_root / "validation/execution-field-provenance.json")
-    preflights = [
-        _load(evidence_root / f"preflight/{issue}/current-correctness-preflight.json")
-        for issue in ("issue-486", "issue-488", "issue-498")
-    ]
+    status_faults = _load(evidence_root / "preflight/status-fault-matrix.json")
+    runtime = _load(evidence_root / "runtime/runtime-lock.json")
+    network = _load(evidence_root / "network/network-isolation-receipt.json")
+    provenance = _load(
+        evidence_root / "replay/generated-artifact-provenance.json"
+    )
+    replay = _load(evidence_root / "replay/replay-result.json")
+    replay_manifest = _load(
+        evidence_root / "replay/replay-evidence-manifest.json"
+    )
+    verifier = _load(
+        evidence_root
+        / "verification/independent-verifier-receipt.json"
+    )
+    required_runtime_sections = {
+        "platform",
+        "jdk",
+        "node",
+        "chromium",
+        "python",
+        "maven",
+        "generic_tools",
+        "shared_library_closure",
+    }
+    required_replay_stages = {
+        "runtime_resolution",
+        "network_isolation",
+        "source_identity",
+        "current_issue_preflight",
+        "protected_channel_qualification",
+        "targeted_mutation_calibration",
+        "production_shadow",
+        "dashboard_unit",
+        "dashboard_build",
+        "dashboard_browser",
+        "strict_schemas",
+        "review_handoff_validation",
+    }
+    verifier_input = verifier.get("input", {})
     assessments = {
-        "LLM-001": all(row["contract_selector_equality"]["status"] == "passed" for row in preflights),
-        "LLM-002": all(row["base_reference_outcome_audit"]["status"] == "passed" for row in preflights),
-        "LLM-003": production.get("fault_injections", {}).get("process", {}).get("status") == "passed",
-        "LLM-004": production.get("stages", {}).get("all_required_fault_injections") is True,
-        "LLM-005": provenance.get("schema_id") == "execution-field-provenance-current"
-        and all(row.get("provenance_kind") != "suite_projection" for row in provenance.get("fields", [])),
-        "LLM-006": replay.get("independent_replay_complete") is True
-        and replay.get("network_enabled") is False,
+        "LLM-001": (
+            status_faults.get("status") == "passed"
+            and status_faults.get("accepted_faults") == 0
+            and status_faults.get("rejected_faults") == 10
+        ),
+        "LLM-002": (
+            runtime.get("schema_id") == "offline-runtime-lock-current"
+            and required_runtime_sections <= set(runtime)
+            and all(
+                runtime.get(section)
+                for section in required_runtime_sections
+            )
+        ),
+        "LLM-003": (
+            network.get("status") == "passed"
+            and network.get("network_enabled") is False
+            and network.get("default_external_route_present") is False
+            and network.get("external_tcp_probe", {}).get("succeeded")
+            is False
+            and network.get("external_dns_probe", {}).get("succeeded")
+            is False
+            and network.get("loopback_probe", {}).get("succeeded") is True
+            and network.get("network_enabled_derivation", {}).get(
+                "expression"
+            )
+            == "tcp or dns or external-default-route"
+        ),
+        "LLM-004": (
+            provenance.get("schema_id")
+            == "generated-artifact-provenance-current"
+            and provenance.get("status") == "passed"
+            and provenance.get("artifacts")
+            and all(
+                row.get("regeneration_equality") is True
+                and row.get("manual_edit_detected") is False
+                for row in provenance.get("artifacts", [])
+            )
+        ),
+        "LLM-005": (
+            replay.get("status") == "passed"
+            and replay.get("independent_replay_complete") is True
+            and required_replay_stages
+            <= {
+                name
+                for name, status in replay.get("stages", {}).items()
+                if status == "passed"
+            }
+            and replay_manifest.get("schema_id")
+            == "replay-evidence-manifest-current"
+            and bool(replay_manifest.get("entries"))
+        ),
+        "LLM-006": (
+            handoff_validated
+            and verifier.get("status") == "passed"
+            and verifier_input.get("outer_delivery_only") is True
+            and verifier_input.get("working_repository") is False
+            and verifier_input.get("builder_home") is False
+            and verifier_input.get("builder_caches") is False
+            and verifier_input.get("host_java") is False
+            and verifier_input.get("host_node") is False
+            and verifier_input.get("host_chromium") is False
+            and verifier_input.get("network") is False
+        ),
     }
     evidence = {
-        "LLM-001": ["zip://preflight/contract-selector-equality.json"],
-        "LLM-002": ["zip://preflight/base-reference-outcome-audit.json"],
-        "LLM-003": ["zip://channel/common-skip-tests.json"],
-        "LLM-004": ["zip://channel/process-validity-tests.json"],
-        "LLM-005": ["zip://validation/execution-field-provenance.json"],
-        "LLM-006": ["zip://target/replay-result.json", "zip://review-handoff-validation.json"],
+        "LLM-001": ["zip://preflight/status-fault-matrix.json"],
+        "LLM-002": ["zip://runtime/runtime-lock.json"],
+        "LLM-003": ["zip://network/network-isolation-receipt.json"],
+        "LLM-004": ["zip://replay/generated-artifact-provenance.json"],
+        "LLM-005": [
+            "zip://replay/replay-result.json",
+            "zip://replay/replay-evidence-manifest.json",
+        ],
+        "LLM-006": [
+            "zip://verification/independent-verifier-receipt.json",
+            "zip://review-handoff-validation.json",
+        ],
     }
     checks = []
     for check_id, title in TITLES.items():

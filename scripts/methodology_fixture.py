@@ -22,6 +22,9 @@ _REQUESTED_TARGET_REPO = os.environ.get("BENCH_TARGET_REPO_PATH", "").strip()
 _REQUESTED_PREFLIGHT_CACHE_ROOT = os.environ.get(
     "BENCH_CURRENT_PREFLIGHT_CACHE_ROOT", ""
 ).strip()
+_REQUESTED_CHROMIUM_EXECUTABLE = os.environ.get(
+    "BENCH_CHROMIUM_EXECUTABLE", ""
+).strip()
 
 from current_pipeline import (
     derive_non_solve_row,
@@ -88,26 +91,31 @@ def _target_repo(repo: Path) -> Path:
                 for commit in required_commits
             ):
                 candidates.append(candidate.resolve())
-        main_candidates = [
+        configured_target_url = str(
+            read_config(
+                repo / "configs/canonical-three-repetition.toml"
+            )["target_repo_url"]
+        )
+        canonical_checkouts = [
             candidate
             for candidate in candidates
-            if subprocess.run(
-                ["git", "-C", str(candidate), "branch", "--show-current"],
+            if (candidate / ".git").is_dir()
+            and subprocess.run(
+                ["git", "-C", str(candidate), "remote", "get-url", "origin"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 text=True,
                 check=False,
             ).stdout.strip()
-            == "main"
+            == configured_target_url
         ]
-        if len(main_candidates) == 1:
-            candidates = main_candidates
-        if len(candidates) != 1:
+        if len(canonical_checkouts) != 1:
             raise RuntimeError(
-                "set BENCH_TARGET_REPO_PATH; current contract commits matched "
-                f"{len(candidates)} sibling repositories"
+                "set BENCH_TARGET_REPO_PATH; expected exactly one standalone "
+                f"checkout of {configured_target_url!r}, found "
+                f"{len(canonical_checkouts)}"
             )
-        target = candidates[0]
+        target = canonical_checkouts[0]
     if not (target / ".git").exists():
         raise RuntimeError(f"immutable target repository is unavailable: {target}")
     return target
@@ -471,10 +479,37 @@ def _preflight_fault_matrix(repo: Path, record: dict[str, Any]) -> dict[str, Any
             return {"id": name, "status": "rejected", "error": str(exc)}
         return {"id": name, "status": "unexpectedly_accepted", "error": None}
 
+    scope_by_selector = {
+        str(evidence["junit_selector"]): str(requirement["scope"])
+        for requirement in contract["requirements"]
+        for evidence in requirement["evidence"]
+    }
+    indices_by_scope = {
+        scope: next(
+            index
+            for index, row in enumerate(artifact["selectors"])
+            if scope_by_selector.get(str(row["junit_selector"])) == scope
+        )
+        for scope in (
+            "requested_behavior",
+            "required_regression",
+            "reference_diagnostic",
+        )
+    }
     direct_index = next(
-        index for index, row in enumerate(artifact["selectors"])
+        index
+        for index, row in enumerate(artifact["selectors"])
         if row["protected_channel"] == "direct"
     )
+
+    def set_status(index: int, side: str, status: str, passed: bool | None = None):
+        def mutate(value, _contract, _plan) -> None:
+            value["selectors"][index][f"{side}_status"] = status
+            if passed is not None:
+                value["selectors"][index][f"{side}_passed"] = passed
+
+        return mutate
+
     mutations = {
         "old_combined_selector": lambda value, _contract, _plan: value["selectors"][direct_index].update(
             junit_selector="obsolete.CombinedBehavior#combined"
@@ -486,11 +521,41 @@ def _preflight_fault_matrix(repo: Path, record: dict[str, Any]) -> dict[str, Any
         "wrong_channel": lambda value, _contract, _plan: value["selectors"][direct_index].update(
             protected_channel="extended"
         ),
-        "wrong_base_result": lambda value, _contract, _plan: value["selectors"][direct_index].update(
-            base_passed=not value["selectors"][direct_index]["base_passed"]
+        "wrong_base_status": set_status(
+            indices_by_scope["requested_behavior"], "base", "passed", True
         ),
-        "wrong_reference_result": lambda value, _contract, _plan: value["selectors"][direct_index].update(
-            reference_passed=not value["selectors"][direct_index]["reference_passed"]
+        "wrong_reference_status": set_status(
+            indices_by_scope["requested_behavior"], "reference", "failed", False
+        ),
+        "requested_base_skipped": set_status(
+            indices_by_scope["requested_behavior"], "base", "skipped", False
+        ),
+        "requested_base_error": set_status(
+            indices_by_scope["requested_behavior"], "base", "error", False
+        ),
+        "requested_reference_skipped": set_status(
+            indices_by_scope["requested_behavior"], "reference", "skipped", False
+        ),
+        "requested_reference_error": set_status(
+            indices_by_scope["requested_behavior"], "reference", "error", False
+        ),
+        "regression_skipped": set_status(
+            indices_by_scope["required_regression"], "base", "skipped", False
+        ),
+        "regression_error": set_status(
+            indices_by_scope["required_regression"], "base", "error", False
+        ),
+        "diagnostic_skipped": set_status(
+            indices_by_scope["reference_diagnostic"], "base", "skipped", False
+        ),
+        "diagnostic_error": set_status(
+            indices_by_scope["reference_diagnostic"], "base", "error", False
+        ),
+        "boolean_false_with_wrong_status": set_status(
+            indices_by_scope["requested_behavior"], "base", "skipped", False
+        ),
+        "published_status_boolean_disagreement": set_status(
+            indices_by_scope["requested_behavior"], "reference", "passed", False
         ),
         "stale_source_hash": lambda value, _contract, _plan: value["selectors"][direct_index].update(
             protected_source_sha256="0" * 64
@@ -729,7 +794,14 @@ def run_fixture(repo: Path, defect: str | None = None, artifact_root: Path | Non
                 row["contract_selector_equality"]["status"] == "passed"
                 for row in preflight_records
             )
-            preflight_faults = _preflight_fault_matrix(repo, preflight_records[1])
+            preflight_faults = _preflight_fault_matrix(
+                repo,
+                next(
+                    row
+                    for row in preflight_records
+                    if row["issue_id"] == "issue-488"
+                ),
+            )
             old_config_fault = _old_config_fault(repo)
             stages["preflight_binding_fault_injections"] = preflight_faults["status"] == "passed"
             stages["old_current_config_field_rejection"] = old_config_fault["status"] == "rejected"
@@ -890,7 +962,10 @@ def run_fixture(repo: Path, defect: str | None = None, artifact_root: Path | Non
             browser = {"status": "not_run", "reason": "build_browser false"}
             if build_browser:
                 output = build_dashboard(root, suite)
-                browser = _browser_smoke(output / "index.html")
+                browser = _browser_smoke(
+                    output / "index.html",
+                    _REQUESTED_CHROMIUM_EXECUTABLE or None,
+                )
                 stages["dashboard_build"] = (output / "index.html").is_file()
                 stages["browser_and_accessible_table"] = browser.get("status") == "passed"
             else:
@@ -969,7 +1044,27 @@ def run_fixture(repo: Path, defect: str | None = None, artifact_root: Path | Non
             stages["normative_formula_consistency"] = run_normative_audit(repo)["status"] == "passed"
             stages["private_prerelease_cleanup"] = run_private_audit(repo)["status"] == "passed"
             stages["review_handoff_generation_extraction_validation"] = production_shadow_probe(repo, root)
-            suite_errors = validate_suite(root)
+            previous_chromium = os.environ.get(
+                "BENCH_CHROMIUM_EXECUTABLE"
+            )
+            if _REQUESTED_CHROMIUM_EXECUTABLE:
+                os.environ["BENCH_CHROMIUM_EXECUTABLE"] = (
+                    _REQUESTED_CHROMIUM_EXECUTABLE
+                )
+            try:
+                suite_errors = validate_suite(
+                    root,
+                    chromium_executable=(
+                        _REQUESTED_CHROMIUM_EXECUTABLE or None
+                    ),
+                )
+            finally:
+                if previous_chromium is None:
+                    os.environ.pop("BENCH_CHROMIUM_EXECUTABLE", None)
+                else:
+                    os.environ["BENCH_CHROMIUM_EXECUTABLE"] = (
+                        previous_chromium
+                    )
             stages["independent_published_suite_validation"] = not suite_errors
             if artifact_root is not None:
                 artifact_root.mkdir(parents=True, exist_ok=True)

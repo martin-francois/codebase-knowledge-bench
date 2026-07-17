@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
@@ -159,11 +160,18 @@ class DownstreamConsumerTests(unittest.TestCase):
             inner = root / "review-handoff.zip"
             checksum = root / "review-handoff.zip.sha256"
             receipt = root / "review-handoff.zip.validation.json"
-            for path in (inner, checksum, receipt):
+            with zipfile.ZipFile(inner, "w") as archive:
+                archive.writestr(
+                    "verification/independent-verifier/"
+                    "independent_verifier.sh",
+                    "#!/bin/sh\n",
+                )
+            for path in (checksum, receipt):
                 path.write_bytes(b"fixture")
             self.assertEqual(
                 {
                     "agent-response.md",
+                    "independent-verifier.sh",
                     "review-handoff/review-handoff.zip",
                     "review-handoff/review-handoff.zip.sha256",
                     "review-handoff/review-handoff.zip.validation.json",

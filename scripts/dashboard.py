@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -101,6 +102,21 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
                 "candidate_test_quality": _number(row.get("candidate_test_quality")),
                 "reference_behavior_match": _number(row.get("reference_behavior_match_rate")),
                 "requirement_vector": row.get("requirement_vector") or [],
+                "requirement_status_details": [
+                    {
+                        key: trace[key]
+                        for key in (
+                            "case_id",
+                            "requirement_id",
+                            "scope",
+                            "junit_selector",
+                            "base_status",
+                            "reference_status",
+                            "passed",
+                        )
+                    }
+                    for trace in row.get("requirement_evidence_trace") or []
+                ],
                 "protected_direct_full_pass": row.get("protected_direct_full_pass"),
                 "protected_common_full_pass": row.get("protected_common_full_pass"),
                 "reference_diagnostic_evaluable": row.get("reference_diagnostic_evaluable"),
@@ -275,14 +291,30 @@ def _schema_check(data: dict[str, Any]) -> list[str]:
     return errors
 
 
-def _browser_smoke(index: Path) -> dict[str, Any]:
-    chromium = shutil.which("chromium") or shutil.which("chromium-browser")
+def _browser_smoke(
+    index: Path, chromium_path: str | Path | None = None
+) -> dict[str, Any]:
+    chromium = (
+        str(chromium_path).strip()
+        if chromium_path is not None
+        else os.environ.get("BENCH_CHROMIUM_EXECUTABLE", "").strip()
+    )
     if not chromium:
-        return {"status": "not_supported", "reason": "system Chromium unavailable"}
+        return {
+            "status": "failed",
+            "reason": "BENCH_CHROMIUM_EXECUTABLE is required",
+        }
+    executable = Path(chromium)
+    if not executable.is_file():
+        return {
+            "status": "failed",
+            "reason": "configured Chromium executable is unavailable",
+            "configured_path": chromium,
+        }
     try:
         completed = subprocess.run(
             [
-                chromium,
+                str(executable),
                 "--headless",
                 "--no-sandbox",
                 "--disable-gpu",
@@ -306,13 +338,17 @@ def _browser_smoke(index: Path) -> dict[str, Any]:
     return {
         "status": "passed" if passed else "failed",
         "returncode": completed.returncode,
+        "executable": str(executable.resolve()),
         "table_rendered": 'data-testid="data-table"' in completed.stdout,
         "chart_rendered": 'data-testid="chart"' in completed.stdout,
     }
 
 
 def validate_dashboard(
-    suite_dir: Path, suite_result: dict[str, Any], errors: list[str]
+    suite_dir: Path,
+    suite_result: dict[str, Any],
+    errors: list[str],
+    chromium_executable: str | Path | None = None,
 ) -> dict[str, Any]:
     output = suite_dir / "report-assets" / "operational-dashboard"
     required = [
@@ -364,7 +400,9 @@ def validate_dashboard(
             schema_errors.append(
                 f"dashboard missing accessibility feature: {required_text}"
             )
-    report["browser_smoke"] = _browser_smoke(output / "index.html")
+    report["browser_smoke"] = _browser_smoke(
+        output / "index.html", chromium_executable
+    )
     if report["browser_smoke"]["status"] == "failed":
         schema_errors.append("dashboard Chromium smoke failed")
     report["errors"] = schema_errors
