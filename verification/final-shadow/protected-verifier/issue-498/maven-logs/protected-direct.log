@@ -1,7 +1,0 @@
-Configured protected direct command: ./mvnw -q -Djunit.parallel.enabled=false -Dtest=LocalSetupTest#dryRunConflictIsRejected+dryRunConflictIsRejectedBeforeSideEffects+interactiveConflictIsRejected+interactiveConflictIsRejectedBeforeSideEffects+noInProgressOmitsActiveAndMoveConfiguration+noInProgressOmitsPhysicalInProgressList+noInProgressOmitsPickupSideEffect+noInProgressOmitsWorkflowState+nonInteractiveConflictIsRejected+nonInteractiveConflictIsRejectedBeforeSideEffects test
-Exit code: 0
-
-STDOUT
-
-
-STDERR

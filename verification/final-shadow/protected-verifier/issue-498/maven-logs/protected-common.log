@@ -1,7 +1,0 @@
-Configured protected common command: ./mvnw -q -Djunit.parallel.enabled=false -Dtest=LocalSetupTest test
-Exit code: 0
-
-STDOUT
-
-
-STDERR

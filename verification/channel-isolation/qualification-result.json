@@ -1,9 +1,0 @@
-{
-  "fault_injection_status": "passed",
-  "production_status": "passed",
-  "rederivation_status": "passed",
-  "schema_id": "channel-isolation-qualification-current",
-  "status": "passed",
-  "tamper_status": "passed",
-  "token_tamper_status": "passed"
-}

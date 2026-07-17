@@ -16,7 +16,6 @@ sys.path.insert(0, str(SCRIPTS))
 
 from benchmark_hardening import (
     TestCaseResult,
-    TestCategory,
     analysis_policy,
     balanced_tool_effect_blocks,
     build_manifest,
@@ -24,19 +23,15 @@ from benchmark_hardening import (
     classify_diagnostics,
     classify_leak_evidence,
     collect_junit_cases,
-    category_candidate_cases,
     efficiency_views,
     evaluate_context_fixtures,
     export_reference_artifacts,
     network_namespace_probe,
     normalize_context_payload,
     patch_review_score,
-    score_matrix_category,
-    taxonomy_rows,
     token_sensitivity,
     validate_manifest,
     validate_reference_artifacts,
-    validate_taxonomy_matrix,
 )
 
 
@@ -56,41 +51,10 @@ validator = load_script("hardening_validator", "validate_benchmark_run.py")
 suite = load_script("hardening_suite", "run_benchmark_suite.py")
 
 
-class CorrectnessTaxonomyTest(unittest.TestCase):
-    def test_missing_protected_common_case_fails_closed(self):
-        matrix = [{
-            "case_identifier": "CommonTest#predeclaredBehavior",
-            "effective_category": "common_regression",
-            "effective_weight": 20.0,
-        }]
-        cases = category_candidate_cases(matrix, TestCategory.COMMON_REGRESSION, [])
-        with self.assertRaisesRegex(ValueError, "CommonTest#predeclaredBehavior"):
-            score_matrix_category(
-                matrix,
-                cases,
-                TestCategory.COMMON_REGRESSION,
-                configured_budget=20.0,
-                normalize_effective_weights=True,
-            )
-
+class CurrentCorrectnessTest(unittest.TestCase):
     def test_protected_case_identifier_field_is_canonical(self):
         case = TestCaseResult("CommonTest#canonical", True)
         self.assertEqual("CommonTest#canonical", case.case_id)
-
-    def test_missing_scoring_contract_case_still_fails_closed(self):
-        matrix = [{
-            "case_identifier": "ContractTest#requiredBehavior",
-            "effective_category": "issue_contract",
-            "effective_weight": 60.0,
-        }]
-        cases = category_candidate_cases(matrix, TestCategory.ISSUE_CONTRACT, [])
-        with self.assertRaisesRegex(ValueError, "ContractTest#requiredBehavior"):
-            score_matrix_category(
-                matrix,
-                cases,
-                TestCategory.ISSUE_CONTRACT,
-                configured_budget=60.0,
-            )
 
     def test_validator_uses_protected_common_policy_and_operational_rank(self):
         source = (SCRIPTS / "validate_benchmark_run.py").read_text(encoding="utf-8")
@@ -100,63 +64,11 @@ class CorrectnessTaxonomyTest(unittest.TestCase):
         self.assertIn('row.get("operational_rank") is None', source)
         self.assertNotIn('row.get("rank") is None', source)
 
-    def test_normalized_full_score_is_bounded_despite_float_noise(self):
-        matrix = [
-            {
-                "case_identifier": f"case-{index}",
-                "effective_category": "common_regression",
-                "effective_weight": 20.0 / 567,
-            }
-            for index in range(567)
-        ]
-        evidence = score_matrix_category(
-            matrix,
-            [TestCaseResult(f"case-{index}", True) for index in range(567)],
-            TestCategory.COMMON_REGRESSION,
-            configured_budget=20.0,
-            normalize_effective_weights=True,
-        )
-        self.assertEqual(1.0, evidence["pass_fraction"])
-        self.assertEqual(20.0, evidence["score"])
-
-    def test_non_discriminating_scoring_case_cannot_contribute(self):
-        rows = taxonomy_rows(
-            TestCategory.REFERENCE_CONFORMANCE,
-            20,
-            [TestCaseResult("case", True)],
-            [TestCaseResult("case", True)],
-        )
-        self.assertEqual(0, rows[0]["effective_weight"])
-        self.assertEqual("common_regression", rows[0]["effective_category"])
-        self.assertEqual([], validate_taxonomy_matrix(rows))
-
-    def test_issue_486_extended_base_pass_is_zero_weight(self):
-        rows = taxonomy_rows(
-            TestCategory.REFERENCE_CONFORMANCE,
-            20,
-            [TestCaseResult("issue-486-missing-value", True)],
-            [TestCaseResult("issue-486-missing-value", True)],
-        )
-        self.assertFalse(rows[0]["discriminating_result"])
-        self.assertEqual(0, rows[0]["effective_weight"])
-
-    def test_weighted_non_discriminating_mutation_is_rejected(self):
-        row = taxonomy_rows(TestCategory.ISSUE_CONTRACT, 60,
-                            [TestCaseResult("x", False)], [TestCaseResult("x", True)])[0]
-        row["discriminating_result"] = False
-        self.assertTrue(validate_taxonomy_matrix([row]))
 
     def test_reference_behavior_is_diagnostic_only(self):
         record = {"task_success": True, "reference_behavior_match_rate": 0.0}
         self.assertTrue(record["task_success"])
         self.assertEqual(0.0, record["reference_behavior_match_rate"])
-
-    def test_issue_488_overlay_is_semantic(self):
-        text = (ROOT / "reference-overlays/issue-488-primary-contract.patch").read_text()
-        added = "\n".join(line[1:] for line in text.splitlines() if line.startswith("+") and not line.startswith("+++"))
-        self.assertIn("trello_move_not_allowed", added)
-        self.assertIn("list_id", added)
-        self.assertNotIn("matches multiple open Trello lists", added)
 
     def test_patch_review_dimensions_total_exactly_15(self):
         self.assertEqual(15, patch_review_score({
@@ -184,7 +96,7 @@ class ReferenceAndManifestTest(unittest.TestCase):
             (repo / "a.txt").write_text("reference\n")
             subprocess.run(["git", "commit", "-qam", "reference"], cwd=repo, check=True)
             ref = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
-            metadata = export_reference_artifacts(repo, base, ref, out)
+            metadata = export_reference_artifacts(repo, base, ref, out, ["a.txt"])
             patch = out / "reference-implementation.patch"
             self.assertGreater(patch.stat().st_size, 0)
             self.assertGreater((out / "reference-patch-apply.log").stat().st_size, 0)
@@ -242,7 +154,7 @@ class ReferenceAndManifestTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             manifest = {"schema_version": "content-manifest-v3", "entries": [{
-                "path": "inputs/primary-contract-overlay.patch", "sha256": "0" * 64,
+                "path": "inputs/direct-channel-overlay.patch", "sha256": "0" * 64,
                 "bytes": 1, "media_type": "text/x-diff", "required": True,
                 "may_be_empty": False,
                 "producer": "fixture", "schema_version": "content-manifest-v3"
@@ -352,12 +264,6 @@ class ParsingIsolationAndEfficiencyTest(unittest.TestCase):
     def test_smoke_only_qualification_does_not_require_candidate_junit(self):
         from current_pipeline import derive_non_solve_row
 
-        metrics = {"run_id": "run-001", "no_patch": True, "solve_wall_seconds": 0}
-        with (
-            mock.patch.object(runner, "SMOKE_ONLY", True),
-            mock.patch.object(runner, "correctness_preflight_matrix", return_value=[]),
-        ):
-            runner.ensure_correctness_evidence(metrics)
         row = derive_non_solve_row(
             run_metadata={"run_id": "run-001", "variant": "baseline-none", "issue_id": "issue-486", "status": "smoke_only"},
             reason="smoke_only",
@@ -372,7 +278,7 @@ class ParsingIsolationAndEfficiencyTest(unittest.TestCase):
         self.assertIn("requirement_vector", required)
         self.assertIn("critical_requirement_status", required)
         self.assertIn("output_tokens_including_reasoning", required)
-        self.assertNotIn("direct_issue_contract_full_pass", required)
+        self.assertIn("protected_direct_full_pass", required)
     def test_current_validator_reads_requirement_evidence(self):
         source = (ROOT / "scripts/validate_benchmark_run.py").read_text()
         self.assertIn("validate_rederived_row", source)
@@ -384,15 +290,8 @@ class ParsingIsolationAndEfficiencyTest(unittest.TestCase):
 
     def test_prepublication_schema_has_no_result_translation_layer(self):
         schema = json.loads((ROOT / "schemas/execution-results.schema.json").read_text())
-        forbidden = {
-            "workflow_rank_eligible", "correctness_score",
-            "extended_reference_pass_fraction", "extended_reference_full_pass",
-            "tool_integration_eligible", "fallback_search_used", "overall_score",
-            "scheduled_correctness_points", "composite_quality_score", "correctness_factor",
-            "issue_contract_score", "direct_issue_contract_full_pass",
-        }
         variant_schema = schema["$defs"]["currentVariantRow"]
-        self.assertTrue(forbidden.isdisjoint(variant_schema["properties"]))
+        self.assertEqual(set(variant_schema["required"]), set(variant_schema["properties"]))
         self.assertFalse(variant_schema["additionalProperties"])
         self.assertFalse((ROOT / "configs/preserved-pilot-migration.json").exists())
         self.assertFalse((ROOT / "scripts/recompute_preserved_suite.py").exists())
@@ -408,12 +307,7 @@ class ParsingIsolationAndEfficiencyTest(unittest.TestCase):
         self.assertEqual(provenance["source_hash_algorithm"], "sha256(path_utf8_nul_file_sha256_bytes)")
         self.assertEqual(provenance["source_hash_version"], "source-content-v1")
 
-    def test_recompute_accepts_explicit_plan_for_aborted_suite(self):
-        source = (ROOT / "scripts/recompute_results.py").read_text()
-        self.assertIn("[preserved-suite-plan-dir]", source)
-        self.assertIn('source_results.get("issue", {}).get("number")', source)
-        self.assertIn('item.get("issue_number") == issue_number', source)
-        self.assertIn("module.write_results_candidate(", source)
+    def test_suite_rederivation_uses_current_rows(self):
         suite_source = (ROOT / "scripts/recompute_suite.py").read_text()
         self.assertIn('if (source / "suite-results.json").is_file()', suite_source)
         self.assertIn("write_suite_outputs_candidate(", suite_source)

@@ -1,22 +1,57 @@
-import json
 import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from mutation_calibration import classify_calibration
+
 
 class MutationCalibrationProvenanceTests(unittest.TestCase):
-    def test_protected_junit_ownership_and_source_hash_are_explicit(self) -> None:
-        root = Path(__file__).resolve().parents[1]
-        evidence_root = root / "verification/methodology-current/mutation-calibration/i486-import-active-drop"
-        provenance = json.loads((evidence_root / "protected-verification.json").read_text())
-        result = json.loads((evidence_root / "result.json").read_text())
+    def test_clean_targeted_mutant_requires_common_process_and_isolation(self) -> None:
+        definition = {"calibration_kind": "targeted"}
+        positive = classify_calibration(
+            definition,
+            intended_failure=True,
+            unexpected_requested_collateral=set(),
+            regression_gates_pass=True,
+            common_pass=True,
+            overlap_pass=True,
+            process_valid=True,
+        )
+        self.assertEqual("killed", positive["status"])
+        self.assertTrue(positive["calibrated"])
+        for field in (
+            "common_pass", "overlap_pass", "process_valid", "regression_gates_pass"
+        ):
+            arguments = {
+                "intended_failure": True,
+                "unexpected_requested_collateral": set(),
+                "regression_gates_pass": True,
+                "common_pass": True,
+                "overlap_pass": True,
+                "process_valid": True,
+            }
+            arguments[field] = False
+            with self.subTest(field=field):
+                observed = classify_calibration(definition, **arguments)
+                self.assertFalse(observed["calibrated"])
 
-        self.assertIs(provenance["candidate_junit_included"], False)
-        self.assertEqual([], provenance["candidate_owned_cases"])
-        self.assertTrue(result["selector_overlap_empty"])
-        self.assertTrue(result["protected_source_hashes"]["common"])
-        self.assertTrue(result["protected_source_hashes"]["direct"])
+    def test_published_mutant_receipt_includes_source_and_process_provenance(self) -> None:
+        source = (ROOT / "scripts/mutation_calibration.py").read_text(encoding="utf-8")
+        for field in (
+            '"protected_source_hashes"',
+            '"channel_process_audit"',
+            '"configured_common_skip_count"',
+            '"selector_overlap_empty"',
+        ):
+            self.assertIn(field, source)
+
+    def test_mutants_are_serialized_to_prevent_common_suite_interference(self) -> None:
+        source = (ROOT / "scripts/mutation_calibration.py").read_text(encoding="utf-8")
+        self.assertNotIn("ThreadPoolExecutor", source)
+        self.assertIn("calibration must execute mutants serially", source)
 
 
 if __name__ == "__main__":

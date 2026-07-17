@@ -82,7 +82,7 @@ def run(repo: Path) -> dict[str, object]:
         **positive,
         "negative_fixtures": negative_fixtures,
         "all_targeted_negative_fixtures_rejected": all(row["rejected"] for row in negative_fixtures),
-        "invocation": "uv run python scripts/normative_document_audit.py --output verification/final-methodology/normative-document-audit.json",
+        "invocation": "uv run python scripts/normative_document_audit.py --output <evidence-root>/audit/normative-document-audit.json",
     }
 
 

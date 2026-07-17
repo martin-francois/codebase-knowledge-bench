@@ -13,7 +13,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from current_pipeline import validate_schema
-from current_row import RETIRED_FIELDS
 from methodology_fixture import run_fixture
 from run_benchmark import parse_jsonl
 from run_benchmark_suite import aggregate_group
@@ -32,11 +31,10 @@ class FinalProductionShadowTests(unittest.TestCase):
         self.assertEqual(84.0, parsed["modeled_weighted_token_load"])
         self.assertEqual(120, parsed["total_reported_tokens"])
 
-    def test_shadow_002_retired_fields_are_rejected(self):
+    def test_shadow_002_current_fields_are_strict(self):
         result = run_fixture(ROOT, artifact_root=None, build_browser=True)
         self.assertEqual("passed", result["status"])
-        for name in RETIRED_FIELDS:
-            self.assertTrue(result["injected_regressions"][f"retired:{name}"])
+        self.assertTrue(result["injected_regressions"]["missing_token_accounting_id"])
 
     def test_shadow_003_task_success_drives_per_success_cost(self):
         row = {
@@ -72,7 +70,7 @@ class FinalProductionShadowTests(unittest.TestCase):
 
     def test_shadow_007_suite_rows_are_strict(self):
         result = run_fixture(ROOT, artifact_root=None, build_browser=True)
-        self.assertTrue(result["injected_regressions"]["retired_suite_field"])
+        self.assertTrue(result["injected_regressions"]["unknown_suite_field"])
 
     def test_shadow_008_full_production_shadow(self):
         result = run_fixture(ROOT, artifact_root=None, build_browser=True)
@@ -119,11 +117,11 @@ class FinalProductionShadowTests(unittest.TestCase):
         self.assertEqual("failed_as_expected", result["status"])
         self.assertFalse(result["row"]["task_success"])
 
-    def test_REG_007_common_denominator_excludes_only_skips(self):
+    def test_REG_007_common_denominator_includes_skips_as_zero_credit(self):
         result = run_fixture(ROOT, "unlisted_common_skipped", build_browser=False)
         row = result["row"]
         self.assertEqual(
-            100 * row["protected_common_pass_count"] / (row["protected_common_pass_count"] + row["protected_common_fail_count"]),
+            100 * row["protected_common_pass_count"] / row["protected_common_case_count"],
             row["common_regression_score"],
         )
 

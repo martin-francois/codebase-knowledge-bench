@@ -20,12 +20,12 @@ class LlmSelfReviewBindingTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(manifest).hexdigest(), actual)
         self.assertEqual(64, len(actual))
 
-    def test_current_llm_report_schema_covers_all_36_checks(self) -> None:
+    def test_current_llm_report_schema_covers_six_semantic_checks(self) -> None:
         schema = json.loads((ROOT / "schemas/llm-verification-report.schema.json").read_text())
         checks = schema["properties"]["checks"]
-        self.assertEqual(36, checks["minItems"])
-        self.assertEqual(36, checks["maxItems"])
-        self.assertIn("03[0-6]", checks["items"]["properties"]["id"]["pattern"])
+        self.assertEqual(6, checks["minItems"])
+        self.assertEqual(6, checks["maxItems"])
+        self.assertEqual("^LLM-00[1-6]$", checks["items"]["properties"]["id"]["pattern"])
 
 
 if __name__ == "__main__":

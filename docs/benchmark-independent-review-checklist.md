@@ -1,29 +1,19 @@
-# Independent benchmark review checklist
+# Independent review checklist
 
-Each step maps to durable verification IDs in `verification/verification-registry.json`.
-
-1. Verify ZIP SHA-256 and bytes. (`PUB-001`, `PUB-019`)
-2. Extract to a fresh directory. (`PUB-019`, `LLM-008`)
-3. Verify every content-manifest path, size, SHA-256, and root. (`PUB-002`, `PUB-003`)
-4. Discover and verify every embedded manifest dynamically. (`PUB-004`)
-5. Parse every primary JSONL. (`PUB-005`, `TOK-001`)
-6. Recompute token fields and call lifecycle. (`PUB-005`, `TOK-002`, `TOK-014`)
-7. Reconcile scheduled, terminal, retried, and infrastructure attempts. (`PUB-006`)
-8. Verify treatment adherence and intended-tool use. (`PUB-011`, `LLM-007`)
-9. Verify protected-test provenance and candidate-test isolation. (`COR-004`, `COR-016`)
-10. Reconstruct every source role. (`PUB-018`)
-11. Validate model, toolchain, schedule, and cache locks. (`TOK-009`, `TOK-010`, `LLM-008`)
-12. Validate retry provenance and child-spawn receipts. (`PUB-012`, `PUB-013`, `PUB-014`)
-13. Recompute operator-summary values from canonical JSON. (`PUB-007`, `PUB-008`, `PUB-024`)
-14. Compare machine JSON, Markdown, dashboard, and readiness. (`LLM-001`, `PUB-015`)
-15. Validate paired versus aggregate labels. (`PUB-009`, `PUB-010`, `TOK-012`)
-16. Validate intervals, bootstrap support, cluster status, and heterogeneity. (`PUB-020`, `LLM-006`)
-17. Validate cache metrics, TTL wording, and weight sensitivity. (`TOK-003`, `TOK-006`, `TOK-008`)
-18. Validate requirement coverage, critical requirements, and mutation calibration. (`COR-001`, `COR-003`, `LLM-004`)
-19. Validate delayed-retry and missing-block sensitivity. (`PUB-020`)
-20. Validate direct attribution separately. (`LLM-007`)
-21. Run dashboard offline, browser, accessibility, and table checks. (`PUB-015`, `PUB-016`, `PUB-017`)
-22. Verify no task-related source, test, or schema is untracked. (`PUB-022`, `PUB-023`)
-23. Verify deterministic publication launched no model or child. (`PUB-025`)
-24. Verify final commit is pushed and remote SHA matches. (`PUB-023`, `LLM-008`)
-25. Perform applicable LLM semantic verification. (`LLM-001` through `LLM-010`)
+1. Verify the outer ZIP byte count and SHA-256, then extract it safely.
+2. Verify the delivery manifest count/root and every member hash.
+3. Verify the detached inner checksum and detailed validation sidecar.
+4. Extract the inner ZIP and verify its manifest count/root and every member hash.
+5. Reconstruct the exact Git tree and commit from `source/` and compare `origin/main` with `HEAD`.
+6. Inspect the pre-fix audit and the old-preflight removal scan.
+7. For each issue, compare contract selectors with actual preflight selectors, channels, source hashes,
+   base/reference outcomes, and process validity.
+8. Recompute the common skip and protected-process truth tables.
+9. Rederive execution rows from raw JSONL, JUnit, receipts, frozen policy, and preflight artifacts.
+10. Rebuild suite rows and aggregates; compare reports and dashboard data with strict schemas.
+11. Inspect targeted mutation results for intended kills, neighboring requested behavior, zero common
+    skips, regression gates, process validity, and collateral failures.
+12. Verify the target Git bundle contains every required commit and exact tree.
+13. Verify dependency manifests, run `target/replay.sh` with network disabled, and compare its receipt.
+14. Review all nine automated checks and their focused negative fixtures.
+15. Treat the six semantic checks as implementing-agent self-review, not independent assurance.

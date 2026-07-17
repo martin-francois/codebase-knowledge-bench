@@ -23,22 +23,23 @@ from protected_verifier import load_channel_plan, validate_selector_isolation
 class ProtectedChannelPlanTests(unittest.TestCase):
     def contracts(self):
         for issue in ("issue-486", "issue-488", "issue-498"):
-            yield issue, json.loads(
-                (ROOT / f"verification/methodology-current/contracts/{issue}.json").read_text()
-            )
+            contract = json.loads((ROOT / f"verification/methodology-current/contracts/{issue}.json").read_text())
+            channel_plan = json.loads((ROOT / f"verification/methodology-current/channel-plans/{issue}.json").read_text())
+            yield issue, contract, channel_plan
 
     def test_PCI_001_current_contract_has_only_channel_specific_overlays(self):
         schema = json.loads((ROOT / "schemas/requirement-contract-current.schema.json").read_text())
         Draft202012Validator.check_schema(schema)
-        for issue, contract in self.contracts():
+        for issue, contract, channel_plan in self.contracts():
             with self.subTest(issue=issue):
                 Draft202012Validator(schema).validate(contract)
                 self.assertNotIn("protected_overlay", contract)
                 self.assertNotIn("applies_to_channels", json.dumps(contract))
-                self.assertEqual({"common", "direct", "extended"}, set(contract["protected_channels"]))
+                self.assertNotIn("protected_channels", contract)
+                self.assertEqual({"common", "direct", "extended"}, set(channel_plan["channels"]))
                 overlay_paths = [
                     row["overlay"]["path"]
-                    for row in contract["protected_channels"].values()
+                    for row in channel_plan["channels"].values()
                     if row["overlay"] is not None
                 ]
                 self.assertEqual(len(overlay_paths), len(set(overlay_paths)))
@@ -46,8 +47,8 @@ class ProtectedChannelPlanTests(unittest.TestCase):
 
     def test_PCI_002_expected_selectors_are_disjoint(self):
         total_common = 0
-        for issue, contract in self.contracts():
-            plan = load_channel_plan(contract, ROOT)
+        for issue, contract, channel_plan in self.contracts():
+            plan = load_channel_plan(channel_plan, contract, ROOT)
             expected = {
                 channel: set(plan["channels"][channel]["expected_selectors"])
                 for channel in ("common", "direct", "extended")
@@ -59,8 +60,8 @@ class ProtectedChannelPlanTests(unittest.TestCase):
         self.assertEqual(1171, total_common)
 
     def test_PCI_003_observed_selector_isolation_has_narrow_negative(self):
-        contract = dict(next(contract for issue, contract in self.contracts() if issue == "issue-488"))
-        plan = load_channel_plan(contract, ROOT)
+        _, contract, channel_plan = next(row for row in self.contracts() if row[0] == "issue-488")
+        plan = load_channel_plan(channel_plan, contract, ROOT)
         observed = {
             channel: [
                 {"junit_selector": selector, "status": "passed", "junit_xml_path": "TEST.xml"}
@@ -75,16 +76,15 @@ class ProtectedChannelPlanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cross-channel selector overlap"):
             validate_selector_isolation(plan, contaminated)
 
-    def test_PCI_004_common_policy_never_copies_reference_tests(self):
+    def test_PCI_004_common_policy_has_no_file_copy_architecture(self):
         source = (ROOT / "scripts/protected_verifier.py").read_text()
-        self.assertIn('"reference_test_files_copied": []', source)
-        self.assertNotIn("reference_tests=True", (ROOT / "scripts/run_benchmark.py").read_text())
+        self.assertNotIn("files_copied", source)
         self.assertNotIn("def _protected_channel(", (ROOT / "scripts/run_benchmark.py").read_text())
 
 
 class CompleteRederivationTests(unittest.TestCase):
     def test_RDR_001_descriptor_is_complete_and_raw_metadata_excludes_derived_fields(self):
-        self.assertEqual(100, len(EXECUTION_FIELDS))
+        self.assertEqual(98, len(EXECUTION_FIELDS))
         self.assertTrue(set(RAW_METADATA_FIELDS) < set(EXECUTION_FIELDS))
         source = (ROOT / "scripts/validate_benchmark_run.py").read_text()
         self.assertIn("validate_rederived_row", source)
@@ -117,7 +117,7 @@ class DownstreamConsumerTests(unittest.TestCase):
     def test_DOWNSTREAM_001_shadow_and_mutation_use_live_executor(self):
         shadow = (ROOT / "scripts/methodology_fixture.py").read_text()
         mutation = (ROOT / "scripts/mutation_calibration.py").read_text()
-        self.assertIn("execute_protected_verification", shadow)
+        self.assertIn("preflight_issue", shadow)
         self.assertNotIn("def _write_junit", shadow)
         self.assertIn("execute_protected_verification", mutation)
         self.assertIn("configured_common_full_pass", mutation)
@@ -135,6 +135,7 @@ class DownstreamConsumerTests(unittest.TestCase):
             regression_gates_pass=True,
             common_pass=True,
             overlap_pass=True,
+            process_valid=True,
         )
         self.assertEqual("killed", result["status"])
         self.assertTrue(result["calibrated"])
@@ -145,6 +146,7 @@ class DownstreamConsumerTests(unittest.TestCase):
             regression_gates_pass=False,
             common_pass=False,
             overlap_pass=True,
+            process_valid=True,
         )
         self.assertEqual("collateral_regression", rejected["status"])
         self.assertFalse(rejected["calibrated"])
