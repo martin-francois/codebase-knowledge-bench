@@ -18,6 +18,7 @@ SEED_PACKAGES = (
     "bash",
     "ca-certificates",
     "coreutils",
+    "dash",
     "findutils",
     "gawk",
     "git",
@@ -31,6 +32,7 @@ SEED_PACKAGES = (
     "zstd",
 )
 TOOL_PATHS = {
+    "posix_sh": "/bin/sh",
     "bash": "/usr/bin/bash",
     "git": "/usr/bin/git",
     "ip": "/usr/bin/ip",

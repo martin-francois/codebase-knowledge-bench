@@ -334,13 +334,15 @@ has no finalize, resume, conditional-stage, or previous-output mode.
 
 `RPL-004` The delivery packages content-addressed JDK, Node/npm, Chromium, Python runtime,
 Python environment, Maven repository, dashboard dependency archives, and one replay OS root
-containing Bash, Git, ip, mount, unshare, tar, unzip, zstd, required coreutils, awk, the dynamic
-loader, and their transitive shared libraries. A strict runtime lock classifies every boundary entry
-as `host_bootstrap_prerequisite`, `packaged_semantic_runtime`, or `kernel_capability`, records its
+containing a POSIX shell interpreter for packaged script shebangs, Bash, Git, ip, mount, unshare,
+tar, unzip, zstd, required coreutils, awk, the dynamic loader, and their transitive shared
+libraries. A strict runtime lock classifies every boundary entry as
+`host_bootstrap_prerequisite`, `packaged_semantic_runtime`, or `kernel_capability`, records its
 path and version, records a hash for packaged bytes, and declares `capability` or `exact_identity`
-validation. Replay invokes semantic utilities only from the packaged root and verifies every
-packaged identity before substantive work. It MUST NOT exact-hash-lock an unbundled host executable.
-Host Java, Node, Chromium, Maven cache, browser paths, and generic distro tools MUST NOT be selected.
+validation. Replay invokes semantic utilities and script interpreters only from the packaged root
+and verifies every packaged identity before substantive work. It MUST NOT exact-hash-lock an
+unbundled host executable. Host Java, Node, Chromium, Maven cache, browser paths, and generic distro
+tools MUST NOT be selected.
 
 `RPL-005` The qualifying launcher creates a new network and mount namespace, enables loopback only,
 mounts an empty resolver configuration, and exposes no external route. Before stages run it records

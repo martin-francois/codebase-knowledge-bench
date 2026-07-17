@@ -32,11 +32,13 @@ from replay_rootfs import (  # noqa: E402
 from safe_archive import inspect_tree  # noqa: E402
 from target_replay import (  # noqa: E402
     REQUIRED_PACKAGED_SEMANTIC_RUNTIMES,
+    ROOTFS_TOOL_PATHS,
     _copytree,
     _dashboard_node_modules_ignore,
     _generic_runtime_resolution,
     _release_fault_injection,
     _replay_script,
+    _rootfs_artifacts,
     _validate_runtime_lock_shape,
     validate_generated_script,
 )
@@ -193,6 +195,7 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
     def _lock(self, root: Path) -> dict:
         tools = {}
         for name in (
+            "posix_sh",
             "bash",
             "git",
             "ip",
@@ -204,13 +207,19 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
             "sha256sum",
             "awk",
         ):
-            path = root / f"runtime/replay-rootfs/usr/bin/{name}"
+            executable = (
+                "dash" if name == "posix_sh" else name
+            )
+            path = root / f"runtime/replay-rootfs/usr/bin/{executable}"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(f"packaged-{name}\n".encode())
             tools[name] = {
                 "role": "packaged_semantic_runtime",
                 "path": path.relative_to(root).as_posix(),
-                "execution_path": f"/usr/bin/{name}",
+                "execution_path": (
+                    "/bin/sh" if name == "posix_sh"
+                    else f"/usr/bin/{name}"
+                ),
                 "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                 "version": f"fixture {name}",
                 "validation_mode": "exact_identity",
@@ -329,6 +338,7 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
     def test_rootfs_contract_contains_every_semantic_generic_tool(self) -> None:
         required = required_rootfs_paths()
         for name in (
+            "posix_sh",
             "bash",
             "git",
             "ip",
@@ -353,6 +363,7 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
                 "python",
                 "maven",
                 "maven_wrapper",
+                "posix_sh",
                 "bash",
                 "git",
                 "ip",
@@ -377,6 +388,47 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
             'manifests["maven-home"]["archive_sha256"]',
             source,
         )
+
+    def test_packaging_rejects_missing_packaged_shebang_interpreter(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            rootfs = Path(temporary) / "rootfs"
+            for name, execution_path in ROOTFS_TOOL_PATHS.items():
+                if name == "posix_sh":
+                    continue
+                path = rootfs.joinpath(*Path(execution_path).parts[1:])
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(f"fixture-{name}\n".encode())
+            loader = rootfs / "usr/lib64/ld-linux-x86-64.so.2"
+            loader.parent.mkdir(parents=True, exist_ok=True)
+            loader.write_bytes(b"fixture-loader\n")
+            receipt = {
+                "source_image_digest": (
+                    "debian@sha256:" + ("d" * 64)
+                ),
+                "packages": [],
+            }
+            with self.assertRaisesRegex(
+                ValueError,
+                "rootfs semantic tool is missing: /bin/sh",
+            ):
+                _rootfs_artifacts(rootfs, receipt)
+
+            dash = rootfs / "usr/bin/dash"
+            dash.parent.mkdir(parents=True, exist_ok=True)
+            dash.write_bytes(b"fixture-dash\n")
+            (rootfs / "bin").symlink_to("usr/bin")
+            (rootfs / "usr/bin/sh").symlink_to("dash")
+            _, lock, _ = _rootfs_artifacts(rootfs, receipt)
+            self.assertEqual(
+                "/bin/sh",
+                lock["tools"]["posix_sh"]["execution_path"],
+            )
+            self.assertEqual(
+                hashlib.sha256(dash.read_bytes()).hexdigest(),
+                lock["tools"]["posix_sh"]["sha256"],
+            )
 
     def test_rootfs_prunes_only_optional_casefold_collisions(self) -> None:
         self.assertTrue(

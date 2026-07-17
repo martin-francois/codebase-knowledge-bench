@@ -104,6 +104,7 @@ HOST_DIRECTORY_MASKS = (
     "/root/.m2",
 )
 GENERIC_SEMANTIC_TOOLS = (
+    "posix_sh",
     "bash",
     "git",
     "ip",
@@ -127,6 +128,7 @@ REQUIRED_PACKAGED_SEMANTIC_RUNTIMES = {
     *GENERIC_SEMANTIC_TOOLS,
 }
 ROOTFS_TOOL_PATHS = {
+    "posix_sh": "/bin/sh",
     "bash": "/usr/bin/bash",
     "git": "/usr/bin/git",
     "ip": "/usr/bin/ip",
