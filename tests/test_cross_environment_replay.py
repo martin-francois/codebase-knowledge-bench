@@ -36,6 +36,7 @@ from target_replay import (  # noqa: E402
     _release_fault_injection,
     _replay_script,
     _validate_runtime_lock_shape,
+    validate_generated_script,
 )
 
 
@@ -140,6 +141,20 @@ class BootstrapBoundaryTests(unittest.TestCase):
 
 
 class PackagedRuntimeBoundaryTests(unittest.TestCase):
+    def test_replay_syntax_validation_uses_packaged_bash_without_sh(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            binary_root = Path(temporary)
+            os.symlink("/usr/bin/bash", binary_root / "bash")
+            with mock.patch.dict(
+                os.environ,
+                {"PATH": str(binary_root)},
+                clear=False,
+            ):
+                result = validate_generated_script(_replay_script())
+        self.assertEqual("passed", result["status"], result["errors"])
+
     def _lock(self, root: Path) -> dict:
         tools = {}
         for name in (

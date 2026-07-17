@@ -363,7 +363,7 @@ def validate_generated_script(script: str) -> dict[str, Any]:
         stream.write(script)
         stream.flush()
         syntax = subprocess.run(
-            ["sh", "-n", stream.name],
+            ["bash", "--posix", "-n", stream.name],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
