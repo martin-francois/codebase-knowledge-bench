@@ -333,12 +333,14 @@ command, output path/hash, regeneration equality, and `manual_edit_detected=fals
 has no finalize, resume, conditional-stage, or previous-output mode.
 
 `RPL-004` The delivery packages content-addressed JDK, Node/npm, Chromium, Python runtime,
-Python environment, Maven repository, and dashboard dependency archives. A strict runtime lock
-records platform/architecture; semantic runtime versions, vendors, executable paths and hashes;
-Maven distribution identity; generic Git, Bash, tar, zstd, and network-launcher identities; and
-shared-library closure roots. Replay sets explicit runtime paths and verifies every locked executable
-hash before substantive work. Host Java, Node, Chromium, Maven cache, and browser paths MUST NOT be
-selected.
+Python environment, Maven repository, dashboard dependency archives, and one replay OS root
+containing Bash, Git, ip, mount, unshare, tar, unzip, zstd, required coreutils, awk, the dynamic
+loader, and their transitive shared libraries. A strict runtime lock classifies every boundary entry
+as `host_bootstrap_prerequisite`, `packaged_semantic_runtime`, or `kernel_capability`, records its
+path and version, records a hash for packaged bytes, and declares `capability` or `exact_identity`
+validation. Replay invokes semantic utilities only from the packaged root and verifies every
+packaged identity before substantive work. It MUST NOT exact-hash-lock an unbundled host executable.
+Host Java, Node, Chromium, Maven cache, browser paths, and generic distro tools MUST NOT be selected.
 
 `RPL-005` The qualifying launcher creates a new network and mount namespace, enables loopback only,
 mounts an empty resolver configuration, and exposes no external route. Before stages run it records
@@ -376,10 +378,66 @@ production shadow, dashboard/browser validation, and immutable evidence identiti
 
 `RPL-011` Final release uses two process boundaries. A builder with final source, immutable evidence,
 target source, and local dependencies creates the outer ZIP. A fresh verifier receives only that ZIP
-plus generic Linux process/network-namespace primitives, has no builder repository/home/caches,
-semantic host runtimes, network, or previous replay output, and independently validates both
-manifests, reconstructs source, executes the source-generated replay, validates all replay evidence
-and handoff semantics, and writes a receipt. `GO` requires this verifier to pass.
+plus the current minimal host bootstrap prerequisites and declared kernel capabilities, has no
+builder repository/home/caches, semantic host runtimes, network, or previous replay output, and
+independently validates both manifests, reconstructs source, executes the source-generated replay,
+validates all replay evidence and handoff semantics, and writes a receipt. `GO` requires the exact
+final outer to pass in at least two materially different Linux userspaces.
+
+`RPL-012` The only host bootstrap boundary is Linux, a POSIX-compatible `/bin/sh`, an `unzip`
+implementation that capability-tests exact-name `-p` streaming, and basic `mkdir`, `chmod`, `mktemp`,
+and `readlink`. The outer launcher unsets `LD_LIBRARY_PATH`, `PYTHONPATH`, `JAVA_HOME`, and
+`NODE_PATH` before any host utility runs. It streams a fixed set of exact-name regular bootstrap
+members and invokes packaged Python through the packaged ELF loader with a scoped `--library-path`.
+It MUST NOT use host awk, sha256sum, sort, sed, tr, zipinfo, Git, tar, zstd, unshare, mount, or ip.
+
+`RPL-013` `runtime/replay-rootfs/`, `runtime/replay-rootfs-manifest.json`,
+`runtime/replay-rootfs-lock.json`, and `runtime/replay-rootfs-license-manifest.json` define the sole
+packaged generic semantic runtime. The rootfs manifest covers every path, type, mode, byte count,
+hash, and link target. The rootfs lock binds its manifest root and each required tool. Missing or
+changed packaged tools fail exact-identity validation even when a matching host tool exists.
+
+`RPL-014` The content-addressed namespace launcher has two explicit modes. Rootless mode creates a
+user namespace, maps the invoking UID and GID to root, and then creates mount, network, and PID
+namespaces. Privileged mode is accepted only when its declared effective UID and capabilities pass
+before replay. Both modes use the packaged rootfs, mount an empty resolver, enable loopback only, and
+emit UID/GID maps, namespace identities, capability measurements, mount results, interfaces, and
+routes. No privilege fallback is implicit.
+
+`RPL-015` Network isolation is measured from the actual replay namespace. The receipt includes
+interface and route inventories, resolver bytes and hash, failed external TCP and DNS probes, and a
+successful loopback listener/connect probe. Any non-loopback default route, successful external
+probe, host resolver use, missing new namespace, or failed loopback probe rejects replay.
+
+`RPL-016` Independent verification preserves failure evidence. On any failed stage it records the
+last completed stage, command log, stdout, stderr, failure receipt, content-addressed partial evidence
+manifest, and all runtime, namespace, and network artifacts already produced. A large worktree may be
+removed only after its diagnostic manifest is durable; replay evidence is never unconditionally
+deleted before the failure receipt.
+
+`RPL-017` Final validation is bound to immutable final bytes. After the final outer ZIP is built, its
+own packaged verifier runs against that exact ZIP in every required userspace. Authoritative
+`<outer>.sha256`, `<outer>.independent-validation.json`, and
+`<outer>.portability-matrix.json` receipts are detached because a ZIP cannot contain its own final
+hash. Candidate or pre-final receipts cannot satisfy readiness.
+
+`RPL-018` Cross-environment qualification provides only the final outer ZIP to clean, empty replay
+roots in at least two materially different Linux userspaces. It records the pinned image or rootfs
+digest, kernel, distribution, glibc, bootstrap capability results, namespace mode, replay duration
+and exit, network result, evidence root, and exact outer and inner identities. At least one userspace
+must differ from the builder for every formerly host-locked generic tool.
+
+`RPL-019` Every numbered split ZIP is strictly smaller than 500,000,000 bytes and contains its
+payload part, a shared split manifest, JSON and Markdown indices, reconstruction script, final outer
+checksum, detached final validation and portability receipts, and the final agent response.
+Validation checks each part and its manifest, concatenates payloads by declared offset, reproduces
+the exact final outer, validates detached binding and both ZIP layers, and requires a passed
+portability matrix.
+
+`RPL-020` Committed generators produce byte-identical independent-verifier, replay launcher, runtime
+lock, replay-rootfs lock, and split reconstruction bytes. Packaged copies are compared against fresh
+source generation. Manual post-generation edits and parallel compatibility replay implementations
+are forbidden.
 
 ## 16. Isolation, privacy, and security
 
@@ -420,13 +478,19 @@ rejection, common skip fail-closed behavior, channel process validity, field pro
 classification, source-generated replay equality and embedded syntax, generated provenance, packaged
 semantic runtimes, enforced/measured network isolation, exact safe archive sets and links, fresh
 one-shot replay without finalization, source commit reconstruction, independent verifier isolation,
-target bundle completeness, and executable offline replay.
+target bundle completeness, executable offline replay, bootstrap environment isolation, packaged
+Python loader invocation, absence of host semantic-runtime dependencies, packaged generic-tool
+completeness, namespace capability contracts, rootless replay when supported, network receipt
+authenticity, failure-evidence preservation, exact-final-outer receipt binding, cross-environment
+portability, and split-delivery inclusion of every detached final receipt.
 
 `VER-003` After deterministic checks, the active coding agent performs semantic self-review for
 status-based base/reference discrimination, runtime-lock completeness, network-isolation honesty,
 generated-artifact provenance, replay-evidence completeness, self-contained review portability,
-preflight contract fidelity, outcome plausibility, skip policy, process semantics, and provenance
-honesty. Scripts and CI MUST NOT invoke a model for that review.
+host-versus-packaged runtime boundaries, cross-distro portability claims, namespace privilege
+disclosure, final-versus-candidate receipt identity, failure diagnostic completeness, preflight
+contract fidelity, outcome plausibility, skip policy, process semantics, and provenance honesty.
+Scripts and CI MUST NOT invoke a model for that review.
 
 ## 19. Publication and external review
 

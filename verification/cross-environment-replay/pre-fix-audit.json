@@ -1,0 +1,405 @@
+{
+  "schema_id": "cross-environment-replay-pre-fix-audit-current",
+  "task_id": "cross-environment-replay-portability-final",
+  "status": "defects_reproduced",
+  "audit_ordering": {
+    "mandatory_task_receipt_created_before_source_edit": true,
+    "repository_source_edited_before_this_audit": false,
+    "receipt_json": "output://cross-environment-replay-final/task-receipt.json",
+    "receipt_markdown": "output://cross-environment-replay-final/task-receipt.md"
+  },
+  "base_source": {
+    "commit": "7954bc49e4f8bcb0b7314171cb679f1b74b05e7e",
+    "tree": "56f3404a7cfa60399f05ba7238830ea6f3af8fcd",
+    "branch": "main",
+    "remote_main_equal": true
+  },
+  "current_source_generated_delivery": {
+    "outer_filename": "current-outer.zip",
+    "bytes": 958010382,
+    "sha256": "68dc0fac10abc632cb4d7b83c39cb19b075b8106f1907ee3ac6ff7373f4376f1",
+    "inner_bytes": 958000211,
+    "inner_sha256": "37ca3aba84ce50aee55708b1619519afb40256fed721312a25e20c96bbacae48",
+    "reconstruction": {
+      "part_001_payload_bytes": 480000000,
+      "part_001_payload_sha256": "dbf7d18bb731a26537184ad349ba6dd43d7e25d46d3e8bbf1dcd131cc0b719ea",
+      "part_002_payload_bytes": 478010382,
+      "part_002_payload_sha256": "e670e5bcf818052c63b5a6db9bd3fdcd95fc55c78bc6146164c17fe3588fddd7",
+      "concatenation_matches_outer": true
+    },
+    "evidence": "output://cross-environment-replay-final/pre-fix/current-delivery/current-outer.zip"
+  },
+  "audit_environments": {
+    "debian_13": {
+      "tag": "ckg-replay-portability:debian13",
+      "image_id": "sha256:95416caefd1ffd129a991b4b8432862144c9386a64919f93ec14326b0986042c",
+      "base_digest": "debian@sha256:fac46bff2e02f51425b6e33b0e1169f55dfb053d83511ca28aa50c09fd5ed7a4",
+      "distribution": "Debian GNU/Linux 13.6 (trixie)",
+      "glibc": "2.41-12+deb13u3",
+      "kernel": "Linux 6.1.0-50-amd64 x86_64",
+      "network_during_reproduction": "none"
+    },
+    "debian_12": {
+      "tag": "ckg-replay-portability:debian12",
+      "image_id": "sha256:6a593e71a86cc208670b0de70efd0e0717e06bc4a1f9b8c688e635d2e1baf9cc",
+      "base_digest": "debian@sha256:30482e873082e906a4908c10529180aefb6f77620aea7404b909829fadc5d168",
+      "distribution": "Debian GNU/Linux 12 (bookworm)",
+      "glibc": "2.36",
+      "network_during_reproduction": "none"
+    }
+  },
+  "findings": [
+    {
+      "id": "PORT-001",
+      "title": "Packaged bootstrap libraries contaminate host utilities",
+      "status": "reproduced",
+      "source": [
+        {
+          "path": "scripts/independent_verifier.sh",
+          "lines": "192-207",
+          "responsibility": "Globally exports the packaged bootstrap LD_LIBRARY_PATH, then launches host sha256sum and awk."
+        },
+        {
+          "path": "scripts/independent_verifier.sh",
+          "lines": "21-185",
+          "responsibility": "Uses host awk, sha256sum, sort, sed, tr, zipinfo, wc, uniq, dirname, and find before the packaged verifier starts."
+        }
+      ],
+      "exact_command": "docker run --rm --privileged --network none -v \"$OUTPUT_ROOT/cross-environment-replay-final/pre-fix/current-delivery/current-outer.zip:/input/current-outer.zip:ro\" -v \"$OUTPUT_ROOT/cross-environment-replay-final/pre-fix/PORT-001:/evidence\" ckg-replay-portability:debian13 bash -c 'unzip -p /input/current-outer.zip independent-verifier.sh >/tmp/independent-verifier.sh && chmod 755 /tmp/independent-verifier.sh && /tmp/independent-verifier.sh /input/current-outer.zip /evidence/result'",
+      "exit_code": 134,
+      "exact_output": {
+        "stdout": "",
+        "stderr": [
+          "sha256sum: /tmp/independent-verifier-bootstrap.vewoMi/inner/runtime/bootstrap-python/system-libs/libc.so.6: version `GLIBC_2.38' not found (required by /lib/x86_64-linux-gnu/libcrypto.so.3)",
+          "awk: /tmp/independent-verifier-bootstrap.vewoMi/inner/runtime/bootstrap-python/system-libs/libc.so.6: version `GLIBC_2.38' not found (required by /lib/x86_64-linux-gnu/libreadline.so.8)",
+          "awk: /tmp/independent-verifier-bootstrap.vewoMi/inner/runtime/bootstrap-python/system-libs/libc.so.6: version `GLIBC_2.38' not found (required by /lib/x86_64-linux-gnu/libgmp.so.10)",
+          "*** stack smashing detected ***: terminated",
+          "/tmp/independent-verifier.sh: line 1:  8952 Aborted                 (core dumped) INDEPENDENT_VERIFIER_UNZIP_SHA256=$(sha256sum \"$INDEPENDENT_VERIFIER_UNZIP_PATH\" | awk '{print $1}')"
+        ]
+      },
+      "host_utility_identity": {
+        "awk": {
+          "path": "/usr/bin/awk",
+          "realpath": "/usr/bin/gawk",
+          "version": "GNU Awk 5.2.1",
+          "sha256": "c90aba59e13752526d9cb767533f3802d3b7cd5dd6355615516d21abbc28b005"
+        },
+        "sha256sum": {
+          "path": "/usr/bin/sha256sum",
+          "version": "sha256sum (GNU coreutils) 9.7",
+          "sha256": "89f8c1d1ba3c76138f3771e1a91e2796ade6180b1c1e4258c04698ff32787c97"
+        }
+      },
+      "packaged_loader_and_libraries": [
+        {
+          "path": "runtime/bootstrap-python/system-libs/ld-linux-x86-64.so.2",
+          "bytes": 215000,
+          "sha256": "02bcda52c1a5dfc236f94d9e5255b4a0e26347d8a372a5223b650e31f291ce3c"
+        },
+        {
+          "path": "runtime/bootstrap-python/system-libs/libc.so.6",
+          "bytes": 1926232,
+          "sha256": "6b4a45352fd0c540a9c7c718f35ce8c8e46a4e482f9d3885a910c32d1a0e1421"
+        },
+        {
+          "path": "runtime/bootstrap-python/system-libs/libdl.so.2",
+          "bytes": 14480,
+          "sha256": "95d521b2c39fd0333271b6fdcdddff878ae82001a304313a837b8e728ebe3cb1"
+        },
+        {
+          "path": "runtime/bootstrap-python/system-libs/libm.so.6",
+          "bytes": 911904,
+          "sha256": "7f2ca87f652f56b094462474b076749e90e689d0ecb9cb63c7679820b271b4e7"
+        },
+        {
+          "path": "runtime/bootstrap-python/system-libs/libpthread.so.0",
+          "bytes": 14480,
+          "sha256": "b93a680da8a05b939b235c1533572e7a2f6d3d8808bf70209997edc64ea5fedc"
+        },
+        {
+          "path": "runtime/bootstrap-python/system-libs/librt.so.1",
+          "bytes": 14640,
+          "sha256": "41c72def458b8cfb6aab96a7dbada7454dd216d89aac65fb085eb52bead51def"
+        },
+        {
+          "path": "runtime/bootstrap-python/system-libs/libutil.so.1",
+          "bytes": 14480,
+          "sha256": "bc5d8f67c3b3c6eea14e9d9f389cd4bc6034e4db9314849d7d5a5d756df0a9ca"
+        }
+      ],
+      "why_it_matters": "The supposedly independent verifier aborts before packaged Python on a newer supported Linux userspace. A builder-host-only pass cannot qualify portability.",
+      "planned_implementation": "Make the launcher POSIX /bin/sh, sanitize LD_LIBRARY_PATH, PYTHONPATH, JAVA_HOME, and NODE_PATH before any host command, stream only fixed exact-name regular bootstrap members with capability-tested host unzip -p, and invoke packaged Python through its packaged loader with a scoped --library-path.",
+      "focused_negative_fixture": "Run the exact production outer verifier with the real packaged bootstrap libraries in both Debian 12 and Debian 13 while the incoming host LD_LIBRARY_PATH points at hostile libraries; assert that no host utility resolves a packaged library and both verifier launches reach packaged Python.",
+      "evidence": [
+        "output://cross-environment-replay-final/pre-fix/PORT-001/host-inventory.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-001/image-identities.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-001/packaged-library-hashes.tsv",
+        "output://cross-environment-replay-final/pre-fix/PORT-001/stdout.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-001/stderr.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-001/exit-code.txt"
+      ]
+    },
+    {
+      "id": "PORT-002",
+      "title": "Current bootstrap portability test cannot detect packaged-library contamination",
+      "status": "reproduced",
+      "source": [
+        {
+          "path": "tests/test_final_source_replay.py",
+          "lines": "465-505",
+          "responsibility": "Builds a fake inner ZIP whose bootstrap Python is a two-line /bin/sh script and contains no runtime/bootstrap-python/system-libs."
+        }
+      ],
+      "exact_command": "uv run python -m unittest -v tests.test_final_source_replay.NetworkNamespaceLauncherTest.test_outer_only_bootstrap_executes_with_system_awk",
+      "exit_code": 0,
+      "exact_output": {
+        "stdout": "",
+        "stderr": "test_outer_only_bootstrap_executes_with_system_awk (tests.test_final_source_replay.NetworkNamespaceLauncherTest.test_outer_only_bootstrap_executes_with_system_awk) ... ok\n\n----------------------------------------------------------------------\nRan 1 test\n\nOK"
+      },
+      "why_it_matters": "The test passes only because the dangerous packaged libc and loader are absent. It exercises a structurally different bootstrap and gives a false portability signal.",
+      "planned_implementation": "Replace the fake bootstrap fixture with a production-package fixture containing the real loader and packaged shared libraries, and execute the exact generated production launcher.",
+      "focused_negative_fixture": "Mutate only the launcher to globally export the real packaged system-libs before a host awk/sha256sum capability probe; require deterministic GLIBC contamination detection on Debian 13.",
+      "evidence": [
+        "output://cross-environment-replay-final/pre-fix/PORT-002/source-excerpt.txt",
+        "output://cross-environment-replay-final/pre-fix/PORT-002/stdout.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-002/stderr.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-002/exit-code.txt"
+      ]
+    },
+    {
+      "id": "PORT-003",
+      "title": "Unbundled generic distro tools are exact-hash locked",
+      "status": "reproduced",
+      "source": [
+        {
+          "path": "scripts/target_replay.py",
+          "lines": "492-514",
+          "responsibility": "Builds exact path/hash/version locks for generic executables found on the builder."
+        },
+        {
+          "path": "scripts/target_replay.py",
+          "lines": "1399-1421",
+          "responsibility": "_generic_runtime_resolution resolves host PATH executables and rejects any path/hash mismatch."
+        }
+      ],
+      "exact_command": "docker run --rm --network none -v \"$CURRENT_PACKAGE:/package:ro\" -v \"$OUTPUT_ROOT/cross-environment-replay-final/pre-fix/PORT-003:/audit:ro\" ckg-replay-portability:debian13 /package/runtime/bootstrap-python/system-libs/ld-linux-x86-64.so.2 --library-path /package/runtime/bootstrap-python/system-libs /package/runtime/bootstrap-python/bin/python3.14 /audit/run-generic-resolution.py /package/runtime/runtime-lock.json",
+      "exit_code": 0,
+      "exact_output": {
+        "errors": [
+          "generic tool lock mismatch: bash",
+          "generic tool lock mismatch: git",
+          "generic tool lock mismatch: ip",
+          "generic tool lock mismatch: mount",
+          "generic tool lock mismatch: tar",
+          "generic tool lock mismatch: unshare",
+          "generic tool lock mismatch: unzip",
+          "generic tool lock mismatch: zstd"
+        ],
+        "observed_sha256": {
+          "bash": "223fe8564b60636bc738b6178d3ba9a50ef7d791266b0efae6363bb716e4c47f",
+          "git": "356db14e102d68a1a37d8a1ac577dfd678d45d46e92f468bef8b7154e7bfdc60",
+          "ip": "024784c6d16b183dc7c97d93a943a9270976f167f95f771e14d72442dc657f0c",
+          "mount": "92253cf919646b4a0242998526d35eea39204dff0363e74086290d63ccb39fed",
+          "tar": "38adf50825f773d353d6bda1a7cd70c22f8877823e44821c1d2bd0a52ddc3871",
+          "unshare": "d82900dfd64b5dd01493d206236575623c2dcf306c466dbe127e171c18cb4614",
+          "unzip": "0e8d7c498e9143e0e2529e6a76d5785d53755ef04ee6f9286088ea645621da73",
+          "zstd": "3eb7744cf8fd1ecd46d617098ee870b3e7911fe570ffaba662c1c5b7d6456020"
+        },
+        "package_search": {
+          "bash": "NOT_SUPPLIED",
+          "git": "NOT_SUPPLIED",
+          "ip": "NOT_SUPPLIED",
+          "mount": "NOT_SUPPLIED",
+          "tar": "NOT_SUPPLIED",
+          "unshare": "NOT_SUPPLIED",
+          "unzip": "NOT_SUPPLIED",
+          "zstd": "NOT_SUPPLIED"
+        }
+      },
+      "why_it_matters": "Replay semantics are pinned to the builder distro without shipping those bytes, so the current package deterministically rejects a different distro even before semantic replay.",
+      "planned_implementation": "Package one content-addressed replay rootfs containing every generic semantic tool, its loader, and transitive libraries; resolve each semantic command by packaged absolute path or inside that root; replace host exact-identity checks with packaged-manifest exact-identity checks.",
+      "focused_negative_fixture": "Require different Debian 13 host hashes to be irrelevant, then separately delete one packaged semantic tool and mutate one packaged tool byte; both packaged faults must be rejected by exact identity validation.",
+      "evidence": [
+        "output://cross-environment-replay-final/pre-fix/PORT-003/stdout.json",
+        "output://cross-environment-replay-final/pre-fix/PORT-003/package-generic-tool-search.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-003/source-excerpt.txt",
+        "output://cross-environment-replay-final/pre-fix/PORT-003/exit-code.txt"
+      ]
+    },
+    {
+      "id": "PORT-004",
+      "title": "Namespace and privilege capability contract is implicit",
+      "status": "reproduced",
+      "source": [
+        {
+          "path": "scripts/target_replay.py",
+          "lines": "150-245",
+          "responsibility": "Generated replay uses host unshare, mount, and ip without a declared user-namespace mapping or explicit privilege mode."
+        },
+        {
+          "path": "SPEC.md",
+          "lines": "343-347,377-382",
+          "responsibility": "Requires new network/mount namespaces and generic Linux primitives but does not define effective UID, capabilities, user namespace settings, or rootless/privileged support."
+        }
+      ],
+      "exact_commands": [
+        "docker run --rm --network none ckg-replay-portability:debian12 unshare --net --mount --fork --pid --mount-proc --propagation unchanged /audit/namespace-probe.sh",
+        "docker run --rm --network none --user 65534:65534 --security-opt seccomp=unconfined ckg-replay-portability:debian12 unshare --user --map-root-user --net --mount --fork --propagation unchanged /audit/namespace-probe.sh",
+        "docker run --rm --privileged --network none ckg-replay-portability:debian12 unshare --net --mount --fork --pid --mount-proc --propagation unchanged /audit/namespace-probe.sh"
+      ],
+      "exact_output": {
+        "current_default_mode": {
+          "effective_uid": 0,
+          "cap_eff": "00000000a80425fb",
+          "cap_sys_admin": false,
+          "cap_net_admin": false,
+          "unprivileged_userns_clone": 1,
+          "max_user_namespaces": 61428,
+          "exit_code": 1,
+          "stderr": "unshare: unshare failed: Operation not permitted"
+        },
+        "rootless_user_net_mount_mode": {
+          "effective_uid_inside": 0,
+          "uid_map": "0 65534 1",
+          "gid_map": "0 65534 1",
+          "new_user_namespace": true,
+          "new_network_namespace": true,
+          "new_mount_namespace": true,
+          "mount_probe": "passed",
+          "interfaces": "loopback only",
+          "routes": "local loopback routes only",
+          "exit_code": 0
+        },
+        "privileged_mode": {
+          "effective_uid_inside": 0,
+          "uid_map": "0 0 4294967295",
+          "new_network_namespace": true,
+          "new_mount_namespace": true,
+          "mount_probe": "passed",
+          "interfaces": "loopback only",
+          "routes": "local loopback routes only",
+          "exit_code": 0
+        }
+      },
+      "why_it_matters": "The same current command fails under an ordinary container capability set, while reduced rootless and explicit privileged probes work under different prerequisites. The package neither tests nor discloses which contract it supports.",
+      "planned_implementation": "Declare host bootstrap, packaged semantic runtime, and kernel capability roles separately; ship one exact namespace launcher strategy; preflight user namespace, UID/GID mapping, mount, network, and PID prerequisites; emit namespace, mount, and network receipts; permit privileged mode only as an explicit checked mode.",
+      "focused_negative_fixture": "Disable unprivileged user namespaces for rootless mode and remove CAP_SYS_ADMIN/CAP_NET_ADMIN for privileged mode; require an early capability-specific failure receipt in each case.",
+      "evidence": [
+        "output://cross-environment-replay-final/pre-fix/PORT-004/default-root.stdout.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-004/default-root.stderr.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-004/rootless-user-net-mount.stdout.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-004/privileged.stdout.log"
+      ]
+    },
+    {
+      "id": "PORT-005",
+      "title": "Packaged verifier receipt authenticates a candidate rather than the final outer",
+      "status": "reproduced",
+      "source": [
+        {
+          "path": "scripts/final_source_replay.py",
+          "lines": "133-152,253-285",
+          "responsibility": "Creates a pending/candidate receipt and qualifies a candidate outer."
+        },
+        {
+          "path": "scripts/final_source_replay.py",
+          "lines": "336-355",
+          "responsibility": "Copies the candidate verifier receipt into the handoff before rebuilding the final inner and outer."
+        },
+        {
+          "path": "scripts/external_review_delivery.py",
+          "lines": "delivery validation path",
+          "responsibility": "Validates the embedded inner sidecar but does not generate a detached receipt bound to the immutable final outer bytes."
+        }
+      ],
+      "exact_command": "unzip -p \"$CURRENT_OUTER\" review-handoff/review-handoff.zip > \"$PORT005/inner.zip\" && unzip -p \"$PORT005/inner.zip\" verification/independent-verifier-receipt.json > \"$PORT005/packaged-verifier-receipt.json\" && unzip -p \"$PORT005/inner.zip\" review-handoff-manifest.json > \"$PORT005/actual-inner-manifest.json\"",
+      "exit_code": 0,
+      "exact_output": {
+        "packaged_receipt_outer": {
+          "filename": "candidate-outer-7954bc4.zip",
+          "bytes": 958001461,
+          "sha256": "d1c5ed2e2a8f38d984c088f4d23cdf10acf4b3fca8db374e39359cf100ab0fe4"
+        },
+        "actual_final_outer": {
+          "filename": "current-outer.zip",
+          "bytes": 958010382,
+          "sha256": "68dc0fac10abc632cb4d7b83c39cb19b075b8106f1907ee3ac6ff7373f4376f1"
+        },
+        "packaged_receipt_inner_manifest": {
+          "count": 4609,
+          "root": "6c8be377aace8833a57eb4d7a32e919fd17fead3b16cc21e0a2a1f0c701b1358"
+        },
+        "actual_final_inner_manifest": {
+          "count": 4613,
+          "root": "1963409a4e17491ec2a7badba339bebd2eae93a662e707c53710f6c0471c6490"
+        },
+        "outer_identity_matches": false,
+        "inner_manifest_identity_matches": false
+      },
+      "why_it_matters": "A passing receipt for different bytes cannot authenticate the delivery sent to reviewers, even if the later package contains the receipt.",
+      "planned_implementation": "Construct the immutable final outer first, verify that exact file in every required userspace, and generate only detached final SHA-256, independent-validation, and portability-matrix receipts containing the exact final outer and inner identities.",
+      "focused_negative_fixture": "Point a detached receipt at a byte-identical candidate name but different outer hash or at the correct outer with a stale inner manifest root; the exact release validator must reject both.",
+      "evidence": [
+        "output://cross-environment-replay-final/pre-fix/PORT-005/packaged-verifier-receipt.json",
+        "output://cross-environment-replay-final/pre-fix/PORT-005/actual-inner-manifest.json",
+        "output://cross-environment-replay-final/pre-fix/PORT-005/source-excerpt.txt"
+      ]
+    },
+    {
+      "id": "PORT-006",
+      "title": "Failed replay evidence is deleted before the failure receipt",
+      "status": "reproduced",
+      "source": [
+        {
+          "path": "scripts/independent_verifier.py",
+          "lines": "616-710",
+          "responsibility": "Creates fresh-work and replay in the output, then unconditionally removes both after replay and evidence validation."
+        },
+        {
+          "path": "scripts/independent_verifier.py",
+          "lines": "711-794",
+          "responsibility": "Writes command log and final failed receipt only after the diagnostic directories are gone."
+        }
+      ],
+      "injection": "The exact current outer was run in a Debian 12 image whose host /usr/bin/unshare was deterministically absent.",
+      "exact_command": "docker run --rm --privileged --network none -v \"$OUTPUT_ROOT/cross-environment-replay-final/pre-fix/current-delivery/current-outer.zip:/input/current-outer.zip:ro\" -v \"$OUTPUT_ROOT/cross-environment-replay-final/pre-fix/PORT-006/verifier-output:/evidence\" ckg-replay-portability:debian12-missing-unshare bash -c 'unzip -p /input/current-outer.zip independent-verifier.sh >/tmp/independent-verifier.sh && chmod 755 /tmp/independent-verifier.sh && /tmp/independent-verifier.sh /input/current-outer.zip /evidence/result'",
+      "exit_code": 1,
+      "exact_output": {
+        "verifier_stderr": "fresh offline replay failed with exit code 127",
+        "replay_exit_code": 127,
+        "receipt_status": "failed",
+        "fresh_work_exists_after_failure": false,
+        "replay_evidence_exists_after_failure": false,
+        "remaining_files": [
+          "command-log.json",
+          "independent-verifier-receipt.json",
+          "stderr.log",
+          "stdout.log"
+        ]
+      },
+      "why_it_matters": "The receipt identifies only a generic exit code and missing expected files; the workspace, partial stage evidence, runtime resolution, and namespace/network diagnostics needed to localize the failure are destroyed.",
+      "planned_implementation": "Track the last completed stage, always retain logs and partial evidence, write a failure-receipt and content-addressed partial evidence manifest, preserve replay output on failure, and prune a large worktree only after its diagnostic manifest is durable.",
+      "focused_negative_fixture": "Inject a missing packaged semantic tool after namespace entry; require failed status plus failure-receipt.json, command-log.json, stdout.log, stderr.log, partial-evidence-manifest.json, last completed stage, and any produced runtime/network receipts.",
+      "evidence": [
+        "output://cross-environment-replay-final/pre-fix/PORT-006/verifier-output/result/independent-verifier-receipt.json",
+        "output://cross-environment-replay-final/pre-fix/PORT-006/verifier-output/result/command-log.json",
+        "output://cross-environment-replay-final/pre-fix/PORT-006/verifier-output/result/stdout.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-006/verifier-output/result/stderr.log",
+        "output://cross-environment-replay-final/pre-fix/PORT-006/exit-code.txt"
+      ]
+    }
+  ],
+  "conclusion": {
+    "prior_go_portable": false,
+    "classification": "repository_fixable_deterministic_defects",
+    "builder_host_only_pass_is_no_go": true,
+    "implementation_may_begin": true
+  },
+  "prohibited_operation_counts": {
+    "model_calls": 0,
+    "codex_implementation_children": 0,
+    "qualifications": 0,
+    "canaries": 0,
+    "benchmark_matrices": 0
+  }
+}

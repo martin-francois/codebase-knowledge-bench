@@ -135,7 +135,7 @@
       "why": "A declarative offline flag does not enforce isolation.", "kind": "automated",
       "checker_id": "NETWORK-NAMESPACE-001", "checker_implementation": "scripts/verification_checkers.py:network_namespace", "checker_version": "current", "expected_evidence_schema": null,
       "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
-      "positive_fixture": "unshare, loopback, empty resolv, and bind-mount bindings", "negative_fixture": "network namespace call removed", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/network-isolation-receipt.json"], "failure_severity": "blocker", "status": "implemented"
+      "positive_fixture": "unshare, loopback, empty resolv, and bind-mount bindings", "negative_fixture": "network namespace call removed", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/network-namespace-receipt.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
       "id": "NETWORK-RECEIPT-DERIVATION-001", "title": "Network receipt derivation", "area": "security",
@@ -143,7 +143,7 @@
       "why": "A hard-coded false value can conceal external connectivity.", "kind": "automated",
       "checker_id": "NETWORK-RECEIPT-DERIVATION-001", "checker_implementation": "scripts/verification_checkers.py:network_receipt_derivation", "checker_version": "current", "expected_evidence_schema": null,
       "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
-      "positive_fixture": "failed TCP/DNS, no default route, successful loopback", "negative_fixture": "TCP succeeds while network_enabled remains false", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/network-isolation-receipt.json"], "failure_severity": "blocker", "status": "implemented"
+      "positive_fixture": "failed TCP/DNS, no default route, successful loopback", "negative_fixture": "TCP succeeds while network_enabled remains false", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/network-namespace-receipt.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
       "id": "EXACT-ARCHIVE-SET-001", "title": "Exact dependency archive set", "area": "security",
@@ -191,25 +191,121 @@
       "why": "Builder state would invalidate the portability boundary.", "kind": "automated",
       "checker_id": "INDEPENDENT-VERIFIER-ISOLATION-001", "checker_implementation": "scripts/verification_checkers.py:independent_verifier_isolation", "checker_version": "current", "expected_evidence_schema": null,
       "implementation": ["scripts/independent_verifier.py", "scripts/independent_verifier.sh"], "test_files": ["tests/test_final_source_replay.py"], "fixture_files": [],
-      "positive_fixture": "outer-only isolated verifier receipt", "negative_fixture": "working repository made available", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["verification/independent-verifier-receipt.json"], "failure_severity": "blocker", "status": "implemented"
+      "positive_fixture": "outer-only isolated verifier receipt", "negative_fixture": "working repository made available", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["verification/final-outer.independent-validation.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-001", "title": "Status-based base/reference discrimination", "area": "correctness", "invariant": "Exact status semantics distinguish behavioral failure from skip/error on both sides.", "why": "Semantic review checks the methodology meaning beyond field equality.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "BOOTSTRAP-ENVIRONMENT-ISOLATION-001", "title": "Bootstrap environment isolation", "area": "delivery",
+      "invariant": "The outer launcher immediately sanitizes library and language runtime variables and never exposes host tools to packaged shared libraries.",
+      "why": "A global packaged LD_LIBRARY_PATH can make newer host awk and coreutils load an older packaged libc.", "kind": "automated",
+      "checker_id": "BOOTSTRAP-ENVIRONMENT-ISOLATION-001", "checker_implementation": "scripts/verification_checkers.py:bootstrap_environment_isolation", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/independent_verifier.sh", "scripts/cross_environment_release.py"], "test_files": ["tests/test_cross_environment_replay.py", "tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "sanitized production outer launcher", "negative_fixture": "global packaged LD_LIBRARY_PATH export", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["runtime/bootstrap-contract.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-002", "title": "Runtime-lock completeness", "area": "verification", "invariant": "The runtime lock completely identifies semantic executables, build tools, platform, and shared-library closure.", "why": "Unpinned runtime semantics prevent honest offline reproduction.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "PACKAGED-PYTHON-LOADER-001", "title": "Packaged Python explicit loader", "area": "delivery",
+      "invariant": "The outer bootstrap invokes packaged Python with its packaged ELF loader and scoped library path.",
+      "why": "Interpreter startup must not depend on the host loader or contaminate the host process environment.", "kind": "automated",
+      "checker_id": "PACKAGED-PYTHON-LOADER-001", "checker_implementation": "scripts/verification_checkers.py:packaged_python_loader", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/independent_verifier.sh"], "test_files": ["tests/test_cross_environment_replay.py", "tests/test_final_source_replay.py"], "fixture_files": [],
+      "positive_fixture": "packaged loader --library-path invocation", "negative_fixture": "host Python invocation without packaged loader", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["runtime/bootstrap-contract.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-003", "title": "Network-isolation honesty", "area": "security", "invariant": "The receipt truthfully derives isolation from namespace, route, DNS, TCP, and loopback observations.", "why": "A hard-coded offline claim is not evidence.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "NO-HOST-SEMANTIC-RUNTIME-001", "title": "No host semantic runtime dependency", "area": "verification",
+      "invariant": "Every generic replay tool resolves below runtime/replay-rootfs and an absolute host path is rejected before hashing.",
+      "why": "Hash-locking an unbundled distro executable preserves a builder-only runtime dependency.", "kind": "automated",
+      "checker_id": "NO-HOST-SEMANTIC-RUNTIME-001", "checker_implementation": "scripts/verification_checkers.py:no_host_semantic_runtime", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "ten packaged rootfs tool paths", "negative_fixture": "absolute /usr/bin/bash lock path", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/runtime-resolution.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-004", "title": "Generated-artifact provenance", "area": "verification", "invariant": "Generated executables and configs are traceable to final source and have no post-generation edits.", "why": "Reviewable source must regenerate packaged behavior.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "PACKAGED-GENERIC-COMPLETENESS-001", "title": "Packaged generic tool completeness", "area": "verification",
+      "invariant": "The packaged rootfs supplies and exact-hash-validates bash, git, ip, mount, tar, unshare, unzip, zstd, sha256sum, and awk.",
+      "why": "One missing semantic utility reintroduces a host distro dependency.", "kind": "automated",
+      "checker_id": "PACKAGED-GENERIC-COMPLETENESS-001", "checker_implementation": "scripts/verification_checkers.py:packaged_generic_completeness", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/replay_rootfs.py", "scripts/target_replay.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "complete exact-identity generic tool set", "negative_fixture": "missing packaged zstd", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["runtime/replay-rootfs-lock.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-005", "title": "Replay evidence completeness", "area": "verification", "invariant": "Every replay stage and derived status is backed by logs, hashes, and exact evidence artifacts.", "why": "Broad constant pass fields are not replay proof.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "NAMESPACE-CAPABILITY-CONTRACT-001", "title": "Namespace capability contract", "area": "security",
+      "invariant": "The selected namespace mode proves mount, network, PID, resolver, and required privilege capabilities before replay qualifies.",
+      "why": "Implicit root privileges make the supported platform contract ambiguous.", "kind": "automated",
+      "checker_id": "NAMESPACE-CAPABILITY-CONTRACT-001", "checker_implementation": "scripts/verification_checkers.py:namespace_capability_contract", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/replay_namespace_launcher.c", "scripts/target_replay.py", "scripts/cross_environment_release.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "explicit privileged receipt with both capabilities", "negative_fixture": "CAP_SYS_ADMIN unavailable", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["runtime/namespace-capability-receipt.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
-      "id": "LLM-006", "title": "Self-contained review portability", "area": "delivery", "invariant": "An outer-ZIP-only verifier can reconstruct source, replay offline, and validate the handoff without builder state.", "why": "The review delivery must be independently portable.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+      "id": "ROOTLESS-REPLAY-WHEN-SUPPORTED-001", "title": "Rootless replay capability", "area": "security",
+      "invariant": "A claimed rootless replay has a new user namespace, root UID/GID maps, and all required namespace mounts; otherwise it fails explicitly.",
+      "why": "Rootless support cannot be inferred from the presence of unshare.", "kind": "automated",
+      "checker_id": "ROOTLESS-REPLAY-WHEN-SUPPORTED-001", "checker_implementation": "scripts/verification_checkers.py:rootless_replay_when_supported", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/replay_namespace_launcher.c", "scripts/cross_environment_release.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "rootless namespace and UID/GID mapping receipt", "negative_fixture": "rootless capability unavailable", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["runtime/namespace-capability-receipt.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "NETWORK-RECEIPT-AUTHENTICITY-001", "title": "Network receipt authenticity", "area": "security",
+      "invariant": "The actual replay namespace has loopback, no external route, isolated DNS, failed external TCP and DNS, and a derived network status.",
+      "why": "A constant offline flag is not measured network isolation.", "kind": "automated",
+      "checker_id": "NETWORK-RECEIPT-AUTHENTICITY-001", "checker_implementation": "scripts/verification_checkers.py:network_receipt_authenticity", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/target_replay.py", "scripts/cross_environment_release.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "isolated route, DNS, TCP, and loopback receipt", "negative_fixture": "external DNS unexpectedly succeeds", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["network/network-namespace-receipt.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "FAILURE-EVIDENCE-PRESERVATION-001", "title": "Failure evidence preservation", "area": "verification",
+      "invariant": "A failed verifier retains its replay directory, stage marker, command log, stdout, stderr, receipt, and partial evidence manifest.",
+      "why": "Deleting failed replay state makes deterministic failures undiagnosable.", "kind": "automated",
+      "checker_id": "FAILURE-EVIDENCE-PRESERVATION-001", "checker_implementation": "scripts/verification_checkers.py:failure_evidence_preservation", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/independent_verifier.py", "scripts/cross_environment_release.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "complete failed verifier evidence set", "negative_fixture": "partial evidence manifest deleted", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["replay/failure-receipt.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "EXACT-FINAL-OUTER-BINDING-001", "title": "Exact final outer receipt binding", "area": "delivery",
+      "invariant": "Detached independent validation and portability receipts identify the exact final outer ZIP bytes and SHA-256.",
+      "why": "A candidate receipt cannot authenticate a later outer construction.", "kind": "automated",
+      "checker_id": "EXACT-FINAL-OUTER-BINDING-001", "checker_implementation": "scripts/verification_checkers.py:exact_final_outer_binding", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/cross_environment_release.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "detached receipts bound to exact final outer", "negative_fixture": "candidate outer SHA substituted", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["verification/final-outer.independent-validation.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "CROSS-ENVIRONMENT-PORTABILITY-001", "title": "Cross-environment portability", "area": "delivery",
+      "invariant": "At least two materially distinct Linux userspaces pass the exact final outer, and one differs for all eight former host-locked tools.",
+      "why": "A builder-family-only pass does not qualify portable replay.", "kind": "automated",
+      "checker_id": "CROSS-ENVIRONMENT-PORTABILITY-001", "checker_implementation": "scripts/verification_checkers.py:cross_environment_portability", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/cross_environment_release.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "Debian 12 and Debian 13 exact-final receipts", "negative_fixture": "only one passed userspace", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["portability/portability-matrix.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "SPLIT-DETACHED-RECEIPTS-001", "title": "Split delivery detached receipts", "area": "delivery",
+      "invariant": "Every numbered part carries identical split metadata and every detached final receipt needed for exact reconstruction and validation.",
+      "why": "A reconstructed outer without its final receipts is not the qualified external-review delivery.", "kind": "automated",
+      "checker_id": "SPLIT-DETACHED-RECEIPTS-001", "checker_implementation": "scripts/verification_checkers.py:split_detached_receipts", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/cross_environment_release.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "all split parts reconstruct and carry detached receipts", "negative_fixture": "one detached validation artifact deleted", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["split-delivery-manifest.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "SOURCE-PACKAGED-VERIFIER-EQUALITY-001", "title": "Source and packaged verifier equality", "area": "verification",
+      "invariant": "The packaged production outer verifier is byte-identical to the committed source verifier.",
+      "why": "A post-generation verifier edit invalidates source reconstruction.", "kind": "automated",
+      "checker_id": "SOURCE-PACKAGED-VERIFIER-EQUALITY-001", "checker_implementation": "scripts/verification_checkers.py:source_packaged_verifier_equality", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/independent_verifier.sh", "scripts/build_review_handoff.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "source and packaged verifier bytes equal", "negative_fixture": "one appended drift byte", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["verification/independent-verifier/independent_verifier.sh"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
+      "id": "LLM-001", "title": "Host versus packaged runtime boundary", "area": "correctness", "invariant": "The review distinguishes capability-tested host bootstrap prerequisites from exact-identity packaged semantic runtimes.", "why": "Conflating the two boundaries conceals cross-distro dependencies.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+    },
+    {
+      "id": "LLM-002", "title": "Cross-distro portability claims", "area": "verification", "invariant": "Portability claims remain bounded to exact-final execution in materially distinct userspaces.", "why": "Source inspection or builder-only execution cannot establish cross-distro replay.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+    },
+    {
+      "id": "LLM-003", "title": "Namespace privilege disclosure", "area": "security", "invariant": "The selected rootless or privileged mode and every required capability are explicit.", "why": "Implicit privilege assumptions make the support contract misleading.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+    },
+    {
+      "id": "LLM-004", "title": "Network-isolation evidence", "area": "verification", "invariant": "Isolation is derived from namespace, route, resolver, TCP, DNS, and loopback observations.", "why": "A hard-coded offline claim is not evidence.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+    },
+    {
+      "id": "LLM-005", "title": "Final versus candidate receipt identity", "area": "verification", "invariant": "Only detached receipts produced after sealing may authenticate the exact final outer and inner identities.", "why": "A receipt for an earlier candidate cannot authenticate later bytes.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
+    },
+    {
+      "id": "LLM-006", "title": "Failure diagnostic completeness", "area": "delivery", "invariant": "A failed replay retains enough content-addressed state and logs to identify the last completed boundary.", "why": "Deleting failed work makes deterministic release failures undiagnosable.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
     }
   ]
 }

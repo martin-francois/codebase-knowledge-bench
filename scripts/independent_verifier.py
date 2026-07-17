@@ -8,13 +8,13 @@ import hashlib
 import io
 import json
 import os
+import platform
 import posixpath
 import shutil
 import stat
 import subprocess
 import sys
 import tarfile
-import tempfile
 import time
 import zipfile
 from pathlib import Path
@@ -39,6 +39,8 @@ QUALIFYING_PAYLOAD_ROOTS = {
     "schemas",
     "tests",
     "immutable-evidence",
+    "task",
+    "verification",
 }
 OUTER_ZIP_MAX_MEMBERS = 10
 OUTER_ZIP_MAX_MEMBER_BYTES = 1_500_000_000
@@ -66,6 +68,48 @@ def canonical_root(rows: list[dict[str, Any]]) -> str:
             rows, sort_keys=True, separators=(",", ":")
         ).encode("utf-8")
     )
+
+
+def _git_object_id(kind: str, data: bytes) -> bytes:
+    header = f"{kind} {len(data)}\0".encode("ascii")
+    return hashlib.sha1(header + data).digest()
+
+
+def _git_tree_id(root: Path) -> str:
+    def tree(path: Path) -> bytes:
+        rows: list[tuple[bytes, bytes]] = []
+        children = list(path.iterdir())
+        children.sort(
+            key=lambda child: child.name.encode("utf-8")
+            + (b"/" if child.is_dir() and not child.is_symlink() else b"")
+        )
+        for child in children:
+            name = child.name.encode("utf-8")
+            metadata = child.lstat()
+            if stat.S_ISDIR(metadata.st_mode):
+                mode = b"40000"
+                object_id = tree(child)
+            elif stat.S_ISLNK(metadata.st_mode):
+                mode = b"120000"
+                object_id = _git_object_id(
+                    "blob", os.readlink(child).encode("utf-8")
+                )
+            elif stat.S_ISREG(metadata.st_mode):
+                mode = (
+                    b"100755"
+                    if stat.S_IMODE(metadata.st_mode) & 0o111
+                    else b"100644"
+                )
+                object_id = _git_object_id("blob", child.read_bytes())
+            else:
+                raise ValueError(
+                    f"unsupported source tree member: {child}"
+                )
+            rows.append((name, mode + b" " + name + b"\0" + object_id))
+        data = b"".join(row for _, row in rows)
+        return _git_object_id("tree", data)
+
+    return tree(root).hex()
 
 
 def _manifest_path_errors(
@@ -547,18 +591,7 @@ def _validate_inner(inner: bytes, work: Path) -> dict[str, Any]:
     source_checkout = work / "source-tree"
     with tarfile.open(inner_root / "source/source.tar") as archive:
         safe_extract_tar(archive, source_checkout)
-    subprocess.run(
-        ["git", "-C", str(source_checkout), "init", "--quiet"],
-        check=True,
-    )
-    subprocess.run(
-        ["git", "-C", str(source_checkout), "add", "--all"],
-        check=True,
-    )
-    reconstructed_tree = subprocess.check_output(
-        ["git", "-C", str(source_checkout), "write-tree"],
-        text=True,
-    ).strip()
+    reconstructed_tree = _git_tree_id(source_checkout)
     if reconstructed_tree != manifest["source_tree"]:
         errors.append("source tree reconstruction mismatch")
     detailed = json.loads(
@@ -584,132 +617,338 @@ def _validate_inner(inner: bytes, work: Path) -> dict[str, Any]:
     }
 
 
+def _content_manifest(root: Path, excluded: set[str]) -> dict[str, Any]:
+    entries = []
+    for path in sorted(
+        item for item in root.rglob("*") if item.is_file()
+    ):
+        relative = path.relative_to(root).as_posix()
+        if relative in excluded:
+            continue
+        entries.append(
+            {
+                "path": relative,
+                "bytes": path.stat().st_size,
+                "sha256": sha256_file(path),
+            }
+        )
+    return {
+        "entries": entries,
+        "entry_count": len(entries),
+        "manifest_root": canonical_root(entries),
+    }
+
+
+def _progress(output: Path, stage: str) -> None:
+    _write(
+        output / "last-completed-stage.json",
+        {
+            "schema_id": "independent-verifier-progress-current",
+            "last_completed_stage": stage,
+        },
+    )
+
+
+def _bootstrap_capabilities() -> dict[str, Any]:
+    unzip_path = Path(
+        os.environ["INDEPENDENT_VERIFIER_UNZIP_PATH"]
+    )
+    shell_path = Path(
+        os.environ["INDEPENDENT_VERIFIER_SHELL_PATH"]
+    )
+    basic_tools = {
+        name: Path(os.environ[environment])
+        for name, environment in (
+            ("mkdir", "INDEPENDENT_VERIFIER_MKDIR_PATH"),
+            ("chmod", "INDEPENDENT_VERIFIER_CHMOD_PATH"),
+            ("mktemp", "INDEPENDENT_VERIFIER_MKTEMP_PATH"),
+            ("readlink", "INDEPENDENT_VERIFIER_READLINK_PATH"),
+        )
+    }
+    clean_host_environment = {
+        "PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+        "LANG": "C",
+        "LC_ALL": "C",
+    }
+    unzip_version = subprocess.run(
+        [str(unzip_path), "-v"],
+        env={
+            "PATH": "/usr/bin:/bin",
+            "LANG": "C",
+            "LC_ALL": "C",
+        },
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+    generic_version_arguments = {
+        "bash": ["--version"],
+        "git": ["--version"],
+        "ip": ["-Version"],
+        "mount": ["--version"],
+        "tar": ["--version"],
+        "unshare": ["--version"],
+        "unzip": ["-v"],
+        "zstd": ["--version"],
+        "sha256sum": ["--version"],
+        "awk": ["--version"],
+    }
+    observed_generic: dict[str, Any] = {}
+    for name, arguments in generic_version_arguments.items():
+        resolved = shutil.which(
+            name, path=clean_host_environment["PATH"]
+        )
+        if resolved is None:
+            observed_generic[name] = {
+                "available": False,
+                "semantic_identity_used": False,
+            }
+            continue
+        path = Path(resolved).resolve()
+        version = subprocess.run(
+            [str(path), *arguments],
+            env=clean_host_environment,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
+        observed_generic[name] = {
+            "available": True,
+            "path": str(path),
+            "sha256_observed_not_locked": sha256_file(path),
+            "version": (
+                version.stdout.splitlines()[0]
+                if version.stdout
+                else ""
+            ),
+            "version_exit_code": version.returncode,
+            "semantic_identity_used": False,
+        }
+    os_release: dict[str, str] = {}
+    release = Path("/etc/os-release")
+    if release.is_file():
+        for line in release.read_text(
+            encoding="utf-8", errors="replace"
+        ).splitlines():
+            if "=" in line:
+                key, value = line.split("=", 1)
+                os_release[key] = value.strip('"')
+    return {
+        "schema_id": "bootstrap-prerequisite-capabilities-current",
+        "status": (
+            "passed"
+            if unzip_version.returncode == 0
+            and unzip_path.is_file()
+            and shell_path.is_file()
+            and all(
+                path.is_file() and os.access(path, os.X_OK)
+                for path in basic_tools.values()
+            )
+            else "failed"
+        ),
+        "validation_mode": "capability",
+        "sanitized_environment": {
+            key: os.environ.get(key)
+            for key in (
+                "LD_LIBRARY_PATH",
+                "PYTHONPATH",
+                "JAVA_HOME",
+                "NODE_PATH",
+            )
+        },
+        "posix_shell": {
+            "path": str(shell_path),
+            "sha256_observed_not_locked": sha256_file(shell_path),
+            "executable": os.access(shell_path, os.X_OK),
+        },
+        "unzip_exact_name_streaming": {
+            "path": str(unzip_path),
+            "sha256_observed_not_locked": sha256_file(unzip_path),
+            "version": unzip_version.stdout.splitlines()[0]
+            if unzip_version.stdout
+            else "",
+            "exit_code": unzip_version.returncode,
+            "p_streaming_reached_packaged_python": True,
+        },
+        "basic_host_tools": {
+            name: {
+                "path": str(path),
+                "sha256_observed_not_locked": sha256_file(path),
+                "executable": os.access(path, os.X_OK),
+                "capability_exercised_by_bootstrap": True,
+            }
+            for name, path in sorted(basic_tools.items())
+        },
+        "observed_host_generic_tools_not_used": observed_generic,
+        "host": {
+            "distribution": os_release.get("PRETTY_NAME"),
+            "kernel": platform.platform(),
+            "glibc": list(platform.libc_ver()),
+            "machine": platform.machine(),
+            "effective_uid": os.geteuid(),
+            "effective_gid": os.getegid(),
+        },
+    }
+
+
 def verify(outer: Path, output: Path) -> dict[str, Any]:
     started = time.monotonic()
     if output.exists() and any(output.iterdir()):
         raise ValueError("independent verifier output must be empty")
     output.mkdir(parents=True, exist_ok=True)
     commands: list[dict[str, Any]] = []
-    bootstrap_description = os.environ.get(
-        "INDEPENDENT_VERIFIER_BOOTSTRAP"
-    )
-    if bootstrap_description:
-        commands.append(
-            {
-                "command": bootstrap_description,
-                "exit_code": 0,
-                "zip_reader_path": os.environ.get(
-                    "INDEPENDENT_VERIFIER_UNZIP_PATH"
-                ),
-                "zip_reader_sha256": os.environ.get(
-                    "INDEPENDENT_VERIFIER_UNZIP_SHA256"
-                ),
-                "zip_metadata_reader_path": os.environ.get(
-                    "INDEPENDENT_VERIFIER_ZIPINFO_PATH"
-                ),
-                "zip_metadata_reader_sha256": os.environ.get(
-                    "INDEPENDENT_VERIFIER_ZIPINFO_SHA256"
-                ),
-            }
-        )
-    outer_result, inner_bytes, inner_name = _validate_outer(outer)
-    with tempfile.TemporaryDirectory(
-        prefix="independent-verifier-", dir=output
-    ) as temporary:
-        work = Path(temporary)
-        inner_result = _validate_inner(inner_bytes, work)
-        inner_root = Path(inner_result.pop("root"))
-        replay_work = output / "fresh-work"
-        replay_evidence = output / "replay"
-        replay_work.mkdir()
-        replay_evidence.mkdir()
-        environment = {
-            "HOME": str(output / "empty-home"),
-            "PATH": "/usr/bin:/bin",
-            "LANG": "C.UTF-8",
-            "LC_ALL": "C.UTF-8",
-            "TMPDIR": str(output),
+    capabilities = _bootstrap_capabilities()
+    _write(output / "bootstrap-contract.json", capabilities)
+    commands.append(
+        {
+            "command": os.environ.get(
+                "INDEPENDENT_VERIFIER_BOOTSTRAP"
+            ),
+            "exit_code": (
+                0 if capabilities["status"] == "passed" else 1
+            ),
+            "role": "host_bootstrap_prerequisites",
+            "validation_mode": "capability",
         }
-        (output / "empty-home").mkdir()
-        replay_started = time.monotonic()
-        process = subprocess.run(
-            [
-                str(inner_root / "target/replay.sh"),
-                str(replay_work),
-                str(replay_evidence),
-            ],
-            env=environment,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
-        )
-        (output / "stdout.log").write_bytes(process.stdout)
-        (output / "stderr.log").write_bytes(process.stderr)
-        commands.append(
-            {
-                "command": (
-                    "target/replay.sh $EMPTY_WORK_ROOT "
-                    "$EMPTY_EVIDENCE_ROOT"
-                ),
-                "exit_code": process.returncode,
-                "duration_seconds": time.monotonic() - replay_started,
-                "environment": {
-                    "HOME": "$EMPTY_HOME",
-                    "PATH": "/usr/bin:/bin",
-                    "network": "source-generated namespace launcher",
-                },
-            }
-        )
-        bootstrap = (
-            inner_root
-            / "runtime/bootstrap-python/bin/python3.14"
-        )
-        validation_process = subprocess.run(
-            [
-                str(bootstrap),
-                str(inner_root / "target/target-replay.py"),
-                "validate-evidence",
-                "--package-root",
-                str(inner_root),
-                "--evidence-root",
-                str(replay_evidence),
-            ],
-            env={
-                **environment,
-                "LD_LIBRARY_PATH": str(
-                    inner_root
-                    / "runtime/bootstrap-python/system-libs"
-                ),
-                "PYTHONDONTWRITEBYTECODE": "1",
+    )
+    _progress(output, "bootstrap_capabilities")
+    outer_result, inner_bytes, inner_name = _validate_outer(outer)
+    _progress(output, "outer_validation")
+    verification_work = output / "inner-validation-work"
+    verification_work.mkdir()
+    inner_result = _validate_inner(inner_bytes, verification_work)
+    inner_root = Path(inner_result.pop("root"))
+    _progress(output, "inner_validation")
+    replay_work = output / "fresh-work"
+    replay_evidence = output / "replay"
+    replay_work.mkdir()
+    replay_evidence.mkdir()
+    empty_home = output / "empty-home"
+    empty_home.mkdir()
+    namespace_mode = os.environ.get(
+        "REPLAY_NAMESPACE_MODE", "privileged"
+    )
+    environment = {
+        "HOME": str(empty_home),
+        "PATH": "/usr/bin:/bin",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "TMPDIR": str(output),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "REPLAY_NAMESPACE_MODE": namespace_mode,
+    }
+    release_fault = os.environ.get(
+        "BENCH_RELEASE_FAULT_INJECTION_STAGE"
+    )
+    if release_fault is not None:
+        environment[
+            "BENCH_RELEASE_FAULT_INJECTION_STAGE"
+        ] = release_fault
+    replay_started = time.monotonic()
+    process = subprocess.run(
+        [
+            str(inner_root / "target/replay.sh"),
+            str(replay_work),
+            str(replay_evidence),
+        ],
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    replay_duration = time.monotonic() - replay_started
+    (output / "stdout.log").write_bytes(process.stdout)
+    (output / "stderr.log").write_bytes(process.stderr)
+    commands.append(
+        {
+            "command": (
+                "target/replay.sh $EMPTY_WORK_ROOT "
+                "$EMPTY_EVIDENCE_ROOT"
+            ),
+            "exit_code": process.returncode,
+            "duration_seconds": replay_duration,
+            "environment": {
+                "HOME": "$EMPTY_HOME",
+                "PATH": "host bootstrap only before packaged rootfs",
+                "namespace_mode": namespace_mode,
+                "network": "packaged namespace launcher",
+                "release_fault_injection_stage": release_fault,
             },
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=False,
-        )
-        commands.append(
-            {
-                "command": (
-                    "runtime/bootstrap-python/bin/python3.14 "
-                    "target/target-replay.py validate-evidence"
-                ),
-                "exit_code": validation_process.returncode,
-            }
-        )
-        try:
-            replay_validation = json.loads(validation_process.stdout)
-        except json.JSONDecodeError:
-            replay_validation = {
-                "status": "failed",
-                "errors": [
-                    "replay evidence validator emitted invalid JSON",
-                    validation_process.stderr,
-                ],
-            }
-        shutil.rmtree(replay_work, ignore_errors=True)
-        shutil.rmtree(replay_evidence, ignore_errors=True)
+        }
+    )
+    _progress(output, "replay_execution")
+    bootstrap_root = inner_root / "runtime/bootstrap-python"
+    loader = (
+        bootstrap_root / "system-libs/ld-linux-x86-64.so.2"
+    )
+    bootstrap = bootstrap_root / "bin/python3.14"
+    libraries = (
+        f"{bootstrap_root / 'system-libs'}:{bootstrap_root / 'lib'}"
+    )
+    validation_process = subprocess.run(
+        [
+            str(loader),
+            "--library-path",
+            libraries,
+            str(bootstrap),
+            str(inner_root / "target/target-replay.py"),
+            "validate-evidence",
+            "--package-root",
+            str(inner_root),
+            "--evidence-root",
+            str(replay_evidence),
+        ],
+        env={
+            **environment,
+            "PYTHONHOME": str(bootstrap_root),
+        },
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
+    commands.append(
+        {
+            "command": (
+                "packaged-loader --library-path packaged-libraries "
+                "packaged-python target/target-replay.py "
+                "validate-evidence"
+            ),
+            "exit_code": validation_process.returncode,
+        }
+    )
+    try:
+        replay_validation = json.loads(validation_process.stdout)
+    except json.JSONDecodeError:
+        replay_validation = {
+            "status": "failed",
+            "errors": [
+                "replay evidence validator emitted invalid JSON",
+                validation_process.stderr,
+            ],
+        }
     _write(output / "command-log.json", commands)
+    work_manifest = _content_manifest(replay_work, set())
+    work_manifest.update(
+        {
+            "schema_id": "fresh-work-diagnostic-manifest-current",
+            "worktree_pruned_after_manifest": (
+                process.returncode == 0
+                and replay_validation.get("status") == "passed"
+            ),
+        }
+    )
+    _write(output / "fresh-work-manifest.json", work_manifest)
+    if (
+        process.returncode == 0
+        and replay_validation.get("status") == "passed"
+    ):
+        shutil.rmtree(replay_work)
+    _progress(output, "failure_safe_evidence_packaging")
     checks = {
+        "bootstrap_capabilities": capabilities["status"] == "passed",
         "outer_manifest": outer_result["status"] == "passed",
         "inner_manifest": inner_result["status"] == "passed",
         "source_commit_reconstruction": (
@@ -730,11 +969,21 @@ def verify(outer: Path, output: Path) -> dict[str, Any]:
         "builder_repository_not_provided": True,
         "builder_home_not_provided": True,
         "builder_caches_not_provided": True,
-        "host_semantic_runtimes_masked_by_launcher": (
+        "packaged_semantic_runtime": (
             replay_validation.get("runtime_resolution") == "passed"
         ),
         "network_isolation_measured": (
             replay_validation.get("network_isolation") == "passed"
+        ),
+        "namespace_capability_measured": (
+            replay_validation.get("namespace_capability") == "passed"
+        ),
+        "failure_evidence_preserved": (
+            replay_evidence.is_dir()
+            and (
+                process.returncode == 0
+                or replay_work.is_dir()
+            )
         ),
     }
     result = {
@@ -744,33 +993,17 @@ def verify(outer: Path, output: Path) -> dict[str, Any]:
             "outer_delivery_only": True,
             "outer_delivery_name": outer.name,
             "outer_delivery_sha256": sha256_file(outer),
-            "generic_linux_process_primitives": True,
             "working_repository": False,
             "builder_home": False,
             "builder_caches": False,
+            "host_semantic_runtimes_provided_to_replay": False,
             "host_java": False,
             "host_node": False,
             "host_chromium": False,
             "network": False,
             "previous_replay_outputs": False,
-            "bootstrap_zip_reader": {
-                "path": os.environ.get(
-                    "INDEPENDENT_VERIFIER_UNZIP_PATH"
-                ),
-                "sha256": os.environ.get(
-                    "INDEPENDENT_VERIFIER_UNZIP_SHA256"
-                ),
-                "role": "generic bounded outer-only bootstrap",
-            },
-            "bootstrap_zip_metadata_reader": {
-                "path": os.environ.get(
-                    "INDEPENDENT_VERIFIER_ZIPINFO_PATH"
-                ),
-                "sha256": os.environ.get(
-                    "INDEPENDENT_VERIFIER_ZIPINFO_SHA256"
-                ),
-                "role": "generic regular-member type discovery",
-            },
+            "namespace_mode": namespace_mode,
+            "bootstrap_prerequisites": capabilities,
         },
         "outer": outer_result,
         "inner": inner_result,
@@ -782,8 +1015,15 @@ def verify(outer: Path, output: Path) -> dict[str, Any]:
             "qualifying_payload_entry_count"
         ],
         "replay_exit_code": process.returncode,
+        "replay_duration_seconds": replay_duration,
         "replay_validation": replay_validation,
         "checks": checks,
+        "failure_evidence": {
+            "replay_directory_retained": replay_evidence.is_dir(),
+            "fresh_work_directory_retained": replay_work.is_dir(),
+            "fresh_work_manifest": "fresh-work-manifest.json",
+            "fresh_work_manifest_root": work_manifest["manifest_root"],
+        },
         "command_log_sha256": sha256_file(
             output / "command-log.json"
         ),
@@ -792,6 +1032,43 @@ def verify(outer: Path, output: Path) -> dict[str, Any]:
         "duration_seconds": time.monotonic() - started,
     }
     _write(output / "independent-verifier-receipt.json", result)
+    if result["status"] == "failed":
+        failure = {
+            "schema_id": "independent-verifier-failure-current",
+            "status": "failed",
+            "last_completed_stage": json.loads(
+                (
+                    output / "last-completed-stage.json"
+                ).read_text(encoding="utf-8")
+            )["last_completed_stage"],
+            "replay_exit_code": process.returncode,
+            "failed_checks": sorted(
+                name for name, passed in checks.items() if not passed
+            ),
+            "replay_failure_receipt": (
+                "replay/failure-receipt.json"
+                if (replay_evidence / "failure-receipt.json").is_file()
+                else None
+            ),
+        }
+        _write(output / "failure-receipt.json", failure)
+        partial = _content_manifest(
+            output,
+            {
+                "partial-evidence-manifest.json",
+                "inner-validation-work",
+            },
+        )
+        partial["schema_id"] = (
+            "independent-verifier-partial-evidence-manifest-current"
+        )
+        _write(output / "partial-evidence-manifest.json", partial)
+    shutil.rmtree(verification_work)
+    bootstrap_stage = os.environ.get(
+        "INDEPENDENT_VERIFIER_BOOTSTRAP_STAGE"
+    )
+    if bootstrap_stage:
+        shutil.rmtree(bootstrap_stage, ignore_errors=True)
     return result
 
 

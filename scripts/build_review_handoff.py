@@ -294,11 +294,7 @@ def scan_source_text(name: str, data: bytes) -> tuple[list[str], list[dict[str, 
         allowed["host-only path"] = (
             "structured verification invocation provenance"
         )
-    if (
-        member.startswith("verification/independent-verifier/")
-        or member
-        == "verification/independent-verifier-receipt.json"
-    ):
+    if member.startswith("verification/independent-verifier/"):
         allowed["host-only path"] = (
             "independent verifier process provenance"
         )
@@ -362,13 +358,22 @@ MANDATORY_FILES = {
     "source/source-state.json",
     "source/source-tree-reconstruction.json",
     "source/full-diff.patch",
-    "audit/pre-fix-audit.json",
-    "audit/pre-fix-audit.md",
+    "task/task-receipt.json",
+    "task/task-receipt.md",
+    "task/implementation-change-proof.json",
+    "audit/pre-fix-portability-audit.json",
+    "audit/pre-fix-portability-audit.md",
     "preflight/status-semantics-audit.json",
     "preflight/status-fault-matrix.json",
     "runtime/runtime-lock.json",
-    "network/network-isolation-receipt.json",
-    "network/network-isolation-receipt.md",
+    "runtime/bootstrap-contract.json",
+    "runtime/replay-rootfs-lock.json",
+    "runtime/replay-rootfs-manifest.json",
+    "runtime/replay-rootfs-license-manifest.json",
+    "runtime/namespace-capability-receipt.json",
+    "network/network-namespace-receipt.json",
+    "network/interfaces.json",
+    "network/routes.json",
     "replay/generated-artifact-provenance.json",
     "replay/generated-artifact-provenance.md",
     "replay/replay.sh",
@@ -378,13 +383,13 @@ MANDATORY_FILES = {
     "replay/source-identity.json",
     "replay/replay-result.json",
     "replay/replay-evidence-manifest.json",
+    "replay/source-generated-script.json",
+    "replay/final-replay-result.json",
+    "replay/failure-preservation-test.json",
     "verification/independent-verifier/independent_verifier.py",
     "verification/independent-verifier/independent_verifier.sh",
-    "verification/independent-verifier/command-log.json",
-    "verification/independent-verifier/stdout.log",
-    "verification/independent-verifier/stderr.log",
-    "verification/independent-verifier-receipt.json",
     "verification/current-verification-report.json",
+    "verification/fault-matrix.json",
     "verification/llm-verification-report.json",
     "target/target-repository.bundle",
     "target/replay-config.json",
@@ -402,6 +407,7 @@ MANDATORY_PREFIXES = (
     "preflight/current-preflight/issue-498/",
     "runtime/runtime-manifests/",
     "runtime/runtime-archives-or-rootfs/",
+    "network/probe-logs/",
     "replay/preflight/",
     "replay/mutation-calibration/",
     "replay/production-shadow/",
@@ -421,6 +427,8 @@ QUALIFYING_PAYLOAD_ROOTS = {
     "schemas",
     "tests",
     "immutable-evidence",
+    "task",
+    "verification",
 }
 
 
@@ -571,13 +579,14 @@ def build(
     tree = git(repo, "rev-parse", "HEAD^{tree}").strip()
     output.mkdir(parents=True, exist_ok=True)
     pre_fix = json.loads(
-        (reports / "audit/pre-fix-audit.json").read_text(
+        (reports / "audit/pre-fix-portability-audit.json").read_text(
             encoding="utf-8"
         )
     )
     base_commit = str(
         pre_fix.get("captured_from_commit")
         or pre_fix.get("source", {}).get("commit")
+        or pre_fix.get("base_source", {}).get("commit")
     )
     if not re.fullmatch(r"[0-9a-f]{40}", base_commit):
         raise ValueError("pre-fix audit does not bind its source commit")
@@ -685,10 +694,27 @@ def build(
             inspect_target_package,
             validate_replay_evidence,
         )
+        from cross_environment_release import (
+            validate_source_generated_equality,
+        )
 
         target_validation = inspect_target_package(reports, repo)
         replay_validation = validate_replay_evidence(
             reports / "replay", reports
+        )
+        verifier_equality = validate_source_generated_equality(
+            (repo / "scripts/independent_verifier.sh").read_bytes(),
+            (
+                reports
+                / "verification/independent-verifier/"
+                "independent_verifier.sh"
+            ).read_bytes(),
+            artifact="independent verifier",
+        )
+        replay_equality = validate_source_generated_equality(
+            (reports / "target/replay.sh").read_bytes(),
+            (reports / "replay/replay.sh").read_bytes(),
+            artifact="replay launcher",
         )
         status_audit = json.loads(
             (reports / "preflight/status-semantics-audit.json").read_text(
@@ -698,7 +724,7 @@ def build(
         network = json.loads(
             (
                 reports
-                / "network/network-isolation-receipt.json"
+                / "network/network-namespace-receipt.json"
             ).read_text(encoding="utf-8")
         )
         runtime = json.loads(
@@ -734,18 +760,14 @@ def build(
                 reports / "replay/dashboard/dashboard-result.json"
             ).read_text(encoding="utf-8")
         )
-        verifier = json.loads(
-            (
-                reports
-                / "verification/independent-verifier-receipt.json"
-            ).read_text(encoding="utf-8")
-        )
         embedded_checks = {
             "source_commit_tree_reconstruction": reconstruction["exact_match"],
             "generated_artifact_equality": (
                 provenance.get("status") == "passed"
                 and provenance.get("packaged_replay_equals_generator")
                 is True
+                and verifier_equality["status"] == "passed"
+                and replay_equality["status"] == "passed"
                 and all(
                     row.get("regeneration_equality") is True
                     and row.get("manual_edit_detected") is False
@@ -822,7 +844,6 @@ def build(
                         "canonical_sha256": CANONICAL_SHA,
                         "supplement_sha256": SUPPLEMENT_SHA,
                     },
-                    "independent_verifier": verifier.get("status"),
                     "full_diff_portability_notes": diff_notes,
                 },
                 indent=2,
@@ -1124,17 +1145,6 @@ def validate(zip_path: Path) -> dict[str, Any]:
         )
         if internal.get("status") != "passed":
             errors.append("inner detailed validation did not pass")
-        verifier = json.loads(
-            (
-                root
-                / "verification/independent-verifier-receipt.json"
-            ).read_text()
-        )
-        verified_root = verifier.get("verified_qualifying_payload_root")
-        if verifier.get("status") == "passed" and verified_root != qualifying_root:
-            errors.append(
-                "independent verifier qualifying payload binding mismatch"
-            )
     return {
         "schema_id": "review-handoff-validation-current",
         "status": "passed" if not errors else "failed",
@@ -1156,7 +1166,7 @@ def validate(zip_path: Path) -> dict[str, Any]:
         "replay_evidence_validation": replay_validation,
         "target_replay_result": replay,
         "detailed_inner_validation": internal,
-        "independent_verifier_result": verifier.get("status"),
+        "independent_verifier_result": "detached-final-only",
         "secret_and_host_path_scan": "passed",
     }
 

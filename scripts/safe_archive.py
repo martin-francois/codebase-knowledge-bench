@@ -613,7 +613,13 @@ def safe_extract_zip(
         os.symlink(declared_symlinks[member_name], target)
 
 
-def inspect_tree(root: Path) -> list[dict[str, Any]]:
+def inspect_tree(
+    root: Path,
+    *,
+    max_members: int = MAX_MEMBERS,
+    max_total_bytes: int = MAX_TOTAL_BYTES,
+    max_member_bytes: int = MAX_MEMBER_BYTES,
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for path in sorted(
         [root, *root.rglob("*")],
@@ -657,12 +663,12 @@ def inspect_tree(root: Path) -> list[dict[str, Any]]:
     _collisions(
         [(row["path"], row["type"] == "directory") for row in rows]
     )
-    if len(rows) > MAX_MEMBERS:
+    if len(rows) > max_members:
         raise ValueError("source member limit exceeded")
     total = sum(row["bytes"] for row in rows)
-    if total > MAX_TOTAL_BYTES:
+    if total > max_total_bytes:
         raise ValueError("source expanded-size limit exceeded")
-    if any(row["bytes"] > MAX_MEMBER_BYTES for row in rows):
+    if any(row["bytes"] > max_member_bytes for row in rows):
         raise ValueError("source member size limit exceeded")
     return sorted(rows, key=lambda row: row["path"])
 

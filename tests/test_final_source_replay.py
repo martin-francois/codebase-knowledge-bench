@@ -35,6 +35,7 @@ from safe_archive import (
 from independent_verifier import _validated_zip_infos
 from target_replay import (
     _replay_script,
+    _stage_python,
     embedded_python_blocks,
     validate_generated_script,
 )
@@ -81,7 +82,9 @@ class SourceGeneratedReplayTest(unittest.TestCase):
 
     def test_broken_embedded_python_is_rejected(self) -> None:
         broken = _replay_script().replace(
-            "import json\n", "import json\nbroken = 'newline\nliteral'\n", 1
+            "import pathlib\n",
+            "import pathlib\nbroken = 'newline\nliteral'\n",
+            1,
         )
         result = validate_generated_script(broken)
         self.assertEqual("failed", result["status"])
@@ -419,66 +422,83 @@ class ExactArchiveBoundaryTest(unittest.TestCase):
 class NetworkNamespaceLauncherTest(unittest.TestCase):
     def test_launcher_source_enforces_namespace_and_loopback(self) -> None:
         script = _replay_script()
+        launcher = (
+            ROOT / "scripts/replay_namespace_launcher.c"
+        ).read_text(encoding="utf-8")
         for token in (
-            "unshare --net --mount",
-            'mount --bind "$WORK_ROOT/tmp" /tmp',
-            "ip link set lo up",
+            'LAUNCHER="$TARGET_DIR/namespace-launcher"',
+            "runtime/replay-rootfs",
             "empty-resolv.conf",
-            "host-runtime-mask",
         ):
             self.assertIn(token, script)
+        for token in (
+            "CLONE_NEWNS | CLONE_NEWNET | CLONE_NEWPID",
+            "enable_loopback();",
+            'bind_mount(package, destination, "mount-package")',
+            'bind_mount(resolver_source, destination, "mount-resolver")',
+        ):
+            self.assertIn(token, launcher)
 
     def test_outer_only_bootstrap_streams_regular_files(self) -> None:
         script = (
             ROOT / "scripts/independent_verifier.sh"
         ).read_text(encoding="utf-8")
-        self.assertIn("zipinfo -l", script)
-        self.assertIn('unzip -p "$INNER" "$member"', script)
-        self.assertIn("for (component_index = 1;", script)
-        self.assertNotIn("for (index =", script)
+        self.assertIn('"$UNZIP" -p "$INNER" "$member"', script)
+        self.assertIn('"$UNZIP" -p "$OUTER"', script)
+        self.assertIn("--library-path \"$LIBRARIES\"", script)
+        self.assertNotIn("zipinfo", script)
+        self.assertNotIn("sha256sum", script)
+        self.assertNotIn("awk", script)
         self.assertNotIn('unzip -q "$INNER"', script)
-        validate_names = script[
-            script.index("validate_names() {"):
-            script.index("\n\nvalidate_sizes() {")
-        ]
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            archive = root / "portable-awk.zip"
-            with zipfile.ZipFile(archive, "w") as fixture:
-                fixture.writestr("nested/regular.txt", b"fixture")
-            result = subprocess.run(
-                [
-                    "bash",
-                    "-c",
-                    validate_names
-                    + '\nvalidate_names "$1" 10 "$2"\n',
-                    "bootstrap-portability-test",
-                    str(archive),
-                    str(root / "names"),
-                ],
-                check=False,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(0, result.returncode, result.stderr)
 
-    def test_outer_only_bootstrap_executes_with_system_awk(self) -> None:
+    def test_outer_only_bootstrap_executes_with_real_packaged_libraries(
+        self,
+    ) -> None:
         launcher = ROOT / "scripts/independent_verifier.sh"
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            python_runtime = root / "python-runtime"
+            _stage_python(
+                Path(sys.executable).resolve().parents[1],
+                python_runtime,
+            )
             inner = root / "review-handoff.zip"
             with zipfile.ZipFile(inner, "w") as archive:
-                write_zip(
-                    archive,
-                    "runtime/bootstrap-python/bin/python3.14",
-                    b"#!/bin/sh\nexit 0\n",
-                    mode=0o755,
-                )
+                members = {
+                    "runtime/bootstrap-python/bin/python3.14":
+                        python_runtime / "bin/python3.14",
+                    "runtime/bootstrap-python/lib/"
+                    "libpython3.14.so.1.0":
+                        python_runtime / "lib/libpython3.14.so.1.0",
+                    "runtime/bootstrap-python/lib/python314.zip":
+                        python_runtime / "lib/python314.zip",
+                }
+                for name in (
+                    "ld-linux-x86-64.so.2",
+                    "libc.so.6",
+                    "libdl.so.2",
+                    "libm.so.6",
+                    "libpthread.so.0",
+                    "librt.so.1",
+                    "libutil.so.1",
+                ):
+                    members[
+                        f"runtime/bootstrap-python/system-libs/{name}"
+                    ] = python_runtime / "system-libs" / name
+                for name, path in members.items():
+                    write_zip(
+                        archive,
+                        name,
+                        path.read_bytes(),
+                        mode=0o755 if name != (
+                            "runtime/bootstrap-python/lib/python314.zip"
+                        ) else 0o644,
+                    )
                 write_zip(
                     archive,
                     "verification/independent-verifier/"
                     "independent_verifier.py",
-                    b"# bootstrap handoff fixture\n",
+                    b"raise SystemExit(0)\n",
                 )
             digest = hashlib.sha256(inner.read_bytes()).hexdigest()
             outer = root / "outer.zip"
@@ -498,6 +518,15 @@ class NetworkNamespaceLauncherTest(unittest.TestCase):
                     write_zip(archive, name, data)
             result = subprocess.run(
                 [str(launcher), str(outer), str(root / "output")],
+                env={
+                    **os.environ,
+                    "LD_LIBRARY_PATH": str(
+                        python_runtime / "system-libs"
+                    ),
+                    "PYTHONPATH": "/hostile/python",
+                    "JAVA_HOME": "/hostile/java",
+                    "NODE_PATH": "/hostile/node",
+                },
                 check=False,
                 capture_output=True,
                 text=True,

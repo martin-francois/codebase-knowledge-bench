@@ -13,12 +13,12 @@ from jsonschema import Draft202012Validator
 
 
 TITLES = {
-    "LLM-001": "status-based base/reference discrimination",
-    "LLM-002": "runtime-lock completeness",
-    "LLM-003": "network-isolation honesty",
-    "LLM-004": "generated-artifact provenance",
-    "LLM-005": "replay evidence completeness",
-    "LLM-006": "self-contained review portability",
+    "LLM-001": "host versus packaged runtime boundary",
+    "LLM-002": "cross-distro portability claim boundary",
+    "LLM-003": "namespace privilege disclosure",
+    "LLM-004": "network-isolation evidence",
+    "LLM-005": "final versus candidate receipt identity",
+    "LLM-006": "failure diagnostic completeness",
 }
 
 
@@ -37,60 +37,72 @@ def generate(repo: Path, evidence_root: Path, *, handoff_validated: bool) -> dic
     commit = subprocess.check_output(
         ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
     ).strip()
-    status_faults = _load(evidence_root / "preflight/status-fault-matrix.json")
     runtime = _load(evidence_root / "runtime/runtime-lock.json")
-    network = _load(evidence_root / "network/network-isolation-receipt.json")
-    provenance = _load(
-        evidence_root / "replay/generated-artifact-provenance.json"
+    network = _load(
+        evidence_root / "network/network-namespace-receipt.json"
     )
-    replay = _load(evidence_root / "replay/replay-result.json")
+    namespace = _load(
+        evidence_root / "runtime/namespace-capability-receipt.json"
+    )
+    registry = _load(
+        evidence_root / "verification/current-verification-report.json"
+    )
+    failure = _load(
+        evidence_root / "replay/failure-preservation-test.json"
+    )
     replay_manifest = _load(
         evidence_root / "replay/replay-evidence-manifest.json"
     )
-    verifier = _load(
-        evidence_root
-        / "verification/independent-verifier-receipt.json"
-    )
     required_runtime_sections = {
         "platform",
-        "jdk",
-        "node",
-        "chromium",
-        "python",
-        "maven",
-        "generic_tools",
+        "host_bootstrap_prerequisites",
+        "kernel_capabilities",
+        "packaged_semantic_runtime",
+        "namespace_launcher",
+        "replay_rootfs",
+        "archive_manifests",
         "shared_library_closure",
     }
-    required_replay_stages = {
-        "runtime_resolution",
-        "network_isolation",
-        "source_identity",
-        "current_issue_preflight",
-        "protected_channel_qualification",
-        "targeted_mutation_calibration",
-        "production_shadow",
-        "dashboard_unit",
-        "dashboard_build",
-        "dashboard_browser",
-        "strict_schemas",
-        "review_handoff_validation",
+    registry_status = {
+        row["id"]: row["status"] for row in registry.get("checks", [])
     }
-    verifier_input = verifier.get("input", {})
     assessments = {
         "LLM-001": (
-            status_faults.get("status") == "passed"
-            and status_faults.get("accepted_faults") == 0
-            and status_faults.get("rejected_faults") == 10
-        ),
-        "LLM-002": (
             runtime.get("schema_id") == "offline-runtime-lock-current"
             and required_runtime_sections <= set(runtime)
             and all(
                 runtime.get(section)
                 for section in required_runtime_sections
             )
+            and registry_status.get(
+                "BOOTSTRAP-ENVIRONMENT-ISOLATION-001"
+            )
+            == "passed"
+            and registry_status.get("PACKAGED-PYTHON-LOADER-001")
+            == "passed"
+            and registry_status.get("NO-HOST-SEMANTIC-RUNTIME-001")
+            == "passed"
+            and registry_status.get(
+                "PACKAGED-GENERIC-COMPLETENESS-001"
+            )
+            == "passed"
+        ),
+        "LLM-002": (
+            registry_status.get("CROSS-ENVIRONMENT-PORTABILITY-001")
+            == "passed"
+            and registry_status.get("EXACT-FINAL-OUTER-BINDING-001")
+            == "passed"
         ),
         "LLM-003": (
+            namespace.get("status") == "passed"
+            and namespace.get("mode") in {"rootless", "privileged"}
+            and namespace.get("new_mount_namespace") is True
+            and namespace.get("new_network_namespace") is True
+            and namespace.get("new_pid_namespace") is True
+            and registry_status.get("NAMESPACE-CAPABILITY-CONTRACT-001")
+            == "passed"
+        ),
+        "LLM-004": (
             network.get("status") == "passed"
             and network.get("network_enabled") is False
             and network.get("default_external_route_present") is False
@@ -104,68 +116,78 @@ def generate(repo: Path, evidence_root: Path, *, handoff_validated: bool) -> dic
             )
             == "tcp or dns or external-default-route"
         ),
-        "LLM-004": (
-            provenance.get("schema_id")
-            == "generated-artifact-provenance-current"
-            and provenance.get("status") == "passed"
-            and provenance.get("artifacts")
-            and all(
-                row.get("regeneration_equality") is True
-                and row.get("manual_edit_detected") is False
-                for row in provenance.get("artifacts", [])
-            )
-        ),
         "LLM-005": (
-            replay.get("status") == "passed"
-            and replay.get("independent_replay_complete") is True
-            and required_replay_stages
-            <= {
-                name
-                for name, status in replay.get("stages", {}).items()
-                if status == "passed"
-            }
+            registry_status.get("EXACT-FINAL-OUTER-BINDING-001")
+            == "passed"
+            and not (
+                evidence_root
+                / "verification/independent-verifier-receipt.json"
+            ).exists()
+        ),
+        "LLM-006": (
+            failure.get("status") == "passed"
+            and failure.get("failure_evidence_retained") is True
             and replay_manifest.get("schema_id")
             == "replay-evidence-manifest-current"
             and bool(replay_manifest.get("entries"))
-        ),
-        "LLM-006": (
-            handoff_validated
-            and verifier.get("status") == "passed"
-            and verifier_input.get("outer_delivery_only") is True
-            and verifier_input.get("working_repository") is False
-            and verifier_input.get("builder_home") is False
-            and verifier_input.get("builder_caches") is False
-            and verifier_input.get("host_java") is False
-            and verifier_input.get("host_node") is False
-            and verifier_input.get("host_chromium") is False
-            and verifier_input.get("network") is False
+            and registry_status.get(
+                "FAILURE-EVIDENCE-PRESERVATION-001"
+            )
+            == "passed"
         ),
     }
     evidence = {
-        "LLM-001": ["zip://preflight/status-fault-matrix.json"],
-        "LLM-002": ["zip://runtime/runtime-lock.json"],
-        "LLM-003": ["zip://network/network-isolation-receipt.json"],
-        "LLM-004": ["zip://replay/generated-artifact-provenance.json"],
+        "LLM-001": [
+            "zip://runtime/runtime-lock.json",
+            "zip://verification/current-verification-report.json",
+        ],
+        "LLM-002": [
+            "zip://verification/current-verification-report.json",
+        ],
+        "LLM-003": [
+            "zip://runtime/namespace-capability-receipt.json",
+        ],
+        "LLM-004": [
+            "zip://network/network-namespace-receipt.json",
+        ],
         "LLM-005": [
-            "zip://replay/replay-result.json",
-            "zip://replay/replay-evidence-manifest.json",
+            "zip://verification/current-verification-report.json",
         ],
         "LLM-006": [
-            "zip://verification/independent-verifier-receipt.json",
-            "zip://review-handoff-validation.json",
+            "zip://replay/failure-preservation-test.json",
+            "zip://replay/replay-evidence-manifest.json",
         ],
     }
     checks = []
     for check_id, title in TITLES.items():
         passed = assessments[check_id]
+        findings = [] if passed else [
+            f"Semantic self-review did not establish {title}."
+        ]
+        if passed and check_id == "LLM-002":
+            findings.append(
+                "The source enforces a two-userspace exact-final matrix; "
+                "the execution receipts are necessarily detached post-seal."
+            )
+        if passed and check_id == "LLM-005":
+            findings.append(
+                "Candidate validation is not embedded as final proof; "
+                "the exact outer identity is established only after sealing."
+            )
+        residual = (
+            "Exact-final detached execution remains to be observed."
+            if check_id in {"LLM-002", "LLM-005"}
+            else (
+                "This is implementing-agent self-review, not independent "
+                "semantic review."
+            )
+        )
         checks.append({
             "id": check_id,
             "status": "passed" if passed else "failed",
             "evidence": evidence[check_id],
-            "findings": [] if passed else [f"Semantic self-review did not establish {title}."],
-            "residual_uncertainty": (
-                "This is implementing-agent self-review, not independent semantic review."
-            ),
+            "findings": findings,
+            "residual_uncertainty": residual,
         })
     result = {
         "source_commit": commit,
@@ -176,8 +198,9 @@ def generate(repo: Path, evidence_root: Path, *, handoff_validated: bool) -> dic
         "reviewed_subject_tree_sha256": verification_subject_tree_sha256(repo),
         "report_envelope_commit": commit,
         "review_session_description": (
-            "The implementing coding agent reviewed the final deterministic evidence; "
-            "no additional model call or model-backed verifier was used."
+            "The implementing coding agent reviewed the pre-seal source and "
+            "replay evidence. No additional model call or model-backed "
+            "verifier was used."
         ),
         "reviewed_artifacts": sorted({item for values in evidence.values() for item in values}),
         "checks": checks,
@@ -185,6 +208,13 @@ def generate(repo: Path, evidence_root: Path, *, handoff_validated: bool) -> dic
         "limitations": [
             "This is implementing-agent self-review, not independent verification.",
             "No model-backed semantic verifier was authorized or invoked.",
+            "Exact-final-outer cross-userspace execution is intentionally "
+            "post-seal and must be established by detached receipts.",
+            (
+                "The inner handoff validation was available."
+                if handoff_validated
+                else "The inner handoff had not yet been sealed."
+            ),
         ],
     }
     schema = _load(repo / "schemas/llm-verification-report.schema.json")

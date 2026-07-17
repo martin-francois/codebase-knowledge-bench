@@ -1,0 +1,315 @@
+{
+  "case_count": 13,
+  "cases": [
+    {
+      "boundary": "outer bootstrap",
+      "evidence": {
+        "environment_sanitized": false,
+        "errors": [
+          "bootstrap environment is not sanitized",
+          "global packaged LD_LIBRARY_PATH",
+          "forbidden host semantic utilities: awk"
+        ],
+        "fixed_exact_name_streaming": true,
+        "forbidden_host_semantic_utilities": [
+          "awk"
+        ],
+        "global_packaged_ld_library_path": true,
+        "packaged_loader_invocation": true,
+        "posix_shell": true,
+        "schema_id": "bootstrap-launcher-validation-current",
+        "status": "failed"
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "global_packaged_ld_library_path_contaminates_host_awk",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "outer bootstrap",
+      "evidence": {
+        "environment_sanitized": false,
+        "errors": [
+          "bootstrap environment is not sanitized",
+          "global packaged LD_LIBRARY_PATH",
+          "forbidden host semantic utilities: sha256sum"
+        ],
+        "fixed_exact_name_streaming": true,
+        "forbidden_host_semantic_utilities": [
+          "sha256sum"
+        ],
+        "global_packaged_ld_library_path": true,
+        "packaged_loader_invocation": true,
+        "posix_shell": true,
+        "schema_id": "bootstrap-launcher-validation-current",
+        "status": "failed"
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "global_packaged_ld_library_path_contaminates_host_sha256sum",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "packaged semantic runtime",
+      "evidence": {
+        "host_hashes_supplied": false,
+        "host_identity_used": false,
+        "packaged_tool_count": 10
+      },
+      "expected_outcome": "accepted_without_host_identity_use",
+      "fault_injected": true,
+      "id": "host_generic_tool_hashes_differ",
+      "observed_outcome": "accepted_without_host_identity_use",
+      "rejected": false,
+      "status": "passed"
+    },
+    {
+      "boundary": "packaged semantic runtime",
+      "evidence": {
+        "errors": [
+          "packaged semantic tool identity mismatch: git"
+        ]
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "packaged_semantic_tool_hash_differs",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "packaged semantic runtime",
+      "evidence": {
+        "errors": [
+          "packaged semantic tool missing: zstd"
+        ]
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "packaged_semantic_tool_missing",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "namespace capability contract",
+      "evidence": {
+        "errors": [
+          "rootless user namespace capability unavailable"
+        ],
+        "mode": "rootless",
+        "schema_id": "namespace-capability-validation-current",
+        "status": "failed"
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "rootless_namespace_unavailable",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "namespace capability contract",
+      "evidence": {
+        "errors": [
+          "privileged CAP_SYS_ADMIN unavailable"
+        ],
+        "mode": "privileged",
+        "schema_id": "namespace-capability-validation-current",
+        "status": "failed"
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "privileged_capability_unavailable",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "measured network receipt",
+      "evidence": {
+        "derived_network_enabled": true,
+        "errors": [
+          "external default route is present",
+          "network_enabled derivation is not isolated"
+        ],
+        "schema_id": "network-namespace-validation-current",
+        "status": "failed"
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "external_route_present",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "measured network receipt",
+      "evidence": {
+        "derived_network_enabled": true,
+        "errors": [
+          "external DNS unexpectedly succeeded",
+          "network_enabled derivation is not isolated"
+        ],
+        "schema_id": "network-namespace-validation-current",
+        "status": "failed"
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "dns_unexpectedly_succeeds",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "detached final receipt binding",
+      "evidence": {
+        "candidate_outer": {
+          "environment_count": 2,
+          "errors": [
+            "independent validation is not final-outer-bound"
+          ],
+          "final_inner": {
+            "bytes": 0,
+            "filename": null,
+            "manifest_entry_count": 0,
+            "manifest_root": null,
+            "outer_member": null,
+            "qualifying_payload_entry_count": 0,
+            "qualifying_payload_root": null,
+            "sha256": null
+          },
+          "final_outer": {
+            "bytes": 117,
+            "filename": "final.zip",
+            "sha256": "994ffa5582aee2ac9e54ca098f0353e9fdc3bf0e2d0e5a0f4e3a13a7685d2cd9"
+          },
+          "schema_id": "detached-final-binding-validation-current",
+          "status": "failed"
+        },
+        "stale_inner_manifest": {
+          "environment_count": 2,
+          "errors": [
+            "independent validation is not final-inner-bound"
+          ],
+          "final_inner": {
+            "bytes": 0,
+            "filename": null,
+            "manifest_entry_count": 0,
+            "manifest_root": null,
+            "outer_member": null,
+            "qualifying_payload_entry_count": 0,
+            "qualifying_payload_root": null,
+            "sha256": null
+          },
+          "final_outer": {
+            "bytes": 117,
+            "filename": "final.zip",
+            "sha256": "994ffa5582aee2ac9e54ca098f0353e9fdc3bf0e2d0e5a0f4e3a13a7685d2cd9"
+          },
+          "schema_id": "detached-final-binding-validation-current",
+          "status": "failed"
+        }
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "candidate_outer_receipt",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "independent verifier failure packaging",
+      "evidence": {
+        "errors": [
+          "failure evidence missing: partial-evidence-manifest.json",
+          "fresh work and its diagnostic manifest were both deleted"
+        ],
+        "fresh_work_manifest_retained": false,
+        "fresh_work_retained": false,
+        "present": [
+          "command-log.json",
+          "failure-receipt.json",
+          "last-completed-stage.json",
+          "stderr.log",
+          "stdout.log"
+        ],
+        "replay_evidence_retained": true,
+        "required": [
+          "command-log.json",
+          "failure-receipt.json",
+          "last-completed-stage.json",
+          "partial-evidence-manifest.json",
+          "stderr.log",
+          "stdout.log"
+        ],
+        "schema_id": "failure-preservation-validation-current",
+        "status": "failed"
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "failure_evidence_deleted",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "package source equality",
+      "evidence": {
+        "artifact": "independent verifier",
+        "byte_equal": false,
+        "errors": [
+          "source-generated independent verifier differs"
+        ],
+        "packaged_sha256": "8a13630080e3dc1698d19fe7ff06d6a6c4a078751da01af4f0618afddab9d022",
+        "schema_id": "source-generated-equality-current",
+        "source_sha256": "ecef0cbc59e1711e7749befaa478db5ac020a2fdbc649f999c48d3f1eb85b529",
+        "status": "failed"
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "source_generated_verifier_differs",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    },
+    {
+      "boundary": "package source equality",
+      "evidence": {
+        "artifact": "replay launcher",
+        "byte_equal": false,
+        "errors": [
+          "source-generated replay launcher differs"
+        ],
+        "packaged_sha256": "5c7192bc6704aaba07faa7ada13df85f0774f18fd2cd9b511fc0d18bc062a47e",
+        "schema_id": "source-generated-equality-current",
+        "source_sha256": "4ade577b3a833f94b2decd3c3a3b32971a30410326541c897b619ce9c04051f1",
+        "status": "failed"
+      },
+      "expected_outcome": "rejected",
+      "fault_injected": true,
+      "id": "source_generated_replay_differs",
+      "observed_outcome": "rejected",
+      "rejected": true,
+      "status": "passed"
+    }
+  ],
+  "positive_bootstrap_fixture": {
+    "environment_sanitized": true,
+    "errors": [],
+    "fixed_exact_name_streaming": true,
+    "forbidden_host_semantic_utilities": [],
+    "global_packaged_ld_library_path": false,
+    "packaged_loader_invocation": true,
+    "posix_shell": true,
+    "schema_id": "bootstrap-launcher-validation-current",
+    "status": "passed"
+  },
+  "rejected_fault_count": 12,
+  "schema_id": "cross-environment-fault-matrix-current",
+  "status": "passed"
+}
