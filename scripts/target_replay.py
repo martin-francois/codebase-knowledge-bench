@@ -464,6 +464,13 @@ def _copytree(
     )
 
 
+def _dashboard_node_modules_ignore(
+    path: str, names: list[str]
+) -> set[str]:
+    del path
+    return {".vite"} & set(names)
+
+
 def _ldd_paths(executables: Sequence[Path]) -> list[Path]:
     paths: dict[str, Path] = {}
     for executable in executables:
@@ -1341,6 +1348,7 @@ def build_target_package(
         _copytree(
             benchmark_repo / "dashboard/node_modules",
             staging / "node_modules",
+            ignore=_dashboard_node_modules_ignore,
         )
         sources = {
             "jdk": (staging / "jdk", "jdk"),

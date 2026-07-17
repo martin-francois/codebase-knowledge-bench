@@ -32,6 +32,8 @@ from replay_rootfs import (  # noqa: E402
 from safe_archive import inspect_tree  # noqa: E402
 from target_replay import (  # noqa: E402
     REQUIRED_PACKAGED_SEMANTIC_RUNTIMES,
+    _copytree,
+    _dashboard_node_modules_ignore,
     _generic_runtime_resolution,
     _release_fault_injection,
     _replay_script,
@@ -141,6 +143,39 @@ class BootstrapBoundaryTests(unittest.TestCase):
 
 
 class PackagedRuntimeBoundaryTests(unittest.TestCase):
+    def test_dashboard_runtime_excludes_volatile_vitest_cache(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "node_modules"
+            cache = source / ".vite/vitest/key"
+            cache.mkdir(parents=True)
+            (source / "stable.js").write_text(
+                "export const stable = true;\n",
+                encoding="utf-8",
+            )
+            (cache / "results.json").write_text(
+                '{"duration": 1}\n', encoding="utf-8"
+            )
+            first = root / "first/node_modules"
+            _copytree(
+                source,
+                first,
+                ignore=_dashboard_node_modules_ignore,
+            )
+            (cache / "results.json").write_text(
+                '{"duration": 999}\n', encoding="utf-8"
+            )
+            second = root / "second/node_modules"
+            _copytree(
+                source,
+                second,
+                ignore=_dashboard_node_modules_ignore,
+            )
+            self.assertEqual(inspect_tree(first), inspect_tree(second))
+            self.assertFalse((first / ".vite").exists())
+
     def test_replay_syntax_validation_uses_packaged_bash_without_sh(
         self,
     ) -> None:
