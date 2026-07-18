@@ -2441,6 +2441,41 @@ def _runtime_environment(
     return environment
 
 
+def _packaged_replay_rootfs_glibc_identity(
+) -> tuple[str, dict[str, Any]]:
+    libc = "/usr/lib/x86_64-linux-gnu/libc.so.6"
+    command = [libc]
+    try:
+        process = subprocess.run(
+            command,
+            env={"PATH": "/usr/bin:/bin", "LANG": "C", "LC_ALL": "C"},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
+    except OSError as exc:
+        return "unknown", {
+            "command": command,
+            "first_line": "",
+            "exit_code": None,
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+    first_line = (
+        process.stdout.splitlines()[0] if process.stdout else ""
+    )
+    match = re.search(r"\b(\d+\.\d+)\b", first_line)
+    return (
+        match.group(1) if match is not None else "unknown",
+        {
+            "command": command,
+            "first_line": first_line,
+            "exit_code": process.returncode,
+            "error": "",
+        },
+    )
+
+
 def _resolve_runtime(
     package_root: Path, work_root: Path, lock: Mapping[str, Any]
 ) -> dict[str, Any]:
@@ -2516,32 +2551,20 @@ def _resolve_runtime(
     launcher_matches = (
         launcher_digest == lock["namespace_launcher"]["sha256"]
     )
-    rootfs_glibc_process = subprocess.run(
-        ["/usr/bin/ldd", "--version"],
-        env={"PATH": "/usr/bin:/bin", "LANG": "C", "LC_ALL": "C"},
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        check=False,
-    )
-    rootfs_glibc_match = re.search(
-        r"\b(\d+\.\d+)\b",
-        rootfs_glibc_process.stdout.splitlines()[0]
-        if rootfs_glibc_process.stdout
-        else "",
-    )
-    packaged_replay_rootfs_glibc = (
-        rootfs_glibc_match.group(1)
-        if rootfs_glibc_match is not None
-        else "unknown"
+    (
+        packaged_replay_rootfs_glibc,
+        rootfs_glibc_probe,
+    ) = _packaged_replay_rootfs_glibc_identity()
+    rootfs_glibc_probe_passed = (
+        rootfs_glibc_probe["exit_code"] == 0
+        and packaged_replay_rootfs_glibc != "unknown"
     )
     all_match = (
         all(row["matches_lock"] for row in executables.values())
         and host_semantic_unavailable
         and not generic_errors
         and launcher_matches
-        and rootfs_glibc_process.returncode == 0
-        and packaged_replay_rootfs_glibc != "unknown"
+        and rootfs_glibc_probe_passed
     )
     return {
         "schema_id": "runtime-resolution-current",
@@ -2565,15 +2588,7 @@ def _resolve_runtime(
         "packaged_replay_rootfs_glibc": (
             packaged_replay_rootfs_glibc
         ),
-        "packaged_replay_rootfs_glibc_probe": {
-            "command": ["/usr/bin/ldd", "--version"],
-            "first_line": (
-                rootfs_glibc_process.stdout.splitlines()[0]
-                if rootfs_glibc_process.stdout
-                else ""
-            ),
-            "exit_code": rootfs_glibc_process.returncode,
-        },
+        "packaged_replay_rootfs_glibc_probe": rootfs_glibc_probe,
         "host_java_node_chromium_unavailable": (
             host_semantic_unavailable
         ),

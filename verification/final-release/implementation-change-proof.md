@@ -30,7 +30,7 @@ waiting notification through a pipe and repeats the acquisition race ten times w
 Machine receipts now distinguish `host_userspace_distribution`, `host_userspace_glibc`,
 `host_kernel`, `packaged_bootstrap_glibc`, and `packaged_replay_rootfs_glibc`. The static sanitizer
 captures host userspace identity before packaged Python starts; replay records its pivoted rootfs
-glibc independently.
+glibc independently by executing the packaged libc itself, without requiring `ldd`.
 
 The final commit and tree cannot be embedded in a tracked file without changing that identity.
 They are bound after commit by the exact-final outer manifest, detached independent-validation

@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -37,6 +38,7 @@ from target_replay import (  # noqa: E402
     _copytree,
     _dashboard_node_modules_ignore,
     _generic_runtime_resolution,
+    _packaged_replay_rootfs_glibc_identity,
     _release_fault_injection,
     _replay_script,
     _rootfs_artifacts,
@@ -155,6 +157,41 @@ class BootstrapBoundaryTests(unittest.TestCase):
 
 
 class PackagedRuntimeBoundaryTests(unittest.TestCase):
+    def test_replay_rootfs_glibc_uses_packaged_libc_without_ldd(
+        self,
+    ) -> None:
+        process = mock.Mock(
+            returncode=0,
+            stdout=(
+                "GNU C Library (Debian GLIBC 2.36-9+deb12u14) "
+                "stable release version 2.36.\n"
+            ),
+        )
+        with mock.patch(
+            "target_replay.subprocess.run", return_value=process
+        ) as runner:
+            version, probe = (
+                _packaged_replay_rootfs_glibc_identity()
+            )
+        self.assertEqual("2.36", version)
+        self.assertEqual(
+            ["/usr/lib/x86_64-linux-gnu/libc.so.6"],
+            probe["command"],
+        )
+        self.assertNotIn("ldd", " ".join(probe["command"]))
+        runner.assert_called_once_with(
+            ["/usr/lib/x86_64-linux-gnu/libc.so.6"],
+            env={
+                "PATH": "/usr/bin:/bin",
+                "LANG": "C",
+                "LC_ALL": "C",
+            },
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
+
     def test_dashboard_runtime_excludes_volatile_vitest_cache(
         self,
     ) -> None:
