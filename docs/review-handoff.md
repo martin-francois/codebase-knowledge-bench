@@ -13,3 +13,12 @@ caches, `.git`, build output, and credentials are excluded.
 Because a file cannot contain its enclosing ZIP's final SHA-256 without a cryptographic fixed-point
 problem, `agent-response.md` names the detached checksum and validation receipt; those detached files are
 the authoritative post-construction ZIP identity.
+
+The official outer-package verification command is:
+
+```bash
+independent-verifier-bootstrap independent-verifier.sh OUTER_ZIP OUTPUT_ROOT
+```
+
+The static bootstrap sanitizes loader and language-runtime environment variables before the shell
+starts. Direct execution of `independent-verifier.sh` is not a hostile-environment-safe entrypoint.

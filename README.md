@@ -25,7 +25,8 @@ that all network access is disabled. Read
 
 You need:
 
-- Linux with `bash`, Python 3.11+, Git, and Bubblewrap (`bwrap`).
+- Linux with `bash`, Python 3.14.x, Git, and Bubblewrap (`bwrap`) for
+  artifact-backed benchmark and release qualification.
 - The Codex CLI with access to your configured model.
 - The GitHub CLI (`gh`). Authenticate it when the target or its issues are private.
 - The build tools required by the target repository.
@@ -34,6 +35,11 @@ You need:
 
 Generated files go to the output directory configured in the suite TOML. They are not written into
 this source repository.
+
+The supported project interpreter is exactly Python `>=3.14,<3.15`. Source-only CI uses the
+checked-in synthetic target and mocked external executable paths; it does not require the canonical
+target checkout, Bubblewrap, packaged replay runtimes, or benchmark output directories. Those real
+inputs remain mandatory only for artifact-backed release qualification.
 
 ## Quick start with the included suite
 
@@ -332,6 +338,16 @@ minimum, not a cold-cache guarantee.
 ## Deterministic hardening and review handoff
 
 Deterministic source checks install from `pyproject.toml` and `uv.lock`. Current live suites use `token-accounting-current`; the published canonical suite retains its immutable historical token metric and has an archive-bound erratum. External review packages are generated with `scripts/build_review_handoff.py`; see `docs/review-handoff.md`.
+
+The official independent-verifier entrypoint for a final outer delivery is:
+
+```bash
+independent-verifier-bootstrap independent-verifier.sh OUTER_ZIP OUTPUT_ROOT
+```
+
+The checked-in bootstrap is a statically linked sanitizer and the package carries its SHA-256.
+Invoking `independent-verifier.sh` directly is supported only in an already sanitized ordinary
+environment and is not hostile-environment safe.
 
 ## Private pre-release single-current policy
 

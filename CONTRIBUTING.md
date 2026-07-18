@@ -35,11 +35,18 @@ derived outputs instead of rerunning completed solves for scoring or reporting c
 
 ## Local development checks
 
+Use Python 3.14.x; the declared support policy is exactly `>=3.14,<3.15`. The clean-checkout
+source-only stratum uses only frozen Python and Node dependencies, the checked-in synthetic target,
+and mocked or injected external executable paths. It deliberately does not require the canonical
+target checkout or Bubblewrap integration.
+
 From the repository root:
 
 ```bash
-python3 -m py_compile scripts/*.py tests/test_harness.py
-python3 tests/test_harness.py -v
+uv sync --frozen --all-extras
+uv run python -m py_compile scripts/*.py tests/*.py
+uv run python -m unittest discover -s tests -p 'test_*.py'
+uv run python3 tests/test_harness.py -v
 git diff --check
 ```
 

@@ -57,6 +57,19 @@ sealed repositories, dependency caches, logs, archives, and review deliveries li
 `LAY-002` Runtime output uses a configurable output root outside the source tree. Generated ZIPs,
 target bundles, Maven caches, child homes, and snapshots MUST NOT be staged.
 
+`LAY-003` The sole supported project interpreter policy is Python `>=3.14,<3.15`. Project metadata,
+the frozen dependency lock, source CI, documentation, and packaged runtime receipts MUST declare
+that exact minor-version boundary. Python 3.11 and Python 3.13 are not blocking CI targets, and no
+compatibility implementation is maintained.
+
+`LAY-004` Source-only CI MUST start from a plain Git checkout and use only frozen Python
+dependencies, frozen Node dependencies, a checked-in small synthetic target fixture, and
+mocked/injected external executable paths for command construction. It MUST NOT require the
+canonical target checkout, `BENCH_TARGET_REPO_PATH`, Bubblewrap, privileged namespaces, canonical
+output directories, or packaged replay runtimes. Artifact-backed release qualification continues
+to exercise the real target commits, real protected Maven tests, mutation calibration, Bubblewrap
+integration, namespace behavior, and exact replay.
+
 ## 4. Sole current suite configuration
 
 `CFG-001` A suite configuration is one strict TOML document. Ambient `BENCH_*` values are private
@@ -386,12 +399,19 @@ independently validates both manifests, reconstructs source, executes the source
 validates all replay evidence and handoff semantics, and writes a receipt. `GO` requires the exact
 final outer to pass in at least two materially different Linux userspaces.
 
-`RPL-012` The only host bootstrap boundary is Linux, a POSIX-compatible `/bin/sh`, an `unzip`
-implementation that capability-tests exact-name `-p` streaming, and basic `mkdir`, `chmod`, `mktemp`,
-and `readlink`. The outer launcher unsets `LD_LIBRARY_PATH`, `PYTHONPATH`, `JAVA_HOME`, and
-`NODE_PATH` before any host utility runs. It streams a fixed set of exact-name regular bootstrap
-members and invokes packaged Python through the packaged ELF loader with a scoped `--library-path`.
-It MUST NOT use host awk, sha256sum, sort, sed, tr, zipinfo, Git, tar, zstd, unshare, mount, or ip.
+`RPL-012` The official independent-verifier entrypoint is the checked-in, prebuilt, statically
+linked current C sanitizer invoked as `independent-verifier-bootstrap independent-verifier.sh
+OUTER_ZIP OUTPUT_ROOT`. It starts without the host dynamic loader, clears `LD_LIBRARY_PATH`,
+`PYTHONPATH`, `JAVA_HOME`, and `NODE_PATH`, fixes a minimal environment, forwards the three
+arguments unchanged, invokes `/bin/sh`, and emits structured errors for argument, shell, signal, or
+child failures. It MUST NOT depend on `/proc/<pid>/exe`. Direct shell execution is not a
+hostile-environment-safe entrypoint. After sanitization the only host bootstrap boundary is Linux,
+`/bin/sh`, an `unzip` implementation that capability-tests exact-name `-p` streaming, and basic
+`mkdir`, `chmod`, `mktemp`, and `readlink`, plus `getconf` and `uname` used only to record host
+userspace glibc and kernel identity. The shell streams a fixed set of exact-name regular
+bootstrap members and invokes packaged Python through the packaged ELF loader with a scoped
+`--library-path`. It MUST NOT use host awk, sha256sum, sort, sed, tr, zipinfo, Git, tar, zstd,
+unshare, mount, or ip.
 
 `RPL-013` `runtime/replay-rootfs/`, `runtime/replay-rootfs-manifest.json`,
 `runtime/replay-rootfs-lock.json`, and `runtime/replay-rootfs-license-manifest.json` define the sole
@@ -426,22 +446,27 @@ own packaged verifier runs against that exact ZIP in every required userspace. A
 hash. Candidate or pre-final receipts cannot satisfy readiness.
 
 `RPL-018` Cross-environment qualification provides only the final outer ZIP to clean, empty replay
-roots in at least two materially different Linux userspaces. It records the pinned image or rootfs
-digest, kernel, distribution, glibc, bootstrap capability results, namespace mode, replay duration
-and exit, network result, evidence root, and exact outer and inner identities. At least one userspace
-must differ from the builder for every formerly host-locked generic tool.
+roots in at least two materially different Linux userspaces. It separately records
+`host_userspace_distribution`, `host_userspace_glibc`, `host_kernel`,
+`packaged_bootstrap_glibc`, and `packaged_replay_rootfs_glibc`, together with the pinned image or
+rootfs digest, bootstrap capability results, namespace mode, replay duration and exit, network
+result, evidence root, and exact outer and inner identities. Host glibc MUST be measured before
+entering either packaged userspace. At least one userspace must differ from the builder for every
+formerly host-locked generic tool.
 
 `RPL-019` Every numbered split ZIP is strictly smaller than 500,000,000 bytes and contains its
-payload part, a shared split manifest, JSON and Markdown indices, reconstruction script, final outer
-checksum, detached final validation and portability receipts, and the final agent response.
+payload part, a shared split manifest, JSON and Markdown indices, reconstruction script, the static
+verifier bootstrap and its SHA-256, final outer checksum, exact-final independent-validation
+receipt, portability matrix, source-only CI receipt, and the final agent response.
 Validation checks each part and its manifest, concatenates payloads by declared offset, reproduces
 the exact final outer, validates detached binding and both ZIP layers, and requires a passed
 portability matrix.
 
-`RPL-020` Committed generators produce byte-identical independent-verifier, replay launcher, runtime
-lock, replay-rootfs lock, and split reconstruction bytes. Packaged copies are compared against fresh
-source generation. Manual post-generation edits and parallel compatibility replay implementations
-are forbidden.
+`RPL-020` Committed generators produce byte-identical static-verifier bootstrap, independent
+verifier shell, replay launcher, runtime lock, replay-rootfs lock, and split reconstruction bytes.
+The prebuilt bootstrap hash is checked in and a fresh compilation with the recorded command MUST
+equal it exactly. Packaged copies are compared against source bytes. Manual post-generation edits
+and parallel compatibility replay implementations are forbidden.
 
 ## 16. Isolation, privacy, and security
 
@@ -511,9 +536,11 @@ verification and semantic self-review results; schemas and command logs; unchang
 published evidence; a semantic manifest; detached checksum; and detailed validation.
 
 `PUB-003` The single outer upload ZIP contains `agent-response.md`, the inner ZIP and its SHA-256
-and validation sidecars under `review-handoff/`, the source-identical generic bootstrap launcher
-`independent-verifier.sh`, plus `delivery-manifest.json` and `delivery-validation.json`. Both
-archives use deterministic ordering and extracted validation.
+and validation sidecars under `review-handoff/`, the source-identical verifier shell,
+`independent-verifier-bootstrap`, its SHA-256 file, plus `delivery-manifest.json` and
+`delivery-validation.json`. Both archives use deterministic ordering and extracted validation. The
+static bootstrap command is the official entrypoint; the shell alone is not documented as
+hostile-environment safe.
 
 `PUB-004` Final source is committed and pushed before generated delivery construction. Generated
 artifacts are not manually edited and no source commit follows packaging. Outer and inner extracted
