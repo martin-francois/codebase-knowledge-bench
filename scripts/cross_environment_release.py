@@ -1422,6 +1422,13 @@ def readiness_markdown(value: Mapping[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def release_command_exit_code(
+    command: str, result: Mapping[str, Any]
+) -> int:
+    expected_status = "GO" if command == "readiness" else "passed"
+    return 0 if result.get("status") == expected_status else 1
+
+
 def fault_matrix(repo: Path) -> dict[str, Any]:
     launcher = (repo / "scripts/independent_verifier.sh").read_text(
         encoding="utf-8"
@@ -1962,7 +1969,7 @@ def main() -> int:
             encoding="utf-8",
         )
     print(json.dumps(result, indent=2, sort_keys=True))
-    return 0 if result["status"] == "passed" else 1
+    return release_command_exit_code(args.command, result)
 
 
 if __name__ == "__main__":

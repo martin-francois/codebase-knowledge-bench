@@ -17,6 +17,7 @@ from cross_environment_release import (  # noqa: E402
     build_split_delivery,
     final_inner_identity,
     final_outer_identity,
+    release_command_exit_code,
     validate_bootstrap_launcher,
     validate_detached_final_binding,
     validate_failure_preservation,
@@ -609,6 +610,35 @@ class NamespaceAndNetworkReceiptTests(unittest.TestCase):
 
 
 class FailureAndFinalDeliveryTests(unittest.TestCase):
+    def test_release_cli_exit_code_uses_exact_command_status(self) -> None:
+        self.assertEqual(
+            0, release_command_exit_code("readiness", {"status": "GO"})
+        )
+        self.assertEqual(
+            1,
+            release_command_exit_code(
+                "readiness", {"status": "NO_GO"}
+            ),
+        )
+        self.assertEqual(
+            1,
+            release_command_exit_code(
+                "readiness", {"status": "passed"}
+            ),
+        )
+        self.assertEqual(
+            0,
+            release_command_exit_code(
+                "fault-matrix", {"status": "passed"}
+            ),
+        )
+        self.assertEqual(
+            1,
+            release_command_exit_code(
+                "fault-matrix", {"status": "GO"}
+            ),
+        )
+
     def test_release_fault_injection_is_explicit_and_narrow(self) -> None:
         with mock.patch.dict(
             os.environ,

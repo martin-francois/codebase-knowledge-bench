@@ -290,6 +290,14 @@
       "positive_fixture": "source and packaged verifier bytes equal", "negative_fixture": "one appended drift byte", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["verification/independent-verifier/independent_verifier.sh"], "failure_severity": "blocker", "status": "implemented"
     },
     {
+      "id": "RELEASE-STATUS-EXIT-001", "title": "Exact release status exit", "area": "delivery",
+      "invariant": "The release readiness command exits zero only for the exact structured GO decision.",
+      "why": "A GO receipt paired with a nonzero process status is not a status-safe release gate.", "kind": "automated",
+      "checker_id": "RELEASE-STATUS-EXIT-001", "checker_implementation": "scripts/verification_checkers.py:release_status_exit", "checker_version": "current", "expected_evidence_schema": null,
+      "implementation": ["scripts/cross_environment_release.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
+      "positive_fixture": "readiness GO maps to exit zero", "negative_fixture": "readiness passed token is rejected with nonzero exit", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["readiness.json"], "failure_severity": "blocker", "status": "implemented"
+    },
+    {
       "id": "LLM-001", "title": "Host versus packaged runtime boundary", "area": "correctness", "invariant": "The review distinguishes capability-tested host bootstrap prerequisites from exact-identity packaged semantic runtimes.", "why": "Conflating the two boundaries conceals cross-distro dependencies.", "kind": "llm_manual", "checker_id": null, "checker_implementation": null, "checker_version": null, "expected_evidence_schema": "llm-verification-report.schema.json", "implementation": ["scripts/generate_llm_self_review.py"], "test_files": ["tests/test_llm_self_review.py"], "fixture_files": [], "positive_fixture": null, "negative_fixture": null, "commands": [], "output_artifacts": ["verification/llm-verification-report.json"], "failure_severity": "high", "status": "documented"
     },
     {

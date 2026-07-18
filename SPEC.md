@@ -546,3 +546,7 @@ generation/syntax/provenance checks, runtime-lock and hostile-host selection tes
 tests, exact archive/link tests, fault injections, strict schemas, provenance audit, target bundle
 validation, one fresh full replay, independent outer-only verification, exact source tree/commit
 reconstruction, and clean-checkout source-only tests. No model-backed command is part of readiness.
+
+`RDY-004` Release command exit status is exact and fail closed. The `readiness` command exits zero
+only when its structured decision is exactly `GO`, and exits nonzero for `NO_GO` or any other status.
+Every other release command exits zero only when its structured status is exactly `passed`.
