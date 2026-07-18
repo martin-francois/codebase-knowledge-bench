@@ -34,7 +34,10 @@ from safe_archive import (
     validate_exact_tar,
 )
 from independent_verifier import _validated_zip_infos
-from final_source_replay import target_package_validation_receipt
+from final_source_replay import (
+    target_package_validation_receipt,
+    task_receipt_base_commit,
+)
 from target_replay import (
     _evidence_entries,
     _package_rows,
@@ -74,6 +77,26 @@ class ExactPreflightStatusTest(unittest.TestCase):
 
 
 class SourceGeneratedReplayTest(unittest.TestCase):
+    def test_task_receipt_uses_mandatory_stale_delivery_commit(self) -> None:
+        stale = "1f8fd577a3f598bfcf388f9a61a9c2cf6ca1ef09"
+        self.assertEqual(
+            stale,
+            task_receipt_base_commit(
+                {
+                    "task_id": "final-release-compliance-enforcement",
+                    "stale_delivery_source_commit": stale,
+                }
+            ),
+        )
+        self.assertEqual(
+            stale,
+            task_receipt_base_commit({"base_commit": stale}),
+        )
+        with self.assertRaisesRegex(
+            ValueError, "stale_delivery_source_commit"
+        ):
+            task_receipt_base_commit({"task_id": "missing-baseline"})
+
     def test_replay_manifest_refresh_includes_final_report_receipts(
         self,
     ) -> None:
