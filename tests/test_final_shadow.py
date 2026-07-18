@@ -76,8 +76,15 @@ class FinalProductionShadowTests(unittest.TestCase):
         result = run_fixture(ROOT, artifact_root=None, build_browser=True)
         self.assertEqual("passed", result["status"])
         self.assertEqual(18, result["row_count"])
-        self.assertTrue(result["stages"]["actual_protected_verifier_maven"])
-        self.assertTrue(result["browser"]["table_rendered"])
+        self.assertTrue(
+            result["stages"][
+                "source_only_protected_verifier_primitives"
+            ]
+        )
+        self.assertEqual("source-only", result["execution_stratum"])
+        self.assertEqual(
+            "not_applicable_source_only", result["browser"]["status"]
+        )
 
     def test_required_selector_failures_close(self):
         for defect in ("missing_required_selector", "duplicate_required_selector", "candidate_owned_same_name"):
@@ -128,7 +135,13 @@ class FinalProductionShadowTests(unittest.TestCase):
     def test_REG_008_report_and_dashboard_show_full_common_suite(self):
         result = run_fixture(ROOT, artifact_root=None, build_browser=True)
         self.assertTrue(result["stages"]["execution_and_suite_reports"])
-        self.assertTrue(result["browser"]["table_rendered"])
+        self.assertTrue(result["stages"]["dashboard_json_schema"])
+        self.assertTrue(
+            result["stages"]["source_only_dashboard_schema_validation"]
+        )
+        self.assertEqual(
+            "not_applicable_source_only", result["browser"]["status"]
+        )
 
 
 if __name__ == "__main__":

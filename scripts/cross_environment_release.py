@@ -26,7 +26,10 @@ DETACHED_PART_FILES = {
     "final-outer.independent-validation.json",
     "final-outer.portability-matrix.json",
     "final-outer.sha256",
+    "independent-verifier-bootstrap",
+    "independent-verifier-bootstrap.sha256",
     "reconstruct.sh",
+    "source-only-ci-receipt.json",
     "split-delivery-manifest.json",
     "split-index.json",
     "split-index.md",
@@ -192,6 +195,9 @@ def validate_bootstrap_launcher(source: str) -> dict[str, Any]:
     )
     if not fixed_streaming:
         errors.append("bootstrap is not fixed exact-name unzip streaming")
+    proc_exe_independent = "/proc/$$/exe" not in source
+    if not proc_exe_independent:
+        errors.append("bootstrap shell depends on /proc/<pid>/exe")
     shell_boundary = source.startswith("#!/bin/sh\n")
     if not shell_boundary:
         errors.append("bootstrap does not use POSIX /bin/sh")
@@ -203,6 +209,7 @@ def validate_bootstrap_launcher(source: str) -> dict[str, Any]:
         "global_packaged_ld_library_path": global_packaged,
         "packaged_loader_invocation": loader_invocation,
         "fixed_exact_name_streaming": fixed_streaming,
+        "proc_exe_independent": proc_exe_independent,
         "posix_shell": shell_boundary,
         "forbidden_host_semantic_utilities": forbidden,
     }
@@ -417,10 +424,39 @@ def validate_portability_matrix(
             errors.append(f"{prefix} did not pass")
             continue
         image = str(row.get("image_digest", ""))
-        glibc = str(row.get("glibc", ""))
-        if not image or not glibc:
+        host_glibc = str(row.get("host_userspace_glibc", ""))
+        required_runtime_identity = (
+            "host_userspace_distribution",
+            "host_userspace_glibc",
+            "host_kernel",
+            "packaged_bootstrap_glibc",
+            "packaged_replay_rootfs_glibc",
+        )
+        if (
+            not image
+            or not host_glibc
+            or any(not row.get(field) for field in required_runtime_identity)
+        ):
             errors.append(f"{prefix} identity is incomplete")
-        identities.add((image, glibc))
+        distribution = str(
+            row.get("host_userspace_distribution", "")
+        ).lower()
+        expected_debian_glibc = (
+            "2.36"
+            if "debian 12" in distribution
+            else "2.41"
+            if "debian 13" in distribution
+            else None
+        )
+        if (
+            expected_debian_glibc is not None
+            and host_glibc != expected_debian_glibc
+        ):
+            errors.append(
+                f"{prefix} host userspace glibc is wrong for "
+                f"{distribution}: {host_glibc}"
+            )
+        identities.add((image, host_glibc))
         if row.get("namespace_mode") not in {"rootless", "privileged"}:
             errors.append(f"{prefix} namespace mode is not explicit")
         if row.get("replay_exit_code") != 0:
@@ -563,21 +599,23 @@ def environment_result_from_verifier(
         if row["different"]
     )
     host = bootstrap.get("host", {})
-    glibc_value = host.get("glibc")
-    glibc = (
-        glibc_value[1]
-        if isinstance(glibc_value, list) and len(glibc_value) > 1
-        else str(glibc_value)
-    )
     return {
         "schema_id": "final-outer-environment-verifier-current",
         "status": "passed" if not errors else "failed",
         "errors": errors,
         "name": name,
         "image_digest": image_digest,
-        "distribution": host.get("distribution"),
-        "kernel": host.get("kernel"),
-        "glibc": glibc,
+        "host_userspace_distribution": host.get(
+            "host_userspace_distribution"
+        ),
+        "host_userspace_glibc": host.get("host_userspace_glibc"),
+        "host_kernel": host.get("host_kernel"),
+        "packaged_bootstrap_glibc": host.get(
+            "packaged_bootstrap_glibc"
+        ),
+        "packaged_replay_rootfs_glibc": runtime.get(
+            "packaged_replay_rootfs_glibc"
+        ),
         "machine": host.get("machine"),
         "effective_uid": host.get("effective_uid"),
         "effective_gid": host.get("effective_gid"),
@@ -731,9 +769,19 @@ def build_detached_final_receipts(
             {
                 "name": row.get("name"),
                 "image_digest": row.get("image_digest"),
-                "distribution": row.get("distribution"),
-                "kernel": row.get("kernel"),
-                "glibc": row.get("glibc"),
+                "host_userspace_distribution": row.get(
+                    "host_userspace_distribution"
+                ),
+                "host_userspace_glibc": row.get(
+                    "host_userspace_glibc"
+                ),
+                "host_kernel": row.get("host_kernel"),
+                "packaged_bootstrap_glibc": row.get(
+                    "packaged_bootstrap_glibc"
+                ),
+                "packaged_replay_rootfs_glibc": row.get(
+                    "packaged_replay_rootfs_glibc"
+                ),
             }
             for row in environment_rows
         ],
@@ -876,13 +924,20 @@ def _metadata_payloads(
     validation: bytes,
     matrix: bytes,
     agent_response: bytes,
+    static_bootstrap: bytes,
+    static_bootstrap_checksum: bytes,
+    source_only_ci_receipt: bytes,
 ) -> dict[str, bytes]:
     return {
         "agent-response.md": agent_response,
         "final-outer.independent-validation.json": validation,
         "final-outer.portability-matrix.json": matrix,
         "final-outer.sha256": checksum,
+        "independent-verifier-bootstrap": static_bootstrap,
+        "independent-verifier-bootstrap.sha256":
+            static_bootstrap_checksum,
         "reconstruct.sh": _reconstruct_script(),
+        "source-only-ci-receipt.json": source_only_ci_receipt,
         "split-delivery-manifest.json": canonical_bytes(manifest),
         "split-index.json": canonical_bytes(manifest),
         "split-index.md": _split_index_markdown(manifest),
@@ -902,7 +957,11 @@ def _part_archive_bytes(
                 archive,
                 name,
                 data,
-                executable=name == "reconstruct.sh",
+                executable=name
+                in {
+                    "reconstruct.sh",
+                    "independent-verifier-bootstrap",
+                },
             )
     return stream.getvalue()
 
@@ -921,6 +980,9 @@ def build_split_delivery(
     validation: Path,
     portability_matrix: Path,
     agent_response: Path,
+    static_bootstrap: Path,
+    static_bootstrap_checksum: Path,
+    source_only_ci_receipt: Path,
     output: Path,
     payload_bytes: int = 480_000_000,
     maximum_part_zip_bytes: int = 500_000_000,
@@ -943,12 +1005,49 @@ def build_split_delivery(
     checksum_value = checksum.read_text(encoding="utf-8").split()
     if not checksum_value or checksum_value[0] != outer_identity["sha256"]:
         raise ValueError("detached final checksum mismatch")
+    bootstrap_digest = sha256_file(static_bootstrap)
+    bootstrap_checksum_value = (
+        static_bootstrap_checksum.read_text(encoding="utf-8").split()
+    )
+    if (
+        not bootstrap_checksum_value
+        or bootstrap_checksum_value[0] != bootstrap_digest
+    ):
+        raise ValueError("static bootstrap checksum mismatch")
+    source_ci_value = json.loads(
+        source_only_ci_receipt.read_text(encoding="utf-8")
+    )
+    source = validation_value.get("source", {})
+    if (
+        source_ci_value.get("status") != "passed"
+        or source_ci_value.get("execution_stratum") != "source-only"
+        or source_ci_value.get("source", {}).get("commit")
+        != source.get("commit")
+        or source_ci_value.get("source", {}).get("tree")
+        != source.get("tree")
+        or source_ci_value.get("source", {}).get("worktree_clean")
+        is not True
+    ):
+        raise ValueError(
+            "source-only CI receipt did not pass exact-source binding"
+        )
+    with zipfile.ZipFile(outer) as outer_archive:
+        if (
+            outer_archive.read("independent-verifier-bootstrap")
+            != static_bootstrap.read_bytes()
+            or outer_archive.read(
+                "independent-verifier-bootstrap.sha256"
+            )
+            != static_bootstrap_checksum.read_bytes()
+        ):
+            raise ValueError(
+                "split static bootstrap differs from final outer"
+            )
     chunks: list[bytes] = []
     with outer.open("rb") as stream:
         while chunk := stream.read(payload_bytes):
             chunks.append(chunk)
     count = len(chunks)
-    source = validation_value.get("source", {})
     parts = []
     offset = 0
     for index, payload in enumerate(chunks, start=1):
@@ -986,12 +1085,23 @@ def build_split_delivery(
             "status": validation_value.get("status"),
             "portability_matrix_status": matrix_value.get("status"),
         },
+        "static_bootstrap": {
+            "bytes": static_bootstrap.stat().st_size,
+            "sha256": bootstrap_digest,
+        },
+        "source_only_ci_receipt_sha256": sha256_file(
+            source_only_ci_receipt
+        ),
     }
     raw_sidecars = {
         "checksum": checksum.read_bytes(),
         "validation": validation.read_bytes(),
         "matrix": portability_matrix.read_bytes(),
         "response": agent_response.read_bytes(),
+        "static_bootstrap": static_bootstrap.read_bytes(),
+        "static_bootstrap_checksum":
+            static_bootstrap_checksum.read_bytes(),
+        "source_only_ci_receipt": source_only_ci_receipt.read_bytes(),
     }
     # Stored ZIP members make archive length independent of same-length hash
     # substitutions. Iterate only until decimal byte-count fields stabilize.
@@ -1003,6 +1113,13 @@ def build_split_delivery(
             validation=raw_sidecars["validation"],
             matrix=raw_sidecars["matrix"],
             agent_response=raw_sidecars["response"],
+            static_bootstrap=raw_sidecars["static_bootstrap"],
+            static_bootstrap_checksum=raw_sidecars[
+                "static_bootstrap_checksum"
+            ],
+            source_only_ci_receipt=raw_sidecars[
+                "source_only_ci_receipt"
+            ],
         )
         sizes = [
             len(
@@ -1028,6 +1145,13 @@ def build_split_delivery(
         validation=raw_sidecars["validation"],
         matrix=raw_sidecars["matrix"],
         agent_response=raw_sidecars["response"],
+        static_bootstrap=raw_sidecars["static_bootstrap"],
+        static_bootstrap_checksum=raw_sidecars[
+            "static_bootstrap_checksum"
+        ],
+        source_only_ci_receipt=raw_sidecars[
+            "source_only_ci_receipt"
+        ],
     )
     for row, payload in zip(manifest["parts"], chunks, strict=True):
         normalized = _part_archive_bytes(
@@ -1040,6 +1164,13 @@ def build_split_delivery(
         validation=raw_sidecars["validation"],
         matrix=raw_sidecars["matrix"],
         agent_response=raw_sidecars["response"],
+        static_bootstrap=raw_sidecars["static_bootstrap"],
+        static_bootstrap_checksum=raw_sidecars[
+            "static_bootstrap_checksum"
+        ],
+        source_only_ci_receipt=raw_sidecars[
+            "source_only_ci_receipt"
+        ],
     )
     outputs: list[Path] = []
     for row, payload in zip(manifest["parts"], chunks, strict=True):
@@ -1081,6 +1212,15 @@ def _normalized_part_digest(
         ),
         matrix=archive.read("final-outer.portability-matrix.json"),
         agent_response=archive.read("agent-response.md"),
+        static_bootstrap=archive.read(
+            "independent-verifier-bootstrap"
+        ),
+        static_bootstrap_checksum=archive.read(
+            "independent-verifier-bootstrap.sha256"
+        ),
+        source_only_ci_receipt=archive.read(
+            "source-only-ci-receipt.json"
+        ),
     )
     data = _part_archive_bytes(
         payload_names[0], archive.read(payload_names[0]), metadata
@@ -1216,6 +1356,48 @@ def validate_split_delivery(
                 reconstructed, detached_validation, matrix
             )
             errors.extend(binding["errors"])
+            bootstrap_hash = sha256_bytes(
+                sidecars["independent-verifier-bootstrap"]
+            )
+            declared_bootstrap_hash = sidecars[
+                "independent-verifier-bootstrap.sha256"
+            ].decode().split()[0]
+            if bootstrap_hash != declared_bootstrap_hash:
+                errors.append("static bootstrap checksum mismatch")
+            source_ci = json.loads(
+                sidecars["source-only-ci-receipt.json"]
+            )
+            if (
+                source_ci.get("status") != "passed"
+                or source_ci.get("execution_stratum")
+                != "source-only"
+                or source_ci.get("source", {}).get("commit")
+                != detached_validation.get("source", {}).get("commit")
+                or source_ci.get("source", {}).get("tree")
+                != detached_validation.get("source", {}).get("tree")
+                or source_ci.get("source", {}).get("worktree_clean")
+                is not True
+            ):
+                errors.append(
+                    "source-only CI receipt did not pass exact-source "
+                    "binding"
+                )
+            with zipfile.ZipFile(reconstructed) as outer_archive:
+                if (
+                    outer_archive.read(
+                        "independent-verifier-bootstrap"
+                    )
+                    != sidecars["independent-verifier-bootstrap"]
+                    or outer_archive.read(
+                        "independent-verifier-bootstrap.sha256"
+                    )
+                    != sidecars[
+                        "independent-verifier-bootstrap.sha256"
+                    ]
+                ):
+                    errors.append(
+                        "split static bootstrap differs from final outer"
+                    )
         except (KeyError, UnicodeDecodeError, json.JSONDecodeError) as exc:
             errors.append(f"detached artifact parsing failed: {exc}")
     outer_validation: dict[str, Any] | None = None
@@ -1635,7 +1817,15 @@ def fault_matrix(repo: Path) -> dict[str, Any]:
                 {
                     "status": "passed",
                     "image_digest": image,
-                    "glibc": glibc,
+                    "host_userspace_distribution": (
+                        "debian 12"
+                        if glibc == "2.36"
+                        else "debian 13"
+                    ),
+                    "host_userspace_glibc": glibc,
+                    "host_kernel": "Linux fixture",
+                    "packaged_bootstrap_glibc": "2.36",
+                    "packaged_replay_rootfs_glibc": "2.36",
                     "namespace_mode": "privileged",
                     "replay_exit_code": 0,
                     "network_status": "passed",
@@ -1842,6 +2032,15 @@ def main() -> int:
     split.add_argument("--validation", type=Path, required=True)
     split.add_argument("--portability-matrix", type=Path, required=True)
     split.add_argument("--agent-response", type=Path, required=True)
+    split.add_argument(
+        "--static-bootstrap", type=Path, required=True
+    )
+    split.add_argument(
+        "--static-bootstrap-checksum", type=Path, required=True
+    )
+    split.add_argument(
+        "--source-only-ci-receipt", type=Path, required=True
+    )
     split.add_argument("--output", type=Path, required=True)
     validate_split = sub.add_parser("validate-split")
     validate_split.add_argument("parts", type=Path, nargs="+")
@@ -1933,6 +2132,13 @@ def main() -> int:
             validation=args.validation.resolve(),
             portability_matrix=args.portability_matrix.resolve(),
             agent_response=args.agent_response.resolve(),
+            static_bootstrap=args.static_bootstrap.resolve(),
+            static_bootstrap_checksum=(
+                args.static_bootstrap_checksum.resolve()
+            ),
+            source_only_ci_receipt=(
+                args.source_only_ci_receipt.resolve()
+            ),
             output=args.output.resolve(),
         )
         result = {

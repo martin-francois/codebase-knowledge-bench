@@ -166,12 +166,24 @@ class DownstreamConsumerTests(unittest.TestCase):
                     "independent_verifier.sh",
                     "#!/bin/sh\n",
                 )
+                archive.writestr(
+                    "verification/independent-verifier/"
+                    "independent-verifier-bootstrap",
+                    b"static fixture",
+                )
+                archive.writestr(
+                    "verification/independent-verifier/"
+                    "independent-verifier-bootstrap.sha256",
+                    b"fixture checksum\n",
+                )
             for path in (checksum, receipt):
                 path.write_bytes(b"fixture")
             self.assertEqual(
                 {
                     "agent-response.md",
                     "independent-verifier.sh",
+                    "independent-verifier-bootstrap",
+                    "independent-verifier-bootstrap.sha256",
                     "review-handoff/review-handoff.zip",
                     "review-handoff/review-handoff.zip.sha256",
                     "review-handoff/review-handoff.zip.validation.json",

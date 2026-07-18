@@ -599,6 +599,7 @@ class NetworkNamespaceLauncherTest(unittest.TestCase):
         self,
     ) -> None:
         launcher = ROOT / "scripts/independent_verifier.sh"
+        bootstrap = ROOT / "scripts/independent-verifier-bootstrap"
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             python_runtime = root / "python-runtime"
@@ -661,7 +662,12 @@ class NetworkNamespaceLauncherTest(unittest.TestCase):
                 }.items():
                     write_zip(archive, name, data)
             result = subprocess.run(
-                [str(launcher), str(outer), str(root / "output")],
+                [
+                    str(bootstrap),
+                    str(launcher),
+                    str(outer),
+                    str(root / "output"),
+                ],
                 env={
                     **os.environ,
                     "LD_LIBRARY_PATH": str(

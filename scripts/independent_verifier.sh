@@ -4,7 +4,7 @@ set -eu
 unset LD_LIBRARY_PATH PYTHONPATH JAVA_HOME NODE_PATH
 
 if [ "$#" -ne 2 ]; then
-  echo "usage: independent_verifier.sh OUTER_DELIVERY_ZIP EMPTY_OUTPUT_ROOT" >&2
+  echo "usage: independent-verifier-bootstrap independent-verifier.sh OUTER_ZIP OUTPUT_ROOT" >&2
   exit 64
 fi
 
@@ -50,10 +50,45 @@ MKTEMP=$("$READLINK" -f "$MKTEMP") || {
   echo "host mktemp path cannot be resolved" >&2
   exit 66
 }
-SHELL_PATH=$("$READLINK" -f "/proc/$$/exe") || {
-  echo "host readlink lacks required -f capability" >&2
+GETCONF=$(command -v getconf) || {
+  echo "host getconf is required for userspace identity" >&2
   exit 66
 }
+GETCONF=$("$READLINK" -f "$GETCONF") || {
+  echo "host getconf path cannot be resolved" >&2
+  exit 66
+}
+UNAME=$(command -v uname) || {
+  echo "host uname is required for kernel identity" >&2
+  exit 66
+}
+UNAME=$("$READLINK" -f "$UNAME") || {
+  echo "host uname path cannot be resolved" >&2
+  exit 66
+}
+SHELL_PATH=${INDEPENDENT_VERIFIER_SHELL_PATH:-}
+if [ -z "$SHELL_PATH" ]; then
+  SHELL_PATH=$(command -v sh) || {
+    echo "host shell is required" >&2
+    exit 66
+  }
+fi
+SHELL_PATH=$("$READLINK" -f "$SHELL_PATH") || {
+  echo "host shell path cannot be resolved" >&2
+  exit 66
+}
+HOST_USERSPACE_DISTRIBUTION=unknown
+if [ -r /etc/os-release ]; then
+  ID=
+  VERSION_ID=
+  # The distribution-owned os-release file is the authoritative userspace ID.
+  . /etc/os-release
+  HOST_USERSPACE_DISTRIBUTION="${ID:-unknown} ${VERSION_ID:-unknown}"
+fi
+HOST_USERSPACE_GLIBC=unknown
+HOST_USERSPACE_GLIBC=$("$GETCONF" GNU_LIBC_VERSION 2>/dev/null || true)
+HOST_USERSPACE_GLIBC=${HOST_USERSPACE_GLIBC#glibc }
+HOST_KERNEL=$("$UNAME" -srmo 2>/dev/null || "$UNAME" -sr 2>/dev/null || echo unknown)
 STAGE=$("$MKTEMP" -d \
   "${TMPDIR:-/tmp}/independent-verifier-bootstrap.XXXXXX")
 "$MKDIR" -p "$STAGE/inner"
@@ -101,15 +136,20 @@ PYTHON="$PREFIX/bin/python3.14"
 VERIFIER="$STAGE/inner/verification/independent-verifier/independent_verifier.py"
 
 export INDEPENDENT_VERIFIER_BOOTSTRAP
-INDEPENDENT_VERIFIER_BOOTSTRAP=\
-"sanitized POSIX shell; exact-name unzip streaming; packaged ELF loader"
+: "${INDEPENDENT_VERIFIER_BOOTSTRAP:=sanitized POSIX shell; exact-name unzip streaming; packaged ELF loader}"
 export INDEPENDENT_VERIFIER_UNZIP_PATH="$UNZIP"
 export INDEPENDENT_VERIFIER_SHELL_PATH="$SHELL_PATH"
 export INDEPENDENT_VERIFIER_MKDIR_PATH="$MKDIR"
 export INDEPENDENT_VERIFIER_CHMOD_PATH="$CHMOD"
 export INDEPENDENT_VERIFIER_MKTEMP_PATH="$MKTEMP"
 export INDEPENDENT_VERIFIER_READLINK_PATH="$READLINK"
+export INDEPENDENT_VERIFIER_GETCONF_PATH="$GETCONF"
+export INDEPENDENT_VERIFIER_UNAME_PATH="$UNAME"
 export INDEPENDENT_VERIFIER_BOOTSTRAP_STAGE="$STAGE"
+export INDEPENDENT_VERIFIER_HOST_USERSPACE_DISTRIBUTION="$HOST_USERSPACE_DISTRIBUTION"
+export INDEPENDENT_VERIFIER_HOST_USERSPACE_GLIBC="$HOST_USERSPACE_GLIBC"
+export INDEPENDENT_VERIFIER_HOST_KERNEL="$HOST_KERNEL"
+export INDEPENDENT_VERIFIER_PACKAGED_LOADER="$LOADER"
 export PYTHONDONTWRITEBYTECODE=1
 
 PYTHONHOME="$PREFIX" exec "$LOADER" \

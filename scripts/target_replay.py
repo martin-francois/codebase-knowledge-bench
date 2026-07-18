@@ -813,6 +813,10 @@ def _runtime_lock(
             release_values[key] = value.strip('"')
     return {
         "schema_id": "offline-runtime-lock-current",
+        "python_support": {
+            "requires_python": ">=3.14,<3.15",
+            "runtime": "CPython 3.14",
+        },
         "platform": {
             "os": "packaged replay rootfs",
             "source_image_digest": replay_rootfs_lock[
@@ -836,6 +840,8 @@ def _runtime_lock(
                 ("chmod", "$PATH/chmod"),
                 ("mktemp", "$PATH/mktemp"),
                 ("readlink", "$PATH/readlink"),
+                ("getconf", "$PATH/getconf"),
+                ("uname", "$PATH/uname"),
             )
         ],
         "kernel_capabilities": [
@@ -1684,6 +1690,7 @@ def _validate_runtime_lock_shape(lock: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
     required = {
         "schema_id",
+        "python_support",
         "platform",
         "host_bootstrap_prerequisites",
         "kernel_capabilities",
@@ -1695,6 +1702,11 @@ def _validate_runtime_lock_shape(lock: Mapping[str, Any]) -> list[str]:
     }
     if set(lock) != required:
         errors.append("runtime lock field set mismatch")
+    if lock.get("python_support") != {
+        "requires_python": ">=3.14,<3.15",
+        "runtime": "CPython 3.14",
+    }:
+        errors.append("runtime lock Python support policy is invalid")
     for section, role, mode, hash_required in (
         (
             "host_bootstrap_prerequisites",
@@ -2504,11 +2516,32 @@ def _resolve_runtime(
     launcher_matches = (
         launcher_digest == lock["namespace_launcher"]["sha256"]
     )
+    rootfs_glibc_process = subprocess.run(
+        ["/usr/bin/ldd", "--version"],
+        env={"PATH": "/usr/bin:/bin", "LANG": "C", "LC_ALL": "C"},
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+    rootfs_glibc_match = re.search(
+        r"\b(\d+\.\d+)\b",
+        rootfs_glibc_process.stdout.splitlines()[0]
+        if rootfs_glibc_process.stdout
+        else "",
+    )
+    packaged_replay_rootfs_glibc = (
+        rootfs_glibc_match.group(1)
+        if rootfs_glibc_match is not None
+        else "unknown"
+    )
     all_match = (
         all(row["matches_lock"] for row in executables.values())
         and host_semantic_unavailable
         and not generic_errors
         and launcher_matches
+        and rootfs_glibc_process.returncode == 0
+        and packaged_replay_rootfs_glibc != "unknown"
     )
     return {
         "schema_id": "runtime-resolution-current",
@@ -2529,6 +2562,18 @@ def _resolve_runtime(
             "matches_lock": launcher_matches,
         },
         "replay_rootfs": lock["replay_rootfs"],
+        "packaged_replay_rootfs_glibc": (
+            packaged_replay_rootfs_glibc
+        ),
+        "packaged_replay_rootfs_glibc_probe": {
+            "command": ["/usr/bin/ldd", "--version"],
+            "first_line": (
+                rootfs_glibc_process.stdout.splitlines()[0]
+                if rootfs_glibc_process.stdout
+                else ""
+            ),
+            "exit_code": rootfs_glibc_process.returncode,
+        },
         "host_java_node_chromium_unavailable": (
             host_semantic_unavailable
         ),
@@ -3255,6 +3300,8 @@ def run_replay(
             "--artifact-root",
             str(shadow_root),
             "--build-browser",
+            "--stratum",
+            "artifact",
         ],
         cwd=benchmark,
         environment=environment,

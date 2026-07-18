@@ -73,7 +73,11 @@ def portability_matrix(identity: dict, inner: dict) -> dict:
             {
                 "status": "passed",
                 "image_digest": "debian12@sha256:" + ("1" * 64),
-                "glibc": "2.36",
+                "host_userspace_distribution": "debian 12",
+                "host_userspace_glibc": "2.36",
+                "host_kernel": "Linux fixture",
+                "packaged_bootstrap_glibc": "2.36",
+                "packaged_replay_rootfs_glibc": "2.36",
                 "namespace_mode": "privileged",
                 "replay_exit_code": 0,
                 "network_status": "passed",
@@ -86,7 +90,11 @@ def portability_matrix(identity: dict, inner: dict) -> dict:
             {
                 "status": "passed",
                 "image_digest": "debian13@sha256:" + ("2" * 64),
-                "glibc": "2.41",
+                "host_userspace_distribution": "debian 13",
+                "host_userspace_glibc": "2.41",
+                "host_kernel": "Linux fixture",
+                "packaged_bootstrap_glibc": "2.36",
+                "packaged_replay_rootfs_glibc": "2.36",
                 "namespace_mode": "privileged",
                 "replay_exit_code": 0,
                 "network_status": "passed",
@@ -248,6 +256,10 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
             }
         return {
             "schema_id": "offline-runtime-lock-current",
+            "python_support": {
+                "requires_python": ">=3.14,<3.15",
+                "runtime": "CPython 3.14",
+            },
             "platform": {"system": "Linux", "architecture": "x86_64"},
             "host_bootstrap_prerequisites": [
                 {
@@ -773,12 +785,24 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             outer = root / "final-outer.zip"
+            bootstrap_bytes = b"static bootstrap fixture"
+            bootstrap_checksum_bytes = (
+                hashlib.sha256(bootstrap_bytes).hexdigest()
+                + "  independent-verifier-bootstrap\n"
+            ).encode()
             with zipfile.ZipFile(
                 outer, "w", compression=zipfile.ZIP_STORED
             ) as archive:
                 archive.writestr(
                     "portable-fixture.bin",
                     (b"portable-final-outer\n" * 1024) + b"end",
+                )
+                archive.writestr(
+                    "independent-verifier-bootstrap", bootstrap_bytes
+                )
+                archive.writestr(
+                    "independent-verifier-bootstrap.sha256",
+                    bootstrap_checksum_bytes,
                 )
             identity = final_outer_identity(outer)
             inner = final_inner_identity(outer)
@@ -792,6 +816,10 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                     "status": "passed",
                     "final_outer": identity,
                     "final_inner": inner,
+                    "source": {
+                        "commit": "1" * 40,
+                        "tree": "2" * 40,
+                    },
                 },
             )
             write_json(
@@ -803,12 +831,38 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                 encoding="utf-8",
             )
             response.write_text("# Agent response\n", encoding="utf-8")
+            bootstrap = root / "independent-verifier-bootstrap"
+            bootstrap.write_bytes(bootstrap_bytes)
+            bootstrap_checksum = (
+                root / "independent-verifier-bootstrap.sha256"
+            )
+            bootstrap_checksum.write_text(
+                hashlib.sha256(bootstrap.read_bytes()).hexdigest()
+                + "  independent-verifier-bootstrap\n",
+                encoding="utf-8",
+            )
+            source_ci = root / "source-only-ci-receipt.json"
+            write_json(
+                source_ci,
+                {
+                    "status": "passed",
+                    "execution_stratum": "source-only",
+                    "source": {
+                        "commit": "1" * 40,
+                        "tree": "2" * 40,
+                        "worktree_clean": True,
+                    },
+                },
+            )
             parts = build_split_delivery(
                 outer=outer,
                 checksum=checksum,
                 validation=validation,
                 portability_matrix=matrix,
                 agent_response=response,
+                static_bootstrap=bootstrap,
+                static_bootstrap_checksum=bootstrap_checksum,
+                source_only_ci_receipt=source_ci,
                 output=root / "parts",
                 payload_bytes=4096,
                 maximum_part_zip_bytes=100_000,
@@ -824,7 +878,10 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                         "final-outer.independent-validation.json",
                         "final-outer.portability-matrix.json",
                         "final-outer.sha256",
+                        "independent-verifier-bootstrap",
+                        "independent-verifier-bootstrap.sha256",
                         "reconstruct.sh",
+                        "source-only-ci-receipt.json",
                         "split-delivery-manifest.json",
                         "split-index.json",
                         "split-index.md",

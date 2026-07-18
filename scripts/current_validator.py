@@ -466,7 +466,12 @@ def validate_execution(
     return errors
 
 
-def _validate_preflights(suite_dir: Path, data: dict[str, Any], errors: list[str]) -> None:
+def _validate_preflights(
+    suite_dir: Path,
+    data: dict[str, Any],
+    errors: list[str],
+    preflight_input_paths: Mapping[str, tuple[Path, Path]] | None = None,
+) -> None:
     from current_preflight import validate_current_preflight_bundle
 
     preflights = data.get("issue_preflights")
@@ -481,8 +486,19 @@ def _validate_preflights(suite_dir: Path, data: dict[str, Any], errors: list[str
         artifact_path = Path(str(record.get("artifact_path") or ""))
         if not artifact_path.is_absolute():
             artifact_path = suite_dir / artifact_path
-        contract_path = ROOT / "verification/methodology-current/contracts" / f"{issue_id}.json"
-        plan_path = ROOT / "verification/methodology-current/channel-plans" / f"{issue_id}.json"
+        contract_path, plan_path = (
+            preflight_input_paths[issue_id]
+            if preflight_input_paths is not None
+            and issue_id in preflight_input_paths
+            else (
+                ROOT
+                / "verification/methodology-current/contracts"
+                / f"{issue_id}.json",
+                ROOT
+                / "verification/methodology-current/channel-plans"
+                / f"{issue_id}.json",
+            )
+        )
         try:
             artifact = load_json(artifact_path)
             if record.get("artifact_sha256") != sha256_file(artifact_path):
@@ -510,7 +526,12 @@ def _validate_preflights(suite_dir: Path, data: dict[str, Any], errors: list[str
 
 
 def validate_suite(
-    path: Path, chromium_executable: str | Path | None = None
+    path: Path,
+    chromium_executable: str | Path | None = None,
+    *,
+    preflight_input_paths: Mapping[
+        str, tuple[Path, Path]
+    ] | None = None,
 ) -> list[str]:
     suite_dir = path
     errors: list[str] = []
@@ -525,7 +546,12 @@ def validate_suite(
     if data.get("scoring_model", {}).get("schema_version") != "current":
         fail(errors, "unsupported result schema; current suite evidence is required")
         return errors
-    _validate_preflights(suite_dir, data, errors)
+    _validate_preflights(
+        suite_dir,
+        data,
+        errors,
+        preflight_input_paths=preflight_input_paths,
+    )
     validate_suite_derived_rows(data, errors)
     plan_path = suite_dir / "suite-plan.json"
     if plan_path.is_file():

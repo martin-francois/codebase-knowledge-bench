@@ -73,7 +73,29 @@ class RetryPolicyTest(unittest.TestCase):
             ), mock.patch.object(runner, "ANTI_LEAK_BIN", anti_leak), mock.patch.object(
                 runner, "SHARED_INSTALL_ROOT", root / "shared-installs"
             ), mock.patch.object(runner, "NODE24_BIN", root / "node24/bin"):
-                command = runner.external_sandbox_cmd(variant, ["true"])
+                with mock.patch.object(
+                    runner.shutil,
+                    "which",
+                    side_effect=AssertionError(
+                        "source-only command construction resolved bwrap"
+                    ),
+                ):
+                    command = runner.external_sandbox_cmd(
+                        variant,
+                        ["true"],
+                        bwrap_path="/fixture/bin/bwrap",
+                    )
+                with mock.patch.object(
+                    runner.shutil,
+                    "which",
+                    return_value="/artifact/bin/bwrap",
+                ) as resolver:
+                    artifact_command = runner.external_sandbox_cmd(
+                        variant, ["true"]
+                    )
+                resolver.assert_called_once_with("bwrap")
+        self.assertEqual("/fixture/bin/bwrap", command[0])
+        self.assertEqual("/artifact/bin/bwrap", artifact_command[0])
         for temporary in ("/tmp", "/var/tmp"):
             mount = command.index(temporary)
             self.assertEqual(["--tmpfs", temporary, "--chmod", "1777", temporary], command[mount - 1 : mount + 4])

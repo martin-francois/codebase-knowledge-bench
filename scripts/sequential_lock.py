@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterator
+from typing import Callable, Iterator
 
 
 LOCK_FD_ENV = "BENCH_SEQUENTIAL_LOCK_FD"
@@ -74,7 +74,9 @@ class SequentialTimingLock:
         os.close(self.fd)
 
 
-def acquire_sequential_timing_lock() -> SequentialTimingLock:
+def acquire_sequential_timing_lock(
+    *, on_waiting: Callable[[], None] | None = None
+) -> SequentialTimingLock:
     inherited = os.environ.get(LOCK_FD_ENV, "").strip()
     path = default_lock_path()
     if inherited:
@@ -93,6 +95,8 @@ def acquire_sequential_timing_lock() -> SequentialTimingLock:
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             print(f"[benchmark] waiting for sequential timing lock: {path}", flush=True)
+            if on_waiting is not None:
+                on_waiting()
             fcntl.flock(fd, fcntl.LOCK_EX)
         wait_seconds = time.monotonic() - started
         acquired_at = _now()

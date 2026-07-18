@@ -16,7 +16,7 @@ from build_review_handoff import scan_text, validate as validate_handoff, write_
 from safe_archive import safe_extract_zip
 
 
-DELIVERY_ZIP_MAX_MEMBERS = 10
+DELIVERY_ZIP_MAX_MEMBERS = 12
 DELIVERY_ZIP_MAX_MEMBER_BYTES = 1_500_000_000
 DELIVERY_ZIP_MAX_TOTAL_BYTES = 1_600_000_000
 DELIVERY_ZIP_MAX_COMPRESSION_RATIO = 200
@@ -60,12 +60,23 @@ def _payload(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Pat
         verifier_launcher = archive.read(
             "verification/independent-verifier/independent_verifier.sh"
         )
+        verifier_bootstrap = archive.read(
+            "verification/independent-verifier/"
+            "independent-verifier-bootstrap"
+        )
+        verifier_bootstrap_checksum = archive.read(
+            "verification/independent-verifier/"
+            "independent-verifier-bootstrap.sha256"
+        )
     return {
         prefix + inner_zip.name: inner_zip.read_bytes(),
         prefix + checksum.name: checksum.read_bytes(),
         prefix + receipt.name: receipt.read_bytes(),
         "agent-response.md": agent_response.read_bytes(),
         "independent-verifier.sh": verifier_launcher,
+        "independent-verifier-bootstrap": verifier_bootstrap,
+        "independent-verifier-bootstrap.sha256":
+            verifier_bootstrap_checksum,
     }
 
 
@@ -93,10 +104,23 @@ def build(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Path, 
             )
             == members["independent-verifier.sh"]
         )
+        bootstrap_matches = (
+            inner_archive.read(
+                "verification/independent-verifier/"
+                "independent-verifier-bootstrap"
+            )
+            == members["independent-verifier-bootstrap"]
+            and inner_archive.read(
+                "verification/independent-verifier/"
+                "independent-verifier-bootstrap.sha256"
+            )
+            == members["independent-verifier-bootstrap.sha256"]
+        )
     binding = validate_detached_binding(inner_zip.name, members[inner_member], checksum.read_text(encoding="utf-8"), detailed)
     if (
         not response_matches
         or not verifier_matches
+        or not bootstrap_matches
         or binding["status"] != "passed"
     ):
         raise ValueError(
@@ -115,12 +139,26 @@ def build(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Path, 
         "receipt_bound_to_inner_zip": Path(str(detailed.get("review_zip_path") or detailed.get("zip_path") or "")).name == inner_zip.name,
         "agent_response_matches_inner": response_matches,
         "verifier_launcher_matches_inner": verifier_matches,
+        "static_verifier_bootstrap_matches_inner": bootstrap_matches,
         "overall_status": "passed" if inner_status == "passed" else "NO_GO",
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in sorted(members.items()):
-            write_zip(archive, name, data)
+            write_zip(
+                archive,
+                name,
+                data,
+                mode=(
+                    0o755
+                    if name
+                    in {
+                        "independent-verifier-bootstrap",
+                        "independent-verifier.sh",
+                    }
+                    else 0o644
+                ),
+            )
         write_zip(archive, "delivery-manifest.json", json.dumps(manifest, indent=2, sort_keys=True).encode() + b"\n")
         write_zip(archive, "delivery-validation.json", json.dumps(validation, indent=2, sort_keys=True).encode() + b"\n")
     observed = validate(output)
@@ -135,6 +173,8 @@ def validate(path: Path) -> dict[str, Any]:
             "delivery-validation.json",
             "agent-response.md",
             "independent-verifier.sh",
+            "independent-verifier-bootstrap",
+            "independent-verifier-bootstrap.sha256",
         }
         inner = sorted(name for name in names if name.startswith("review-handoff/") and name.endswith(".zip"))
         if len(inner) != 1:
@@ -143,6 +183,16 @@ def validate(path: Path) -> dict[str, Any]:
         required = roots | {inner_name, inner_name + ".sha256", inner_name + ".validation.json"}
         if names != required:
             raise ValueError(f"delivery member mismatch: missing={sorted(required - names)} extra={sorted(names - required)}")
+        for executable in (
+            "independent-verifier-bootstrap",
+            "independent-verifier.sh",
+        ):
+            if (
+                archive.getinfo(executable).external_attr >> 16
+            ) & 0o7777 != 0o755:
+                raise ValueError(
+                    f"outer executable mode mismatch: {executable}"
+                )
         manifest = json.loads(archive.read("delivery-manifest.json"))
         validation = json.loads(archive.read("delivery-validation.json"))
         entries = manifest["entries"]
@@ -166,12 +216,29 @@ def validate(path: Path) -> dict[str, Any]:
             inner_verifier = inner_archive.read(
                 "verification/independent-verifier/independent_verifier.sh"
             )
+            inner_bootstrap = inner_archive.read(
+                "verification/independent-verifier/"
+                "independent-verifier-bootstrap"
+            )
+            inner_bootstrap_checksum = inner_archive.read(
+                "verification/independent-verifier/"
+                "independent-verifier-bootstrap.sha256"
+            )
         outer_response = archive.read("agent-response.md")
         if outer_response != inner_response:
             raise ValueError("outer and inner agent responses differ")
         if archive.read("independent-verifier.sh") != inner_verifier:
             raise ValueError(
                 "outer and inner independent verifier launchers differ"
+            )
+        if (
+            archive.read("independent-verifier-bootstrap")
+            != inner_bootstrap
+            or archive.read("independent-verifier-bootstrap.sha256")
+            != inner_bootstrap_checksum
+        ):
+            raise ValueError(
+                "outer and inner static verifier bootstrap artifacts differ"
             )
         scan_errors = scan_text("agent-response.md", outer_response)
         if scan_errors:
@@ -206,6 +273,7 @@ def validate(path: Path) -> dict[str, Any]:
         "detailed_receipt_status": receipt.get("overall_status", receipt.get("status")),
         "agent_response_matches_inner": True,
         "verifier_launcher_matches_inner": True,
+        "static_verifier_bootstrap_matches_inner": True,
         "secret_scan": "passed",
         "host_path_scan": "passed",
         "outer_extraction_validation": "passed",

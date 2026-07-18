@@ -8,11 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  python:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.13", "3.14"]
+  source-only:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,40 +18,17 @@ jobs:
           enable-cache: true
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-      - run: uv sync --frozen --all-extras
-      - run: uv run python -m py_compile scripts/*.py tests/*.py
-      - run: uv run python -m unittest discover -s tests -p 'test_*.py'
-      - run: uv run python scripts/verification_registry.py validate
-      - run: uv run python scripts/methodology_fixture.py --output /tmp/methodology-fixture.json
-      - run: uv run python scripts/private_prerelease_audit.py --output-dir /tmp/pre-release-audit
-      - run: git diff --check
-
-  dashboard:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+          python-version: "3.14"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: dashboard/package-lock.json
-      - run: npm ci --prefix dashboard
-      - run: npm audit --prefix dashboard --package-lock-only --audit-level=high
-      - run: npm test --prefix dashboard -- --run
-      - run: npm run build --prefix dashboard
-      - run: npx --prefix dashboard playwright install --with-deps chromium
-      - run: npm run test:browser --prefix dashboard
-
-  source-only-handoff:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - run: python scripts/source_only_ci.py --output "$RUNNER_TEMP/source-only-ci-receipt.json"
+      - uses: actions/upload-artifact@v4
         with:
-          version: "0.10.3"
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-      - run: uv sync --frozen --all-extras
-      - run: uv run python -m unittest tests.test_review_handoff tests.test_private_prerelease_cleanup
+          name: source-only-ci-receipt
+          path: |
+            ${{ runner.temp }}/source-only-ci-receipt.json
+            ${{ runner.temp }}/source-only-ci-receipt-logs
+            ${{ runner.temp }}/source-only-methodology.json

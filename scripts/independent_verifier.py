@@ -12,6 +12,7 @@ import platform
 import posixpath
 import shutil
 import stat
+import struct
 import subprocess
 import sys
 import tarfile
@@ -342,6 +343,8 @@ def _validate_outer(outer: Path) -> tuple[dict[str, Any], bytes, str]:
             "delivery-manifest.json",
             "delivery-validation.json",
             "independent-verifier.sh",
+            "independent-verifier-bootstrap",
+            "independent-verifier-bootstrap.sha256",
             inner_name,
             inner_name + ".sha256",
             inner_name + ".validation.json",
@@ -352,6 +355,17 @@ def _validate_outer(outer: Path) -> tuple[dict[str, Any], bytes, str]:
                 f"missing={sorted(required - names)} "
                 f"extra={sorted(names - required)}"
             )
+        info_by_name = {info.filename: info for info in infos}
+        for executable in (
+            "independent-verifier-bootstrap",
+            "independent-verifier.sh",
+        ):
+            if (
+                _zip_permissions(info_by_name[executable]) != 0o755
+            ):
+                errors.append(
+                    f"outer executable mode mismatch: {executable}"
+                )
         manifest = json.loads(archive.read("delivery-manifest.json"))
         manifest_entries = manifest.get("entries", [])
         manifest_paths = [
@@ -394,6 +408,16 @@ def _validate_outer(outer: Path) -> tuple[dict[str, Any], bytes, str]:
                 errors.append(
                     "outer verifier launcher differs from inner source"
                 )
+            for name in (
+                "independent-verifier-bootstrap",
+                "independent-verifier-bootstrap.sha256",
+            ):
+                if archive.read(name) != inner_archive.read(
+                    "verification/independent-verifier/" + name
+                ):
+                    errors.append(
+                        f"outer {name} differs from inner source"
+                    )
         inner_hash = sha256_bytes(inner)
         checksum = (
             archive.read(inner_name + ".sha256")
@@ -598,6 +622,66 @@ def _validate_inner(inner: bytes, work: Path) -> dict[str, Any]:
     reconstructed_tree = _git_tree_id(source_checkout)
     if reconstructed_tree != manifest["source_tree"]:
         errors.append("source tree reconstruction mismatch")
+    verifier_root = (
+        inner_root / "verification/independent-verifier"
+    )
+    bootstrap = verifier_root / "independent-verifier-bootstrap"
+    bootstrap_checksum = (
+        verifier_root / "independent-verifier-bootstrap.sha256"
+    ).read_text(encoding="utf-8").split()[0]
+    if sha256_file(bootstrap) != bootstrap_checksum:
+        errors.append("static verifier bootstrap checksum mismatch")
+    bootstrap_bytes = bootstrap.read_bytes()
+    if (
+        bootstrap_bytes[:4] != b"\x7fELF"
+        or bootstrap_bytes[4:6] != b"\x02\x01"
+    ):
+        errors.append("static verifier bootstrap is not ELF64")
+    else:
+        program_offset = struct.unpack_from(
+            "<Q", bootstrap_bytes, 32
+        )[0]
+        entry_size = struct.unpack_from(
+            "<H", bootstrap_bytes, 54
+        )[0]
+        entry_count = struct.unpack_from(
+            "<H", bootstrap_bytes, 56
+        )[0]
+        if any(
+            struct.unpack_from(
+                "<I",
+                bootstrap_bytes,
+                program_offset + index * entry_size,
+            )[0]
+            == 3
+            for index in range(entry_count)
+        ):
+            errors.append("static verifier bootstrap contains PT_INTERP")
+    for source_name, packaged_name in (
+        (
+            "independent_verifier.sh",
+            "independent_verifier.sh",
+        ),
+        (
+            "independent_verifier_bootstrap.c",
+            "independent_verifier_bootstrap.c",
+        ),
+        (
+            "independent-verifier-bootstrap",
+            "independent-verifier-bootstrap",
+        ),
+        (
+            "independent-verifier-bootstrap.sha256",
+            "independent-verifier-bootstrap.sha256",
+        ),
+    ):
+        if (
+            source_checkout / "scripts" / source_name
+        ).read_bytes() != (verifier_root / packaged_name).read_bytes():
+            errors.append(
+                "source/packaged verifier artifact mismatch: "
+                + source_name
+            )
     detailed = json.loads(
         (inner_root / "review-handoff-validation.json").read_text(
             encoding="utf-8"
@@ -667,6 +751,8 @@ def _bootstrap_capabilities() -> dict[str, Any]:
             ("chmod", "INDEPENDENT_VERIFIER_CHMOD_PATH"),
             ("mktemp", "INDEPENDENT_VERIFIER_MKTEMP_PATH"),
             ("readlink", "INDEPENDENT_VERIFIER_READLINK_PATH"),
+            ("getconf", "INDEPENDENT_VERIFIER_GETCONF_PATH"),
+            ("uname", "INDEPENDENT_VERIFIER_UNAME_PATH"),
         )
     }
     clean_host_environment = {
@@ -685,6 +771,28 @@ def _bootstrap_capabilities() -> dict[str, Any]:
         stderr=subprocess.STDOUT,
         text=True,
         check=False,
+    )
+    packaged_loader = Path(
+        os.environ["INDEPENDENT_VERIFIER_PACKAGED_LOADER"]
+    )
+    packaged_loader_version = subprocess.run(
+        [str(packaged_loader), "--version"],
+        env=clean_host_environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+    packaged_glibc_match = re.search(
+        r"\b(\d+\.\d+)\b",
+        packaged_loader_version.stdout.splitlines()[0]
+        if packaged_loader_version.stdout
+        else "",
+    )
+    packaged_bootstrap_glibc = (
+        packaged_glibc_match.group(1)
+        if packaged_glibc_match is not None
+        else "unknown"
     )
     generic_version_arguments = {
         "bash": ["--version"],
@@ -730,20 +838,33 @@ def _bootstrap_capabilities() -> dict[str, Any]:
             "version_exit_code": version.returncode,
             "semantic_identity_used": False,
         }
-    os_release: dict[str, str] = {}
-    release = Path("/etc/os-release")
-    if release.is_file():
-        for line in release.read_text(
-            encoding="utf-8", errors="replace"
-        ).splitlines():
-            if "=" in line:
-                key, value = line.split("=", 1)
-                os_release[key] = value.strip('"')
+    sanitized_values = {
+        key: os.environ.get(key)
+        for key in (
+            "LD_LIBRARY_PATH",
+            "PYTHONPATH",
+            "JAVA_HOME",
+            "NODE_PATH",
+        )
+    }
+    host_userspace_distribution = os.environ.get(
+        "INDEPENDENT_VERIFIER_HOST_USERSPACE_DISTRIBUTION", "unknown"
+    )
+    host_userspace_glibc = os.environ.get(
+        "INDEPENDENT_VERIFIER_HOST_USERSPACE_GLIBC", "unknown"
+    )
+    host_kernel = os.environ.get(
+        "INDEPENDENT_VERIFIER_HOST_KERNEL", "unknown"
+    )
     return {
         "schema_id": "bootstrap-prerequisite-capabilities-current",
         "status": (
             "passed"
             if unzip_version.returncode == 0
+            and packaged_loader_version.returncode == 0
+            and packaged_bootstrap_glibc != "unknown"
+            and os.environ.get("INDEPENDENT_VERIFIER_STATIC_BOOTSTRAP") == "1"
+            and all(value is None for value in sanitized_values.values())
             and unzip_path.is_file()
             and shell_path.is_file()
             and all(
@@ -753,14 +874,24 @@ def _bootstrap_capabilities() -> dict[str, Any]:
             else "failed"
         ),
         "validation_mode": "capability",
-        "sanitized_environment": {
-            key: os.environ.get(key)
-            for key in (
-                "LD_LIBRARY_PATH",
-                "PYTHONPATH",
-                "JAVA_HOME",
-                "NODE_PATH",
+        "sanitized_environment": sanitized_values,
+        "static_bootstrap": {
+            "used": os.environ.get(
+                "INDEPENDENT_VERIFIER_STATIC_BOOTSTRAP"
             )
+            == "1",
+            "description": os.environ.get(
+                "INDEPENDENT_VERIFIER_BOOTSTRAP"
+            ),
+        },
+        "packaged_loader": {
+            "path": str(packaged_loader),
+            "version": (
+                packaged_loader_version.stdout.splitlines()[0]
+                if packaged_loader_version.stdout
+                else ""
+            ),
+            "exit_code": packaged_loader_version.returncode,
         },
         "posix_shell": {
             "path": str(shell_path),
@@ -787,9 +918,10 @@ def _bootstrap_capabilities() -> dict[str, Any]:
         },
         "observed_host_generic_tools_not_used": observed_generic,
         "host": {
-            "distribution": os_release.get("PRETTY_NAME"),
-            "kernel": platform.platform(),
-            "glibc": list(platform.libc_ver()),
+            "host_userspace_distribution": host_userspace_distribution,
+            "host_userspace_glibc": host_userspace_glibc,
+            "host_kernel": host_kernel,
+            "packaged_bootstrap_glibc": packaged_bootstrap_glibc,
             "machine": platform.machine(),
             "effective_uid": os.geteuid(),
             "effective_gid": os.getegid(),
