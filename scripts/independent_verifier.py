@@ -10,6 +10,7 @@ import json
 import os
 import platform
 import posixpath
+import re
 import shutil
 import stat
 import struct

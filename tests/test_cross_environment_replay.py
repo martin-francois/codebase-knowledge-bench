@@ -27,6 +27,7 @@ from cross_environment_release import (  # noqa: E402
     validate_source_generated_equality,
     validate_split_delivery,
 )
+from independent_verifier import _bootstrap_capabilities  # noqa: E402
 from replay_rootfs import (  # noqa: E402
     _skip_package_member,
     required_rootfs_paths,
@@ -112,6 +113,79 @@ def portability_matrix(identity: dict, inner: dict) -> dict:
 
 
 class BootstrapBoundaryTests(unittest.TestCase):
+    def test_bootstrap_capabilities_reports_packaged_glibc(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            paths = {}
+            for name in (
+                "unzip",
+                "shell",
+                "mkdir",
+                "chmod",
+                "mktemp",
+                "readlink",
+                "getconf",
+                "uname",
+                "loader",
+            ):
+                path = root / name
+                path.write_bytes(b"fixture\n")
+                path.chmod(0o755)
+                paths[name] = path
+            environment = {
+                "INDEPENDENT_VERIFIER_UNZIP_PATH": str(paths["unzip"]),
+                "INDEPENDENT_VERIFIER_SHELL_PATH": str(paths["shell"]),
+                "INDEPENDENT_VERIFIER_MKDIR_PATH": str(paths["mkdir"]),
+                "INDEPENDENT_VERIFIER_CHMOD_PATH": str(paths["chmod"]),
+                "INDEPENDENT_VERIFIER_MKTEMP_PATH": str(paths["mktemp"]),
+                "INDEPENDENT_VERIFIER_READLINK_PATH": str(
+                    paths["readlink"]
+                ),
+                "INDEPENDENT_VERIFIER_GETCONF_PATH": str(paths["getconf"]),
+                "INDEPENDENT_VERIFIER_UNAME_PATH": str(paths["uname"]),
+                "INDEPENDENT_VERIFIER_PACKAGED_LOADER": str(
+                    paths["loader"]
+                ),
+                "INDEPENDENT_VERIFIER_STATIC_BOOTSTRAP": "1",
+                "INDEPENDENT_VERIFIER_BOOTSTRAP":
+                    "independent-verifier-bootstrap",
+                "INDEPENDENT_VERIFIER_HOST_USERSPACE_DISTRIBUTION":
+                    "Debian GNU/Linux 12 (bookworm)",
+                "INDEPENDENT_VERIFIER_HOST_USERSPACE_GLIBC": "2.36",
+                "INDEPENDENT_VERIFIER_HOST_KERNEL": "Linux fixture",
+            }
+            processes = [
+                mock.Mock(returncode=0, stdout="UnZip 6.00\n"),
+                mock.Mock(
+                    returncode=0,
+                    stdout=(
+                        "ld.so (Debian GLIBC 2.36-9+deb12u14) "
+                        "stable release version 2.36.\n"
+                    ),
+                ),
+            ]
+            with (
+                mock.patch.dict(os.environ, environment, clear=True),
+                mock.patch(
+                    "independent_verifier.subprocess.run",
+                    side_effect=processes,
+                ) as runner,
+                mock.patch(
+                    "independent_verifier.shutil.which",
+                    return_value=None,
+                ),
+            ):
+                result = _bootstrap_capabilities()
+
+        self.assertEqual("passed", result["status"])
+        self.assertEqual(
+            "2.36", result["host"]["packaged_bootstrap_glibc"]
+        )
+        self.assertEqual(
+            "2.36", result["host"]["host_userspace_glibc"]
+        )
+        self.assertEqual(2, runner.call_count)
+
     def test_production_outer_launcher_has_tiny_sanitized_boundary(self) -> None:
         source = (ROOT / "scripts/independent_verifier.sh").read_text(
             encoding="utf-8"
