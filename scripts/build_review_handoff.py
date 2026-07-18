@@ -18,7 +18,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from safe_archive import safe_extract_tar, safe_extract_zip
+from safe_archive import _resolved_link, safe_extract_tar, safe_extract_zip
 
 
 CANONICAL_SHA = "b4a77687b40bea1ff97117224d08e00b0b66ee0a6fc1875c87d0b95da19e49e0"
@@ -108,7 +108,7 @@ def write_zip(
 ) -> None:
     info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
     info.external_attr = (
-        (stat.S_IFREG | (mode & 0o777)) & 0xFFFF
+        (stat.S_IFREG | (mode & 0o7777)) & 0xFFFF
     ) << 16
     info.compress_type = (
         zipfile.ZIP_STORED
@@ -141,7 +141,7 @@ def write_zip_directory(
     )
     info.create_system = 3
     info.external_attr = (
-        (stat.S_IFDIR | (mode & 0o777)) & 0xFFFF
+        (stat.S_IFDIR | (mode & 0o7777)) & 0xFFFF
     ) << 16
     info.compress_type = zipfile.ZIP_STORED
     archive.writestr(info, b"")
@@ -302,6 +302,17 @@ def scan_source_text(name: str, data: bytes) -> tuple[list[str], list[dict[str, 
         allowed["secret-shaped value"] = (
             "content-addressed vendored Python runtime source"
         )
+    if member.startswith("runtime/replay-rootfs/"):
+        allowed.update(
+            {
+                "host-only path": (
+                    "content-addressed vendored replay rootfs source"
+                ),
+                "secret-shaped value": (
+                    "content-addressed vendored replay rootfs source"
+                ),
+            }
+        )
     retained = []
     exceptions = []
     for finding in findings:
@@ -341,6 +352,15 @@ def portable_generated_text(data: bytes) -> tuple[bytes, list[str]]:
         data = secret.sub(rb"\1$REDACTED_TEST_SECRET", data)
         notes.append("secret-shaped fixture value: redacted")
     return data, notes
+
+
+def validate_handoff_symlink(name: str, target: str) -> str:
+    try:
+        return _resolved_link(name, target, hardlink=False)
+    except ValueError as exc:
+        raise ValueError(
+            f"escaping handoff evidence symlink: {name}"
+        ) from exc
 
 
 def command_version(*command: str) -> str:
@@ -630,20 +650,7 @@ def build(
                 raise ValueError(f"evidence collides with generated member: {name}")
             if path.is_symlink():
                 link_target = os.readlink(path)
-                if Path(link_target).is_absolute():
-                    raise ValueError(
-                        f"absolute handoff evidence symlink: {name}"
-                    )
-                try:
-                    (path.parent / link_target).resolve(
-                        strict=True
-                    ).relative_to(
-                        reports.resolve()
-                    )
-                except (FileNotFoundError, ValueError) as exc:
-                    raise ValueError(
-                        f"escaping handoff evidence symlink: {name}"
-                    ) from exc
+                validate_handoff_symlink(name, link_target)
                 symlink_targets[name] = link_target
                 symlink_modes[name] = stat.S_IMODE(
                     path.lstat().st_mode

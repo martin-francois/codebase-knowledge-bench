@@ -402,9 +402,11 @@ changed packaged tools fail exact-identity validation even when a matching host 
 `RPL-014` The content-addressed namespace launcher has two explicit modes. Rootless mode creates a
 user namespace, maps the invoking UID and GID to root, and then creates mount, network, and PID
 namespaces. Privileged mode is accepted only when its declared effective UID and capabilities pass
-before replay. Both modes use the packaged rootfs, mount an empty resolver, enable loopback only, and
-emit UID/GID maps, namespace identities, capability measurements, mount results, interfaces, and
-routes. No privilege fallback is implicit.
+before replay. Both modes pivot the packaged rootfs to the namespace root, detach the old root, mount
+an empty resolver, enable loopback only, and emit UID/GID maps, namespace identities, capability
+measurements, mount results, interfaces, and routes. The pivoted mount table MUST let packaged
+runtime filesystem APIs resolve `/`, `/work`, and `/evidence`; a chroot-only boundary is invalid.
+No privilege fallback is implicit.
 
 `RPL-015` Network isolation is measured from the actual replay namespace. The receipt includes
 interface and route inventories, resolver bytes and hash, failed external TCP and DNS probes, and a

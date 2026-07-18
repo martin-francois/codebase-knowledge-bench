@@ -67,6 +67,7 @@ CONFIG_PATHS = (
     "/usr/share/zoneinfo/UTC",
 )
 RUNTIME_DIRECTORIES = (
+    "/.pivot-old-root",
     "/dev",
     "/evidence",
     "/home",

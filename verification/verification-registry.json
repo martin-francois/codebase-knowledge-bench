@@ -227,11 +227,11 @@
     },
     {
       "id": "NAMESPACE-CAPABILITY-CONTRACT-001", "title": "Namespace capability contract", "area": "security",
-      "invariant": "The selected namespace mode proves mount, network, PID, resolver, and required privilege capabilities before replay qualifies.",
-      "why": "Implicit root privileges make the supported platform contract ambiguous.", "kind": "automated",
+      "invariant": "The selected namespace mode proves mount, network, PID, resolver, required privilege capabilities, and a pivoted packaged root with a usable mount table before replay qualifies.",
+      "why": "Implicit root privileges or a chroot-only mount table make the supported platform contract ambiguous and can break packaged runtime filesystem APIs.", "kind": "automated",
       "checker_id": "NAMESPACE-CAPABILITY-CONTRACT-001", "checker_implementation": "scripts/verification_checkers.py:namespace_capability_contract", "checker_version": "current", "expected_evidence_schema": null,
       "implementation": ["scripts/replay_namespace_launcher.c", "scripts/target_replay.py", "scripts/cross_environment_release.py"], "test_files": ["tests/test_cross_environment_replay.py"], "fixture_files": [],
-      "positive_fixture": "explicit privileged receipt with both capabilities", "negative_fixture": "CAP_SYS_ADMIN unavailable", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["runtime/namespace-capability-receipt.json"], "failure_severity": "blocker", "status": "implemented"
+      "positive_fixture": "explicit privileged receipt with both capabilities and pivoted root boundary", "negative_fixture": "pivot_root operation removed", "commands": ["uv run python scripts/verification_registry.py run"], "output_artifacts": ["runtime/namespace-capability-receipt.json"], "failure_severity": "blocker", "status": "implemented"
     },
     {
       "id": "ROOTLESS-REPLAY-WHEN-SUPPORTED-001", "title": "Rootless replay capability", "area": "security",

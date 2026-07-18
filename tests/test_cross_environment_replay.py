@@ -40,6 +40,7 @@ from target_replay import (  # noqa: E402
     _replay_script,
     _rootfs_artifacts,
     _validate_runtime_lock_shape,
+    validate_namespace_root_boundary,
     validate_generated_script,
 )
 
@@ -554,6 +555,36 @@ class NamespaceAndNetworkReceiptTests(unittest.TestCase):
             validate_namespace_capability_receipt(missing_privileged)[
                 "status"
             ],
+        )
+
+    def test_namespace_root_is_pivoted_for_runtime_mount_discovery(
+        self,
+    ) -> None:
+        source = (
+            ROOT / "scripts/replay_namespace_launcher.c"
+        ).read_text(encoding="utf-8")
+        positive = validate_namespace_root_boundary(source)
+        self.assertEqual("passed", positive["status"], positive["errors"])
+        self.assertTrue(positive["pivot_root"])
+        self.assertTrue(positive["old_root_detached"])
+
+        missing_pivot = source.replace(
+            "SYS_pivot_root", "SYS_pivot_root_removed"
+        )
+        negative = validate_namespace_root_boundary(missing_pivot)
+        self.assertEqual("failed", negative["status"])
+        self.assertTrue(
+            any("SYS_pivot_root" in error for error in negative["errors"])
+        )
+
+        chroot_only = missing_pivot.replace(
+            "pivot_to_rootfs(rootfs);", "chroot(rootfs);"
+        )
+        negative = validate_namespace_root_boundary(chroot_only)
+        self.assertEqual("failed", negative["status"])
+        self.assertIn(
+            "chroot-only namespace root boundary is forbidden",
+            negative["errors"],
         )
 
     def test_external_route_and_dns_success_are_rejected(self) -> None:

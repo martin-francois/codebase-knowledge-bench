@@ -16,6 +16,7 @@
 #include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -236,6 +237,28 @@ static void enable_loopback(void) {
     close(descriptor);
 }
 
+static void make_rootfs_mountpoint(const char *rootfs) {
+    if (mount(rootfs, rootfs, NULL, MS_BIND, NULL) < 0) {
+        die("mount-rootfs", rootfs);
+    }
+}
+
+static void pivot_to_rootfs(const char *rootfs) {
+    if (chdir(rootfs) < 0) {
+        die("pivot-root", rootfs);
+    }
+    if (syscall(SYS_pivot_root, ".", ".pivot-old-root") < 0) {
+        die("pivot-root", "pivot packaged rootfs");
+    }
+    if (chdir("/") < 0) {
+        die("pivot-root", "change directory to namespace root");
+    }
+    failure_evidence = "/evidence";
+    if (umount2("/.pivot-old-root", MNT_DETACH) < 0) {
+        die("pivot-root", "detach old root");
+    }
+}
+
 static void child_root(
     const char *rootfs,
     const char *package,
@@ -247,6 +270,7 @@ static void child_root(
     if (mount(NULL, "/", NULL, MS_REC | MS_PRIVATE, NULL) < 0) {
         die("mount", "make root mount propagation private");
     }
+    make_rootfs_mountpoint(rootfs);
     join_path(destination, sizeof(destination), rootfs, "/package");
     bind_mount(package, destination, "mount-package");
     join_path(destination, sizeof(destination), rootfs, "/work");
@@ -292,9 +316,7 @@ static void child_root(
     );
     bind_mount(resolver_source, destination, "mount-resolver");
     enable_loopback();
-    if (chroot(rootfs) < 0) {
-        die("chroot", rootfs);
-    }
+    pivot_to_rootfs(rootfs);
     if (chdir("/work") < 0) {
         die("chdir", "/work");
     }

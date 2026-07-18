@@ -541,7 +541,7 @@ def safe_extract_zip(
     observed_modes: set[str] = set()
     for info in infos:
         member_type = (info.external_attr >> 16) & 0o170000
-        permissions = (info.external_attr >> 16) & 0o777
+        permissions = (info.external_attr >> 16) & 0o7777
         member_name = str(_path(info.filename)).rstrip("/")
         if member_type and member_type not in {
             stat.S_IFREG,
@@ -594,14 +594,14 @@ def safe_extract_zip(
         if member_type == stat.S_IFDIR or info.is_dir():
             target.mkdir(parents=True, exist_ok=True)
             target.chmod(
-                (info.external_attr >> 16) & 0o777 or 0o755
+                (info.external_attr >> 16) & 0o7777 or 0o755
             )
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
         with archive.open(info) as source, target.open("xb") as output:
             shutil.copyfileobj(source, output)
         target.chmod(
-            (info.external_attr >> 16) & 0o777 or 0o644
+            (info.external_attr >> 16) & 0o7777 or 0o644
         )
     for info in infos:
         member_type = (info.external_attr >> 16) & 0o170000

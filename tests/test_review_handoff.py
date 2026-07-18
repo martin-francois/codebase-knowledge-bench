@@ -12,7 +12,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from build_review_handoff import portable_generated_text, reconstruct_tree, scan_source_text, scan_text, write_zip
+from build_review_handoff import (
+    portable_generated_text,
+    reconstruct_tree,
+    scan_source_text,
+    scan_text,
+    validate_handoff_symlink,
+    write_zip,
+)
 
 
 def git(repo: Path, *args: str) -> str:
@@ -20,6 +27,22 @@ def git(repo: Path, *args: str) -> str:
 
 
 class ReviewHandoffTest(unittest.TestCase):
+    def test_dangling_in_root_symlink_is_safe_but_escape_is_rejected(
+        self,
+    ) -> None:
+        name = "runtime/replay-rootfs/etc/alternatives/awk.1.gz"
+        target = "../../usr/share/man/man1/gawk.1.gz"
+        self.assertEqual(
+            "runtime/replay-rootfs/usr/share/man/man1/gawk.1.gz",
+            validate_handoff_symlink(name, target),
+        )
+        with self.assertRaisesRegex(
+            ValueError, "escaping handoff evidence symlink"
+        ):
+            validate_handoff_symlink(
+                name, "../../../../../../outside"
+            )
+
     def fixture(self, root: Path) -> tuple[Path, bytes, str]:
         repo = root / "repo"
         repo.mkdir()
@@ -122,6 +145,7 @@ class ReviewHandoffTest(unittest.TestCase):
             "target/replay.sh",
             "tests/command-log.txt",
             "verification/independent-verifier/stdout.log",
+            "runtime/replay-rootfs/usr/share/perl/5.36.0/CPAN.pm",
         ):
             with self.subTest(member=member):
                 findings, exceptions = scan_source_text(member, host_path)
@@ -139,6 +163,7 @@ class ReviewHandoffTest(unittest.TestCase):
             "preflight/current-preflight/issue-486/base/protected-requirement-evidence-inputs/protected-sources/direct/src/test/Fixture.java",
             "replay/mutation-calibration/m1/protected-requirement-evidence-inputs/protected-sources/direct/src/test/Fixture.java",
             "runtime/bootstrap-python/lib/python3.14/http/server.py",
+            "runtime/replay-rootfs/usr/share/perl/5.36.0/CPAN.pm",
         ):
             with self.subTest(member=member):
                 findings, exceptions = scan_source_text(member, secret)

@@ -1074,6 +1074,8 @@ def preflight_semantic_hashes(root: Path) -> dict[str, Any]:
 def _package_rows(package_root: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     excluded = {
+        "runtime/bootstrap-contract.json",
+        "runtime/namespace-capability-receipt.json",
         "target/package-manifest.json",
         "target/target-package-validation.json",
     }
@@ -1117,6 +1119,14 @@ def _provenance_markdown(value: Mapping[str, Any]) -> str:
 def _compile_namespace_launcher(
     source: Path, output: Path
 ) -> dict[str, Any]:
+    root_boundary = validate_namespace_root_boundary(
+        source.read_text(encoding="utf-8")
+    )
+    if root_boundary["status"] != "passed":
+        raise ValueError(
+            "namespace launcher root boundary is invalid: "
+            + ", ".join(root_boundary["errors"])
+        )
     command = [
         "gcc",
         "-std=c17",
@@ -1161,10 +1171,51 @@ def _compile_namespace_launcher(
         "output_sha256": sha256_file(output),
         "static_elf": True,
         "double_compilation_equal": True,
+        "root_boundary_validation": root_boundary,
         "command": (
             "gcc -std=c17 -O2 -static -s -fno-ident "
             "-Wl,--build-id=none"
         ),
+    }
+
+
+def validate_namespace_root_boundary(source: str) -> dict[str, Any]:
+    setup_tokens = (
+        "make_rootfs_mountpoint(rootfs);",
+        "bind_mount(package, destination, \"mount-package\");",
+        "pivot_to_rootfs(rootfs);",
+    )
+    pivot_tokens = (
+        "syscall(SYS_pivot_root, \".\", \".pivot-old-root\")",
+        "chdir(\"/\")",
+        "umount2(\"/.pivot-old-root\", MNT_DETACH)",
+    )
+    setup_positions = [source.find(token) for token in setup_tokens]
+    pivot_positions = [source.find(token) for token in pivot_tokens]
+    errors = []
+    for token, position in zip(
+        (*setup_tokens, *pivot_tokens),
+        (*setup_positions, *pivot_positions),
+        strict=True,
+    ):
+        if position < 0:
+            errors.append(
+                f"namespace root boundary token is missing: {token}"
+            )
+    if not errors and (
+        setup_positions != sorted(setup_positions)
+        or pivot_positions != sorted(pivot_positions)
+    ):
+        errors.append("namespace root boundary operations are out of order")
+    if "chroot(rootfs)" in source:
+        errors.append("chroot-only namespace root boundary is forbidden")
+    return {
+        "schema_id": "namespace-root-boundary-validation-current",
+        "status": "passed" if not errors else "failed",
+        "errors": errors,
+        "pivot_root": pivot_positions[0] >= 0,
+        "old_root_detached": pivot_positions[2] >= 0,
+        "chroot_only_absent": "chroot(rootfs)" not in source,
     }
 
 
@@ -2715,6 +2766,23 @@ def _evidence_entries(evidence_root: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def write_replay_evidence_manifest(
+    evidence_root: Path,
+) -> dict[str, Any]:
+    entries = _evidence_entries(evidence_root)
+    manifest = {
+        "schema_id": "replay-evidence-manifest-current",
+        "entries": entries,
+        "entry_count": len(entries),
+        "manifest_root": canonical_root(entries),
+        "excluded_self": "replay-evidence-manifest.json",
+    }
+    _write_json(
+        evidence_root / "replay-evidence-manifest.json", manifest
+    )
+    return manifest
+
+
 def _mark_replay_stage(evidence_root: Path, stage: str) -> None:
     _write_json(
         evidence_root / "last-completed-stage.json",
@@ -3395,25 +3463,9 @@ def run_replay(
         "independent_replay_complete": True,
     }
     _write_json(evidence_root / "replay-result.json", result)
-    entries = _evidence_entries(evidence_root)
-    manifest = {
-        "schema_id": "replay-evidence-manifest-current",
-        "entries": entries,
-        "entry_count": len(entries),
-        "manifest_root": canonical_root(entries),
-        "excluded_self": "replay-evidence-manifest.json",
-    }
-    _write_json(
-        evidence_root / "replay-evidence-manifest.json", manifest
-    )
+    write_replay_evidence_manifest(evidence_root)
     _mark_replay_stage(evidence_root, "complete")
-    entries = _evidence_entries(evidence_root)
-    manifest["entries"] = entries
-    manifest["entry_count"] = len(entries)
-    manifest["manifest_root"] = canonical_root(entries)
-    _write_json(
-        evidence_root / "replay-evidence-manifest.json", manifest
-    )
+    write_replay_evidence_manifest(evidence_root)
     return result
 
 

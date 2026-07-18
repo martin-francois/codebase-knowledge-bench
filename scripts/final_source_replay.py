@@ -25,6 +25,9 @@ from preflight_status_faults import run as run_status_faults
 from target_replay import (
     _replay_inner_script,
     _replay_script,
+    inspect_target_package,
+    validate_replay_evidence,
+    write_replay_evidence_manifest,
 )
 from verification_registry import execute as execute_registry
 
@@ -58,6 +61,48 @@ def copy_tree(source: Path, destination: Path) -> None:
     if destination.exists():
         shutil.rmtree(destination)
     shutil.copytree(source, destination, symlinks=True)
+
+
+def target_package_validation_receipt(
+    package_root: Path,
+    replay_root: Path,
+    repo: Path,
+) -> dict[str, Any]:
+    inspection = inspect_target_package(package_root, repo)
+    replay_validation = validate_replay_evidence(
+        replay_root, package_root
+    )
+    replay_result = json.loads(
+        (replay_root / "replay-result.json").read_text(encoding="utf-8")
+    )
+    errors = [
+        *inspection.get("errors", []),
+        *replay_validation.get("errors", []),
+    ]
+    if replay_result.get("status") != "passed":
+        errors.append("fresh replay result is not passed")
+    if replay_result.get("exit_code") != 0:
+        errors.append("fresh replay exit code is not zero")
+    execution = {
+        "command": (
+            "target/replay.sh $EMPTY_WORK_ROOT $EMPTY_EVIDENCE_ROOT"
+        ),
+        "exit_code": replay_result.get("exit_code"),
+        "duration_seconds": replay_result.get("duration_seconds"),
+        "launcher_stdout": "",
+        "launcher_stderr": "",
+        "fresh_work_root": replay_result.get("fresh_one_shot") is True,
+    }
+    return {
+        "schema_id": "target-package-validation-current",
+        "status": "passed" if not errors else "failed",
+        "errors": errors,
+        "exact_package_inspection": inspection,
+        "replay_executed": True,
+        "fresh_replay": execution,
+        "replay_evidence_validation": replay_validation,
+        "duration_seconds": replay_result.get("duration_seconds"),
+    }
 
 
 def status_semantics_audit(repo: Path) -> dict[str, Any]:
@@ -345,6 +390,11 @@ def prepare(
     write_json(
         output / "replay/failure-preservation-test.json",
         failure_validation,
+    )
+    write_replay_evidence_manifest(output / "replay")
+    write_json(
+        output / "target/target-package-validation.json",
+        target_package_validation_receipt(output, output / "replay", repo),
     )
     verifier_root = output / "verification/independent-verifier"
     verifier_root.mkdir(parents=True)

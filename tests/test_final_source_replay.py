@@ -12,6 +12,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,11 +34,15 @@ from safe_archive import (
     validate_exact_tar,
 )
 from independent_verifier import _validated_zip_infos
+from final_source_replay import target_package_validation_receipt
 from target_replay import (
+    _evidence_entries,
+    _package_rows,
     _replay_script,
     _stage_python,
     embedded_python_blocks,
     validate_generated_script,
+    write_replay_evidence_manifest,
 )
 
 
@@ -69,6 +74,114 @@ class ExactPreflightStatusTest(unittest.TestCase):
 
 
 class SourceGeneratedReplayTest(unittest.TestCase):
+    def test_replay_manifest_refresh_includes_final_report_receipts(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            replay = Path(temporary)
+            (replay / "replay-result.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+            write_replay_evidence_manifest(replay)
+            (replay / "final-replay-result.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+            stale = json.loads(
+                (replay / "replay-evidence-manifest.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertNotEqual(stale["entries"], _evidence_entries(replay))
+
+            refreshed = write_replay_evidence_manifest(replay)
+            self.assertEqual(refreshed["entries"], _evidence_entries(replay))
+            self.assertIn(
+                "final-replay-result.json",
+                {row["path"] for row in refreshed["entries"]},
+            )
+
+    def test_target_validation_receipt_reuses_exact_replay_evidence(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            replay = root / "replay"
+            replay.mkdir()
+            (replay / "replay-result.json").write_text(
+                json.dumps(
+                    {
+                        "status": "passed",
+                        "exit_code": 0,
+                        "duration_seconds": 12.5,
+                        "fresh_one_shot": True,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            passed = {"status": "passed", "errors": []}
+            with (
+                patch(
+                    "final_source_replay.inspect_target_package",
+                    return_value=passed,
+                ),
+                patch(
+                    "final_source_replay.validate_replay_evidence",
+                    return_value=passed,
+                ),
+            ):
+                receipt = target_package_validation_receipt(
+                    root, replay, ROOT
+                )
+            self.assertEqual("passed", receipt["status"])
+            self.assertTrue(receipt["replay_executed"])
+            self.assertTrue(receipt["fresh_replay"]["fresh_work_root"])
+
+            failed = {
+                "status": "failed",
+                "errors": ["package member mismatch"],
+            }
+            with (
+                patch(
+                    "final_source_replay.inspect_target_package",
+                    return_value=failed,
+                ),
+                patch(
+                    "final_source_replay.validate_replay_evidence",
+                    return_value=passed,
+                ),
+            ):
+                receipt = target_package_validation_receipt(
+                    root, replay, ROOT
+                )
+            self.assertEqual("failed", receipt["status"])
+            self.assertIn("package member mismatch", receipt["errors"])
+
+    def test_report_only_runtime_receipts_do_not_change_package_identity(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary)
+            (package / "target").mkdir()
+            (package / "runtime").mkdir()
+            (package / "target/replay.sh").write_text(
+                "#!/bin/sh\n", encoding="utf-8"
+            )
+            baseline = _package_rows(package)
+
+            for name in (
+                "bootstrap-contract.json",
+                "namespace-capability-receipt.json",
+            ):
+                (package / "runtime" / name).write_text(
+                    "{}\n", encoding="utf-8"
+                )
+            self.assertEqual(baseline, _package_rows(package))
+
+            (package / "runtime/unexpected-semantic-member").write_text(
+                "fault\n", encoding="utf-8"
+            )
+            self.assertNotEqual(baseline, _package_rows(package))
+
     def test_generation_is_equal_and_all_embedded_python_compiles(self) -> None:
         first = _replay_script()
         second = _replay_script()
@@ -346,12 +459,12 @@ class ExactArchiveBoundaryTest(unittest.TestCase):
             root = Path(temporary)
             archive_path = root / "exact.zip"
             with zipfile.ZipFile(archive_path, "w") as archive:
-                write_zip_directory(archive, "runtime", mode=0o755)
+                write_zip_directory(archive, "runtime", mode=0o1777)
                 write_zip(
                     archive,
                     "runtime/tool",
                     b"#!/bin/sh\n",
-                    mode=0o755,
+                    mode=0o4755,
                 )
                 write_zip_symlink(
                     archive, "runtime/tool-link", "tool"
@@ -364,18 +477,32 @@ class ExactArchiveBoundaryTest(unittest.TestCase):
                         "runtime/tool-link": "tool"
                     },
                     expected_modes={
-                        "runtime": 0o755,
-                        "runtime/tool": 0o755,
+                        "runtime": 0o1777,
+                        "runtime/tool": 0o4755,
+                        "runtime/tool-link": 0o777,
+                    },
+                )
+            with zipfile.ZipFile(archive_path) as archive:
+                _validated_zip_infos(
+                    archive,
+                    max_members=10,
+                    max_member_bytes=100,
+                    allowed_symlinks={
+                        "runtime/tool-link": "tool"
+                    },
+                    expected_modes={
+                        "runtime": 0o1777,
+                        "runtime/tool": 0o4755,
                         "runtime/tool-link": 0o777,
                     },
                 )
             self.assertEqual(
-                0o755,
-                (root / "out/runtime").stat().st_mode & 0o777,
+                0o1777,
+                (root / "out/runtime").stat().st_mode & 0o7777,
             )
             self.assertEqual(
-                0o755,
-                (root / "out/runtime/tool").stat().st_mode & 0o777,
+                0o4755,
+                (root / "out/runtime/tool").stat().st_mode & 0o7777,
             )
             self.assertTrue(
                 (root / "out/runtime/tool-link").is_symlink()
@@ -394,6 +521,23 @@ class ExactArchiveBoundaryTest(unittest.TestCase):
                         expected_modes={
                             "runtime": 0o755,
                             "runtime/tool": 0o644,
+                            "runtime/tool-link": 0o777,
+                        },
+                    )
+            with zipfile.ZipFile(archive_path) as archive:
+                with self.assertRaisesRegex(
+                    ValueError, "mode mismatch"
+                ):
+                    _validated_zip_infos(
+                        archive,
+                        max_members=10,
+                        max_member_bytes=100,
+                        allowed_symlinks={
+                            "runtime/tool-link": "tool"
+                        },
+                        expected_modes={
+                            "runtime": 0o777,
+                            "runtime/tool": 0o755,
                             "runtime/tool-link": 0o777,
                         },
                     )

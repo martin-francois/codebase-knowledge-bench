@@ -254,7 +254,7 @@ def _validated_zip_infos(
             raise ValueError(
                 "declared independent-verifier ZIP symlink has wrong type"
             )
-        permissions = (info.external_attr >> 16) & 0o777
+        permissions = _zip_permissions(info)
         if declared_modes:
             if clean not in declared_modes:
                 raise ValueError(
@@ -313,6 +313,10 @@ def _validated_zip_infos(
             "independent-verifier ZIP mode set mismatch"
         )
     return infos
+
+
+def _zip_permissions(info: zipfile.ZipInfo) -> int:
+    return (info.external_attr >> 16) & 0o7777
 
 
 def _validate_outer(outer: Path) -> tuple[dict[str, Any], bytes, str]:
@@ -482,14 +486,14 @@ def _validate_inner(inner: bytes, work: Path) -> dict[str, Any]:
             if mode == stat.S_IFDIR or info.is_dir():
                 target.mkdir(parents=True, exist_ok=True)
                 target.chmod(
-                    (info.external_attr >> 16) & 0o777 or 0o755
+                    _zip_permissions(info) or 0o755
                 )
             else:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with archive.open(info) as source, target.open("xb") as output:
                     shutil.copyfileobj(source, output)
                 target.chmod(
-                    (info.external_attr >> 16) & 0o777 or 0o644
+                    _zip_permissions(info) or 0o644
                 )
         for info in infos:
             mode = (info.external_attr >> 16) & 0o170000
