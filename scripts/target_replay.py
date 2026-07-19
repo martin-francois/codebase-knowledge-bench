@@ -49,6 +49,8 @@ ARCHIVE_NAMES = (
     "maven-repository",
     "dashboard-node-modules",
 )
+BOOTSTRAP_MEMBER_MANIFEST_NAME = "bootstrap-python-members.txt"
+BOOTSTRAP_MEMBER_MANIFEST_HEADER = "bootstrap-python-members-v1"
 REPLAY_REQUIRED_FILES = {
     "command.json",
     "stdout.log",
@@ -519,7 +521,55 @@ def _copy_library_closure(
     return [unique[key] for key in sorted(unique)]
 
 
-def _stage_python(source: Path, destination: Path) -> list[dict[str, Any]]:
+def _bootstrap_member_manifest(
+    destination: Path, output: Path
+) -> list[dict[str, Any]]:
+    required_modes = {
+        "bin/python3.14": 0o755,
+        "lib/libpython3.14.so.1.0": 0o755,
+        "lib/python314.zip": 0o644,
+    }
+    loader = "system-libs/ld-linux-x86-64.so.2"
+    system_libraries = sorted(
+        path.relative_to(destination).as_posix()
+        for path in (destination / "system-libs").iterdir()
+        if path.is_file()
+    )
+    if loader not in system_libraries:
+        raise ValueError("bootstrap Python ELF loader is missing")
+    required_modes.update(
+        {path: 0o755 for path in system_libraries}
+    )
+    rows: list[dict[str, Any]] = []
+    lines = [BOOTSTRAP_MEMBER_MANIFEST_HEADER]
+    for relative, mode in sorted(required_modes.items()):
+        path = destination / relative
+        if not path.is_file():
+            raise ValueError(
+                f"required bootstrap Python member is missing: {relative}"
+            )
+        path.chmod(mode)
+        row = {
+            "path": f"runtime/bootstrap-python/{relative}",
+            "mode": mode,
+            "bytes": path.stat().st_size,
+            "sha256": sha256_file(path),
+        }
+        rows.append(row)
+        lines.append(
+            f"{mode:04o} {row['bytes']} {row['sha256']} {row['path']}"
+        )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return rows
+
+
+def _stage_python(
+    source: Path,
+    destination: Path,
+    *,
+    bootstrap_member_manifest: Path | None = None,
+) -> list[dict[str, Any]]:
     def ignored(path: str, names: list[str]) -> set[str]:
         relative = Path(path).resolve().relative_to(source.resolve())
         if relative == Path("share"):
@@ -551,13 +601,18 @@ def _stage_python(source: Path, destination: Path) -> list[dict[str, Any]]:
             info.external_attr = (0o100644 & 0xFFFF) << 16
             info.compress_type = zipfile.ZIP_STORED
             archive.writestr(info, path.read_bytes())
-    return _copy_library_closure(
+    closure = _copy_library_closure(
         [
             destination / "bin/python3.14",
             destination / "lib/libpython3.14.so.1.0",
         ],
         destination / "system-libs",
     )
+    if bootstrap_member_manifest is not None:
+        _bootstrap_member_manifest(
+            destination, bootstrap_member_manifest
+        )
+    return closure
 
 
 def _stage_environment(source: Path, destination: Path) -> None:
@@ -1398,7 +1453,11 @@ def build_target_package(
             chromium_root, staging / "chromium"
         )
         closure["python-runtime"] = _stage_python(
-            python_runtime, staging / "python-runtime"
+            python_runtime,
+            staging / "python-runtime",
+            bootstrap_member_manifest=(
+                runtime_dir / BOOTSTRAP_MEMBER_MANIFEST_NAME
+            ),
         )
         _stage_environment(
             benchmark_repo / ".venv", staging / ".venv"
@@ -1814,6 +1873,7 @@ def inspect_target_package(
         target / "package-manifest.json",
         runtime / "runtime-lock.json",
         runtime / "bootstrap-python/bin/python3.14",
+        runtime / BOOTSTRAP_MEMBER_MANIFEST_NAME,
         runtime / "bootstrap-python-manifest.json",
         runtime / "replay-rootfs-manifest.json",
         runtime / "replay-rootfs-lock.json",

@@ -23,6 +23,7 @@ from final_source_only_release import (  # noqa: E402
     environment_image_identity_errors,
     release_descriptor_errors,
 )
+import source_only_ci  # noqa: E402
 from source_only_ci import (  # noqa: E402
     BASE_COMMIT,
     BROWSER_COMMAND,
@@ -425,6 +426,28 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
 
 
 class SourceOnlyReceiptTest(unittest.TestCase):
+    def test_vitest_count_accepts_ansi_colored_ci_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stdout = root / "dashboard-unit.stdout.log"
+            stderr = root / "dashboard-unit.stderr.log"
+            stdout.write_text(
+                "\x1b[2m      Tests \x1b[22m "
+                "\x1b[1m\x1b[32m16 passed\x1b[39m\x1b[22m (16)\n",
+                encoding="utf-8",
+            )
+            stderr.write_text("", encoding="utf-8")
+            row = {
+                "stdout": {"path": stdout.name},
+                "stderr": {"path": stderr.name},
+            }
+            self.assertEqual(
+                16,
+                source_only_ci._test_count(
+                    "dashboard_unit", row, root
+                ),
+            )
+
     def test_receipt_requires_userspace_runtime_and_browser_identity(
         self,
     ) -> None:

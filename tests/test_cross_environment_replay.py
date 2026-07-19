@@ -1256,6 +1256,147 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
             reconstruction = json.loads(completed.stdout)
             self.assertEqual("passed", reconstruction["status"])
             self.assertEqual(identity, reconstruction["final_outer"])
+            interpreter = reconstruction["interpreter"]
+            self.assertEqual(
+                Path(sys.executable).resolve(),
+                Path(interpreter["path"]),
+            )
+            self.assertRegex(
+                interpreter["version"], r"^\d+\.\d+\.\d+"
+            )
+            self.assertEqual(
+                hashlib.sha256(
+                    Path(sys.executable).resolve().read_bytes()
+                ).hexdigest(),
+                interpreter["sha256"],
+            )
+
+            explicit = subprocess.run(
+                [str(reconstruct), *map(str, parts)],
+                cwd=reviewer,
+                env={
+                    **os.environ,
+                    "RECONSTRUCT_PYTHON": sys.executable,
+                },
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(0, explicit.returncode, explicit.stderr)
+            self.assertEqual(
+                Path(sys.executable).resolve(),
+                Path(json.loads(explicit.stdout)["interpreter"]["path"]),
+            )
+
+            system_python = Path("/usr/bin/python3")
+            self.assertTrue(system_python.is_file())
+            system = subprocess.run(
+                [str(reconstruct), *map(str, parts)],
+                cwd=reviewer,
+                env={
+                    **os.environ,
+                    "RECONSTRUCT_PYTHON": str(system_python),
+                },
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(0, system.returncode, system.stderr)
+            self.assertEqual(
+                system_python.resolve(),
+                Path(json.loads(system.stdout)["interpreter"]["path"]),
+            )
+
+            missing = subprocess.run(
+                [str(reconstruct), *map(str, parts)],
+                cwd=reviewer,
+                env={
+                    **os.environ,
+                    "RECONSTRUCT_PYTHON": str(root / "missing-python"),
+                },
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(69, missing.returncode)
+            self.assertIn("interpreter is missing", missing.stderr)
+
+            broken_python = root / "broken-python"
+            broken_python.write_text(
+                "#!/bin/sh\nexit 7\n", encoding="utf-8"
+            )
+            broken_python.chmod(0o755)
+            cannot_start = subprocess.run(
+                [str(reconstruct), *map(str, parts)],
+                cwd=reviewer,
+                env={
+                    **os.environ,
+                    "RECONSTRUCT_PYTHON": str(broken_python),
+                },
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(69, cannot_start.returncode)
+            self.assertIn("cannot start", cannot_start.stderr)
+
+            hostile = root / "hostile-pythonpath"
+            hostile.mkdir()
+            marker = root / "hostile-pythonpath-ran"
+            (hostile / "sitecustomize.py").write_text(
+                "from pathlib import Path\n"
+                f"Path({str(marker)!r}).write_text('ran')\n"
+                "raise SystemExit(91)\n",
+                encoding="utf-8",
+            )
+            sanitized = subprocess.run(
+                [str(reconstruct), *map(str, parts)],
+                cwd=reviewer,
+                env={
+                    **os.environ,
+                    "RECONSTRUCT_PYTHON": sys.executable,
+                    "PYTHONPATH": str(hostile),
+                },
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(0, sanitized.returncode, sanitized.stderr)
+            self.assertFalse(marker.exists())
+
+            tampered = root / parts[0].name
+            with (
+                zipfile.ZipFile(parts[0]) as source,
+                zipfile.ZipFile(tampered, "w") as destination,
+            ):
+                for info in source.infolist():
+                    data = source.read(info)
+                    if info.filename.startswith("payload.part-"):
+                        data = bytes([data[0] ^ 1]) + data[1:]
+                    destination.writestr(info, data)
+            tampered_parts = [tampered, *parts[1:]]
+            rejected = subprocess.run(
+                [str(reconstruct), *map(str, tampered_parts)],
+                cwd=reviewer,
+                env={
+                    **os.environ,
+                    "RECONSTRUCT_PYTHON": sys.executable,
+                },
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertNotEqual(0, rejected.returncode)
+            self.assertRegex(
+                rejected.stderr,
+                "payload SHA-256 mismatch|part absent from split manifest",
+            )
 
     def test_source_generated_replay_has_one_packaged_boundary(self) -> None:
         source = _replay_script()

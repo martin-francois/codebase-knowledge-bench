@@ -5,6 +5,7 @@ import hashlib
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -34,13 +35,21 @@ from safe_archive import (
     validate_exact_tar,
 )
 from independent_verifier import _validated_zip_infos
+from independent_verifier import (
+    _parse_bootstrap_member_manifest,
+    _validate_bootstrap_member_contract,
+)
+import final_source_replay as source_replay
 from final_source_replay import (
     TASK_RECEIPT,
+    current_source_identity,
     pre_fix_source_commit,
     target_package_validation_receipt,
     validate_task_receipt,
 )
 from target_replay import (
+    BOOTSTRAP_MEMBER_MANIFEST_HEADER,
+    _bootstrap_member_manifest,
     _evidence_entries,
     _package_rows,
     _replay_script,
@@ -98,6 +107,132 @@ class SourceGeneratedReplayTest(unittest.TestCase):
             ValueError, "exact source-only browser contract"
         ):
             validate_task_receipt(unauthorized)
+
+    def _audit_repo(self, root: Path) -> Path:
+        repo = root / "repo"
+        audit = (
+            repo
+            / "verification/final-source-only-ci-browser/pre-fix-audit.json"
+        )
+        audit.parent.mkdir(parents=True)
+        shutil.copy2(
+            ROOT
+            / "verification/final-source-only-ci-browser/pre-fix-audit.json",
+            audit,
+        )
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        subprocess.run(
+            ["git", "-C", str(repo), "config", "user.name", "fixture"],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repo),
+                "config",
+                "user.email",
+                "fixture@example.invalid",
+            ],
+            check=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(repo), "add", "."], check=True
+        )
+        subprocess.run(
+            ["git", "-C", str(repo), "commit", "-qm", "fixture"],
+            check=True,
+        )
+        return repo
+
+    def test_pre_fix_provenance_passes_without_historical_object(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = self._audit_repo(Path(temporary))
+            missing = subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(repo),
+                    "cat-file",
+                    "-e",
+                    f"{TASK_RECEIPT['base_commit']}^{{commit}}",
+                ],
+                check=False,
+            )
+            self.assertNotEqual(0, missing.returncode)
+            self.assertEqual(
+                TASK_RECEIPT["base_commit"],
+                pre_fix_source_commit(repo),
+            )
+
+    def test_pre_fix_provenance_rejects_wrong_and_malformed_identity(
+        self,
+    ) -> None:
+        mutations = {
+            "wrong historical commit": ("commit", "1" * 40),
+            "wrong historical tree": ("tree", "2" * 40),
+            "malformed commit": ("commit", "not-a-commit"),
+        }
+        for label, (field, value) in mutations.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as temporary:
+                repo = self._audit_repo(Path(temporary))
+                path = (
+                    repo
+                    / (
+                        "verification/final-source-only-ci-browser/"
+                        "pre-fix-audit.json"
+                    )
+                )
+                audit = json.loads(path.read_text(encoding="utf-8"))
+                audit["base"][field] = value
+                path.write_text(
+                    json.dumps(audit, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                with (
+                    patch.object(
+                        source_replay,
+                        "PRE_FIX_AUDIT_SHA256",
+                        digest,
+                    ),
+                    self.assertRaisesRegex(
+                        ValueError, "exact reproduced task base"
+                    ),
+                ):
+                    pre_fix_source_commit(repo)
+
+    def test_pre_fix_provenance_rejects_tampered_audit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = self._audit_repo(Path(temporary))
+            path = (
+                repo
+                / (
+                    "verification/final-source-only-ci-browser/"
+                    "pre-fix-audit.json"
+                )
+            )
+            path.write_bytes(path.read_bytes() + b" ")
+            with self.assertRaisesRegex(
+                ValueError, "content identity mismatch"
+            ):
+                pre_fix_source_commit(repo)
+
+    def test_current_source_identity_remains_strict(self) -> None:
+        identity = current_source_identity(ROOT)
+        self.assertRegex(identity["commit"], r"^[0-9a-f]{40}$")
+        self.assertRegex(identity["tree"], r"^[0-9a-f]{40}$")
+        with (
+            patch.object(
+                source_replay.subprocess,
+                "check_output",
+                side_effect=["g" * 40 + "\n", "1" * 40 + "\n"],
+            ),
+            self.assertRaisesRegex(ValueError, "strict 40-hex"),
+        ):
+            current_source_identity(ROOT)
 
     def test_replay_manifest_refresh_includes_final_report_receipts(
         self,
@@ -628,41 +763,32 @@ class NetworkNamespaceLauncherTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             python_runtime = root / "python-runtime"
+            member_manifest = root / "bootstrap-python-members.txt"
             _stage_python(
                 Path(sys.executable).resolve().parents[1],
                 python_runtime,
+                bootstrap_member_manifest=member_manifest,
             )
             inner = root / "review-handoff.zip"
             with zipfile.ZipFile(inner, "w") as archive:
-                members = {
-                    "runtime/bootstrap-python/bin/python3.14":
-                        python_runtime / "bin/python3.14",
-                    "runtime/bootstrap-python/lib/"
-                    "libpython3.14.so.1.0":
-                        python_runtime / "lib/libpython3.14.so.1.0",
-                    "runtime/bootstrap-python/lib/python314.zip":
-                        python_runtime / "lib/python314.zip",
-                }
-                for name in (
-                    "ld-linux-x86-64.so.2",
-                    "libc.so.6",
-                    "libdl.so.2",
-                    "libm.so.6",
-                    "libpthread.so.0",
-                    "librt.so.1",
-                    "libutil.so.1",
-                ):
-                    members[
-                        f"runtime/bootstrap-python/system-libs/{name}"
-                    ] = python_runtime / "system-libs" / name
-                for name, path in members.items():
+                write_zip(
+                    archive,
+                    "runtime/bootstrap-python-members.txt",
+                    member_manifest.read_bytes(),
+                )
+                rows = _parse_bootstrap_member_manifest(
+                    member_manifest.read_bytes()
+                )
+                for row in rows:
+                    relative = row["path"].removeprefix(
+                        "runtime/bootstrap-python/"
+                    )
+                    path = python_runtime / relative
                     write_zip(
                         archive,
-                        name,
+                        row["path"],
                         path.read_bytes(),
-                        mode=0o755 if name != (
-                            "runtime/bootstrap-python/lib/python314.zip"
-                        ) else 0o644,
+                        mode=row["mode"],
                     )
                 write_zip(
                     archive,
@@ -707,6 +833,158 @@ class NetworkNamespaceLauncherTest(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(0, result.returncode, result.stderr)
+
+    def test_bootstrap_manifest_supports_current_and_compat_closures(
+        self,
+    ) -> None:
+        for compatibility in ((), ("libdl.so.2", "libpthread.so.0")):
+            with self.subTest(compatibility=compatibility), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                for relative, data in {
+                    "bin/python3.14": b"python",
+                    "lib/libpython3.14.so.1.0": b"libpython",
+                    "lib/python314.zip": b"stdlib",
+                    (
+                        "system-libs/ld-linux-x86-64.so.2"
+                    ): b"loader",
+                    "system-libs/libc.so.6": b"libc",
+                    "system-libs/libm.so.6": b"libm",
+                    **{
+                        f"system-libs/{name}": name.encode()
+                        for name in compatibility
+                    },
+                }.items():
+                    path = root / relative
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(data)
+                manifest = root.parent / "members.txt"
+                rows = _bootstrap_member_manifest(root, manifest)
+                paths = {row["path"] for row in rows}
+                self.assertEqual(
+                    bool(compatibility),
+                    (
+                        "runtime/bootstrap-python/system-libs/"
+                        "libdl.so.2"
+                    )
+                    in paths,
+                )
+                self.assertEqual(
+                    BOOTSTRAP_MEMBER_MANIFEST_HEADER,
+                    manifest.read_text(encoding="utf-8").splitlines()[0],
+                )
+
+    def test_bootstrap_manifest_rejects_missing_loader(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for relative in (
+                "bin/python3.14",
+                "lib/libpython3.14.so.1.0",
+                "lib/python314.zip",
+                "system-libs/libc.so.6",
+            ):
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(relative.encode())
+            with self.assertRaisesRegex(ValueError, "ELF loader"):
+                _bootstrap_member_manifest(
+                    root, root.parent / "members.txt"
+                )
+
+    def test_bootstrap_manifest_rejects_duplicate_and_escape(self) -> None:
+        digest = "0" * 64
+        required = [
+            f"0755 1 {digest} runtime/bootstrap-python/bin/python3.14",
+            (
+                f"0755 1 {digest} runtime/bootstrap-python/lib/"
+                "libpython3.14.so.1.0"
+            ),
+            f"0644 1 {digest} runtime/bootstrap-python/lib/python314.zip",
+            (
+                f"0755 1 {digest} runtime/bootstrap-python/system-libs/"
+                "ld-linux-x86-64.so.2"
+            ),
+        ]
+        duplicate = "\n".join(
+            [BOOTSTRAP_MEMBER_MANIFEST_HEADER, *required, required[-1], ""]
+        ).encode()
+        with self.assertRaisesRegex(ValueError, "invalid bootstrap"):
+            _parse_bootstrap_member_manifest(duplicate)
+        escape = "\n".join(
+            [
+                BOOTSTRAP_MEMBER_MANIFEST_HEADER,
+                *required,
+                f"0644 1 {digest} runtime/bootstrap-python/lib/../escape",
+                "",
+            ]
+        ).encode()
+        with self.assertRaisesRegex(ValueError, "invalid bootstrap"):
+            _parse_bootstrap_member_manifest(escape)
+
+    def test_bootstrap_manifest_rejects_archive_mode_mismatch(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            stage = Path(temporary)
+            inner_root = stage / "inner"
+            members = {
+                "runtime/bootstrap-python/bin/python3.14": (b"p", 0o755),
+                (
+                    "runtime/bootstrap-python/lib/"
+                    "libpython3.14.so.1.0"
+                ): (b"l", 0o755),
+                "runtime/bootstrap-python/lib/python314.zip": (b"z", 0o644),
+                (
+                    "runtime/bootstrap-python/system-libs/"
+                    "ld-linux-x86-64.so.2"
+                ): (b"d", 0o755),
+            }
+            lines = [BOOTSTRAP_MEMBER_MANIFEST_HEADER]
+            for name, (data, mode) in sorted(members.items()):
+                lines.append(
+                    f"{mode:04o} {len(data)} "
+                    f"{hashlib.sha256(data).hexdigest()} {name}"
+                )
+                staged = inner_root / name
+                staged.parent.mkdir(parents=True, exist_ok=True)
+                staged.write_bytes(data)
+                staged.chmod(mode)
+            stream = io.BytesIO()
+            with zipfile.ZipFile(stream, "w") as archive:
+                write_zip(
+                    archive,
+                    "runtime/bootstrap-python-members.txt",
+                    ("\n".join(lines) + "\n").encode(),
+                )
+                for index, (name, (data, mode)) in enumerate(
+                    sorted(members.items())
+                ):
+                    write_zip(
+                        archive,
+                        name,
+                        data,
+                        mode=0o644 if index == 0 else mode,
+                    )
+            with self.assertRaisesRegex(ValueError, "mode|identity"):
+                _validate_bootstrap_member_contract(
+                    stream.getvalue(), stage
+                )
+
+    def test_source_generated_verifier_uses_staged_member_contract(
+        self,
+    ) -> None:
+        source = (
+            ROOT / "scripts/independent_verifier.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "MEMBER_MANIFEST_REL=runtime/bootstrap-python-members.txt",
+            source,
+        )
+        self.assertNotIn(
+            "stream_member runtime/bootstrap-python/system-libs/libdl.so.2",
+            source,
+        )
+        self.assertIn("duplicate bootstrap member", source)
+        self.assertIn("unsafe bootstrap member path", source)
 
 
 if __name__ == "__main__":

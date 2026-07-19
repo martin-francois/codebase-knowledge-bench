@@ -912,13 +912,36 @@ def _zip_write(
 def _reconstruct_script() -> bytes:
     return b"""#!/bin/sh
 set -eu
-unset LD_LIBRARY_PATH PYTHONPATH JAVA_HOME NODE_PATH
+unset PYTHONPATH JAVA_HOME NODE_PATH
 if [ "$#" -lt 1 ]; then
   echo "usage: reconstruct.sh PART-ZIP..." >&2
   exit 64
 fi
-exec python3 - "$@" <<'PY'
-import hashlib, io, json, pathlib, re, sys, zipfile
+if [ -n "${RECONSTRUCT_PYTHON:-}" ]; then
+  reconstruction_python=$(command -v "$RECONSTRUCT_PYTHON" 2>/dev/null || true)
+  if [ -z "$reconstruction_python" ]; then
+    echo "RECONSTRUCT_PYTHON interpreter is missing: $RECONSTRUCT_PYTHON" >&2
+    exit 69
+  fi
+else
+  reconstruction_python=$(command -v python3 2>/dev/null || true)
+  if [ -z "$reconstruction_python" ]; then
+    echo "python3 reconstruction interpreter is missing" >&2
+    exit 69
+  fi
+fi
+if [ ! -f "$reconstruction_python" ] || [ ! -x "$reconstruction_python" ]; then
+  echo "reconstruction interpreter is not an executable file: $reconstruction_python" >&2
+  exit 69
+fi
+if ! "$reconstruction_python" -c 'import sys; raise SystemExit(0)' </dev/null >/dev/null 2>&1
+then
+  echo "reconstruction interpreter cannot start: $reconstruction_python" >&2
+  exit 69
+fi
+export RECONSTRUCT_PYTHON_SELECTED="$reconstruction_python"
+exec "$reconstruction_python" - "$@" <<'PY'
+import hashlib, io, json, pathlib, platform, re, sys, zipfile
 
 TASK_ID = "final-source-only-ci-browser-and-image-pin"
 ROUTING_NONCE = "FMCB-20260719-9D4E2A7B"
@@ -1221,14 +1244,14 @@ if (
     raise SystemExit("exact-final detached receipt binding mismatch")
 
 output = pathlib.Path(manifest["final_outer"]["filename"])
-digest = hashlib.sha256()
+outer_digest = hashlib.sha256()
 with output.open("wb") as stream:
     for _, _, payload in rows:
         stream.write(payload)
-        digest.update(payload)
+        outer_digest.update(payload)
 if output.stat().st_size != manifest["final_outer"]["bytes"]:
     raise SystemExit("reconstructed byte count mismatch")
-if digest.hexdigest() != manifest["final_outer"]["sha256"]:
+if outer_digest.hexdigest() != manifest["final_outer"]["sha256"]:
     raise SystemExit("reconstructed SHA-256 mismatch")
 if validation.get("final_outer") != manifest["final_outer"]:
     raise SystemExit("detached final outer identity mismatch")
@@ -1274,6 +1297,13 @@ print(json.dumps({
     "source_only_browser_status": browser["status"],
     "debian_12_exact_final_status": debian12["status"],
     "debian_13_exact_final_status": debian13["status"],
+    "interpreter": {
+        "path": str(pathlib.Path(sys.executable).resolve()),
+        "version": platform.python_version(),
+        "sha256": digest(
+            pathlib.Path(sys.executable).resolve().read_bytes()
+        ),
+    },
 }, indent=2, sort_keys=True))
 PY
 """

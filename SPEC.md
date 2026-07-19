@@ -408,10 +408,13 @@ child failures. It MUST NOT depend on `/proc/<pid>/exe`. Direct shell execution 
 hostile-environment-safe entrypoint. After sanitization the only host bootstrap boundary is Linux,
 `/bin/sh`, an `unzip` implementation that capability-tests exact-name `-p` streaming, and basic
 `mkdir`, `chmod`, `mktemp`, and `readlink`, plus `getconf` and `uname` used only to record host
-userspace glibc and kernel identity. The shell streams a fixed set of exact-name regular
-bootstrap members and invokes packaged Python through the packaged ELF loader with a scoped
-`--library-path`. It MUST NOT use host awk, sha256sum, sort, sed, tr, zipinfo, Git, tar, zstd,
-unshare, mount, or ip.
+userspace glibc and kernel identity. The package builder writes one bounded, deterministic
+bootstrap-member contract for the Python executable, libpython, stdlib ZIP, ELF loader, and actual
+shared-library closure it staged. The shell validates the contract's syntax, paths, modes, counts,
+and byte bounds before streaming exactly those exact-name regular members, and packaged Python then
+revalidates their archive and staged identities. The shell invokes packaged Python through the
+packaged ELF loader with a scoped `--library-path`. It MUST NOT use host awk, sha256sum, sort, sed,
+tr, zipinfo, Git, tar, zstd, unshare, mount, or ip.
 
 `RPL-013` `runtime/replay-rootfs/`, `runtime/replay-rootfs-manifest.json`,
 `runtime/replay-rootfs-lock.json`, and `runtime/replay-rootfs-license-manifest.json` define the sole
@@ -460,7 +463,11 @@ verifier bootstrap and its SHA-256, final outer checksum, exact-final independen
 receipt, portability matrix, source-only CI receipt, and the final agent response.
 Validation checks each part and its manifest, concatenates payloads by declared offset, reproduces
 the exact final outer, validates detached binding and both ZIP layers, and requires a passed
-portability matrix.
+portability matrix. The convenience reconstruction script uses an explicit `RECONSTRUCT_PYTHON`
+when provided or resolves `python3`, proves the interpreter can start, clears Python/Java/Node
+module-path contamination without clearing that interpreter's required loader environment, and
+records its resolved path, version, and SHA-256. Hostile-loader qualification always uses the
+static verifier bootstrap instead of direct reconstruction-script execution.
 
 `RPL-020` Committed generators produce byte-identical static-verifier bootstrap, independent
 verifier shell, replay launcher, runtime lock, replay-rootfs lock, and split reconstruction bytes.

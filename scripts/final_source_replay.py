@@ -48,6 +48,13 @@ TASK_RECEIPT = {
     "model_calls_authorized": False,
     "benchmark_children_authorized": False,
 }
+TASK_RECEIPT_SHA256 = (
+    "e80f4046bc067f94fb0c6f256d7a865b8279e33b2de9bf4c809f70b2f2f9f88f"
+)
+PRE_FIX_AUDIT_SHA256 = (
+    "0e39a98b4b39bcd355aeb3efd88f6e03cd6cbfa9ea546dbff37904e13a299763"
+)
+HEX_40 = set("0123456789abcdef")
 
 
 def sha256_file(path: Path) -> str:
@@ -87,33 +94,65 @@ def validate_task_receipt(receipt: dict[str, Any]) -> None:
 
 def pre_fix_source_commit(repo: Path) -> str:
     """Return the source identity owned by the reproduced pre-fix audit."""
-    audit = json.loads(
-        (
-            repo
-            / (
-                "verification/final-source-only-ci-browser/"
-                "pre-fix-audit.json"
-            )
-        ).read_text(encoding="utf-8")
+    path = (
+        repo
+        / (
+            "verification/final-source-only-ci-browser/"
+            "pre-fix-audit.json"
+        )
     )
-    commit = audit.get("base", {}).get("commit")
+    if sha256_file(path) != PRE_FIX_AUDIT_SHA256:
+        raise ValueError("pre-fix audit content identity mismatch")
+    audit = json.loads(path.read_text(encoding="utf-8"))
+    base = audit.get("base", {})
+    commit = base.get("commit")
+    tree = base.get("tree")
     if (
         audit.get("status") != "findings_reproduced"
         or audit.get("audit_completed_before_source_edits") is not True
         or not isinstance(commit, str)
         or len(commit) != 40
-        or any(character not in "0123456789abcdef" for character in commit)
+        or any(character not in HEX_40 for character in commit)
+        or not isinstance(tree, str)
+        or len(tree) != 40
+        or any(character not in HEX_40 for character in tree)
+        or commit != TASK_RECEIPT["base_commit"]
+        or tree != TASK_RECEIPT["base_tree"]
+        or audit.get("task_id") != TASK_RECEIPT["task_id"]
+        or audit.get("routing_nonce") != TASK_RECEIPT["routing_nonce"]
+        or audit.get("task_receipt")
+        != {
+            "path": (
+                "output://final-source-only-ci-browser/"
+                "task-receipt.json"
+            ),
+            "sha256": TASK_RECEIPT_SHA256,
+        }
     ):
         raise ValueError(
-            "pre-fix audit must bind a reproduced 40-hex source commit"
+            "pre-fix audit must bind the exact reproduced task base "
+            "commit/tree and task receipt"
         )
-    subprocess.run(
-        ["git", "-C", str(repo), "cat-file", "-e", f"{commit}^{{commit}}"],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
     return commit
+
+
+def current_source_identity(repo: Path) -> dict[str, str]:
+    """Resolve and strictly validate the checked-out source identity."""
+    commit = subprocess.check_output(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
+    ).strip()
+    tree = subprocess.check_output(
+        ["git", "-C", str(repo), "rev-parse", "HEAD^{tree}"],
+        text=True,
+    ).strip()
+    for label, value in (("commit", commit), ("tree", tree)):
+        if len(value) != 40 or any(
+            character not in HEX_40 for character in value
+        ):
+            raise ValueError(
+                f"current source {label} is not strict 40-hex"
+            )
+    return {"commit": commit, "tree": tree}
 
 
 def target_package_validation_receipt(
@@ -280,13 +319,9 @@ def prepare(
     )
     validate_task_receipt(receipt)
     base_commit = pre_fix_source_commit(repo)
-    head = subprocess.check_output(
-        ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
-    ).strip()
-    tree = subprocess.check_output(
-        ["git", "-C", str(repo), "rev-parse", "HEAD^{tree}"],
-        text=True,
-    ).strip()
+    current_source = current_source_identity(repo)
+    head = current_source["commit"]
+    tree = current_source["tree"]
     changed = subprocess.check_output(
         [
             "git",

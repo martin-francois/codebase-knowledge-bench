@@ -115,17 +115,134 @@ stream_member() {
   "$CHMOD" "$mode" "$target"
 }
 
-stream_member runtime/bootstrap-python/bin/python3.14 755
-stream_member runtime/bootstrap-python/lib/libpython3.14.so.1.0 755
-stream_member runtime/bootstrap-python/lib/python314.zip 644
-stream_member \
-  runtime/bootstrap-python/system-libs/ld-linux-x86-64.so.2 755
-stream_member runtime/bootstrap-python/system-libs/libc.so.6 755
-stream_member runtime/bootstrap-python/system-libs/libdl.so.2 755
-stream_member runtime/bootstrap-python/system-libs/libm.so.6 755
-stream_member runtime/bootstrap-python/system-libs/libpthread.so.0 755
-stream_member runtime/bootstrap-python/system-libs/librt.so.1 755
-stream_member runtime/bootstrap-python/system-libs/libutil.so.1 755
+MEMBER_MANIFEST_REL=runtime/bootstrap-python-members.txt
+MEMBER_MANIFEST="$STAGE/bootstrap-python-members.txt"
+# POSIX ulimit -f is in 512-byte blocks. Bound the untrusted manifest
+# before packaged Python is available to validate its exact identity.
+ulimit -S -f 128 || {
+  echo "cannot enforce bootstrap manifest byte limit" >&2
+  exit 66
+}
+if ! "$UNZIP" -p "$INNER" "$MEMBER_MANIFEST_REL" >"$MEMBER_MANIFEST"
+then
+  echo "bootstrap member manifest is missing" >&2
+  exit 65
+fi
+ulimit -S -f unlimited || {
+  echo "cannot restore bootstrap member file limit" >&2
+  exit 66
+}
+
+exec 3<"$MEMBER_MANIFEST"
+IFS= read -r manifest_header <&3 || {
+  echo "bootstrap member manifest is empty" >&2
+  exit 65
+}
+if [ "$manifest_header" != bootstrap-python-members-v1 ]; then
+  echo "bootstrap member manifest header mismatch" >&2
+  exit 65
+fi
+member_count=0
+total_bytes=0
+seen_members='
+'
+required_python=false
+required_libpython=false
+required_stdlib=false
+required_loader=false
+while IFS=' ' read -r mode bytes digest member extra <&3
+do
+  if [ -n "${extra:-}" ] || [ -z "${member:-}" ]; then
+    echo "invalid bootstrap member manifest row" >&2
+    exit 65
+  fi
+  case "$mode" in
+    0644|0755) ;;
+    *)
+      echo "invalid bootstrap member mode: $mode" >&2
+      exit 65
+      ;;
+  esac
+  case "$bytes" in
+    ''|*[!0-9]*)
+      echo "invalid bootstrap member byte count: $bytes" >&2
+      exit 65
+      ;;
+  esac
+  if [ "$bytes" -le 0 ] || [ "$bytes" -gt 300000000 ]; then
+    echo "bootstrap member byte limit exceeded: $member" >&2
+    exit 65
+  fi
+  case "$digest" in
+    *[!0-9a-f]*)
+      echo "invalid bootstrap member SHA-256: $member" >&2
+      exit 65
+      ;;
+  esac
+  if [ "${#digest}" -ne 64 ]; then
+    echo "invalid bootstrap member SHA-256 length: $member" >&2
+    exit 65
+  fi
+  case "$member" in
+    /*|../*|*/../*|*/..|*//*|*\\*)
+      echo "unsafe bootstrap member path: $member" >&2
+      exit 65
+      ;;
+  esac
+  case "$member" in
+    runtime/bootstrap-python/bin/*|\
+    runtime/bootstrap-python/lib/*|\
+    runtime/bootstrap-python/system-libs/*) ;;
+    *)
+      echo "bootstrap member prefix is not allowed: $member" >&2
+      exit 65
+      ;;
+  esac
+  case "$seen_members" in
+    *"
+$member
+"*)
+      echo "duplicate bootstrap member: $member" >&2
+      exit 65
+      ;;
+  esac
+  seen_members="${seen_members}${member}
+"
+  member_count=$((member_count + 1))
+  total_bytes=$((total_bytes + bytes))
+  if [ "$member_count" -gt 128 ] || [ "$total_bytes" -gt 1000000000 ]; then
+    echo "bootstrap member contract limit exceeded" >&2
+    exit 65
+  fi
+  blocks=$(((bytes + 511) / 512))
+  ulimit -S -f "$blocks" || {
+    echo "cannot enforce bootstrap member byte limit: $member" >&2
+    exit 66
+  }
+  stream_member "$member" "${mode#0}"
+  case "$member" in
+    runtime/bootstrap-python/bin/python3.14)
+      required_python=true ;;
+    runtime/bootstrap-python/lib/libpython3.14.so.1.0)
+      required_libpython=true ;;
+    runtime/bootstrap-python/lib/python314.zip)
+      required_stdlib=true ;;
+    runtime/bootstrap-python/system-libs/ld-linux-x86-64.so.2)
+      required_loader=true ;;
+  esac
+done
+exec 3<&-
+ulimit -S -f unlimited || {
+  echo "cannot restore bootstrap stream file limit" >&2
+  exit 66
+}
+if [ "$required_python" != true ] || \
+   [ "$required_libpython" != true ] || \
+   [ "$required_stdlib" != true ] || \
+   [ "$required_loader" != true ]; then
+  echo "bootstrap member manifest lacks a required runtime member" >&2
+  exit 65
+fi
 stream_member \
   verification/independent-verifier/independent_verifier.py 644
 

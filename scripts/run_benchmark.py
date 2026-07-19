@@ -434,49 +434,79 @@ def run(
             stage_attempts=[asdict(attempt) for attempt in supervised.attempts],
         )
     started = time.monotonic()
+    receipt_read, receipt_write = os.pipe()
     process = subprocess.Popen(
-        cmd,
-        cwd=cwd,
-        env=env,
-        stdin=subprocess.PIPE if input_text is not None else None,
+        [
+            sys.executable,
+            str(BENCH / "scripts/process_supervisor.py"),
+            "--receipt-fd",
+            str(receipt_write),
+        ],
+        cwd=BENCH,
+        stdin=subprocess.PIPE,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        shell=isinstance(cmd, str),
+        pass_fds=(receipt_write,),
         start_new_session=True,
     )
+    os.close(receipt_write)
+    request = json.dumps(
+        {
+            "command": cmd,
+            "cwd": str(cwd),
+            "env": env,
+            "input_text": input_text,
+            "timeout": timeout,
+        }
+    )
     try:
-        stdout, stderr = process.communicate(input=input_text, timeout=timeout)
+        stdout, stderr = process.communicate(input=request)
+        with os.fdopen(receipt_read, "rb") as stream:
+            receipt_bytes = stream.read()
+        if process.returncode != 0:
+            raise RuntimeError(
+                "scoped process supervisor failed: "
+                + (stderr.strip() or f"exit {process.returncode}")
+            )
+        try:
+            receipt = json.loads(receipt_bytes)
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise RuntimeError(
+                "scoped process supervisor returned an invalid receipt"
+            ) from exc
+        if "supervisor_error" in receipt:
+            raise RuntimeError(str(receipt["supervisor_error"]))
+        if receipt.get("remaining_descendants"):
+            raise RuntimeError(
+                "scoped process supervisor left command descendants: "
+                f"{receipt['remaining_descendants']}"
+            )
         return CommandResult(
             command=cmd,
             cwd=str(cwd),
-            returncode=process.returncode,
+            returncode=int(receipt["returncode"]),
             stdout=stdout,
             stderr=stderr,
             seconds=time.monotonic() - started,
-        )
-    except subprocess.TimeoutExpired:
-        terminate_process_session(process.pid)
-        try:
-            stdout, stderr = process.communicate(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            stdout, stderr = process.communicate()
-        return CommandResult(
-            command=cmd,
-            cwd=str(cwd),
-            returncode=124,
-            stdout=stdout or "",
-            stderr=stderr or "",
-            seconds=time.monotonic() - started,
-            timed_out=True,
+            timed_out=receipt.get("timed_out") is True,
         )
     except BaseException:
-        terminate_process_session(process.pid)
+        try:
+            os.close(receipt_read)
+        except OSError:
+            pass
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
         try:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
-            process.kill()
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
             process.wait()
         raise
 

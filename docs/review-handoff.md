@@ -29,3 +29,11 @@ Debian 12/13 exact-final receipts, portability matrix, detached outer receipt, s
 reconstruction script. `scripts/cross_environment_release.py validate-split` verifies the raw and
 normalized part identities and the complete task/source/userspace/browser/portability binding after
 reconstructing the exact outer.
+
+`reconstruct.sh` is a convenience reconstruction and validation tool. Set
+`RECONSTRUCT_PYTHON` to an explicit compatible interpreter when needed; otherwise it resolves
+`python3`. It validates that interpreter before use and records its resolved path, version, and
+SHA-256 in the reconstruction result. It clears Python, Java, and Node module-path variables but
+preserves the selected interpreter's dynamic-loader environment. Hostile-loader verification does
+not execute this convenience script directly: it uses the statically linked verifier bootstrap,
+the packaged ELF loader, and packaged Python.

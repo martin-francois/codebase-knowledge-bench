@@ -50,6 +50,10 @@ INNER_ZIP_MAX_MEMBERS = 20_000
 INNER_ZIP_MAX_MEMBER_BYTES = 300_000_000
 ZIP_MAX_TOTAL_BYTES = 1_600_000_000
 ZIP_MAX_COMPRESSION_RATIO = 200
+BOOTSTRAP_MEMBER_MANIFEST = "runtime/bootstrap-python-members.txt"
+BOOTSTRAP_MEMBER_HEADER = "bootstrap-python-members-v1"
+BOOTSTRAP_MEMBER_MAX_COUNT = 128
+BOOTSTRAP_MEMBER_MAX_BYTES = 1_000_000_000
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -319,6 +323,148 @@ def _validated_zip_infos(
 
 def _zip_permissions(info: zipfile.ZipInfo) -> int:
     return (info.external_attr >> 16) & 0o7777
+
+
+def _parse_bootstrap_member_manifest(
+    data: bytes,
+) -> list[dict[str, Any]]:
+    try:
+        lines = data.decode("utf-8").splitlines()
+    except UnicodeDecodeError as exc:
+        raise ValueError(
+            "bootstrap member manifest is not UTF-8"
+        ) from exc
+    if not lines or lines[0] != BOOTSTRAP_MEMBER_HEADER:
+        raise ValueError("bootstrap member manifest header mismatch")
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    total = 0
+    for line in lines[1:]:
+        fields = line.split(" ")
+        if len(fields) != 4:
+            raise ValueError("invalid bootstrap member manifest row")
+        mode_text, bytes_text, digest, path = fields
+        member = PurePosixPath(path)
+        if (
+            mode_text not in {"0644", "0755"}
+            or not bytes_text.isascii()
+            or not bytes_text.isdigit()
+            or not re.fullmatch(r"[0-9a-f]{64}", digest)
+            or member.is_absolute()
+            or ".." in member.parts
+            or "." in member.parts
+            or "\\" in path
+            or path in seen
+            or not path.startswith(
+                (
+                    "runtime/bootstrap-python/bin/",
+                    "runtime/bootstrap-python/lib/",
+                    "runtime/bootstrap-python/system-libs/",
+                )
+            )
+        ):
+            raise ValueError(
+                f"invalid bootstrap member contract: {path}"
+            )
+        size = int(bytes_text)
+        if size <= 0 or size > INNER_ZIP_MAX_MEMBER_BYTES:
+            raise ValueError(
+                f"bootstrap member byte limit exceeded: {path}"
+            )
+        total += size
+        if (
+            len(rows) >= BOOTSTRAP_MEMBER_MAX_COUNT
+            or total > BOOTSTRAP_MEMBER_MAX_BYTES
+        ):
+            raise ValueError("bootstrap member contract limit exceeded")
+        seen.add(path)
+        rows.append(
+            {
+                "path": path,
+                "mode": int(mode_text, 8),
+                "bytes": size,
+                "sha256": digest,
+            }
+        )
+    required = {
+        "runtime/bootstrap-python/bin/python3.14",
+        "runtime/bootstrap-python/lib/libpython3.14.so.1.0",
+        "runtime/bootstrap-python/lib/python314.zip",
+        (
+            "runtime/bootstrap-python/system-libs/"
+            "ld-linux-x86-64.so.2"
+        ),
+    }
+    if not required.issubset(seen):
+        raise ValueError(
+            "bootstrap member manifest lacks a required runtime member"
+        )
+    return rows
+
+
+def _validate_bootstrap_member_contract(
+    inner: bytes, bootstrap_stage: Path
+) -> dict[str, Any]:
+    with zipfile.ZipFile(io.BytesIO(inner)) as archive:
+        manifest = archive.read(BOOTSTRAP_MEMBER_MANIFEST)
+        rows = _parse_bootstrap_member_manifest(manifest)
+        infos = {info.filename: info for info in archive.infolist()}
+        expected = {
+            "runtime/bootstrap-python/bin/python3.14",
+            "runtime/bootstrap-python/lib/libpython3.14.so.1.0",
+            "runtime/bootstrap-python/lib/python314.zip",
+        } | {
+            name
+            for name in infos
+            if name.startswith(
+                "runtime/bootstrap-python/system-libs/"
+            )
+            and not name.endswith("/")
+        }
+        declared = {row["path"] for row in rows}
+        if declared != expected:
+            raise ValueError(
+                "bootstrap member manifest/package set mismatch"
+            )
+        for row in rows:
+            info = infos.get(row["path"])
+            if info is None:
+                raise ValueError(
+                    f"bootstrap member is missing: {row['path']}"
+                )
+            mode = (info.external_attr >> 16) & 0o170000
+            if mode not in {0, stat.S_IFREG} or info.is_dir():
+                raise ValueError(
+                    f"bootstrap member is not regular: {row['path']}"
+                )
+            data = archive.read(info)
+            if (
+                _zip_permissions(info) != row["mode"]
+                or len(data) != row["bytes"]
+                or sha256_bytes(data) != row["sha256"]
+            ):
+                raise ValueError(
+                    f"bootstrap member archive identity mismatch: "
+                    f"{row['path']}"
+                )
+            staged = bootstrap_stage / "inner" / row["path"]
+            if (
+                not staged.is_file()
+                or stat.S_IMODE(staged.stat().st_mode) != row["mode"]
+                or staged.stat().st_size != row["bytes"]
+                or sha256_file(staged) != row["sha256"]
+            ):
+                raise ValueError(
+                    f"streamed bootstrap member identity mismatch: "
+                    f"{row['path']}"
+                )
+    return {
+        "status": "passed",
+        "manifest": BOOTSTRAP_MEMBER_MANIFEST,
+        "member_count": len(rows),
+        "total_bytes": sum(row["bytes"] for row in rows),
+        "members": rows,
+    }
 
 
 def _validate_outer(outer: Path) -> tuple[dict[str, Any], bytes, str]:
@@ -953,6 +1099,15 @@ def verify(outer: Path, output: Path) -> dict[str, Any]:
     _progress(output, "bootstrap_capabilities")
     outer_result, inner_bytes, inner_name = _validate_outer(outer)
     _progress(output, "outer_validation")
+    bootstrap_members = _validate_bootstrap_member_contract(
+        inner_bytes,
+        Path(os.environ["INDEPENDENT_VERIFIER_BOOTSTRAP_STAGE"]),
+    )
+    _write(
+        output / "bootstrap-member-contract.json",
+        bootstrap_members,
+    )
+    _progress(output, "bootstrap_member_validation")
     verification_work = output / "inner-validation-work"
     verification_work.mkdir()
     inner_result = _validate_inner(inner_bytes, verification_work)
@@ -1086,6 +1241,9 @@ def verify(outer: Path, output: Path) -> dict[str, Any]:
     _progress(output, "failure_safe_evidence_packaging")
     checks = {
         "bootstrap_capabilities": capabilities["status"] == "passed",
+        "bootstrap_member_contract": (
+            bootstrap_members["status"] == "passed"
+        ),
         "outer_manifest": outer_result["status"] == "passed",
         "inner_manifest": inner_result["status"] == "passed",
         "source_commit_reconstruction": (
@@ -1143,6 +1301,7 @@ def verify(outer: Path, output: Path) -> dict[str, Any]:
             "bootstrap_prerequisites": capabilities,
         },
         "outer": outer_result,
+        "bootstrap_members": bootstrap_members,
         "inner": inner_result,
         "inner_member": inner_name,
         "verified_qualifying_payload_root": inner_result[
