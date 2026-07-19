@@ -327,7 +327,7 @@ def scan_source_text(name: str, data: bytes) -> tuple[list[str], list[dict[str, 
 
 def portable_generated_text(data: bytes) -> tuple[bytes, list[str]]:
     replacements = {
-        b"/home/server/git-projects/codebase-knowledge-graph-benchmark": b"$REPO",
+        b"/home/server/git-projects/codebase-knowledge-bench": b"$REPO",
         b"/home/server/git-projects": b"$WORKSPACE",
         b"/home/server": b"$BENCHMARK_HOME",
         b"/root/.local/share/uv": b"$UV_HOME",

@@ -27,7 +27,7 @@ def default_lock_path() -> Path:
     if configured:
         return Path(configured).expanduser().resolve()
     runtime = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp"))
-    return runtime / f"codebase-knowledge-graph-benchmark-{os.getuid()}.lock"
+    return runtime / f"codebase-knowledge-bench-{os.getuid()}.lock"
 
 
 @dataclass

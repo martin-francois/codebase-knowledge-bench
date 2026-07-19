@@ -2,7 +2,7 @@
   "audit_completed_before_source_edits": true,
   "findings": [
     {
-      "command": "PYTHONPATH=scripts python3 -c 'import target_replay; print(target_replay._replay_script(), end=\"\")' | diff -u --label source-generated/replay.sh --label previous-delivery/target/replay.sh - /home/server/git-projects/.codebase-knowledge-graph-benchmark-output/final-live-preflight/target/replay.sh",
+      "command": "PYTHONPATH=scripts python3 -c 'import target_replay; print(target_replay._replay_script(), end=\"\")' | diff -u --label source-generated/replay.sh --label previous-delivery/target/replay.sh - /home/server/git-projects/.codebase-knowledge-bench-output/final-live-preflight/target/replay.sh",
       "focused_negative_fixture": "Regenerate replay.sh from target_replay._replay_script(), mutate one packaged byte, and require byte equality validation to reject the package.",
       "id": "REPLAY-001",
       "observed_result": {
@@ -104,15 +104,15 @@
       "focused_negative_fixture": "Run the final replay with a host PATH containing only an incompatible Java shim and require the packaged JDK path/hash to be selected before any Maven work.",
       "id": "REPLAY-004",
       "observed_result": {
-        "JAVA_HOME": "/home/server/git-projects/.codebase-knowledge-graph-benchmark-output/final-source-replay/pre-fix-work/jdk-21.0.7+6",
+        "JAVA_HOME": "/home/server/git-projects/.codebase-knowledge-bench-output/final-source-replay/pre-fix-work/jdk-21.0.7+6",
         "fresh_replay_exit_code": 1,
         "java": {
-          "path": "/home/server/git-projects/.codebase-knowledge-graph-benchmark-output/final-source-replay/pre-fix-work/jdk-21.0.7+6/bin/java",
+          "path": "/home/server/git-projects/.codebase-knowledge-bench-output/final-source-replay/pre-fix-work/jdk-21.0.7+6/bin/java",
           "sha256": "217126ab9708f797fb5cee09228392055d3bd9213147f83ff4987addb6f92494",
           "version": "openjdk version \"21.0.7\" 2025-04-15 LTS"
         },
         "javac": {
-          "path": "/home/server/git-projects/.codebase-knowledge-graph-benchmark-output/final-source-replay/pre-fix-work/jdk-21.0.7+6/bin/javac",
+          "path": "/home/server/git-projects/.codebase-knowledge-bench-output/final-source-replay/pre-fix-work/jdk-21.0.7+6/bin/javac",
           "sha256": "b9c73d2642a9a1bcf436e58f96738c80649cf984d57e98731bf9eaf6e5806227",
           "version": "javac 21.0.7"
         },
@@ -328,12 +328,12 @@
   "previous_review_delivery": {
     "inner_review_zip": {
       "bytes": 460494944,
-      "path": "/home/server/git-projects/.codebase-knowledge-graph-benchmark-output/final-live-preflight/review-handoff/review-handoff.zip",
+      "path": "/home/server/git-projects/.codebase-knowledge-bench-output/final-live-preflight/review-handoff/review-handoff.zip",
       "sha256": "72caafad2e7f5537de85edd2ce866dec2d27e54af070afb71a5e27dda312459e"
     },
     "outer_delivery_zip": {
       "bytes": 460502234,
-      "path": "/home/server/git-projects/.codebase-knowledge-graph-benchmark-output/codebase-knowledge-graph-benchmark-external-review-delivery-4c1dc40.zip",
+      "path": "/home/server/git-projects/.codebase-knowledge-bench-output/codebase-knowledge-bench-external-review-delivery-4c1dc40.zip",
       "sha256": "8d8419a558092bf45e7ec9f18c28d6cb1fa591a21642b218a5482a6b52f26d7d"
     },
     "packaged_replay_sha256": "9a0f261462a9616630edbca48657e9e1421ed5aafbe58a3502048a5deb08ee6a"
@@ -347,9 +347,9 @@
   },
   "status": "findings_reproduced",
   "task_receipt": {
-    "json_path": "/home/server/git-projects/.codebase-knowledge-graph-benchmark-output/final-source-replay/task-receipt.json",
+    "json_path": "/home/server/git-projects/.codebase-knowledge-bench-output/final-source-replay/task-receipt.json",
     "json_sha256": "27a43ec8b3a86d5ebf7c934aaf5d998747c99df58480b81858d102c1cd0c25f4",
-    "markdown_path": "/home/server/git-projects/.codebase-knowledge-graph-benchmark-output/final-source-replay/task-receipt.md",
+    "markdown_path": "/home/server/git-projects/.codebase-knowledge-bench-output/final-source-replay/task-receipt.md",
     "markdown_sha256": "c633e6d71e431f4df9c91ebaf06aa779465cc047cda48e5497d6d7a69372202f"
   }
 }

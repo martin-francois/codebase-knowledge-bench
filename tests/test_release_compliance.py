@@ -195,6 +195,68 @@ class SourceOnlyStratumTest(unittest.TestCase):
         self.assertIn("@sha256:", workflow)
         self.assertNotIn("runs-on: ubuntu-latest", workflow)
 
+    def test_project_identity_is_consistent(self) -> None:
+        name = "Codebase Knowledge Bench"
+        slug = "codebase-knowledge-bench"
+        unexpected_slug = "-".join(
+            ("codebase", "knowledge", "graph", "benchmark")
+        )
+        unexpected_name = " ".join(
+            ("Codebase", "Knowledge", "Graph", "Benchmark")
+        )
+        project = tomllib.loads(
+            (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        )
+        self.assertEqual(slug, project["project"]["name"])
+        self.assertTrue(
+            (ROOT / "README.md").read_text(encoding="utf-8").startswith(
+                f"# {name}\n"
+            )
+        )
+        self.assertTrue(
+            (ROOT / "SPEC.md").read_text(encoding="utf-8").startswith(
+                f"# {name} Specification\n"
+            )
+        )
+        self.assertIn(
+            f"github.com/martin-francois/{slug}.git",
+            (ROOT / "README.md").read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            f'output_root = "../../.{slug}-output"',
+            (ROOT / "configs/default.toml").read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            f'"https://example.invalid/{slug}/',
+            (
+                ROOT / "schemas/qualification-checkpoint.schema.json"
+            ).read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            f'f"{slug}-{{os.getuid()}}.lock"',
+            (SCRIPTS / "sequential_lock.py").read_text(encoding="utf-8"),
+        )
+        stale = subprocess.run(
+            [
+                "git",
+                "grep",
+                "-n",
+                "-I",
+                "-i",
+                "-e",
+                unexpected_slug,
+                "-e",
+                unexpected_name,
+            ],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(1, stale.returncode, stale.stderr)
+        self.assertEqual("", stale.stdout)
+
     def test_source_only_fixture_ignores_external_target_discovery(
         self,
     ) -> None:

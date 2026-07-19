@@ -22,7 +22,7 @@ test-output/
 !verification/current-canonical-verification-report.md
 !verification/llm-verification-report.md
 latest-*.txt
-.codebase-knowledge-graph-benchmark-output/
+.codebase-knowledge-bench-output/
 
 # Environment snapshots and local state
 .env

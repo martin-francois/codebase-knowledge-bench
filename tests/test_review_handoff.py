@@ -191,7 +191,7 @@ class ReviewHandoffTest(unittest.TestCase):
 
     def test_generated_text_is_portable_and_secret_redacted(self):
         data, notes = portable_generated_text(
-            b"/home/server/git-projects/codebase-knowledge-graph-benchmark /home/alice/private api_key=abcdefghijklmnop"
+            b"/home/server/git-projects/codebase-knowledge-bench /home/alice/private api_key=abcdefghijklmnop"
         )
         self.assertIn(b"$REPO", data)
         self.assertIn(b"$REDACTED_TEST_SECRET", data)
