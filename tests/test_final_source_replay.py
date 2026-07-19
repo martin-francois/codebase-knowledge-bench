@@ -82,20 +82,20 @@ class SourceGeneratedReplayTest(unittest.TestCase):
     def test_task_receipt_has_one_exact_current_contract(self) -> None:
         validate_task_receipt(copy.deepcopy(TASK_RECEIPT))
         self.assertEqual(
-            "4c1dc4023e71634ccb9884603dcadcf293945cf9",
+            "86e1658f48539a8cd3e737d740f498ee649d214c",
             pre_fix_source_commit(ROOT),
         )
-        for extra in ("base_commit", "stale_delivery_source_commit"):
+        for extra in ("compatibility_mode", "stale_delivery_source_commit"):
             receipt = copy.deepcopy(TASK_RECEIPT)
             receipt[extra] = "1f8fd577a3f598bfcf388f9a61a9c2cf6ca1ef09"
             with self.subTest(extra=extra), self.assertRaisesRegex(
-                ValueError, "exact final-source-replay contract"
+                ValueError, "exact source-only browser contract"
             ):
                 validate_task_receipt(receipt)
         unauthorized = copy.deepcopy(TASK_RECEIPT)
         unauthorized["model_calls_authorized"] = True
         with self.assertRaisesRegex(
-            ValueError, "exact final-source-replay contract"
+            ValueError, "exact source-only browser contract"
         ):
             validate_task_receipt(unauthorized)
 

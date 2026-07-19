@@ -1,0 +1,114 @@
+{
+  "audit_completed_before_source_edits": true,
+  "base": {
+    "commit": "86e1658f48539a8cd3e737d740f498ee649d214c",
+    "origin_main": "86e1658f48539a8cd3e737d740f498ee649d214c",
+    "tree": "45d7e4d793c04d7d8e76e0a3ae3db7fafdc9a84e",
+    "worktree_clean_before_audit": true
+  },
+  "findings": [
+    {
+      "command_plan_sha256": "ea282028804d7d94714972304208e094d4d22c80712f7fa67a8549d4142a4703",
+      "focused_regression_test": "tests/test_final_source_only_ci_browser.py:SourceOnlyCommandPlanTest.test_real_browser_spec_is_required",
+      "id": "NARROW-001",
+      "observed_result": {
+        "browser_command_present": false,
+        "dashboard_commands": [
+          "npm ci --prefix dashboard",
+          "npm audit --prefix dashboard --package-lock-only",
+          "npm test --prefix dashboard -- --run",
+          "npm run build --prefix dashboard"
+        ],
+        "dashboard_browser_name_present": false,
+        "npm_run_test_browser_present": false
+      },
+      "reproduced": true,
+      "source": {
+        "path": "scripts/source_only_ci.py",
+        "sha256": "c34c2484976acddb806e6e7a97ef61e37107edee2049f17cb3c384143192012a"
+      },
+      "title": "Browser absent from source-only command plan"
+    },
+    {
+      "focused_regression_test": "tests/test_final_source_only_ci_browser.py:PinnedUserspaceWorkflowTest.test_workflow_and_runner_use_the_same_digest_pinned_image",
+      "id": "NARROW-002",
+      "observed_result": {
+        "container_image": null,
+        "full_image_digest_recorded": false,
+        "runs_on": "ubuntu-latest",
+        "userspace_is_mutable": true
+      },
+      "reproduced": true,
+      "source": {
+        "path": ".github/workflows/ci.yml",
+        "sha256": "6d6616a8e510049aba0beea3131e7dadcd0d95aff5a23ad9a41d1a82ca81f7f2"
+      },
+      "title": "No pinned source-only userspace"
+    },
+    {
+      "focused_regression_test": "tests/test_final_source_only_ci_browser.py:SourceOnlyReceiptTest.test_receipt_requires_userspace_runtime_and_browser_identity",
+      "id": "NARROW-003",
+      "observed_result": {
+        "browser_test_count_recorded": false,
+        "chromium_executable_recorded": false,
+        "chromium_executable_sha256_recorded": false,
+        "chromium_version_recorded": false,
+        "missing_receipt_fields": [
+          "source_only_userspace_image",
+          "source_only_userspace_image_digest",
+          "chromium_version",
+          "chromium_executable",
+          "chromium_executable_sha256",
+          "browser_test_count"
+        ]
+      },
+      "reproduced": true,
+      "source": {
+        "path": "scripts/source_only_ci.py",
+        "sha256": "c34c2484976acddb806e6e7a97ef61e37107edee2049f17cb3c384143192012a"
+      },
+      "title": "No source-only Chromium identity"
+    },
+    {
+      "attempt": {
+        "accepted_task_id": "final-source-reproducible-offline-replay",
+        "source_commit": "86e1658f48539a8cd3e737d740f498ee649d214c",
+        "validator": "scripts/final_source_replay.py:validate_task_receipt"
+      },
+      "focused_regression_test": "tests/test_final_source_only_ci_browser.py:ReleaseDescriptorGuardTest.test_old_task_and_stale_source_are_rejected",
+      "id": "NARROW-004",
+      "observed_result": {
+        "expected_narrow_task_binding_enforced": false,
+        "stale_task_validation_exit_code": 0
+      },
+      "reproduced": true,
+      "title": "Stale-task packaging is not rejected"
+    },
+    {
+      "focused_regression_test": "tests/test_final_source_only_ci_browser.py:ReleaseDescriptorGuardTest.test_environment_receipt_must_match_inspected_digest",
+      "id": "NARROW-005",
+      "observed_result": {
+        "image": "ckg-replay-portability:debian13",
+        "match": false,
+        "old_receipt_digest": "sha256:95416cae1a21c7c393cd39ee0356a1c17a38aad59eb08b06649147a92623c1ff",
+        "retained_image_inspected_id": "sha256:95416caefd1ffd129a991b4b8432862144c9386a64919f93ec14326b0986042c"
+      },
+      "reproduced": true,
+      "recovery_evidence": {
+        "audit_path": "output://current-session-transcript-recovery-v1/findings/debian-image-identity-audit.json",
+        "audit_sha256": "f653fa960dbc01cc9b6fdf6e9e0afd6e0301d1cf6e4fa56b8e9a6710ec707ece",
+        "inspect_log_path": "output://current-session-transcript-recovery-v1/evidence/debian13-image-inspect.json",
+        "inspect_log_sha256": "7a13f3d51293a4b0f92468d9821c7369ea171d71f70d3591944fc12ed4554473"
+      },
+      "title": "Debian 13 old image identity is invalid"
+    }
+  ],
+  "methodology_change_authorized": false,
+  "routing_nonce": "FMCB-20260719-9D4E2A7B",
+  "status": "findings_reproduced",
+  "task_id": "final-source-only-ci-browser-and-image-pin",
+  "task_receipt": {
+    "path": "output://final-source-only-ci-browser/task-receipt.json",
+    "sha256": "e80f4046bc067f94fb0c6f256d7a865b8279e33b2de9bf4c809f70b2f2f9f88f"
+  }
+}

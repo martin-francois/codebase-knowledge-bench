@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source-only-ci-receipt.schema.json",
+  "title": "Digest-pinned source-only CI receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "task_id",
+    "routing_nonce",
+    "status",
+    "execution_stratum",
+    "python_support",
+    "plain_git_checkout_compatible",
+    "canonical_target_required",
+    "bench_target_repo_path_present",
+    "bubblewrap_required",
+    "privileged_namespaces_required",
+    "canonical_output_directories_required",
+    "builder_home_required",
+    "builder_caches_required",
+    "packaged_replay_runtimes_required",
+    "artifact_backed_target_evidence_imported",
+    "external_executable_command_tests_use_injection",
+    "source",
+    "source_identity_unchanged",
+    "workflow_definition",
+    "workflow_definition_sha256",
+    "command_plan",
+    "commands",
+    "command_count",
+    "test_counts",
+    "source_only_userspace_image",
+    "source_only_userspace_image_digest",
+    "source_only_executed_image",
+    "source_only_distribution",
+    "source_only_glibc",
+    "python_version",
+    "python_executable_sha256",
+    "node_version",
+    "node_executable_sha256",
+    "npm_version",
+    "npm_entrypoint_sha256",
+    "chromium_version",
+    "chromium_executable",
+    "chromium_executable_sha256",
+    "source_only_browser_receipt",
+    "validation_errors"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "source-only-ci-receipt-current"
+    },
+    "task_id": {
+      "const": "final-source-only-ci-browser-and-image-pin"
+    },
+    "routing_nonce": {
+      "const": "FMCB-20260719-9D4E2A7B"
+    },
+    "status": {
+      "const": "passed"
+    },
+    "execution_stratum": {
+      "const": "source-only"
+    },
+    "python_support": {
+      "const": ">=3.14,<3.15"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "source_identity_unchanged": {
+      "const": true
+    },
+    "workflow_definition": {
+      "const": ".github/workflows/ci.yml"
+    },
+    "workflow_definition_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "command_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_count",
+        "commands",
+        "sha256"
+      ],
+      "properties": {
+        "command_count": {
+          "const": 12
+        },
+        "commands": {
+          "type": "array",
+          "minItems": 12,
+          "maxItems": 12
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "commands": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12
+    },
+    "command_count": {
+      "const": 12
+    },
+    "test_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "python_unit",
+        "vitest",
+        "playwright"
+      ],
+      "properties": {
+        "python_unit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "vitest": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "playwright": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "source_only_userspace_image": {
+      "const": "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+    },
+    "source_only_userspace_image_digest": {
+      "const": "sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+    },
+    "source_only_distribution": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_only_glibc": {
+      "type": "string",
+      "minLength": 1
+    },
+    "python_version": {
+      "const": "3.14.3"
+    },
+    "python_executable_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "node_version": {
+      "const": "v22.22.0"
+    },
+    "node_executable_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "npm_version": {
+      "const": "10.9.4"
+    },
+    "npm_entrypoint_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "chromium_version": {
+      "const": "Google Chrome for Testing 149.0.7827.55"
+    },
+    "chromium_executable": {
+      "const": "/ms-playwright/chromium-1228/chrome-linux64/chrome"
+    },
+    "chromium_executable_sha256": {
+      "const": "2d18db9d8608b052b6a552ee00ec1e830f93692e928b65ecc67d693bd33fe801"
+    },
+    "source_only_browser_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256",
+        "status"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "status": {
+          "const": "passed"
+        }
+      }
+    },
+    "validation_errors": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "plain_git_checkout_compatible": {
+      "const": true
+    },
+    "canonical_target_required": {
+      "const": false
+    },
+    "bench_target_repo_path_present": {
+      "const": false
+    },
+    "bubblewrap_required": {
+      "const": false
+    },
+    "privileged_namespaces_required": {
+      "const": false
+    },
+    "canonical_output_directories_required": {
+      "const": false
+    },
+    "builder_home_required": {
+      "const": false
+    },
+    "builder_caches_required": {
+      "const": false
+    },
+    "packaged_replay_runtimes_required": {
+      "const": false
+    },
+    "artifact_backed_target_evidence_imported": {
+      "const": false
+    },
+    "external_executable_command_tests_use_injection": {
+      "const": true
+    },
+    "fixture": {
+      "type": "object"
+    },
+    "source_only_executed_image": {
+      "const": "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+    },
+    "source_only_distribution_id": {
+      "type": "string"
+    },
+    "source_only_distribution_version": {
+      "type": "string"
+    },
+    "python_executable": {
+      "type": "string"
+    },
+    "node_executable": {
+      "type": "string"
+    },
+    "npm_entrypoint": {
+      "type": "string"
+    },
+    "duration_seconds": {
+      "type": "number",
+      "minimum": 0
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "tree",
+        "worktree_clean"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "not": {
+            "const": "86e1658f48539a8cd3e737d740f498ee649d214c"
+          }
+        },
+        "tree": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "worktree_clean": {
+          "const": true
+        }
+      }
+    }
+  }
+}

@@ -17,22 +17,39 @@ import zipfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from final_source_only_release import (
+    PACKAGED_PATHS,
+    ROUTING_NONCE,
+    TASK_ID,
+    environment_image_identity_errors,
+    package_origin_errors,
+    release_descriptor_errors,
+    source_identity_errors,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 ZERO_SHA256 = "0" * 64
 PART_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 DETACHED_PART_FILES = {
     "agent-response.md",
+    "exact-final-debian-12-receipt.json",
+    "exact-final-debian-13-receipt.json",
     "final-outer.independent-validation.json",
     "final-outer.portability-matrix.json",
-    "final-outer.sha256",
+    "final-outer.zip.sha256",
     "independent-verifier-bootstrap",
     "independent-verifier-bootstrap.sha256",
+    "package-origin.json",
     "reconstruct.sh",
+    "release-descriptor.json",
+    "release-descriptor.md",
+    "source-only-browser-receipt.json",
     "source-only-ci-receipt.json",
     "split-delivery-manifest.json",
     "split-index.json",
     "split-index.md",
+    "task-receipt.json",
+    "task-receipt.md",
 }
 FORBIDDEN_BOOTSTRAP_UTILITIES = (
     "awk",
@@ -394,6 +411,7 @@ def validate_portability_matrix(
     errors: list[str] = []
     outer = matrix.get("final_outer")
     inner = matrix.get("final_inner")
+    source = matrix.get("source")
     environments = matrix.get("environments")
     if matrix.get("status") != "passed":
         errors.append("portability matrix status is not passed")
@@ -403,6 +421,10 @@ def validate_portability_matrix(
         errors.append("portability matrix final outer identity is invalid")
     if not isinstance(inner, Mapping):
         errors.append("portability matrix final inner identity is invalid")
+    if not isinstance(source, Mapping):
+        errors.append("portability matrix source identity is invalid")
+    else:
+        errors.extend(source_identity_errors(source))
     if not isinstance(environments, list) or len(environments) < 2:
         errors.append("two passed portability environments are required")
         environments = []
@@ -423,6 +445,12 @@ def validate_portability_matrix(
         if not isinstance(row, Mapping) or row.get("status") != "passed":
             errors.append(f"{prefix} did not pass")
             continue
+        errors.extend(
+            f"{prefix}: {error}"
+            for error in environment_image_identity_errors(row)
+        )
+        if isinstance(source, Mapping) and row.get("source") != source:
+            errors.append(f"{prefix} source identity differs")
         image = str(row.get("image_digest", ""))
         host_glibc = str(row.get("host_userspace_glibc", ""))
         required_runtime_identity = (
@@ -501,7 +529,13 @@ def environment_result_from_verifier(
     outer: Path,
     verifier_root: Path,
     name: str,
-    image_digest: str,
+    requested_image_reference: str,
+    repo_digest: str | None,
+    image_id: str,
+    inspected_digest: str,
+    execution_image_reference: str,
+    source_commit: str,
+    source_tree: str,
     builder_generic_tool_lock: Mapping[str, Any],
 ) -> dict[str, Any]:
     final_outer = final_outer_identity(outer)
@@ -557,6 +591,21 @@ def environment_result_from_verifier(
         errors.append("packaged runtime resolution did not pass")
     if bootstrap.get("status") != "passed":
         errors.append("bootstrap prerequisite capabilities did not pass")
+    image_identity = {
+        "requested_image_reference": requested_image_reference,
+        "repo_digest": repo_digest,
+        "image_id": image_id,
+        "inspected_digest": inspected_digest,
+        "execution_image_reference": execution_image_reference,
+        "image_digest": inspected_digest,
+        "image_identity_match": (
+            inspected_digest == image_id
+            and execution_image_reference == inspected_digest
+        ),
+    }
+    errors.extend(environment_image_identity_errors(image_identity))
+    source = {"commit": source_commit, "tree": source_tree}
+    errors.extend(source_identity_errors(source))
     observed_host_tools = bootstrap.get(
         "observed_host_generic_tools_not_used", {}
     )
@@ -604,7 +653,8 @@ def environment_result_from_verifier(
         "status": "passed" if not errors else "failed",
         "errors": errors,
         "name": name,
-        "image_digest": image_digest,
+        **image_identity,
+        "source": source,
         "host_userspace_distribution": host.get(
             "host_userspace_distribution"
         ),
@@ -768,6 +818,15 @@ def build_detached_final_receipts(
         "environment_identities": [
             {
                 "name": row.get("name"),
+                "requested_image_reference": row.get(
+                    "requested_image_reference"
+                ),
+                "repo_digest": row.get("repo_digest"),
+                "image_id": row.get("image_id"),
+                "inspected_digest": row.get("inspected_digest"),
+                "execution_image_reference": row.get(
+                    "execution_image_reference"
+                ),
                 "image_digest": row.get("image_digest"),
                 "host_userspace_distribution": row.get(
                     "host_userspace_distribution"
@@ -859,34 +918,363 @@ if [ "$#" -lt 1 ]; then
   exit 64
 fi
 exec python3 - "$@" <<'PY'
-import hashlib, io, json, pathlib, sys, zipfile
+import hashlib, io, json, pathlib, re, sys, zipfile
+
+TASK_ID = "final-source-only-ci-browser-and-image-pin"
+ROUTING_NONCE = "FMCB-20260719-9D4E2A7B"
+BASE_COMMIT = "86e1658f48539a8cd3e737d740f498ee649d214c"
+ZERO = "0" * 64
+TIMESTAMP = (1980, 1, 1, 0, 0, 0)
+REQUIRED = {
+    "agent-response.md",
+    "exact-final-debian-12-receipt.json",
+    "exact-final-debian-13-receipt.json",
+    "final-outer.independent-validation.json",
+    "final-outer.portability-matrix.json",
+    "final-outer.zip.sha256",
+    "independent-verifier-bootstrap",
+    "independent-verifier-bootstrap.sha256",
+    "package-origin.json",
+    "reconstruct.sh",
+    "release-descriptor.json",
+    "release-descriptor.md",
+    "source-only-browser-receipt.json",
+    "source-only-ci-receipt.json",
+    "split-delivery-manifest.json",
+    "split-index.json",
+    "split-index.md",
+    "task-receipt.json",
+    "task-receipt.md",
+}
+
+def canonical(value):
+    return (json.dumps(value, indent=2, sort_keys=True) + "\\n").encode()
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+def split_markdown(manifest):
+    lines = [
+        "# Split external-review delivery",
+        "",
+        f"Final outer: `{manifest['final_outer']['filename']}`",
+        "",
+        f"Task ID: `{manifest['task_id']}`",
+        "",
+        f"Routing nonce: `{manifest['routing_nonce']}`",
+        "",
+        f"Source commit: `{manifest['source_commit']}`",
+        "",
+        f"Source tree: `{manifest['source_tree']}`",
+        "",
+        "| Part | Part ZIP bytes | Normalized part SHA-256 | "
+        "Payload bytes | Payload SHA-256 |",
+        "|---:|---:|---|---:|---|",
+    ]
+    for row in manifest["parts"]:
+        lines.append(
+            f"| {row['index']} | {row['part_zip_bytes']} | "
+            f"`{row['part_zip_sha256']}` | "
+            f"{row['payload_bytes']} | `{row['payload_sha256']}` |"
+        )
+    lines.extend([
+        "",
+        "Part archive identities use SHA-256 after normalizing every "
+        "embedded `part_zip_sha256` field to 64 zeroes. This explicit "
+        "self-excluding mode avoids an impossible self-hash.",
+        "",
+    ])
+    return "\\n".join(lines).encode()
+
+def zero_part_hashes(manifest):
+    value = json.loads(json.dumps(manifest))
+    for row in value["parts"]:
+        row["part_zip_sha256"] = ZERO
+    return value
+
+def zip_write(archive, name, data):
+    info = zipfile.ZipInfo(name, TIMESTAMP)
+    info.create_system = 3
+    mode = 0o100755 if name in {
+        "reconstruct.sh", "independent-verifier-bootstrap"
+    } else 0o100644
+    info.external_attr = (mode & 0xFFFF) << 16
+    info.compress_type = zipfile.ZIP_STORED
+    archive.writestr(info, data)
+
+def normalized_archive(payload_name, payload, shared, manifest):
+    zero = zero_part_hashes(manifest)
+    metadata = dict(shared)
+    metadata["split-delivery-manifest.json"] = canonical(zero)
+    metadata["split-index.json"] = canonical(zero)
+    metadata["split-index.md"] = split_markdown(zero)
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w") as archive:
+        zip_write(archive, payload_name, payload)
+        for name, data in sorted(metadata.items()):
+            zip_write(archive, name, data)
+    return stream.getvalue()
+
 parts = [pathlib.Path(value) for value in sys.argv[1:]]
 rows = []
 manifest_bytes = None
+shared = None
+observed = []
+seen_indices = set()
 for part in parts:
+    raw = part.read_bytes()
     with zipfile.ZipFile(part) as archive:
+        names = set(archive.namelist())
         current = archive.read("split-delivery-manifest.json")
         if manifest_bytes is None:
             manifest_bytes = current
         elif current != manifest_bytes:
             raise SystemExit("split manifests differ")
-        payload_names = [n for n in archive.namelist() if n.startswith("payload.part-")]
+        manifest = json.loads(current)
+        payload_names = [n for n in names if n.startswith("payload.part-")]
         if len(payload_names) != 1:
             raise SystemExit("part payload member set mismatch")
-        rows.append((payload_names[0], archive.read(payload_names[0])))
+        if names != REQUIRED | set(payload_names):
+            raise SystemExit("part member set mismatch")
+        if archive.read("split-index.json") != current:
+            raise SystemExit("split JSON index differs")
+        if archive.read("split-index.md") != split_markdown(manifest):
+            raise SystemExit("split Markdown index differs")
+        row = next(
+            (value for value in manifest["parts"]
+             if value["filename"] == part.name),
+            None,
+        )
+        if row is None:
+            raise SystemExit("part absent from split manifest")
+        if row["index"] in seen_indices:
+            raise SystemExit("duplicate split part index")
+        seen_indices.add(row["index"])
+        if payload_names[0] != row["payload_filename"]:
+            raise SystemExit("part payload filename mismatch")
+        payload = archive.read(payload_names[0])
+        if len(payload) != row["payload_bytes"]:
+            raise SystemExit("part payload byte count mismatch")
+        if digest(payload) != row["payload_sha256"]:
+            raise SystemExit("part payload SHA-256 mismatch")
+        if len(raw) != row["part_zip_bytes"]:
+            raise SystemExit("raw part ZIP byte count mismatch")
+        current_shared = {
+            name: archive.read(name)
+            for name in REQUIRED
+            if name not in {
+                "split-delivery-manifest.json",
+                "split-index.json",
+                "split-index.md",
+            }
+        }
+        if shared is None:
+            shared = current_shared
+        elif current_shared != shared:
+            raise SystemExit("shared split metadata differs")
+        normalized = digest(normalized_archive(
+            payload_names[0], payload, current_shared, manifest
+        ))
+        if normalized != row["part_zip_sha256"]:
+            raise SystemExit("normalized part ZIP SHA-256 mismatch")
+        observed.append({
+            "filename": part.name,
+            "bytes": len(raw),
+            "sha256": digest(raw),
+            "normalized_sha256": normalized,
+        })
+        rows.append((row["index"], row, payload))
 manifest = json.loads(manifest_bytes)
+if manifest.get("status") != "passed":
+    raise SystemExit("split manifest status is not passed")
+if manifest.get("task_id") != TASK_ID:
+    raise SystemExit("stale split task ID")
+if manifest.get("routing_nonce") != ROUTING_NONCE:
+    raise SystemExit("split routing nonce mismatch")
+if len(rows) != manifest.get("part_count"):
+    raise SystemExit("split part count mismatch")
 rows.sort()
+if [index for index, _, _ in rows] != list(
+    range(1, manifest["part_count"] + 1)
+):
+    raise SystemExit("split part index set mismatch")
+offset = 0
+for _, row, payload in rows:
+    if row["payload_offset"] != offset:
+        raise SystemExit("split payload offset mismatch")
+    offset += len(payload)
+
+task = json.loads(shared["task-receipt.json"])
+descriptor_bytes = shared["release-descriptor.json"]
+descriptor = json.loads(descriptor_bytes)
+origin = json.loads(shared["package-origin.json"])
+ci = json.loads(shared["source-only-ci-receipt.json"])
+browser = json.loads(shared["source-only-browser-receipt.json"])
+debian12 = json.loads(shared["exact-final-debian-12-receipt.json"])
+debian13 = json.loads(shared["exact-final-debian-13-receipt.json"])
+validation = json.loads(
+    shared["final-outer.independent-validation.json"]
+)
+matrix = json.loads(shared["final-outer.portability-matrix.json"])
+source = {
+    "commit": descriptor.get("source_commit"),
+    "tree": descriptor.get("source_tree"),
+}
+if task.get("task_id") != TASK_ID or task.get("routing_nonce") != ROUTING_NONCE:
+    raise SystemExit("task receipt binding mismatch")
+if task.get("base_commit") != BASE_COMMIT:
+    raise SystemExit("task receipt base commit mismatch")
+if source["commit"] == BASE_COMMIT:
+    raise SystemExit("stale source commit")
+if not re.fullmatch(r"[0-9a-f]{40}", str(source["commit"])):
+    raise SystemExit("invalid source commit")
+if not re.fullmatch(r"[0-9a-f]{40}", str(source["tree"])):
+    raise SystemExit("invalid source tree")
+if (
+    descriptor.get("status") != "passed"
+    or descriptor.get("task_id") != TASK_ID
+    or descriptor.get("routing_nonce") != ROUTING_NONCE
+):
+    raise SystemExit("release descriptor binding mismatch")
+if (
+    manifest.get("source_commit") != source["commit"]
+    or manifest.get("source_tree") != source["tree"]
+    or manifest.get("source_only_userspace")
+    != descriptor.get("source_only_userspace")
+    or manifest.get("chromium_identity")
+    != descriptor.get("chromium_identity")
+    or manifest.get("release_descriptor_sha256")
+    != digest(descriptor_bytes)
+    or manifest.get("package_origin_sha256")
+    != digest(shared["package-origin.json"])
+):
+    raise SystemExit("split manifest receipt binding mismatch")
+userspace = descriptor.get("source_only_userspace", {})
+image = str(userspace.get("image", ""))
+image_digest = str(userspace.get("digest", ""))
+chromium = descriptor.get("chromium_identity", {})
+if (
+    not re.fullmatch(r"sha256:[0-9a-f]{64}", image_digest)
+    or not image.endswith("@" + image_digest)
+    or not re.fullmatch(r"[0-9a-f]{64}", str(chromium.get("sha256", "")))
+    or not str(chromium.get("version", ""))
+):
+    raise SystemExit("source-only userspace or Chromium identity is invalid")
+ci_source = ci.get("source", {})
+browser_source = browser.get("source", {})
+if (
+    ci.get("status") != "passed"
+    or browser.get("status") != "passed"
+    or ci_source.get("commit") != source["commit"]
+    or ci_source.get("tree") != source["tree"]
+    or ci_source.get("worktree_clean") is not True
+    or browser_source != ci_source
+    or ci.get("source_only_userspace_image") != image
+    or ci.get("source_only_userspace_image_digest") != image_digest
+    or ci.get("chromium_executable_sha256") != chromium.get("sha256")
+    or ci.get("chromium_version") != chromium.get("version")
+    or browser.get("source_only_userspace_image") != image
+    or browser.get("chromium_executable_sha256") != chromium.get("sha256")
+    or browser.get("executed_test_files")
+    != ["dashboard/tests/browser.spec.ts"]
+    or int(browser.get("browser_test_count", 0)) < 1
+):
+    raise SystemExit("source-only CI/browser binding mismatch")
+if (
+    origin.get("status") != "passed"
+    or origin.get("task_id") != TASK_ID
+    or origin.get("routing_nonce") != ROUTING_NONCE
+    or origin.get("source_commit") != source["commit"]
+    or origin.get("source_tree") != source["tree"]
+    or origin.get("selection_mode") != "explicit_release_descriptor"
+    or origin.get("latest_output_selected") is not False
+    or origin.get("modification_time_selection_used") is not False
+    or origin.get("prior_response_task_inference_used") is not False
+    or origin.get("release_descriptor", {}).get("sha256")
+    != digest(descriptor_bytes)
+):
+    raise SystemExit("package-origin binding mismatch")
+for receipt, distribution in (
+    (debian12, "debian 12"), (debian13, "debian 13")
+):
+    inspected = receipt.get("inspected_digest")
+    if (
+        receipt.get("status") != "passed"
+        or receipt.get("source") != source
+        or receipt.get("image_id") != inspected
+        or receipt.get("execution_image_reference") != inspected
+        or receipt.get("image_digest") != inspected
+        or receipt.get("image_identity_match") is not True
+        or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(inspected))
+        or distribution not in str(
+            receipt.get("host_userspace_distribution", "")
+        ).lower()
+    ):
+        raise SystemExit(f"{distribution} exact-final receipt mismatch")
+if (
+    validation.get("status") != "passed"
+    or matrix.get("status") != "passed"
+    or validation.get("source") != source
+    or matrix.get("source") != source
+    or matrix.get("environments") != [debian12, debian13]
+):
+    raise SystemExit("exact-final detached receipt binding mismatch")
+
 output = pathlib.Path(manifest["final_outer"]["filename"])
 digest = hashlib.sha256()
 with output.open("wb") as stream:
-    for _, payload in rows:
+    for _, _, payload in rows:
         stream.write(payload)
         digest.update(payload)
 if output.stat().st_size != manifest["final_outer"]["bytes"]:
     raise SystemExit("reconstructed byte count mismatch")
 if digest.hexdigest() != manifest["final_outer"]["sha256"]:
     raise SystemExit("reconstructed SHA-256 mismatch")
-print(output)
+if validation.get("final_outer") != manifest["final_outer"]:
+    raise SystemExit("detached final outer identity mismatch")
+with zipfile.ZipFile(output) as outer:
+    members = sorted(
+        name for name in outer.namelist()
+        if name.startswith("review-handoff/") and name.endswith(".zip")
+    )
+    if len(members) != 1:
+        raise SystemExit("final outer inner ZIP member set mismatch")
+    inner_bytes = outer.read(members[0])
+inner = validation.get("final_inner", {})
+if (
+    inner.get("outer_member") != members[0]
+    or inner.get("bytes") != len(inner_bytes)
+    or inner.get("sha256") != hashlib.sha256(inner_bytes).hexdigest()
+    or matrix.get("final_inner") != inner
+    or descriptor.get("final_inner") != inner
+):
+    raise SystemExit("final inner identity mismatch")
+with zipfile.ZipFile(io.BytesIO(inner_bytes)) as inner_archive:
+    inner_manifest = json.loads(
+        inner_archive.read("review-handoff-manifest.json")
+    )
+if (
+    inner.get("manifest_entry_count") != inner_manifest.get("entry_count")
+    or inner.get("manifest_root") != inner_manifest.get("manifest_root")
+    or inner.get("qualifying_payload_entry_count")
+    != inner_manifest.get("qualifying_payload_entry_count")
+    or inner.get("qualifying_payload_root")
+    != inner_manifest.get("qualifying_payload_root")
+):
+    raise SystemExit("final inner manifest identity mismatch")
+print(json.dumps({
+    "status": "passed",
+    "parts": observed,
+    "final_outer": manifest["final_outer"],
+    "final_inner": inner,
+    "source": source,
+    "task_id": TASK_ID,
+    "routing_nonce": ROUTING_NONCE,
+    "source_only_ci_status": ci["status"],
+    "source_only_browser_status": browser["status"],
+    "debian_12_exact_final_status": debian12["status"],
+    "debian_13_exact_final_status": debian13["status"],
+}, indent=2, sort_keys=True))
 PY
 """
 
@@ -897,13 +1285,23 @@ def _split_index_markdown(manifest: Mapping[str, Any]) -> bytes:
         "",
         f"Final outer: `{manifest['final_outer']['filename']}`",
         "",
-        "| Part | Payload bytes | Payload SHA-256 |",
-        "|---:|---:|---|",
+        f"Task ID: `{manifest['task_id']}`",
+        "",
+        f"Routing nonce: `{manifest['routing_nonce']}`",
+        "",
+        f"Source commit: `{manifest['source_commit']}`",
+        "",
+        f"Source tree: `{manifest['source_tree']}`",
+        "",
+        "| Part | Part ZIP bytes | Normalized part SHA-256 | "
+        "Payload bytes | Payload SHA-256 |",
+        "|---:|---:|---|---:|---|",
     ]
     for row in manifest["parts"]:
         lines.append(
-            f"| {row['index']} | {row['payload_bytes']} | "
-            f"`{row['payload_sha256']}` |"
+            f"| {row['index']} | {row['part_zip_bytes']} | "
+            f"`{row['part_zip_sha256']}` | "
+            f"{row['payload_bytes']} | `{row['payload_sha256']}` |"
         )
     lines.extend(
         [
@@ -926,21 +1324,38 @@ def _metadata_payloads(
     agent_response: bytes,
     static_bootstrap: bytes,
     static_bootstrap_checksum: bytes,
+    task_receipt: bytes,
+    task_receipt_markdown: bytes,
+    release_descriptor: bytes,
+    release_descriptor_markdown: bytes,
+    package_origin: bytes,
     source_only_ci_receipt: bytes,
+    source_only_browser_receipt: bytes,
+    debian_12_receipt: bytes,
+    debian_13_receipt: bytes,
 ) -> dict[str, bytes]:
     return {
         "agent-response.md": agent_response,
+        "exact-final-debian-12-receipt.json": debian_12_receipt,
+        "exact-final-debian-13-receipt.json": debian_13_receipt,
         "final-outer.independent-validation.json": validation,
         "final-outer.portability-matrix.json": matrix,
-        "final-outer.sha256": checksum,
+        "final-outer.zip.sha256": checksum,
         "independent-verifier-bootstrap": static_bootstrap,
         "independent-verifier-bootstrap.sha256":
             static_bootstrap_checksum,
+        "package-origin.json": package_origin,
         "reconstruct.sh": _reconstruct_script(),
+        "release-descriptor.json": release_descriptor,
+        "release-descriptor.md": release_descriptor_markdown,
+        "source-only-browser-receipt.json":
+            source_only_browser_receipt,
         "source-only-ci-receipt.json": source_only_ci_receipt,
         "split-delivery-manifest.json": canonical_bytes(manifest),
         "split-index.json": canonical_bytes(manifest),
         "split-index.md": _split_index_markdown(manifest),
+        "task-receipt.json": task_receipt,
+        "task-receipt.md": task_receipt_markdown,
     }
 
 
@@ -982,7 +1397,15 @@ def build_split_delivery(
     agent_response: Path,
     static_bootstrap: Path,
     static_bootstrap_checksum: Path,
+    task_receipt: Path,
+    task_receipt_markdown: Path,
+    release_descriptor: Path,
+    release_descriptor_markdown: Path,
+    package_origin: Path,
     source_only_ci_receipt: Path,
+    source_only_browser_receipt: Path,
+    debian_12_receipt: Path,
+    debian_13_receipt: Path,
     output: Path,
     payload_bytes: int = 480_000_000,
     maximum_part_zip_bytes: int = 500_000_000,
@@ -1017,6 +1440,43 @@ def build_split_delivery(
     source_ci_value = json.loads(
         source_only_ci_receipt.read_text(encoding="utf-8")
     )
+    browser_value = json.loads(
+        source_only_browser_receipt.read_text(encoding="utf-8")
+    )
+    descriptor_value = json.loads(
+        release_descriptor.read_text(encoding="utf-8")
+    )
+    descriptor_bytes = release_descriptor.read_bytes()
+    origin_value = json.loads(
+        package_origin.read_text(encoding="utf-8")
+    )
+    explicit_artifacts = {
+        "task-receipt.json": task_receipt.read_bytes(),
+        "source-only-ci-receipt.json":
+            source_only_ci_receipt.read_bytes(),
+        "source-only-browser-receipt.json":
+            source_only_browser_receipt.read_bytes(),
+        "exact-final-debian-12-receipt.json":
+            debian_12_receipt.read_bytes(),
+        "exact-final-debian-13-receipt.json":
+            debian_13_receipt.read_bytes(),
+        "final-outer.independent-validation.json":
+            validation.read_bytes(),
+        "final-outer.portability-matrix.json":
+            portability_matrix.read_bytes(),
+    }
+    descriptor_errors = release_descriptor_errors(
+        descriptor_value, explicit_artifacts
+    )
+    if descriptor_errors:
+        raise ValueError(descriptor_errors)
+    origin_errors = package_origin_errors(
+        origin_value, descriptor_value, descriptor_bytes
+    )
+    if origin_value.get("status") != "passed" or origin_errors:
+        raise ValueError(
+            ["package origin status is not passed", *origin_errors]
+        )
     source = validation_value.get("source", {})
     if (
         source_ci_value.get("status") != "passed"
@@ -1027,6 +1487,15 @@ def build_split_delivery(
         != source.get("tree")
         or source_ci_value.get("source", {}).get("worktree_clean")
         is not True
+        or browser_value.get("status") != "passed"
+        or browser_value.get("source", {}).get("commit")
+        != source.get("commit")
+        or browser_value.get("source", {}).get("tree")
+        != source.get("tree")
+        or descriptor_value.get("source_commit")
+        != source.get("commit")
+        or descriptor_value.get("source_tree")
+        != source.get("tree")
     ):
         raise ValueError(
             "source-only CI receipt did not pass exact-source binding"
@@ -1078,8 +1547,15 @@ def build_split_delivery(
         "part_count": count,
         "final_outer": outer_identity,
         "final_inner": validation_value.get("final_inner"),
+        "task_id": descriptor_value.get("task_id"),
+        "routing_nonce": descriptor_value.get("routing_nonce"),
         "source_commit": source.get("commit"),
         "source_tree": source.get("tree"),
+        "source_only_userspace":
+            descriptor_value.get("source_only_userspace"),
+        "chromium_identity": descriptor_value.get(
+            "chromium_identity"
+        ),
         "parts": parts,
         "detached_validation": {
             "status": validation_value.get("status"),
@@ -1092,6 +1568,19 @@ def build_split_delivery(
         "source_only_ci_receipt_sha256": sha256_file(
             source_only_ci_receipt
         ),
+        "source_only_browser_receipt_sha256": sha256_file(
+            source_only_browser_receipt
+        ),
+        "release_descriptor_sha256": sha256_file(
+            release_descriptor
+        ),
+        "package_origin_sha256": sha256_file(package_origin),
+        "debian_12_receipt_sha256": sha256_file(
+            debian_12_receipt
+        ),
+        "debian_13_receipt_sha256": sha256_file(
+            debian_13_receipt
+        ),
     }
     raw_sidecars = {
         "checksum": checksum.read_bytes(),
@@ -1101,7 +1590,17 @@ def build_split_delivery(
         "static_bootstrap": static_bootstrap.read_bytes(),
         "static_bootstrap_checksum":
             static_bootstrap_checksum.read_bytes(),
+        "task_receipt": task_receipt.read_bytes(),
+        "task_receipt_markdown": task_receipt_markdown.read_bytes(),
+        "release_descriptor": descriptor_bytes,
+        "release_descriptor_markdown":
+            release_descriptor_markdown.read_bytes(),
+        "package_origin": package_origin.read_bytes(),
         "source_only_ci_receipt": source_only_ci_receipt.read_bytes(),
+        "source_only_browser_receipt":
+            source_only_browser_receipt.read_bytes(),
+        "debian_12_receipt": debian_12_receipt.read_bytes(),
+        "debian_13_receipt": debian_13_receipt.read_bytes(),
     }
     # Stored ZIP members make archive length independent of same-length hash
     # substitutions. Iterate only until decimal byte-count fields stabilize.
@@ -1117,9 +1616,23 @@ def build_split_delivery(
             static_bootstrap_checksum=raw_sidecars[
                 "static_bootstrap_checksum"
             ],
+            task_receipt=raw_sidecars["task_receipt"],
+            task_receipt_markdown=raw_sidecars[
+                "task_receipt_markdown"
+            ],
+            release_descriptor=raw_sidecars["release_descriptor"],
+            release_descriptor_markdown=raw_sidecars[
+                "release_descriptor_markdown"
+            ],
+            package_origin=raw_sidecars["package_origin"],
             source_only_ci_receipt=raw_sidecars[
                 "source_only_ci_receipt"
             ],
+            source_only_browser_receipt=raw_sidecars[
+                "source_only_browser_receipt"
+            ],
+            debian_12_receipt=raw_sidecars["debian_12_receipt"],
+            debian_13_receipt=raw_sidecars["debian_13_receipt"],
         )
         sizes = [
             len(
@@ -1149,9 +1662,23 @@ def build_split_delivery(
         static_bootstrap_checksum=raw_sidecars[
             "static_bootstrap_checksum"
         ],
+        task_receipt=raw_sidecars["task_receipt"],
+        task_receipt_markdown=raw_sidecars[
+            "task_receipt_markdown"
+        ],
+        release_descriptor=raw_sidecars["release_descriptor"],
+        release_descriptor_markdown=raw_sidecars[
+            "release_descriptor_markdown"
+        ],
+        package_origin=raw_sidecars["package_origin"],
         source_only_ci_receipt=raw_sidecars[
             "source_only_ci_receipt"
         ],
+        source_only_browser_receipt=raw_sidecars[
+            "source_only_browser_receipt"
+        ],
+        debian_12_receipt=raw_sidecars["debian_12_receipt"],
+        debian_13_receipt=raw_sidecars["debian_13_receipt"],
     )
     for row, payload in zip(manifest["parts"], chunks, strict=True):
         normalized = _part_archive_bytes(
@@ -1168,9 +1695,23 @@ def build_split_delivery(
         static_bootstrap_checksum=raw_sidecars[
             "static_bootstrap_checksum"
         ],
+        task_receipt=raw_sidecars["task_receipt"],
+        task_receipt_markdown=raw_sidecars[
+            "task_receipt_markdown"
+        ],
+        release_descriptor=raw_sidecars["release_descriptor"],
+        release_descriptor_markdown=raw_sidecars[
+            "release_descriptor_markdown"
+        ],
+        package_origin=raw_sidecars["package_origin"],
         source_only_ci_receipt=raw_sidecars[
             "source_only_ci_receipt"
         ],
+        source_only_browser_receipt=raw_sidecars[
+            "source_only_browser_receipt"
+        ],
+        debian_12_receipt=raw_sidecars["debian_12_receipt"],
+        debian_13_receipt=raw_sidecars["debian_13_receipt"],
     )
     outputs: list[Path] = []
     for row, payload in zip(manifest["parts"], chunks, strict=True):
@@ -1206,7 +1747,7 @@ def _normalized_part_digest(
     zero = _zero_part_hashes(manifest)
     metadata = _metadata_payloads(
         manifest=zero,
-        checksum=archive.read("final-outer.sha256"),
+        checksum=archive.read("final-outer.zip.sha256"),
         validation=archive.read(
             "final-outer.independent-validation.json"
         ),
@@ -1218,8 +1759,24 @@ def _normalized_part_digest(
         static_bootstrap_checksum=archive.read(
             "independent-verifier-bootstrap.sha256"
         ),
+        task_receipt=archive.read("task-receipt.json"),
+        task_receipt_markdown=archive.read("task-receipt.md"),
+        release_descriptor=archive.read("release-descriptor.json"),
+        release_descriptor_markdown=archive.read(
+            "release-descriptor.md"
+        ),
+        package_origin=archive.read("package-origin.json"),
         source_only_ci_receipt=archive.read(
             "source-only-ci-receipt.json"
+        ),
+        source_only_browser_receipt=archive.read(
+            "source-only-browser-receipt.json"
+        ),
+        debian_12_receipt=archive.read(
+            "exact-final-debian-12-receipt.json"
+        ),
+        debian_13_receipt=archive.read(
+            "exact-final-debian-13-receipt.json"
         ),
     )
     data = _part_archive_bytes(
@@ -1264,6 +1821,14 @@ def validate_split_delivery(
                 manifest = json.loads(manifest_bytes)
                 if archive.read("split-index.json") != manifest_bytes:
                     errors.append(f"{part.name}: JSON index differs")
+                if archive.read(
+                    "split-index.md"
+                ) != _split_index_markdown(manifest):
+                    errors.append(f"{part.name}: Markdown index differs")
+                if archive.read("reconstruct.sh") != _reconstruct_script():
+                    errors.append(
+                        f"{part.name}: reconstruction script differs"
+                    )
                 row = next(
                     (
                         item
@@ -1275,7 +1840,13 @@ def validate_split_delivery(
                 if row is None:
                     errors.append(f"{part.name}: absent from manifest")
                     continue
+                if row["index"] in payloads:
+                    errors.append(f"{part.name}: duplicate part index")
                 payload = archive.read(payload_names[0])
+                if payload_names[0] != row.get("payload_filename"):
+                    errors.append(
+                        f"{part.name}: payload filename mismatch"
+                    )
                 if (
                     len(payload) != row["payload_bytes"]
                     or sha256_bytes(payload) != row["payload_sha256"]
@@ -1296,8 +1867,6 @@ def validate_split_delivery(
                     not in {
                         "split-delivery-manifest.json",
                         "split-index.json",
-                        "split-index.md",
-                        "reconstruct.sh",
                     }
                 }
                 if sidecars is None:
@@ -1322,6 +1891,12 @@ def validate_split_delivery(
     expected_indices = list(range(1, int(manifest.get("part_count", 0)) + 1))
     if sorted(payloads) != expected_indices:
         errors.append("split part index set mismatch")
+    expected_offset = 0
+    for row in manifest.get("parts", []):
+        if row.get("payload_offset") != expected_offset:
+            errors.append("split payload offset mismatch")
+            break
+        expected_offset += int(row.get("payload_bytes", 0))
     reconstruction_root.mkdir(parents=True, exist_ok=True)
     outer_identity = manifest.get("final_outer", {})
     reconstructed = reconstruction_root / str(
@@ -1337,11 +1912,15 @@ def validate_split_delivery(
         errors.append("reconstructed final outer identity mismatch")
     detached_validation: dict[str, Any] = {}
     matrix: dict[str, Any] = {}
+    descriptor: dict[str, Any] = {}
+    origin: dict[str, Any] = {}
     if sidecars is None:
         errors.append("detached artifacts are missing")
     else:
         try:
-            checksum = sidecars["final-outer.sha256"].decode().split()[0]
+            checksum = sidecars[
+                "final-outer.zip.sha256"
+            ].decode().split()[0]
             detached_validation = json.loads(
                 sidecars[
                     "final-outer.independent-validation.json"
@@ -1367,6 +1946,28 @@ def validate_split_delivery(
             source_ci = json.loads(
                 sidecars["source-only-ci-receipt.json"]
             )
+            browser_receipt = json.loads(
+                sidecars["source-only-browser-receipt.json"]
+            )
+            descriptor_bytes = sidecars["release-descriptor.json"]
+            descriptor = json.loads(descriptor_bytes)
+            origin = json.loads(sidecars["package-origin.json"])
+            descriptor_artifacts = {
+                path: sidecars[path]
+                for path in PACKAGED_PATHS.values()
+            }
+            errors.extend(
+                release_descriptor_errors(
+                    descriptor, descriptor_artifacts
+                )
+            )
+            errors.extend(
+                package_origin_errors(
+                    origin, descriptor, descriptor_bytes
+                )
+            )
+            if origin.get("status") != "passed":
+                errors.append("package origin status is not passed")
             if (
                 source_ci.get("status") != "passed"
                 or source_ci.get("execution_stratum")
@@ -1377,10 +1978,52 @@ def validate_split_delivery(
                 != detached_validation.get("source", {}).get("tree")
                 or source_ci.get("source", {}).get("worktree_clean")
                 is not True
+                or browser_receipt.get("status") != "passed"
+                or browser_receipt.get("source", {}).get("commit")
+                != detached_validation.get("source", {}).get("commit")
+                or browser_receipt.get("source", {}).get("tree")
+                != detached_validation.get("source", {}).get("tree")
             ):
                 errors.append(
                     "source-only CI receipt did not pass exact-source "
                     "binding"
+                )
+            if (
+                manifest.get("task_id") != TASK_ID
+                or manifest.get("routing_nonce") != ROUTING_NONCE
+                or manifest.get("source_commit")
+                != descriptor.get("source_commit")
+                or manifest.get("source_tree")
+                != descriptor.get("source_tree")
+                or manifest.get("source_only_userspace")
+                != descriptor.get("source_only_userspace")
+                or manifest.get("chromium_identity")
+                != descriptor.get("chromium_identity")
+                or manifest.get("release_descriptor_sha256")
+                != sha256_bytes(descriptor_bytes)
+                or manifest.get("package_origin_sha256")
+                != sha256_bytes(sidecars["package-origin.json"])
+                or manifest.get("source_only_ci_receipt_sha256")
+                != sha256_bytes(
+                    sidecars["source-only-ci-receipt.json"]
+                )
+                or manifest.get(
+                    "source_only_browser_receipt_sha256"
+                )
+                != sha256_bytes(
+                    sidecars["source-only-browser-receipt.json"]
+                )
+                or manifest.get("debian_12_receipt_sha256")
+                != sha256_bytes(
+                    sidecars["exact-final-debian-12-receipt.json"]
+                )
+                or manifest.get("debian_13_receipt_sha256")
+                != sha256_bytes(
+                    sidecars["exact-final-debian-13-receipt.json"]
+                )
+            ):
+                errors.append(
+                    "split manifest narrow-task binding differs"
                 )
             with zipfile.ZipFile(reconstructed) as outer_archive:
                 if (
@@ -1425,6 +2068,24 @@ def validate_split_delivery(
             "status"
         ),
         "portability_matrix_status": matrix.get("status"),
+        "task_id": descriptor.get("task_id"),
+        "routing_nonce": descriptor.get("routing_nonce"),
+        "source_commit": descriptor.get("source_commit"),
+        "source_tree": descriptor.get("source_tree"),
+        "source_only_ci_status": descriptor.get(
+            "source_only_ci_status"
+        ),
+        "source_only_browser_status": descriptor.get(
+            "source_only_browser_status"
+        ),
+        "debian_12_exact_final_status": descriptor.get(
+            "debian_12_exact_final_status"
+        ),
+        "debian_13_exact_final_status": descriptor.get(
+            "debian_13_exact_final_status"
+        ),
+        "release_descriptor_status": descriptor.get("status"),
+        "package_origin_status": origin.get("status"),
         "outer_inner_validation": outer_validation,
     }
 
@@ -1995,7 +2656,13 @@ def main() -> int:
     capture.add_argument("--outer", type=Path, required=True)
     capture.add_argument("--verifier-root", type=Path, required=True)
     capture.add_argument("--name", required=True)
-    capture.add_argument("--image-digest", required=True)
+    capture.add_argument("--requested-image-reference", required=True)
+    capture.add_argument("--repo-digest")
+    capture.add_argument("--image-id", required=True)
+    capture.add_argument("--inspected-digest", required=True)
+    capture.add_argument("--execution-image-reference", required=True)
+    capture.add_argument("--source-commit", required=True)
+    capture.add_argument("--source-tree", required=True)
     capture.add_argument(
         "--builder-generic-audit",
         type=Path,
@@ -2038,8 +2705,28 @@ def main() -> int:
     split.add_argument(
         "--static-bootstrap-checksum", type=Path, required=True
     )
+    split.add_argument("--task-receipt", type=Path, required=True)
+    split.add_argument(
+        "--task-receipt-markdown", type=Path, required=True
+    )
+    split.add_argument(
+        "--release-descriptor", type=Path, required=True
+    )
+    split.add_argument(
+        "--release-descriptor-markdown", type=Path, required=True
+    )
+    split.add_argument("--package-origin", type=Path, required=True)
     split.add_argument(
         "--source-only-ci-receipt", type=Path, required=True
+    )
+    split.add_argument(
+        "--source-only-browser-receipt", type=Path, required=True
+    )
+    split.add_argument(
+        "--debian-12-receipt", type=Path, required=True
+    )
+    split.add_argument(
+        "--debian-13-receipt", type=Path, required=True
     )
     split.add_argument("--output", type=Path, required=True)
     validate_split = sub.add_parser("validate-split")
@@ -2083,7 +2770,13 @@ def main() -> int:
             outer=args.outer.resolve(),
             verifier_root=args.verifier_root.resolve(),
             name=args.name,
-            image_digest=args.image_digest,
+            requested_image_reference=args.requested_image_reference,
+            repo_digest=args.repo_digest,
+            image_id=args.image_id,
+            inspected_digest=args.inspected_digest,
+            execution_image_reference=args.execution_image_reference,
+            source_commit=args.source_commit,
+            source_tree=args.source_tree,
             builder_generic_tool_lock=builder_audit["expected"],
         )
         write_json(args.output.resolve(), result)
@@ -2136,9 +2829,23 @@ def main() -> int:
             static_bootstrap_checksum=(
                 args.static_bootstrap_checksum.resolve()
             ),
+            task_receipt=args.task_receipt.resolve(),
+            task_receipt_markdown=(
+                args.task_receipt_markdown.resolve()
+            ),
+            release_descriptor=args.release_descriptor.resolve(),
+            release_descriptor_markdown=(
+                args.release_descriptor_markdown.resolve()
+            ),
+            package_origin=args.package_origin.resolve(),
             source_only_ci_receipt=(
                 args.source_only_ci_receipt.resolve()
             ),
+            source_only_browser_receipt=(
+                args.source_only_browser_receipt.resolve()
+            ),
+            debian_12_receipt=args.debian_12_receipt.resolve(),
+            debian_13_receipt=args.debian_13_receipt.resolve(),
             output=args.output.resolve(),
         )
         result = {

@@ -35,10 +35,12 @@ derived outputs instead of rerunning completed solves for scoring or reporting c
 
 ## Local development checks
 
-Use Python 3.14.x; the declared support policy is exactly `>=3.14,<3.15`. The clean-checkout
-source-only stratum uses only frozen Python and Node dependencies, the checked-in synthetic target,
-and mocked or injected external executable paths. It deliberately does not require the canonical
-target checkout or Bubblewrap integration.
+Use Python 3.14.3; the declared support policy is exactly `>=3.14,<3.15`. The clean-checkout
+source-only stratum runs in the full-digest Playwright userspace declared in
+`.github/workflows/ci.yml`, selects Node 22.22.0, uses frozen dependencies and the checked-in
+synthetic target, and injects external executable paths. It executes Vitest, the dashboard build,
+and the real `dashboard/tests/browser.spec.ts` Playwright test. It deliberately does not require the
+canonical target checkout or Bubblewrap integration.
 
 From the repository root:
 
@@ -47,6 +49,11 @@ uv sync --frozen --all-extras
 uv run python -m py_compile scripts/*.py tests/*.py
 uv run python -m unittest discover -s tests -p 'test_*.py'
 uv run python3 tests/test_harness.py -v
+npm ci --prefix dashboard
+npm audit --prefix dashboard --package-lock-only
+npm test --prefix dashboard -- --run
+npm run build --prefix dashboard
+BENCH_CHROMIUM_EXECUTABLE=/absolute/path/to/the-pinned-image/chrome npm run test:browser --prefix dashboard
 git diff --check
 ```
 

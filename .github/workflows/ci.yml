@@ -7,28 +7,53 @@ on:
 permissions:
   contents: read
 
+env:
+  SOURCE_ONLY_USERSPACE_IMAGE: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+  SOURCE_ONLY_EXECUTED_IMAGE: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+
 jobs:
   source-only:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    container:
+      image: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           version: "0.10.3"
-          enable-cache: true
+          enable-cache: false
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: "3.14.3"
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: dashboard/package-lock.json
-      - run: python scripts/source_only_ci.py --output "$RUNNER_TEMP/source-only-ci-receipt.json"
+          node-version: "22.22.0"
+      - name: Resolve pinned Chromium
+        shell: bash
+        run: |
+          mapfile -t candidates < <(
+            find /ms-playwright -type f \
+              -path '*/chrome-linux*/chrome' -print | sort
+          )
+          if [[ "${#candidates[@]}" -ne 1 ]]; then
+            printf 'expected one pinned Chromium executable, found %s\n' \
+              "${#candidates[@]}" >&2
+            exit 1
+          fi
+          printf 'BENCH_CHROMIUM_EXECUTABLE=%s\n' \
+            "${candidates[0]}" >> "$GITHUB_ENV"
+      - run: >-
+          python scripts/source_only_ci.py
+          --output "$RUNNER_TEMP/source-only-ci-receipt.json"
+          --browser-output "$RUNNER_TEMP/source-only-browser-receipt.json"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: source-only-ci-receipt
+          name: source-only-ci-browser-receipts
           path: |
             ${{ runner.temp }}/source-only-ci-receipt.json
+            ${{ runner.temp }}/source-only-browser-receipt.json
+            ${{ runner.temp }}/source-only-browser-result.json
             ${{ runner.temp }}/source-only-ci-receipt-logs
             ${{ runner.temp }}/source-only-methodology.json
+            ${{ runner.temp }}/private-prerelease-audit

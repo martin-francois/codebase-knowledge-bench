@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source-only-browser-receipt.schema.json",
+  "title": "Source-only Playwright browser receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "task_id",
+    "routing_nonce",
+    "status",
+    "source",
+    "command",
+    "command_exit_code",
+    "browser_spec",
+    "source_only_userspace_image",
+    "source_only_userspace_image_digest",
+    "source_only_distribution",
+    "source_only_glibc",
+    "chromium_version",
+    "chromium_executable",
+    "chromium_executable_sha256",
+    "errors",
+    "browser_test_count",
+    "passed_test_count",
+    "failed_test_count",
+    "flaky_test_count",
+    "skipped_test_count",
+    "executed_test_files",
+    "result",
+    "validation_errors"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "source-only-browser-receipt-current"
+    },
+    "task_id": {
+      "const": "final-source-only-ci-browser-and-image-pin"
+    },
+    "routing_nonce": {
+      "const": "FMCB-20260719-9D4E2A7B"
+    },
+    "status": {
+      "const": "passed"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "command": {
+      "const": [
+        "npm",
+        "run",
+        "test:browser",
+        "--prefix",
+        "dashboard"
+      ]
+    },
+    "command_exit_code": {
+      "const": 0
+    },
+    "browser_spec": {
+      "$ref": "#/$defs/file"
+    },
+    "source_only_userspace_image": {
+      "const": "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+    },
+    "source_only_userspace_image_digest": {
+      "const": "sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+    },
+    "source_only_distribution": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_only_glibc": {
+      "type": "string",
+      "minLength": 1
+    },
+    "chromium_version": {
+      "const": "Google Chrome for Testing 149.0.7827.55"
+    },
+    "chromium_executable": {
+      "const": "/ms-playwright/chromium-1228/chrome-linux64/chrome"
+    },
+    "chromium_executable_sha256": {
+      "const": "2d18db9d8608b052b6a552ee00ec1e830f93692e928b65ecc67d693bd33fe801"
+    },
+    "errors": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "browser_test_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "passed_test_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "failed_test_count": {
+      "const": 0
+    },
+    "flaky_test_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "skipped_test_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "executed_test_files": {
+      "const": [
+        "dashboard/tests/browser.spec.ts"
+      ]
+    },
+    "result": {
+      "$ref": "#/$defs/file"
+    },
+    "validation_errors": {
+      "type": "array",
+      "maxItems": 0
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "tree",
+        "worktree_clean"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "not": {
+            "const": "86e1658f48539a8cd3e737d740f498ee649d214c"
+          }
+        },
+        "tree": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "worktree_clean": {
+          "const": true
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  }
+}

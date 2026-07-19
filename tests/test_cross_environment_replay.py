@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import os
 import subprocess
@@ -14,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from cross_environment_release import (  # noqa: E402
+    DETACHED_PART_FILES,
     build_detached_final_receipts,
     build_split_delivery,
     final_inner_identity,
@@ -27,12 +29,35 @@ from cross_environment_release import (  # noqa: E402
     validate_source_generated_equality,
     validate_split_delivery,
 )
+from final_source_only_release import (  # noqa: E402
+    PACKAGED_PATHS,
+    ROUTING_NONCE,
+    TASK_ID,
+    TASK_RECEIPT,
+    build_package_origin,
+    descriptor_markdown,
+)
 from independent_verifier import _bootstrap_capabilities  # noqa: E402
 from replay_rootfs import (  # noqa: E402
     _skip_package_member,
     required_rootfs_paths,
 )
 from safe_archive import inspect_tree  # noqa: E402
+from source_only_ci import (  # noqa: E402
+    BROWSER_COMMAND,
+    BROWSER_SPEC_RELATIVE,
+    EXPECTED_CHROMIUM_EXECUTABLE,
+    EXPECTED_CHROMIUM_SHA256,
+    EXPECTED_CHROMIUM_VERSION,
+    INDEPENDENCE_CONTRACT,
+    REQUIRED_COMMAND_NAMES,
+    SOURCE_ONLY_USERSPACE_IMAGE,
+    SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
+    canonical_bytes,
+    command_plan,
+    command_plan_identity,
+    sha256_file,
+)
 from target_replay import (  # noqa: E402
     REQUIRED_PACKAGED_SEMANTIC_RUNTIMES,
     ROOTFS_TOOL_PATHS,
@@ -68,46 +93,58 @@ def portability_matrix(identity: dict, inner: dict) -> dict:
         "unzip",
         "zstd",
     ]
+    source = {"commit": "1" * 40, "tree": "2" * 40}
+
+    def environment(
+        name: str,
+        distribution: str,
+        glibc: str,
+        digest_character: str,
+        different: list[str],
+    ) -> dict:
+        digest = "sha256:" + (digest_character * 64)
+        return {
+            "status": "passed",
+            "name": name,
+            "requested_image_reference":
+                f"fixture:{distribution.replace(' ', '-')}",
+            "repo_digest": None,
+            "image_id": digest,
+            "inspected_digest": digest,
+            "execution_image_reference": digest,
+            "image_digest": digest,
+            "image_identity_match": True,
+            "source": dict(source),
+            "host_userspace_distribution": distribution,
+            "host_userspace_glibc": glibc,
+            "host_kernel": "Linux fixture",
+            "packaged_bootstrap_glibc": "2.36",
+            "packaged_replay_rootfs_glibc": "2.36",
+            "namespace_mode": "privileged",
+            "replay_exit_code": 0,
+            "network_status": "passed",
+            "final_outer": dict(identity),
+            "final_inner": dict(inner),
+            "verifier_receipt_final_outer_sha256": identity["sha256"],
+            "host_generic_tool_hashes_different_from_builder": different,
+        }
+
     return {
         "status": "passed",
         "final_outer": dict(identity),
         "final_inner": dict(inner),
+        "source": source,
         "environments": [
-            {
-                "status": "passed",
-                "image_digest": "debian12@sha256:" + ("1" * 64),
-                "host_userspace_distribution": "debian 12",
-                "host_userspace_glibc": "2.36",
-                "host_kernel": "Linux fixture",
-                "packaged_bootstrap_glibc": "2.36",
-                "packaged_replay_rootfs_glibc": "2.36",
-                "namespace_mode": "privileged",
-                "replay_exit_code": 0,
-                "network_status": "passed",
-                "final_outer": dict(identity),
-                "final_inner": dict(inner),
-                "verifier_receipt_final_outer_sha256":
-                    identity["sha256"],
-                "host_generic_tool_hashes_different_from_builder": [],
-            },
-            {
-                "status": "passed",
-                "image_digest": "debian13@sha256:" + ("2" * 64),
-                "host_userspace_distribution": "debian 13",
-                "host_userspace_glibc": "2.41",
-                "host_kernel": "Linux fixture",
-                "packaged_bootstrap_glibc": "2.36",
-                "packaged_replay_rootfs_glibc": "2.36",
-                "namespace_mode": "privileged",
-                "replay_exit_code": 0,
-                "network_status": "passed",
-                "final_outer": dict(identity),
-                "final_inner": dict(inner),
-                "verifier_receipt_final_outer_sha256":
-                    identity["sha256"],
-                "host_generic_tool_hashes_different_from_builder":
-                    generic,
-            },
+            environment(
+                "debian-12-fixture", "debian 12", "2.36", "1", []
+            ),
+            environment(
+                "debian-13-fixture",
+                "debian 13",
+                "2.41",
+                "2",
+                generic,
+            ),
         ],
     }
 
@@ -901,6 +938,19 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                 hashlib.sha256(bootstrap_bytes).hexdigest()
                 + "  independent-verifier-bootstrap\n"
             ).encode()
+            inner_stream = io.BytesIO()
+            with zipfile.ZipFile(inner_stream, "w") as inner_archive:
+                inner_archive.writestr(
+                    "review-handoff-manifest.json",
+                    json.dumps(
+                        {
+                            "entry_count": 0,
+                            "manifest_root": "4" * 64,
+                            "qualifying_payload_entry_count": 0,
+                            "qualifying_payload_root": "5" * 64,
+                        }
+                    ),
+                )
             with zipfile.ZipFile(
                 outer, "w", compression=zipfile.ZIP_STORED
             ) as archive:
@@ -914,6 +964,10 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                 archive.writestr(
                     "independent-verifier-bootstrap.sha256",
                     bootstrap_checksum_bytes,
+                )
+                archive.writestr(
+                    "review-handoff/review-handoff.zip",
+                    inner_stream.getvalue(),
                 )
             identity = final_outer_identity(outer)
             inner = final_inner_identity(outer)
@@ -953,17 +1007,199 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                 encoding="utf-8",
             )
             source_ci = root / "source-only-ci-receipt.json"
+            browser_receipt = root / "source-only-browser-receipt.json"
+            source = {
+                "commit": "1" * 40,
+                "tree": "2" * 40,
+                "worktree_clean": True,
+            }
+            browser_spec = ROOT / BROWSER_SPEC_RELATIVE
+            browser_value = {
+                "schema_id": "source-only-browser-receipt-current",
+                "task_id": TASK_ID,
+                "routing_nonce": ROUTING_NONCE,
+                "status": "passed",
+                "source": dict(source),
+                "command": list(BROWSER_COMMAND),
+                "command_exit_code": 0,
+                "browser_spec": {
+                    "path": BROWSER_SPEC_RELATIVE,
+                    "bytes": browser_spec.stat().st_size,
+                    "sha256": sha256_file(browser_spec),
+                },
+                "browser_test_count": 1,
+                "passed_test_count": 1,
+                "failed_test_count": 0,
+                "flaky_test_count": 0,
+                "skipped_test_count": 0,
+                "executed_test_files": [
+                    BROWSER_SPEC_RELATIVE
+                ],
+                "result": {
+                    "path": "source-only-browser-result.json",
+                    "bytes": 1,
+                    "sha256": "3" * 64,
+                },
+                "source_only_userspace_image":
+                    SOURCE_ONLY_USERSPACE_IMAGE,
+                "source_only_userspace_image_digest":
+                    SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
+                "source_only_distribution": "Ubuntu 24.04.4 LTS",
+                "source_only_glibc": "glibc 2.39",
+                "chromium_version": EXPECTED_CHROMIUM_VERSION,
+                "chromium_executable": EXPECTED_CHROMIUM_EXECUTABLE,
+                "chromium_executable_sha256":
+                    EXPECTED_CHROMIUM_SHA256,
+                "errors": [],
+                "validation_errors": [],
+            }
+            write_json(browser_receipt, browser_value)
+            plan = command_plan(
+                root / "source-only-methodology.json"
+            )
+            plan_identity = command_plan_identity(plan, root)
             write_json(
                 source_ci,
                 {
+                    "task_id": TASK_ID,
+                    "routing_nonce": ROUTING_NONCE,
                     "status": "passed",
                     "execution_stratum": "source-only",
-                    "source": {
-                        "commit": "1" * 40,
-                        "tree": "2" * 40,
-                        "worktree_clean": True,
+                    "source": source,
+                    "source_identity_unchanged": True,
+                    "workflow_definition_sha256": sha256_file(
+                        ROOT / ".github/workflows/ci.yml"
+                    ),
+                    "command_plan": plan_identity,
+                    "commands": [
+                        {
+                            **row,
+                            "status": "passed",
+                            "exit_code": 0,
+                        }
+                        for row in plan_identity["commands"]
+                    ],
+                    "command_count": len(REQUIRED_COMMAND_NAMES),
+                    "test_counts": {
+                        "python_unit": 1,
+                        "vitest": 1,
+                        "playwright": 1,
                     },
+                    **INDEPENDENCE_CONTRACT,
+                    "source_only_browser_receipt": {
+                        "path": browser_receipt.name,
+                        "bytes": browser_receipt.stat().st_size,
+                        "sha256": hashlib.sha256(
+                            canonical_bytes(browser_value)
+                        ).hexdigest(),
+                        "status": "passed",
+                    },
+                    "source_only_userspace_image":
+                        SOURCE_ONLY_USERSPACE_IMAGE,
+                    "source_only_userspace_image_digest":
+                        SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
+                    "source_only_executed_image":
+                        SOURCE_ONLY_USERSPACE_IMAGE,
+                    "source_only_distribution":
+                        "Ubuntu 24.04.4 LTS",
+                    "source_only_glibc": "glibc 2.39",
+                    "python_version": "3.14.3",
+                    "python_executable_sha256": "3" * 64,
+                    "node_version": "v22.22.0",
+                    "node_executable_sha256": "3" * 64,
+                    "npm_version": "10.9.4",
+                    "npm_entrypoint_sha256": "3" * 64,
+                    "chromium_version": EXPECTED_CHROMIUM_VERSION,
+                    "chromium_executable": EXPECTED_CHROMIUM_EXECUTABLE,
+                    "chromium_executable_sha256":
+                        EXPECTED_CHROMIUM_SHA256,
+                    "validation_errors": [],
                 },
+            )
+            matrix_value = json.loads(matrix.read_text(encoding="utf-8"))
+            debian_12 = root / "exact-final-debian-12-receipt.json"
+            debian_13 = root / "exact-final-debian-13-receipt.json"
+            write_json(debian_12, matrix_value["environments"][0])
+            write_json(debian_13, matrix_value["environments"][1])
+            task_receipt = root / "task-receipt.json"
+            task_receipt_markdown = root / "task-receipt.md"
+            write_json(task_receipt, TASK_RECEIPT)
+            task_receipt_markdown.write_text(
+                "# Task receipt\n", encoding="utf-8"
+            )
+
+            inputs = {
+                "task_receipt": task_receipt,
+                "source_only_ci_receipt": source_ci,
+                "source_only_browser": browser_receipt,
+                "exact_final_debian_12_receipt": debian_12,
+                "exact_final_debian_13_receipt": debian_13,
+                "exact_final_independent_validation": validation,
+                "portability_matrix": matrix,
+            }
+            descriptor_value = {
+                "schema_id":
+                    "final-source-only-release-descriptor-current",
+                "status": "passed",
+                "task_id": TASK_ID,
+                "routing_nonce": ROUTING_NONCE,
+                "source_commit": source["commit"],
+                "source_tree": source["tree"],
+                **{
+                    name: {
+                        "path": PACKAGED_PATHS[name],
+                        "bytes": path.stat().st_size,
+                        "sha256": sha256_file(path),
+                    }
+                    for name, path in inputs.items()
+                },
+                "source_only_userspace": {
+                    "image": SOURCE_ONLY_USERSPACE_IMAGE,
+                    "digest": SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
+                },
+                "chromium_identity": {
+                    "version": EXPECTED_CHROMIUM_VERSION,
+                    "executable": EXPECTED_CHROMIUM_EXECUTABLE,
+                    "sha256": EXPECTED_CHROMIUM_SHA256,
+                },
+                "source_only_ci_status": "passed",
+                "source_only_browser_status": "passed",
+                "source_only_browser_result": browser_value["result"],
+                "workflow_definition_sha256": sha256_file(
+                    ROOT / ".github/workflows/ci.yml"
+                ),
+                "source_only_command_plan_sha256":
+                    plan_identity["sha256"],
+                "debian_12_exact_final_status": "passed",
+                "debian_13_exact_final_status": "passed",
+                "portability_status": "passed",
+                "final_outer": identity,
+                "final_inner": inner,
+                "inner_handoff_source_identity": {
+                    "commit": source["commit"],
+                    "tree": source["tree"],
+                },
+                "outer_delivery_source_identity": {
+                    "commit": source["commit"],
+                    "tree": source["tree"],
+                },
+            }
+            release_descriptor = root / "release-descriptor.json"
+            release_descriptor_markdown = (
+                root / "release-descriptor.md"
+            )
+            write_json(release_descriptor, descriptor_value)
+            release_descriptor_markdown.write_text(
+                descriptor_markdown(descriptor_value),
+                encoding="utf-8",
+            )
+            package_origin = root / "package-origin.json"
+            write_json(
+                package_origin,
+                build_package_origin(
+                    descriptor_value,
+                    release_descriptor.read_bytes(),
+                ),
             )
             parts = build_split_delivery(
                 outer=outer,
@@ -973,7 +1209,17 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                 agent_response=response,
                 static_bootstrap=bootstrap,
                 static_bootstrap_checksum=bootstrap_checksum,
+                task_receipt=task_receipt,
+                task_receipt_markdown=task_receipt_markdown,
+                release_descriptor=release_descriptor,
+                release_descriptor_markdown=(
+                    release_descriptor_markdown
+                ),
+                package_origin=package_origin,
                 source_only_ci_receipt=source_ci,
+                source_only_browser_receipt=browser_receipt,
+                debian_12_receipt=debian_12,
+                debian_13_receipt=debian_13,
                 output=root / "parts",
                 payload_bytes=4096,
                 maximum_part_zip_bytes=100_000,
@@ -984,19 +1230,7 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
             self.assertEqual(identity, result["final_outer"])
             with zipfile.ZipFile(parts[0]) as archive:
                 self.assertEqual(
-                    {
-                        "agent-response.md",
-                        "final-outer.independent-validation.json",
-                        "final-outer.portability-matrix.json",
-                        "final-outer.sha256",
-                        "independent-verifier-bootstrap",
-                        "independent-verifier-bootstrap.sha256",
-                        "reconstruct.sh",
-                        "source-only-ci-receipt.json",
-                        "split-delivery-manifest.json",
-                        "split-index.json",
-                        "split-index.md",
-                    },
+                    DETACHED_PART_FILES,
                     set(archive.namelist())
                     - {
                         name
@@ -1004,6 +1238,24 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                         if name.startswith("payload.part-")
                     },
                 )
+                reconstruct_bytes = archive.read("reconstruct.sh")
+            reviewer = root / "external-reviewer"
+            reviewer.mkdir()
+            reconstruct = reviewer / "reconstruct.sh"
+            reconstruct.write_bytes(reconstruct_bytes)
+            reconstruct.chmod(0o755)
+            completed = subprocess.run(
+                [str(reconstruct), *map(str, parts)],
+                cwd=reviewer,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(0, completed.returncode, completed.stderr)
+            reconstruction = json.loads(completed.stdout)
+            self.assertEqual("passed", reconstruction["status"])
+            self.assertEqual(identity, reconstruction["final_outer"])
 
     def test_source_generated_replay_has_one_packaged_boundary(self) -> None:
         source = _replay_script()

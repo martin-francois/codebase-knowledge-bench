@@ -22,3 +22,10 @@ independent-verifier-bootstrap independent-verifier.sh OUTER_ZIP OUTPUT_ROOT
 
 The static bootstrap sanitizes loader and language-runtime environment variables before the shell
 starts. Direct execution of `independent-verifier.sh` is not a hostile-environment-safe entrypoint.
+
+The final split packager receives `release-descriptor.json` and `package-origin.json` explicitly.
+Every numbered part carries those records, the task receipt, source-only CI/browser receipts,
+Debian 12/13 exact-final receipts, portability matrix, detached outer receipt, split index, and
+reconstruction script. `scripts/cross_environment_release.py validate-split` verifies the raw and
+normalized part identities and the complete task/source/userspace/browser/portability binding after
+reconstructing the exact outer.

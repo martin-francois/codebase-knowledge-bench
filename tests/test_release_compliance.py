@@ -177,7 +177,7 @@ class SourceOnlyStratumTest(unittest.TestCase):
         workflow = (
             ROOT / ".github/workflows/ci.yml"
         ).read_text(encoding="utf-8")
-        self.assertIn('python-version: "3.14"', workflow)
+        self.assertIn('python-version: "3.14.3"', workflow)
         self.assertNotIn('python-version: "3.11"', workflow)
         self.assertNotIn('python-version: "3.13"', workflow)
         self.assertIn("scripts/source_only_ci.py", workflow)
@@ -190,7 +190,10 @@ class SourceOnlyStratumTest(unittest.TestCase):
             "source-only CI requires a clean plain Git checkout",
             source_ci,
         )
-        self.assertNotIn('"test:browser"', source_ci)
+        self.assertIn('"dashboard_browser"', source_ci)
+        self.assertIn('"test:browser"', source_ci)
+        self.assertIn("@sha256:", workflow)
+        self.assertNotIn("runs-on: ubuntu-latest", workflow)
 
     def test_source_only_fixture_ignores_external_target_discovery(
         self,

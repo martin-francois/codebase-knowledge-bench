@@ -36,10 +36,17 @@ You need:
 Generated files go to the output directory configured in the suite TOML. They are not written into
 this source repository.
 
-The supported project interpreter is exactly Python `>=3.14,<3.15`. Source-only CI uses the
-checked-in synthetic target and mocked external executable paths; it does not require the canonical
-target checkout, Bubblewrap, packaged replay runtimes, or benchmark output directories. Those real
-inputs remain mandatory only for artifact-backed release qualification.
+The supported project interpreter is exactly Python `>=3.14,<3.15`. Source-only CI runs in
+`mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48`
+with Python 3.14.3 and Node 22.22.0 selected explicitly. It uses the checked-in synthetic target and
+injected external executable paths. It also builds the dashboard and runs the real
+`dashboard/tests/browser.spec.ts` Playwright accessibility/offline test with the Chromium supplied
+by that image. The source-only CI and browser receipts record the exact image, Python, Node, npm,
+Chromium, workflow, command-plan, commit, and tree identities.
+
+This stratum does not require the canonical target checkout, Bubblewrap, privileged namespaces,
+packaged replay runtimes, builder caches, or benchmark output directories. Those real inputs remain
+mandatory only for artifact-backed release qualification.
 
 ## Quick start with the included suite
 
