@@ -13,6 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from build_review_handoff import (
+    MANDATORY_FILES,
     portable_generated_text,
     reconstruct_tree,
     scan_source_text,
@@ -27,6 +28,16 @@ def git(repo: Path, *args: str) -> str:
 
 
 class ReviewHandoffTest(unittest.TestCase):
+    def test_final_handoff_requires_both_pre_fix_audits(self) -> None:
+        self.assertIn("audit/pre-fix-audit.json", MANDATORY_FILES)
+        self.assertIn("audit/pre-fix-audit.md", MANDATORY_FILES)
+        self.assertIn(
+            "audit/pre-fix-portability-audit.json", MANDATORY_FILES
+        )
+        self.assertIn(
+            "audit/pre-fix-portability-audit.md", MANDATORY_FILES
+        )
+
     def test_dangling_in_root_symlink_is_safe_but_escape_is_rejected(
         self,
     ) -> None:

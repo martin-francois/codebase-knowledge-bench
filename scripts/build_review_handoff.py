@@ -382,6 +382,8 @@ MANDATORY_FILES = {
     "task/task-receipt.json",
     "task/task-receipt.md",
     "task/implementation-change-proof.json",
+    "audit/pre-fix-audit.json",
+    "audit/pre-fix-audit.md",
     "audit/pre-fix-portability-audit.json",
     "audit/pre-fix-portability-audit.md",
     "preflight/status-semantics-audit.json",

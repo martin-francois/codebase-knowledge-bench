@@ -20,6 +20,83 @@ from safe_archive import safe_extract_tar
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def reconstruct_exact_git_checkout(
+    source_repo: Path, checkout: Path
+) -> dict[str, str]:
+    expected_commit = subprocess.check_output(
+        ["git", "-C", str(source_repo), "rev-parse", "HEAD"],
+        text=True,
+    ).strip()
+    expected_tree = subprocess.check_output(
+        ["git", "-C", str(source_repo), "rev-parse", "HEAD^{tree}"],
+        text=True,
+    ).strip()
+    commit_object = subprocess.check_output(
+        ["git", "-C", str(source_repo), "cat-file", "commit", expected_commit]
+    )
+    subprocess.run(
+        ["git", "-C", str(checkout), "init", "--quiet"], check=True
+    )
+    subprocess.run(
+        ["git", "-C", str(checkout), "add", "--all"], check=True
+    )
+    actual_tree = subprocess.check_output(
+        ["git", "-C", str(checkout), "write-tree"], text=True
+    ).strip()
+    if actual_tree != expected_tree:
+        raise RuntimeError(
+            "clean-checkout source tree reconstruction mismatch"
+        )
+    actual_commit = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(checkout),
+            "hash-object",
+            "-t",
+            "commit",
+            "-w",
+            "--stdin",
+        ],
+        input=commit_object,
+        stdout=subprocess.PIPE,
+        check=True,
+    ).stdout.decode().strip()
+    if actual_commit != expected_commit:
+        raise RuntimeError(
+            "clean-checkout commit-object reconstruction mismatch"
+        )
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(checkout),
+            "update-ref",
+            "HEAD",
+            expected_commit,
+        ],
+        check=True,
+    )
+    status = subprocess.check_output(
+        [
+            "git",
+            "-C",
+            str(checkout),
+            "status",
+            "--porcelain=v1",
+            "--untracked-files=all",
+        ],
+        text=True,
+    )
+    if status:
+        raise RuntimeError("reconstructed clean checkout is dirty")
+    return {
+        "commit": actual_commit,
+        "tree": actual_tree,
+        "status": "clean",
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, default=ROOT)
@@ -120,6 +197,7 @@ def main() -> int:
 
             with tarfile.open(archive) as source_archive:
                 safe_extract_tar(source_archive, checkout)
+            reconstructed = reconstruct_exact_git_checkout(repo, checkout)
             (checkout / "dashboard/node_modules").symlink_to(
                 repo / "dashboard/node_modules", target_is_directory=True
             )
@@ -143,6 +221,9 @@ def main() -> int:
                 "returncode": process.returncode,
                 "duration_seconds": duration,
                 "output_sha256": __import__("hashlib").sha256(process.stdout.encode()).hexdigest(),
+                "source_commit": reconstructed["commit"],
+                "source_tree": reconstructed["tree"],
+                "worktree_status_before_test": reconstructed["status"],
             })
             log_lines.extend([
                 "$ clean-checkout source-only test suite",

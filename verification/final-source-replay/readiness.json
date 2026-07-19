@@ -1,33 +1,33 @@
 {
   "blockers": [
     "final_source_commit_and_remote_equality_not_yet_available",
+    "final_source_package_and_fresh_replay_not_yet_run",
+    "final_committed_clean_checkout_not_yet_run",
     "independent_verifier_outer_zip_only_not_yet_run"
   ],
   "conditions": {
-    "all_replay_evidence_packaged": true,
+    "all_replay_evidence_packaged": false,
     "exact_archive_sets_and_types_validated": true,
-    "fresh_replay_succeeds_from_empty_work_root": true,
-    "host_runtimes_unavailable_during_replay": true,
+    "fresh_replay_succeeds_from_empty_work_root": false,
+    "host_runtimes_unavailable_during_replay": false,
     "independent_verifier_outer_zip_only": false,
-    "network_isolation_measured_and_passed": true,
+    "network_isolation_measured_and_passed": false,
     "no_post_generation_edits": true,
     "origin_main_equals_final_source_commit": false,
-    "packaged_jdk_node_chromium_selected": true,
+    "packaged_jdk_node_chromium_selected": false,
     "preflight_status_semantics_exact": true,
-    "source_commit_reconstructed_in_replay": true,
-    "source_generated_replay_equals_packaged_replay": true,
-    "target_package_validator_executes_replay": true
+    "source_commit_reconstructed_in_replay": false,
+    "source_generated_replay_equals_packaged_replay": false,
+    "target_package_validator_executes_replay": false
   },
-  "diagnostic_proof": {
-    "fresh_one_shot": true,
-    "replay_duration_seconds": 2442.533215538948,
-    "replay_evidence_manifest_count": 696,
-    "replay_evidence_manifest_root": "db9249f7e681fee759e868206407ba1a56635f29f21c04e23687df962079fd2e",
-    "replay_exit_code": 0,
-    "source_commit": "4a38f7db1b46bcfeb849ad591f6976d6bd651feb",
-    "source_tree": "946b213ceaa152747de47d25165e34997d2fe602",
-    "status": "passed",
-    "target_package_validation": "passed"
+  "precommit_validation": {
+    "command_count": 16,
+    "duration_seconds": 125.15325780818239,
+    "initial_clean_checkout_failure_preserved": true,
+    "initial_failure": "archive extraction omitted exact Git identity",
+    "repaired_in_worktree_status": "passed",
+    "test_count": 1825,
+    "test_receipt": "output://final-source-replay/precommit-20260719/tests-repaired-precommit/test-results.json"
   },
   "prohibited_work": {
     "benchmark_matrices": 0,
@@ -38,5 +38,5 @@
   },
   "schema_id": "final-source-replay-readiness-current",
   "status": "NO_GO",
-  "supersession": "The source-controlled post-commit finalizer writes the authoritative delivery readiness receipt after remote equality and the outer-ZIP-only verifier pass."
+  "supersession": "The source-controlled post-commit finalizer writes the authoritative delivery readiness receipt only after the exact final package, committed clean checkout, remote equality, fresh replay, and outer-ZIP-only verifier pass."
 }

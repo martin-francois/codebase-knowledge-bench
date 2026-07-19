@@ -9,6 +9,7 @@ import os
 import struct
 import subprocess
 import sys
+import tarfile
 import tempfile
 import tomllib
 import unittest
@@ -21,6 +22,8 @@ SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from methodology_fixture import run_fixture  # noqa: E402
+from run_final_validation import reconstruct_exact_git_checkout  # noqa: E402
+from safe_archive import safe_extract_tar  # noqa: E402
 
 
 class StaticVerifierBootstrapTest(unittest.TestCase):
@@ -98,6 +101,70 @@ class StaticVerifierBootstrapTest(unittest.TestCase):
 
 
 class SourceOnlyStratumTest(unittest.TestCase):
+    def test_clean_checkout_reconstructs_exact_commit_and_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            checkout = root / "checkout"
+            archive_path = root / "source.tar"
+            source.mkdir()
+            subprocess.run(
+                ["git", "-C", str(source), "init", "--quiet"], check=True
+            )
+            (source / "tracked.txt").write_text(
+                "source-controlled\n", encoding="utf-8"
+            )
+            subprocess.run(
+                ["git", "-C", str(source), "add", "--all"], check=True
+            )
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(source),
+                    "-c",
+                    "user.name=Release Fixture",
+                    "-c",
+                    "user.email=release-fixture@example.invalid",
+                    "commit",
+                    "--quiet",
+                    "-m",
+                    "fixture",
+                ],
+                check=True,
+            )
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(source),
+                    "archive",
+                    "--format=tar",
+                    "--output",
+                    str(archive_path),
+                    "HEAD",
+                ],
+                check=True,
+            )
+            with tarfile.open(archive_path) as archive:
+                safe_extract_tar(archive, checkout)
+            result = reconstruct_exact_git_checkout(source, checkout)
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "-C", str(source), "rev-parse", "HEAD"],
+                    text=True,
+                ).strip(),
+                result["commit"],
+            )
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "-C", str(source), "rev-parse", "HEAD^{tree}"],
+                    text=True,
+                ).strip(),
+                result["tree"],
+            )
+            self.assertEqual("clean", result["status"])
+
     def test_python_policy_and_workflow_are_314_only(self) -> None:
         project = tomllib.loads(
             (ROOT / "pyproject.toml").read_text(encoding="utf-8")

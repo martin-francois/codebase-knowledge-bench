@@ -2,17 +2,26 @@
 
 Decision: **NO_GO** before the final source commit.
 
-The fresh diagnostic replay passed from empty roots with packaged runtimes,
-measured network isolation, exact archives, exact source reconstruction, all
-three preflights, 17 killed targeted mutants, production shadow, dashboard
-browser validation, and executable target-package validation.
+The repaired pre-commit deterministic ladder passed all 16 commands and 1,825
+Python tests. Exact preflight-status faults, generated replay syntax, archive
+boundaries, runtime and namespace contracts, dashboard unit/build/browser
+tests, policy audits, provenance checks, and whitespace checks passed.
 
-The pre-commit receipt deliberately withholds `GO` because two proofs cannot
-exist until after the one allowed source commit:
+The initial clean-checkout diagnostic failed because the runner extracted a Git
+archive without reconstructing Git identity. That failure is preserved outside
+Git. The focused correction now reconstructs and verifies the exact commit and
+tree before tests; its narrow fixture and the full in-worktree ladder pass.
 
-- `origin/main` must equal that final source commit.
-- An independent process must receive only the sealed outer ZIP and pass.
+This tracked receipt deliberately withholds `GO` because final facts cannot
+exist before the one allowed source commit:
+
+- `origin/main` must equal the final source commit.
+- the package must bind that exact commit;
+- the final committed clean checkout must pass;
+- one fresh empty-root replay must pass with packaged runtimes and measured
+  network isolation; and
+- an independent process must receive only the sealed outer ZIP and pass.
 
 After those proofs pass, the source-controlled post-commit finalizer writes the
-authoritative delivery readiness receipt. No source file is edited after the
-commit.
+authoritative detached delivery readiness receipt. No source file is edited
+after the commit.
