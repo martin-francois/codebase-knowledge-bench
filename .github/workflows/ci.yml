@@ -11,6 +11,8 @@ env:
   SOURCE_ONLY_USERSPACE_IMAGE: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
   SOURCE_ONLY_EXECUTED_IMAGE: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
   SOURCE_ONLY_OUTPUT_ROOT: "/__w/_temp"
+  SOURCE_ONLY_UNZIP_PACKAGE: "unzip=6.0-28ubuntu4.1"
+  SOURCE_ONLY_UNZIP_PACKAGE_SHA256: "a505b9d491386167bd8e14e3383315a4a7d6539e4406745901ccf009a7988271"
 
 jobs:
   source-only:
@@ -19,6 +21,24 @@ jobs:
       image: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
     steps:
       - uses: actions/checkout@v4
+      - name: Install pinned host bootstrap prerequisite
+        shell: bash
+        run: |
+          apt-get update -qq
+          apt-get download "$SOURCE_ONLY_UNZIP_PACKAGE"
+          mapfile -t packages < <(find . -maxdepth 1 -type f -name 'unzip_*.deb' -print)
+          if [[ "${#packages[@]}" -ne 1 ]]; then
+            printf 'expected one pinned unzip package, found %s\n' \
+              "${#packages[@]}" >&2
+            exit 1
+          fi
+          printf '%s  %s\n' \
+            "$SOURCE_ONLY_UNZIP_PACKAGE_SHA256" "${packages[0]}" |
+            sha256sum --check --strict
+          dpkg --install "${packages[0]}"
+          test "$(dpkg-query --showformat='${Version}' --show unzip)" = \
+            "${SOURCE_ONLY_UNZIP_PACKAGE#unzip=}"
+          rm -- "${packages[0]}"
       - uses: astral-sh/setup-uv@v6
         with:
           version: "0.10.3"

@@ -351,6 +351,31 @@ class SourceOnlyCommandPlanTest(unittest.TestCase):
 
 
 class PinnedUserspaceWorkflowTest(unittest.TestCase):
+    def test_workflow_pins_host_unzip_package_and_package_hash(
+        self,
+    ) -> None:
+        source = (
+            ROOT / ".github/workflows/ci.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            'SOURCE_ONLY_UNZIP_PACKAGE: "unzip=6.0-28ubuntu4.1"',
+            source,
+        )
+        self.assertIn(
+            "SOURCE_ONLY_UNZIP_PACKAGE_SHA256: "
+            '"a505b9d491386167bd8e14e3383315a4a7d6539e4406745901ccf009a7988271"',
+            source,
+        )
+        self.assertIn(
+            'apt-get download "$SOURCE_ONLY_UNZIP_PACKAGE"',
+            source,
+        )
+        self.assertIn(
+            '"$SOURCE_ONLY_UNZIP_PACKAGE_SHA256" "${packages[0]}"',
+            source,
+        )
+        self.assertNotIn("apt-get install unzip", source)
+
     def test_workflow_and_runner_use_the_same_digest_pinned_image(
         self,
     ) -> None:
