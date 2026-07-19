@@ -44,6 +44,7 @@ from source_only_ci import (  # noqa: E402
     command_plan_errors,
     command_plan_identity,
     environment_identity_errors,
+    git_safe_environment,
     playwright_result_summary,
     sha256_file,
     source_only_receipt_errors,
@@ -373,6 +374,21 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
             "mcr.microsoft.com/playwright:v1.61.1-noble"
         )
         self.assertTrue(environment_identity_errors(identity))
+
+    def test_git_checkout_trust_does_not_require_builder_home(
+        self,
+    ) -> None:
+        environment = git_safe_environment(
+            {"HOME": "/unusable-builder-home"}
+        )
+        self.assertEqual("/dev/null", environment["GIT_CONFIG_GLOBAL"])
+        self.assertEqual("1", environment["GIT_CONFIG_COUNT"])
+        self.assertEqual(
+            "safe.directory", environment["GIT_CONFIG_KEY_0"]
+        )
+        self.assertEqual(
+            str(ROOT), environment["GIT_CONFIG_VALUE_0"]
+        )
 
     def test_workflow_rejects_a_mutable_or_different_container(
         self,

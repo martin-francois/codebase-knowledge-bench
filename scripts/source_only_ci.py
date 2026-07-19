@@ -333,10 +333,27 @@ def fixture_identity() -> dict[str, Any]:
     }
 
 
+def git_safe_environment(
+    environment: Mapping[str, str] | None = None,
+) -> dict[str, str]:
+    result = dict(environment if environment is not None else os.environ)
+    result.update(
+        {
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "safe.directory",
+            "GIT_CONFIG_VALUE_0": str(ROOT),
+        }
+    )
+    return result
+
+
 def source_identity() -> dict[str, Any]:
+    environment = git_safe_environment()
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=ROOT,
+        env=environment,
         text=True,
         stdout=subprocess.PIPE,
         check=True,
@@ -344,6 +361,7 @@ def source_identity() -> dict[str, Any]:
     tree = subprocess.run(
         ["git", "rev-parse", "HEAD^{tree}"],
         cwd=ROOT,
+        env=environment,
         text=True,
         stdout=subprocess.PIPE,
         check=True,
@@ -351,6 +369,7 @@ def source_identity() -> dict[str, Any]:
     status = subprocess.run(
         ["git", "status", "--porcelain"],
         cwd=ROOT,
+        env=environment,
         text=True,
         stdout=subprocess.PIPE,
         check=True,
@@ -884,7 +903,7 @@ def _isolated_environment(
     cache = output_root / "source-only-tool-cache"
     home.mkdir(parents=True, exist_ok=True)
     cache.mkdir(parents=True, exist_ok=True)
-    environment = os.environ.copy()
+    environment = git_safe_environment()
     environment.update(
         {
             "HOME": str(home),

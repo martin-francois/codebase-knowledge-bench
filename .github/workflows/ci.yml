@@ -10,6 +10,7 @@ permissions:
 env:
   SOURCE_ONLY_USERSPACE_IMAGE: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
   SOURCE_ONLY_EXECUTED_IMAGE: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+  SOURCE_ONLY_OUTPUT_ROOT: "/__w/_temp"
 
 jobs:
   source-only:
@@ -44,16 +45,17 @@ jobs:
             "${candidates[0]}" >> "$GITHUB_ENV"
       - run: >-
           python scripts/source_only_ci.py
-          --output "$RUNNER_TEMP/source-only-ci-receipt.json"
-          --browser-output "$RUNNER_TEMP/source-only-browser-receipt.json"
+          --output "$SOURCE_ONLY_OUTPUT_ROOT/source-only-ci-receipt.json"
+          --browser-output
+          "$SOURCE_ONLY_OUTPUT_ROOT/source-only-browser-receipt.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: source-only-ci-browser-receipts
           path: |
-            ${{ runner.temp }}/source-only-ci-receipt.json
-            ${{ runner.temp }}/source-only-browser-receipt.json
-            ${{ runner.temp }}/source-only-browser-result.json
-            ${{ runner.temp }}/source-only-ci-receipt-logs
-            ${{ runner.temp }}/source-only-methodology.json
-            ${{ runner.temp }}/private-prerelease-audit
+            ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/source-only-ci-receipt.json
+            ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/source-only-browser-receipt.json
+            ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/source-only-browser-result.json
+            ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/source-only-ci-receipt-logs
+            ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/source-only-methodology.json
+            ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/private-prerelease-audit
