@@ -18,6 +18,31 @@ from operational_tradeoffs import (
 POLICY = json.loads((ROOT / "configs" / "methodology-policy.json").read_text())
 
 
+def unavailable_cost() -> dict:
+    return {
+        "contract_id": "equivalent-codex-api-cost-current",
+        "scope": "solve_only",
+        "label": "Equivalent Codex API cost",
+        "actual_invoice": False,
+        "status": "unavailable",
+        "currency": "USD",
+        "exact_usd_nanos": None,
+        "lower_bound_usd_nanos": None,
+        "upper_bound_usd_nanos": None,
+        "reason": "fixture has no request usage",
+        "pricing_descriptor_id": "fixture-pricing",
+        "pricing_descriptor_sha256": "a" * 64,
+        "request_usage_sha256": None,
+        "request_evidence_level": "unavailable",
+        "request_count": None,
+        "billable_request_count": None,
+        "retry_count": None,
+        "presentation_exact_usd": None,
+        "presentation_lower_bound_usd": None,
+        "presentation_upper_bound_usd": None,
+    }
+
+
 def row(
     tool: str,
     correctness: float,
@@ -54,7 +79,7 @@ def row(
         "intended_tool_successful_solve_invocation_count": (
             0 if tool == "baseline-none" else 2
         ),
-        "estimated_monetary_cost": None,
+        "equivalent_cost": unavailable_cost(),
         "exclusion_reason": exclusion_reason,
         "attribution": {
             "applicable": tool != "baseline-none",
@@ -311,11 +336,6 @@ class DashboardDataTest(unittest.TestCase):
         self.assertNotIn("invalid", data["published"]["exact_pareto_frontier"])
         tool = next(run for run in data["individual_runs"] if run["tool"] == "tool")
         self.assertEqual(2.0, tool["metrics"]["intended_tool_successful_calls"])
-        self.assertFalse(
-            data["metric_descriptors"]["estimated_monetary_cost"][
-                "absolute_available"
-            ]
-        )
 
     def test_dashboard_validator_rejects_changed_value(self) -> None:
         suite_result = self.suite_result()

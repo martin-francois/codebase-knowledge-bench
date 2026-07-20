@@ -159,20 +159,6 @@ def weighted_token_count(usage: Mapping[str, Any], cache_weight: float) -> float
     )
 
 
-def pricing_cost(usage: Mapping[str, Any], *, uncached_input_price: float | None,
-                 cache_write_price: float | None, cached_input_price: float | None,
-                 output_price: float | None) -> float | None:
-    prices = (uncached_input_price, cache_write_price, cached_input_price, output_price)
-    if not usage.get("cache_write_metrics_available") or any(value is None or value < 0 for value in prices):
-        return None
-    return (
-        float(usage["uncached_nonwrite_input_tokens"]) * float(uncached_input_price)
-        + float(usage["cache_write_tokens"]) * float(cache_write_price)
-        + float(usage["cached_input_tokens"]) * float(cached_input_price)
-        + float(usage["output_tokens_including_reasoning"]) * float(output_price)
-    )
-
-
 def validate_requirement_contract(contract: Mapping[str, Any]) -> None:
     if contract.get("methodology_id") != METHODOLOGY_ID:
         raise ValueError("unsupported methodology")

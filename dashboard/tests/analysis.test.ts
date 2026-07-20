@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { DashboardData, DashboardRun, METRICS, QUALITY_AXES, TOKEN_VIEWS, deriveView, metricAvailability, qualityAvailability } from "../src/analysis";
+import { DashboardData, DashboardRun, EquivalentCost, METRICS, QUALITY_AXES, TOKEN_VIEWS, deriveView, formatEquivalentCost, metricAvailability, qualityAvailability, summarizeEquivalentCost } from "../src/analysis";
 
-const metrics = (tokens: number, time: number, calls: number, cost: number | null = null) => ({
+const metrics = (tokens: number, time: number, calls: number) => ({
   weighted_token_count: tokens,
   observed_non_cached_input_tokens: tokens * .8,
   output_tokens_including_reasoning: tokens * .1,
@@ -10,16 +10,39 @@ const metrics = (tokens: number, time: number, calls: number, cost: number | nul
   warm_end_to_end_seconds: time + 10,
   tool_calls: calls,
   intended_tool_successful_calls: 2,
-  estimated_monetary_cost: cost,
+});
+const cost = (status: "exact" | "bounded" | "unavailable" = "exact", lower = 100_000_000, upper = lower): EquivalentCost => ({
+  contract_id: "equivalent-codex-api-cost-current", scope: "solve_only",
+  label: "Equivalent Codex API cost", actual_invoice: false, status, currency: "USD",
+  exact_usd_nanos: status === "exact" ? lower : null,
+  lower_bound_usd_nanos: status === "unavailable" ? null : lower,
+  upper_bound_usd_nanos: status === "unavailable" ? null : upper,
+  reason: status === "exact" ? "fully observed" : status === "bounded" ? "cache writes not observed" : "usage unavailable",
+  pricing_descriptor_id: "fixture-pricing", pricing_descriptor_sha256: "a".repeat(64),
+  request_usage_sha256: status === "unavailable" ? null : "b".repeat(64),
+  request_evidence_level: status === "exact" ? "request" : status === "bounded" ? "turn_aggregate" : "unavailable",
+  request_count: status === "exact" ? 1 : null, billable_request_count: status === "exact" ? 1 : null,
+  retry_count: status === "exact" ? 0 : null,
+  presentation_exact_usd: status === "exact" ? (lower / 1e9).toFixed(2) : null,
+  presentation_lower_bound_usd: status === "unavailable" ? null : (lower / 1e9).toFixed(2),
+  presentation_upper_bound_usd: status === "unavailable" ? null : (upper / 1e9).toFixed(2),
 });
 const run = (tool: string, issue: string, repetition: number, correctness: number, tokens: number, time: number, calls: number, eligible = true): DashboardRun => ({
   tool, issue_id: issue, repetition, correctness, operational_eligible: eligible,
   exclusion_reason: eligible ? null : "trust-invalid", task_success: false,
   strict_attribution_supported: tool === "baseline-none" ? null : false,
+  requested_behavior: null, critical_requirement_pass_rate: null, common_regression: null,
+  patch_quality: null, candidate_test_quality: null, reference_behavior_match: null,
+  requirement_vector: [], protected_common_case_count: 0, protected_common_pass_count: 0,
+  protected_common_fail_count: 0, protected_common_skip_count: 0, common_regression_failures: [],
+  protected_direct_full_pass: null, protected_common_full_pass: null,
+  reference_diagnostic_evaluable: null,
+  candidate_test_changes: {added: [], modified: [], deleted: [], renamed: [], protected_test_effect: "none"},
+  equivalent_cost: cost(),
   metrics: metrics(tokens, time, calls),
 });
 const fixture = (): DashboardData => ({
-  schema_version: "operational-dashboard-v4", suite_id: "fixture", analysis_mode: "repeated_matched",
+  schema_version: "operational-dashboard-v5", suite_id: "fixture", analysis_mode: "repeated_matched",
   tolerance_grid: [0, 1, 2.5, 5, 7.5, 10], default_tolerance: 2.5,
   points: [],
   individual_runs: [
@@ -62,10 +85,22 @@ describe("dashboard derivation", () => {
     expect(result.points.find(point => point.tool === "invalid")?.authoritative).toBe(false);
     expect(result.frontier).not.toContain("invalid");
   });
-  it("populates intended calls and disables unavailable cost", () => {
+  it("populates intended calls and keeps cost separate from workload metrics", () => {
     const calls = deriveView(fixture(), "intended_tool_successful_calls", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false});
     expect(calls.points.find(point => point.tool === "tool")?.metricValue).toBe(2);
-    expect(metricAvailability(fixture(), false).estimated_monetary_cost).toBe(false);
+    expect(Object.keys(metricAvailability(fixture(), false))).not.toContain("equivalent_cost");
+  });
+  it("summarizes exact, bounded, and unavailable equivalent costs without point estimates", () => {
+    const exactRuns = [run("tool", "a", 1, 30, 100, 10, 1), run("tool", "a", 2, 30, 100, 10, 1)];
+    expect(summarizeEquivalentCost(exactRuns).exact_usd_nanos).toBe(200_000_000);
+    exactRuns[1].equivalent_cost = cost("bounded", 100_000_000, 150_000_000);
+    const bounded = summarizeEquivalentCost(exactRuns);
+    expect(bounded.status).toBe("bounded");
+    expect(formatEquivalentCost(bounded)).toBe("$0.20–$0.25");
+    exactRuns[1].equivalent_cost = cost("unavailable");
+    const unavailable = summarizeEquivalentCost(exactRuns);
+    expect(unavailable.status).toBe("unavailable");
+    expect(formatEquivalentCost(unavailable)).toBe("Unavailable");
   });
   it("does not invent intervals when published hierarchical uncertainty is unavailable", () => {
     const repeated = deriveView(fixture(), "solve_wall_seconds", {issue: "a", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false});

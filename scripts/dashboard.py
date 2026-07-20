@@ -15,7 +15,7 @@ from jsonschema import Draft202012Validator
 ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD = ROOT / "dashboard"
 SCHEMA = ROOT / "schemas" / "dashboard-data.schema.json"
-VERSION = "operational-dashboard-v4"
+VERSION = "operational-dashboard-v5"
 
 METRIC_DESCRIPTORS: dict[str, dict[str, Any]] = json.loads(
     (DASHBOARD / "src" / "metric-descriptors.json").read_text(encoding="utf-8")
@@ -49,9 +49,6 @@ def _run_metrics(row: dict[str, Any]) -> dict[str, float | None]:
         "tool_calls": _number(row.get("tool_calls")),
         "intended_tool_successful_calls": _number(
             row.get("intended_tool_successful_solve_invocation_count")
-        ),
-        "estimated_monetary_cost": _number(
-            row.get("estimated_monetary_cost")
         ),
     }
 
@@ -124,6 +121,7 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
                     "added": [], "modified": [], "deleted": [], "renamed": [],
                     "protected_test_effect": "none",
                 },
+                "equivalent_cost": row["equivalent_cost"],
                 "metrics": _run_metrics(row),
             }
         )
@@ -288,6 +286,49 @@ def _schema_check(data: dict[str, Any]) -> list[str]:
     for index, run in enumerate(data.get("individual_runs", [])):
         if set(run.get("metrics", {})) != set(METRIC_DESCRIPTORS):
             errors.append(f"dashboard run {index} has incomplete metric fields")
+        cost = run.get("equivalent_cost")
+        if not isinstance(cost, dict):
+            errors.append(f"dashboard run {index} lacks equivalent-cost evidence")
+            continue
+        status = cost.get("status")
+        if status == "exact":
+            nanos = cost.get("exact_usd_nanos")
+            if (
+                nanos is None
+                or nanos != cost.get("lower_bound_usd_nanos")
+                or nanos != cost.get("upper_bound_usd_nanos")
+            ):
+                errors.append(
+                    f"dashboard run {index} has inconsistent exact equivalent cost"
+                )
+        elif status == "bounded":
+            lower = cost.get("lower_bound_usd_nanos")
+            upper = cost.get("upper_bound_usd_nanos")
+            if (
+                cost.get("exact_usd_nanos") is not None
+                or not isinstance(lower, int)
+                or not isinstance(upper, int)
+                or lower > upper
+            ):
+                errors.append(
+                    f"dashboard run {index} has inconsistent bounded equivalent cost"
+                )
+        elif status == "unavailable":
+            if any(
+                cost.get(field) is not None
+                for field in (
+                    "exact_usd_nanos",
+                    "lower_bound_usd_nanos",
+                    "upper_bound_usd_nanos",
+                )
+            ):
+                errors.append(
+                    f"dashboard run {index} prices unavailable evidence"
+                )
+        else:
+            errors.append(
+                f"dashboard run {index} has unknown equivalent-cost state"
+            )
     return errors
 
 

@@ -12,8 +12,7 @@ export type MetricKey =
   | "solve_wall_seconds"
   | "warm_end_to_end_seconds"
   | "tool_calls"
-  | "intended_tool_successful_calls"
-  | "estimated_monetary_cost";
+  | "intended_tool_successful_calls";
 
 export type MetricDescriptor = {
   absoluteField: MetricKey;
@@ -47,7 +46,7 @@ export const QUALITY_AXES: Record<QualityAxis, {label: string}> = {
 };
 
 export type TokenView = "total_input" | "cached_input" | "observed_non_cached_input" | "cache_writes"
-  | "output" | "reasoning" | "cache_hit_rate" | "weighted_load" | "pricing_cost";
+  | "output" | "reasoning" | "cache_hit_rate" | "weighted_load";
 
 export const TOKEN_VIEWS: Record<TokenView, {label: string; metric: MetricKey | null; caveat?: string}> = {
   total_input: {label: "Total input tokens", metric: "input_tokens"},
@@ -58,7 +57,29 @@ export const TOKEN_VIEWS: Record<TokenView, {label: string; metric: MetricKey | 
   reasoning: {label: "Reasoning output tokens (subset of output)", metric: "reasoning_output_tokens"},
   cache_hit_rate: {label: "Cache hit rate", metric: "cache_hit_rate"},
   weighted_load: {label: "Weighted token count", metric: "weighted_token_count"},
-  pricing_cost: {label: "Pricing-based cost", metric: "estimated_monetary_cost", caveat: "Available only with complete pinned price and cache-write telemetry"},
+};
+
+export type EquivalentCost = {
+  contract_id: "equivalent-codex-api-cost-current";
+  scope: "solve_only";
+  label: "Equivalent Codex API cost";
+  actual_invoice: false;
+  status: "exact" | "bounded" | "unavailable";
+  currency: "USD";
+  exact_usd_nanos: number | null;
+  lower_bound_usd_nanos: number | null;
+  upper_bound_usd_nanos: number | null;
+  reason: string;
+  pricing_descriptor_id: string;
+  pricing_descriptor_sha256: string;
+  request_usage_sha256: string | null;
+  request_evidence_level: "request" | "turn_aggregate" | "unavailable";
+  request_count: number | null;
+  billable_request_count: number | null;
+  retry_count: number | null;
+  presentation_exact_usd: string | null;
+  presentation_lower_bound_usd: string | null;
+  presentation_upper_bound_usd: string | null;
 };
 
 export type DashboardRun = {
@@ -100,6 +121,7 @@ export type DashboardRun = {
     renamed: Array<{from: string; to: string; similarity?: string | null}>;
     protected_test_effect: "none";
   };
+  equivalent_cost: EquivalentCost;
   metrics: Record<MetricKey, number | null>;
 };
 
@@ -167,7 +189,6 @@ const PUBLISHED_METRIC: Record<MetricKey, {ratio: string; interval: string}> = {
   warm_end_to_end_seconds: {ratio: "warm_time", interval: "warm_time_ratio"},
   tool_calls: {ratio: "calls", interval: "calls_ratio"},
   intended_tool_successful_calls: {ratio: "intended_tool_calls", interval: "intended_tool_calls_ratio"},
-  estimated_monetary_cost: {ratio: "cost", interval: "cost_ratio"},
 };
 
 export function assertMetricDescriptorParity(data: DashboardData): void {
@@ -220,6 +241,7 @@ export type ViewPoint = {
   correctnessUpper: number | null;
   metricLower: number | null;
   metricUpper: number | null;
+  equivalentCost: EquivalentCost;
 };
 
 export type IndividualViewPoint = DashboardRun & {
@@ -240,6 +262,80 @@ const median = (values: number[]) => {
 const summarize = (values: number[], statistic: "average" | "median") =>
   statistic === "average" ? average(values) : median(values);
 const blockId = (run: DashboardRun) => `${run.issue_id}::${run.repetition}`;
+
+const unavailableCost = (reason: string): EquivalentCost => ({
+  contract_id: "equivalent-codex-api-cost-current",
+  scope: "solve_only",
+  label: "Equivalent Codex API cost",
+  actual_invoice: false,
+  status: "unavailable",
+  currency: "USD",
+  exact_usd_nanos: null,
+  lower_bound_usd_nanos: null,
+  upper_bound_usd_nanos: null,
+  reason,
+  pricing_descriptor_id: "",
+  pricing_descriptor_sha256: "0".repeat(64),
+  request_usage_sha256: null,
+  request_evidence_level: "unavailable",
+  request_count: null,
+  billable_request_count: null,
+  retry_count: null,
+  presentation_exact_usd: null,
+  presentation_lower_bound_usd: null,
+  presentation_upper_bound_usd: null,
+});
+
+const displayUsd = (nanos: number) => (nanos / 1_000_000_000).toFixed(2);
+
+export function summarizeEquivalentCost(runs: DashboardRun[]): EquivalentCost {
+  if (!runs.length) return unavailableCost("no selected runs");
+  const costs = runs.map(run => run.equivalent_cost);
+  const first = costs[0];
+  if (costs.some(cost =>
+    cost.pricing_descriptor_id !== first.pricing_descriptor_id
+    || cost.pricing_descriptor_sha256 !== first.pricing_descriptor_sha256
+    || cost.currency !== first.currency
+  )) return unavailableCost("selected runs use different pricing descriptors");
+  const unavailable = costs.filter(cost => cost.status === "unavailable");
+  if (unavailable.length) {
+    return {
+      ...first,
+      status: "unavailable",
+      exact_usd_nanos: null,
+      lower_bound_usd_nanos: null,
+      upper_bound_usd_nanos: null,
+      reason: [...new Set(unavailable.map(cost => cost.reason))].sort().join("; "),
+      presentation_exact_usd: null,
+      presentation_lower_bound_usd: null,
+      presentation_upper_bound_usd: null,
+    };
+  }
+  const lower = costs.reduce((sum, cost) => sum + (cost.lower_bound_usd_nanos ?? 0), 0);
+  const upper = costs.reduce((sum, cost) => sum + (cost.upper_bound_usd_nanos ?? 0), 0);
+  const bounded = costs.some(cost => cost.status === "bounded");
+  return {
+    ...first,
+    status: bounded ? "bounded" : "exact",
+    exact_usd_nanos: bounded ? null : lower,
+    lower_bound_usd_nanos: lower,
+    upper_bound_usd_nanos: upper,
+    reason: bounded
+      ? [...new Set(costs.filter(cost => cost.status === "bounded").map(cost => cost.reason))].sort().join("; ")
+      : "all selected request-level pricing inputs are observed and reconciled",
+    presentation_exact_usd: bounded ? null : displayUsd(lower),
+    presentation_lower_bound_usd: displayUsd(lower),
+    presentation_upper_bound_usd: displayUsd(upper),
+  };
+}
+
+export function formatEquivalentCost(cost: EquivalentCost): string {
+  if (cost.status === "exact") return `$${cost.presentation_exact_usd}`;
+  if (cost.status === "bounded") {
+    return `$${cost.presentation_lower_bound_usd}–$${cost.presentation_upper_bound_usd}`;
+  }
+  return "Unavailable";
+}
 
 export function qualityValue(run: DashboardRun, axis: QualityAxis): number | null {
   const fields: Record<QualityAxis, number | null | undefined> = {
@@ -353,6 +449,7 @@ export function deriveView(
       correctnessUpper: null,
       metricLower: null,
       metricUpper: null,
+      equivalentCost: summarizeEquivalentCost(rows),
     };
     const published = data.published.comparisons[tool];
     if (publishedScope && qualityAxis === "correctness" && view === "relative" && tool !== "baseline-none" && published) {

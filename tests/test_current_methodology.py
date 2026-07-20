@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from current_methodology import (derive_token_usage, issue_diversity_preflight,
-    weighted_token_count, pricing_cost, score_requirement_contract, validate_requirement_contract)
+    weighted_token_count, score_requirement_contract, validate_requirement_contract)
 from methodology_fixture import run_fixture
 
 
@@ -30,7 +30,6 @@ class CurrentTokenMethodologyTests(unittest.TestCase):
         known = derive_token_usage({"input_tokens": 2, "cached_input_tokens": 1, "cache_write_tokens": 0, "output_tokens_including_reasoning": 0, "reasoning_output_tokens": 0})
         self.assertIsNone(unknown["cache_write_tokens"])
         self.assertEqual(0, known["cache_write_tokens"])
-        self.assertIsNone(pricing_cost(unknown, uncached_input_price=1, cache_write_price=1, cached_input_price=1, output_price=1))
 
 
 class CurrentCorrectnessMethodologyTests(unittest.TestCase):

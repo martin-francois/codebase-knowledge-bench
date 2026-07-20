@@ -278,12 +278,77 @@ observed_non_cached_input_tokens
 ```
 
 `TOK-002` Input tokens equal cached plus observed non-cached input. Missing cache-write telemetry is
-`null`, never zero. Pricing is unavailable without complete cache-write telemetry and a pinned dated
-price table. Weighted token count is not money.
+`null`, never zero. It widens equivalent-cost bounds when a finite range is provable and otherwise
+makes cost unavailable. A pinned dated price table is always required. Weighted token count is not
+money.
 
 `TOK-003` Reports publish cache-weight sensitivity at 0, 0.1, 0.25, and 1. Turn aggregates cannot
 identify cross-run cache reuse. Natural cache mode is explicit, and the documented cache lifetime is
 a minimum eligibility period rather than an eviction guarantee.
+
+`CST-001` Equivalent model cost is a separate solve-only metric named
+`Equivalent Codex API cost`. It is a deterministic equivalent under one frozen public pricing
+descriptor, not an actual invoice, subscription allocation, or claim about provider billing.
+Weighted token count retains its current formula and cache-weight sensitivity and MUST NOT be
+renamed, removed, or used as money.
+
+`CST-002` Every cost result has exactly one state:
+
+- `exact`: every request-level pricing input and every billable completed request or retry is
+  observed and reconciled;
+- `bounded`: supported evidence proves a finite lower and upper equivalent-cost bound but cannot
+  prove a point value; or
+- `unavailable`: the evidence cannot prove even a valid finite range.
+
+Exact state publishes one integer USD-nanos value and equal lower and upper bounds. Bounded state
+publishes distinct integer USD-nanos lower and upper bounds and a specific reason. Unavailable state
+publishes null values and a specific reason. Zero in exact state remains distinct from unavailable.
+Reports, dashboards, and website data MUST preserve the state and MUST NOT replace a range with a
+midpoint, plus/minus value, confidence interval, or other invented point estimate.
+
+`CST-003` One strict, dated, content-addressed pricing descriptor binds source URLs, retrieval and
+benchmark-effective dates, currency, configured model identity, ordinary input, cache-write,
+cached-input-read, and output rates, long-context threshold and multipliers, execution mode,
+service-tier and regional multipliers, hosted-tool rules, exact units, billable-attempt policy, and
+presentation rounding. Runtime MUST validate its canonical content SHA-256 and configured-model
+match and MUST NOT fetch mutable pricing. Missing, negative, ambiguous, inconsistent, or mismatched
+descriptor input fails closed.
+
+`CST-004` Every measured solve preserves a content-addressed request-usage artifact derived only
+from supported structured Codex telemetry. When request-level telemetry is available, each record
+binds a contiguous run-local ordinal, terminal outcome, billable status, input, cached-read,
+nullable cache-write and ordinary-input counts, output including reasoning, reasoning subset,
+model identity, long-context classification inputs, execution mode, service tier, region,
+hosted-tool usage, evidence source, and schema version. Duplicate or missing ordinals, missing
+terminal attempts, negative counts, cached input above input, cache writes above observed
+non-cached input, reasoning above output, model mismatch, and request/aggregate reconciliation
+failure are invalid.
+
+`CST-005` Supported turn-aggregate telemetry is preserved without pretending it is request-level
+evidence. When request partitioning, retry identity, or long-context classification is absent, the
+deriver may publish only a mathematically proven conservative range. If total aggregate input is at
+or below the long-context threshold, no constituent request can exceed that threshold. Above it,
+the conservative lower bound uses ordinary rates and the upper bound applies every descriptor
+modifier that could validly apply. Missing cache-write telemetry bounds observed non-cached input
+between zero and all eligible cache writes. If no finite range is provable, cost is unavailable.
+
+`CST-006` Currency derivation uses integer USD nanos and rational integer multipliers. Each
+request is priced before aggregation. Ordinary uncached input, cache writes, cached reads, output,
+and separately priced hosted-tool usage are distinct terms. Reasoning tokens are a subset of output
+and MUST NOT be added twice. Long-context, service-tier, regional, and hosted-tool modifiers come
+only from the frozen descriptor. Binary floating-point MUST NOT perform currency arithmetic;
+rounding occurs only in presentation according to the descriptor.
+
+`CST-007` The primary per-run value covers solve model requests only, including attributable
+completed retries. Model-bearing benchmark overhead such as model preflight and tool smoke is
+reported separately and is never allocated to tools without a separately versioned policy. Local
+compute, installation, indexing, codebase-tool subscriptions or hosted-service fees, ChatGPT
+subscription allocation, and human time are outside equivalent model cost.
+
+`CST-008` The pricing descriptor, request-usage artifact, and cost result form one authenticated
+chain in raw run metadata, execution and suite rows, validators, reports, dashboards, and published
+archives. Any usage, descriptor, hash, state, bound, provenance, or summary mutation fails
+validation. Existing published evidence remains immutable and is not reinterpreted.
 
 ## 12. Aggregation, reports, and dashboard
 
@@ -297,7 +362,9 @@ descriptive only.
 
 `RPT-003` Execution and suite Markdown, dashboard data, and the accessible browser table are rendered
 from validated current rows. The dashboard JSON validates under Draft 2020-12. Reports and dashboard
-show common fail and skip counts and protected process validity.
+show common fail and skip counts, protected process validity, and `Cost` qualified as
+`Equivalent Codex API cost` under the frozen descriptor. Cost is the primary reader-facing resource
+value; weighted token count remains separately available as a workload and debugging metric.
 
 `RPT-004` A mutation to execution correctness, tokens, suite aggregation, dashboard schema, or
 presentation projection is rejected by independent validation even if surrounding arithmetic is

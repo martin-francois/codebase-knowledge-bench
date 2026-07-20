@@ -1,0 +1,265 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/request-usage.schema.json",
+  "title": "Content-addressed solve request-usage evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "run_id",
+    "configured_model_identity",
+    "evidence_level",
+    "evidence_source",
+    "turn_aggregate",
+    "requests",
+    "request_count",
+    "billable_request_count",
+    "retry_count",
+    "terminal_attempts_complete",
+    "request_aggregate_reconciled",
+    "unavailable_reason",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "request-usage-current"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "configured_model_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_level": {
+      "enum": [
+        "request",
+        "turn_aggregate",
+        "unavailable"
+      ]
+    },
+    "evidence_source": {
+      "enum": [
+        "codex_jsonl_structured_usage",
+        "deterministic_fixture"
+      ]
+    },
+    "turn_aggregate": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/usage"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "requests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/request"
+      }
+    },
+    "request_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "billable_request_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "retry_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "terminal_attempts_complete": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "request_aggregate_reconciled": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "unavailable_reason": {
+      "type": "string"
+    },
+    "content_sha256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_tokens",
+        "cached_input_tokens",
+        "cache_write_tokens",
+        "ordinary_uncached_nonwrite_tokens",
+        "output_tokens_including_reasoning",
+        "reasoning_output_tokens"
+      ],
+      "properties": {
+        "input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cached_input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cache_write_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "ordinary_uncached_nonwrite_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "output_tokens_including_reasoning": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reasoning_output_tokens": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinal",
+        "retry_of_ordinal",
+        "attempt_outcome",
+        "billable",
+        "input_tokens",
+        "cached_input_tokens",
+        "cache_write_tokens",
+        "ordinary_uncached_nonwrite_tokens",
+        "output_tokens_including_reasoning",
+        "reasoning_output_tokens",
+        "model_identity",
+        "long_context_classification",
+        "execution_mode",
+        "service_tier",
+        "region",
+        "hosted_tool_usage",
+        "evidence_source",
+        "evidence_schema_version"
+      ],
+      "properties": {
+        "ordinal": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "retry_of_ordinal": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "attempt_outcome": {
+          "enum": [
+            "completed",
+            "failed",
+            "cancelled"
+          ]
+        },
+        "billable": {
+          "type": "boolean"
+        },
+        "input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cached_input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cache_write_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "ordinary_uncached_nonwrite_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "output_tokens_including_reasoning": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reasoning_output_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "model_identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "long_context_classification": {
+          "enum": [
+            "standard",
+            "long_context"
+          ]
+        },
+        "execution_mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "service_tier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "region": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hosted_tool_usage": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "evidence_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_schema_version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
