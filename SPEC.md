@@ -718,3 +718,10 @@ reconstruction, and clean-checkout source-only tests. No model-backed command is
 `RDY-004` Release command exit status is exact and fail closed. The `readiness` command exits zero
 only when its structured decision is exactly `GO`, and exits nonzero for `NO_GO` or any other status.
 Every other release command exits zero only when its structured status is exactly `passed`.
+
+`RDY-005` Fresh acceptance-canary readiness consumes only current published suite-row fields.
+Protected verification requires direct and common full-pass evidence, authoritative protected-process
+validity, trust validity, evaluated implementation evidence, operational eligibility, and candidate
+test changes with no protected-test effect. JSONL and artifact integrity are established by the
+successful strict suite validator and detached publication receipt; readiness MUST NOT require
+legacy internal runner fields that the current suite-row projection does not publish.

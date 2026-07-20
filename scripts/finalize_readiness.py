@@ -46,11 +46,11 @@ def build_readiness_payload(
     protected_ok = len(rows) == 3 and all(
         row.get("protected_direct_full_pass") is True
         and row.get("protected_common_full_pass") is True
+        and row.get("protected_process_valid") is True
         and row.get("trust_valid") is True
         and row.get("implementation_evaluated") is True
         and row.get("operational_rank_eligible") is True
-        and row.get("jsonl_parse_valid") is True
-        and row.get("artifact_integrity_valid") is True
+        and row.get("correctness_evidence_available") is True
         and isinstance(row.get("candidate_test_changes"), dict)
         and row["candidate_test_changes"].get("protected_test_effect") == "none"
         for row in rows
