@@ -70,7 +70,7 @@ class ReadinessTests(unittest.TestCase):
         )
         self.assertEqual("GO", payload["decision"])
         self.assertEqual(
-            "python3 scripts/run_benchmark_suite.py configs/published-three-repetition.toml",
+            "python3 scripts/run_benchmark_suite.py configs/symphony-trello.toml",
             payload["recommended_next_command"],
         )
 

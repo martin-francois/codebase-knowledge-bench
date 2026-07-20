@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 def classify(path: str) -> str:
-    if path == "configs/published-three-repetition.toml": return "published_config"
+    if path == "configs/symphony-trello.toml": return "published_config"
     if path.startswith("tests/"): return "test"
     if path.startswith("schemas/"): return "schema"
     if path.startswith("dashboard/"): return "dashboard"

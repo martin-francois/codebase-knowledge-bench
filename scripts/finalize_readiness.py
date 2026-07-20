@@ -98,7 +98,7 @@ def build_readiness_payload(
         "pilot_inference_not_estimable": analysis_mode == "pilot_only",
         "remaining_blockers": blockers,
         "recommended_next_command": (
-            "python3 scripts/run_benchmark_suite.py configs/published-three-repetition.toml"
+            "python3 scripts/run_benchmark_suite.py configs/symphony-trello.toml"
             if decision == "GO" else None
         ),
     }

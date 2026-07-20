@@ -217,7 +217,7 @@ def assemble(
         shutil.rmtree(evidence)
     evidence.mkdir(parents=True)
     production = json.loads(production_path.read_text(encoding="utf-8"))
-    normalized_path = repo / "configs/published-three-repetition.toml"
+    normalized_path = repo / "configs/symphony-trello.toml"
     config = read_config(normalized_path)
     issue_specs = parse_issue_matrix(config["issue_matrix"], normalized_path.parent)
     _write(evidence / "preflight/current-config.json", config)

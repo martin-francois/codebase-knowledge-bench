@@ -35,7 +35,7 @@ os.environ.setdefault(
         Path(configured_reuse).name
         if configured_reuse
         else "model-preflight-published-locked"
-        if profile == "published_three_repetition"
+        if profile == "symphony_trello"
         else f"model-preflight-gpt56sol-high-{stamp}"
     ),
 )
