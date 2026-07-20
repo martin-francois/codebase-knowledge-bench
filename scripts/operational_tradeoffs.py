@@ -1078,7 +1078,7 @@ def analyze_operational_tradeoffs(
     profiles = {}
     for name, tolerance in config["preference_profiles"].items():
         candidates = ["baseline-none"] if "baseline-none" in complete_variants else []
-        reasons = {"baseline-none": "reference workflow"} if candidates else {}
+        reasons = {"baseline-none": "baseline reference"} if candidates else {}
         for variant, comparison in comparisons.items():
             sensitivity = next(
                 item

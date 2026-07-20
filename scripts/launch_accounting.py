@@ -113,9 +113,9 @@ def record_child_spawn(
             raise ValueError("attempt has conflicting child-spawn receipts")
         return
     if int(ledger.get("actual_implementation_child_spawns") or 0) >= int(ledger["maximum_launches"]):
-        raise ValueError("canonical actual child-spawn budget exhausted")
+        raise ValueError("published-suite child-spawn budget exhausted")
     if int(arm.get("actual_child_spawn_count") or 0) >= int(ledger["maximum_launches_per_arm"]):
-        raise ValueError("per-arm actual child-spawn budget exhausted")
+        raise ValueError("per-run actual child-spawn budget exhausted")
     attempt.update({
         "child_process_spawned": True,
         "child_pid": int(receipt["child_pid"]),
@@ -170,5 +170,5 @@ def validate_ledger_accounting(ledger: dict[str, Any]) -> list[str]:
         if counted != int(arm.get("actual_child_spawn_count") or 0):
             errors.append(f"actual child-spawn count does not reconcile for {key}")
         if counted > int(ledger["maximum_launches_per_arm"]):
-            errors.append(f"per-arm actual child-spawn budget exceeded for {key}")
+            errors.append(f"per-run actual child-spawn budget exceeded for {key}")
     return errors

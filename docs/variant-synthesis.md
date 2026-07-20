@@ -1,12 +1,12 @@
 # Variant Synthesis
 
 This document records the comparison of the six uploaded documentation variants under
-`/home/server/variants` with the repository's canonical `AGENTS.md` and `SPEC.md`.
+`/home/server/variants` with the repository's root `AGENTS.md` and `SPEC.md`.
 
 ## Decision rules
 
-- Preserve the current operational-workflow and attributable-tool-effect model.
-- Preserve stable requirement IDs, root-level layout, private status, exact canonical profile,
+- Preserve the current operational tool comparison and attributable-tool-effect model.
+- Preserve stable requirement IDs, root-level layout, private status, exact published profile,
   anti-leak gates, formulas, and existing traceability.
 - Adopt a variant clause only when it is clearer, stricter, or more reproducible and does not
   restore superseded eligibility or scoring behavior.
@@ -27,7 +27,7 @@ existing scoring and benchmark requirements were not duplicated because `SPEC.md
 Strongest contribution: concise engineering boundaries. Incorporated pure derivation primitives,
 treatment-specific adapters versus treatment-neutral scoring, untrusted-input handling, persisted rule
 versions and denominators, complete-diff review, and formal read-only compliance-audit behavior.
-References to lowercase `spec.md` were normalized to canonical `SPEC.md`.
+References to lowercase `spec.md` were normalized to the root `SPEC.md`.
 
 ### `AGENTS_3.md`
 
@@ -41,9 +41,9 @@ adopted because this repository does not currently declare those dependencies or
 ### `SPEC_1.md`
 
 Strongest contribution: exhaustive lifecycle coverage and definition-of-done detail. Incorporated the
-explicit 63-arm canonical matrix, immutable plan input, versioned classification metadata, centralized
+explicit 63-run published suite, immutable plan input, versioned classification metadata, centralized
 derivation, audit method, and completion discipline. Its alternative focused-context rule (50 entities,
-25,000 characters, and 20 percent precision) was rejected because canonical v4 uses the implemented
+25,000 characters, and 20 percent precision) was rejected because the current specification uses the implemented
 40-item, 4:1 rejected-to-accepted, and 400-node limits.
 
 ### `spec_2.md`
@@ -51,17 +51,17 @@ derivation, audit method, and completion discipline. Its alternative focused-con
 Strongest contribution: engineering and adapter contracts. Incorporated adapter-neutral boundaries,
 safe derived-output publication, issue-context normalization, untrusted-input parsing, and explicit
 audit/recomputation expectations. Alternate environment names such as `BENCH_REPO_URL` were not adopted
-because the current canonical interface uses `BENCH_TARGET_REPO_URL`.
+because the current interface uses `BENCH_TARGET_REPO_URL`.
 
 ### `spec_3.md`
 
 Strongest contribution: concise field and lifecycle semantics. Incorporated full-precision versus
-display-rounding requirements, versioned focus limits, canonical matrix size, deterministic adapter
+display-rounding requirements, versioned focus limits, published suite size, deterministic adapter
 normalization, and formal audit verdict semantics. Duplicate descriptions of existing formulas,
 fixtures, artifacts, and anti-leak rules were not repeated.
 
 ## Result
 
-The canonical documents remain shorter than the union of all variants while now retaining their best
+The current documents remain shorter than the union of all variants while now retaining their best
 non-conflicting engineering guidance. `SPEC.md` remains implementation-independent and authoritative;
 `AGENTS.md` translates it into repository-specific working rules.

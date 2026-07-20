@@ -121,8 +121,8 @@ def render_markdown(ledger: dict[str, Any]) -> str:
     lines = [
         "# Autonomous readiness attempt ledger", "",
         f"- Maximum invocations: `{ledger['maximum_expensive_canary_invocations']}`",
-        f"- Maximum new child arms: `{ledger['maximum_new_child_arms']}`", "",
-        "| Attempt | Commit | Exit | New arms | Completed | Decision | Failure class | Output |", "| ---: | --- | ---: | ---: | ---: | --- | --- | --- |",
+        f"- Maximum new benchmark runs: `{ledger['maximum_new_child_arms']}`", "",
+        "| Attempt | Commit | Exit | New runs | Completed | Decision | Failure class | Output |", "| ---: | --- | ---: | ---: | ---: | --- | --- | --- |",
     ]
     for item in ledger["attempts"]:
         lines.append(
@@ -152,7 +152,7 @@ def assert_launch_allowed(config_path: Path, ledger: dict[str, Any]) -> dict[str
     if len(attempts) >= MAX_ATTEMPTS:
         raise RuntimeError("expensive canary invocation budget is exhausted")
     if arms + 3 > MAX_CHILD_ARMS:
-        raise RuntimeError("new child-arm budget would be exceeded")
+        raise RuntimeError("new benchmark-run budget would be exceeded")
     if git("status", "--short"):
         raise RuntimeError("harness worktree must be clean before an expensive canary")
     head = git("rev-parse", "HEAD")
@@ -208,7 +208,7 @@ def finish(config_path: Path, args: argparse.Namespace) -> int:
         "source_reconstruction_passed": args.source_reconstruction_passed,
     })
     if sum(int(row.get("new_child_arms_launched") or 0) for row in ledger["attempts"]) > MAX_CHILD_ARMS:
-        raise RuntimeError("recorded child-arm count exceeds hard budget")
+        raise RuntimeError("recorded benchmark-run count exceeds hard budget")
     save(json_path, markdown_path, ledger)
     return 0
 

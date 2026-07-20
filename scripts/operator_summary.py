@@ -157,8 +157,8 @@ def render_operator_summary(summary: dict[str, Any]) -> str:
         f"- Manifest root: `{summary['archive']['content_manifest_root_sha256']}`",
         f"- Source commit: `{summary['source']['commit']}`",
         f"- Git tree: `{summary['source']['git_tree']}`",
-        f"- Canonical result: `{summary['canonical_result']['path']}` (`{summary['canonical_result']['sha256']}`)", "",
-        "| Treatment | Correctness | Weighted tokens | Solve seconds | Warm seconds | Calls started | Intended-tool calls | Token change vs baseline | Solve-time change vs baseline | Strict attribution |", 
+        f"- Published result: `{summary['canonical_result']['path']}` (`{summary['canonical_result']['sha256']}`)", "",
+        "| Tool or baseline | Correctness | Weighted tokens | Solve seconds | Warm seconds | Calls started | Intended-tool calls | Token change vs baseline | Solve-time change vs baseline | Attribution-supported runs |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     def number(value: Any, digits: int = 2) -> str:
@@ -191,7 +191,7 @@ def validate_operator_summary(suite_dir: Path) -> list[str]:
         expected = build_operator_summary(suite_dir)
         actual = json.loads((suite_dir / "operator-summary.json").read_text())
         if actual != expected:
-            errors.append("operator summary JSON disagrees with archive canonical results")
+            errors.append("operator summary JSON disagrees with archived published results")
         if (suite_dir / "operator-summary.md").read_text() != render_operator_summary(expected):
             errors.append("operator summary Markdown disagrees with validated JSON")
     except (OSError, KeyError, ValueError, json.JSONDecodeError, zipfile.BadZipFile) as exc:

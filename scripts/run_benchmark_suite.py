@@ -3524,7 +3524,7 @@ def _main() -> None:
         for name in ("full-suite-readiness.json", "full-suite-readiness.md"):
             shutil.copy2(ledger_dir / name, suite_dir / name)
         if readiness["decision"] != "GO":
-            raise SystemExit("Canonical matrix completed but final readiness is NO_GO")
+            raise SystemExit("Published suite completed but final readiness is NO_GO")
     elif EXECUTION_PROFILE == "acceptance_canary":
         readiness = finalize_canary_readiness(suite_dir)
         if readiness["decision"] != "GO":

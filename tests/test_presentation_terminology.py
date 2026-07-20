@@ -57,6 +57,31 @@ class PresentationTerminologyTest(unittest.TestCase):
         self.assertNotIn("primary operational workflow ranking", suite_runner)
         self.assertNotIn("lowest modeled weighted token load", suite_runner)
 
+        scoring = (ROOT / "SCORING-MODEL.md").read_text(encoding="utf-8")
+        tool_guide = (ROOT / "tool-guides/quickstart-sources.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("## Protected correctness", scoring)
+        self.assertIn("Operational tool comparison", scoring)
+        self.assertNotIn("operational workflow ranking", tool_guide)
+
+    def test_generated_human_outputs_use_plain_run_labels(self) -> None:
+        operator_summary = (ROOT / "scripts/operator_summary.py").read_text(
+            encoding="utf-8"
+        )
+        readiness = (ROOT / "scripts/autonomous_readiness.py").read_text(
+            encoding="utf-8"
+        )
+        published_suite = (ROOT / "scripts/canonical_suite.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("| Tool or baseline |", operator_summary)
+        self.assertIn("Attribution-supported runs", operator_summary)
+        self.assertIn("Maximum new benchmark runs", readiness)
+        self.assertIn("Completed benchmark runs", published_suite)
+        self.assertIn("| Benchmark run |", published_suite)
+        self.assertNotIn('"# Canonical execution ledger"', published_suite)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -17,5 +17,5 @@ made.
 - `LLM-006` replay completeness: **not applicable**; replay, dependency, network, Git, and package
   behavior are unchanged.
 
-The reviewed change is limited to presentation terminology, documentation, operator messages, and
-their focused regression tests.
+The reviewed change completes a transcript-wide presentation-terminology audit across documentation,
+readiness output, operator messages, and their focused regression tests.

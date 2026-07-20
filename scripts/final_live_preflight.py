@@ -306,7 +306,7 @@ def assemble(
             "contract_sha256": sha256_file(contract),
             "channel_plan_sha256": sha256_file(plan),
             "issue_snapshot_sha256": sha256_file(snapshot),
-            "source": "current canonical configuration and content-addressed files",
+            "source": "current published configuration and content-addressed files",
         })
     _write(evidence / "methodology/contract-provenance.json", {
         "schema_id": "contract-provenance-current",

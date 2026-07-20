@@ -1,6 +1,6 @@
 # External review handoff
 
-Run `uv run python scripts/build_review_handoff.py` with the immutable canonical and supplement ZIPs,
+Run `uv run python scripts/build_review_handoff.py` with the immutable published suite and supplement ZIPs,
 an output directory, and the final `agent-response.md`. The generator exports every tracked source file,
 source identity and subject manifests, allowed report delta, machine and human reports, test evidence,
 registry files, and immutable publications. It writes detached SHA-256 and validation receipts.

@@ -339,5 +339,5 @@ class DashboardDataTest(unittest.TestCase):
             errors: list[str] = []
             validate_dashboard(root, suite_result, errors)
             self.assertIn(
-                "dashboard data differs from canonical suite analysis", errors
+            "dashboard data differs from published suite analysis", errors
             )

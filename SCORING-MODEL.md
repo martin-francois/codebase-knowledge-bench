@@ -2,7 +2,7 @@
 
 The sole current correctness methodology is `behavioral-correctness-current`.
 
-## Protected behavioral correctness
+## Protected correctness
 
 Each requested-behavior requirement owns independently observable protected evidence and a weight.
 One protected testcase has at most one weighted owner. The requested score is the earned requested
@@ -45,6 +45,6 @@ pricing fails closed when required telemetry or pinned prices are unavailable.
 
 ## Operational analysis
 
-Operational workflow analysis uses trust-valid task success. Attributable tool-effect analysis also
+Operational tool comparison uses trust-valid task success. Attributable tool-effect analysis also
 requires successful, relevant, bounded intended-tool use on balanced matched blocks. Resource and
 time views remain separate from correctness.

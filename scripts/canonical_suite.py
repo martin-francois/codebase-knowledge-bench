@@ -125,7 +125,7 @@ def validate_execution_profile(
     if resolved_configuration.get("require_clean_pushed_source", False):
         if not identity["clean"] or not identity["pushed"]:
             raise SystemExit(
-                "Fresh acceptance/canonical execution requires a clean HEAD pushed to origin/main"
+                "Fresh acceptance or published-suite execution requires a clean HEAD pushed to origin/main"
             )
     expected: dict[str, Any]
     if profile == "canonical_three_repetition":
@@ -171,7 +171,7 @@ def validate_execution_profile(
     if resolved_configuration.get("allow_code_upload") is not False:
         mismatches.append("allow_code_upload must be false")
     if mismatches:
-        raise SystemExit("Resolved execution profile is not canonical:\n- " + "\n- ".join(mismatches))
+        raise SystemExit("Resolved execution profile does not match the published profile:\n- " + "\n- ".join(mismatches))
     payload = {
         "schema_version": SCHEMA_VERSION,
         "profile": profile,
@@ -191,13 +191,13 @@ def validate_execution_profile(
             raise SystemExit(f"Frozen execution ledger is missing: {ledger_path}")
         persisted_profile = json.loads(ledger_path.read_text(encoding="utf-8")).get("profile")
         if not isinstance(persisted_profile, dict):
-            raise SystemExit("Frozen execution ledger has no canonical profile")
+            raise SystemExit("Frozen execution ledger has no published profile")
         current_without_source = dict(payload)
         persisted_without_source = dict(persisted_profile)
         current_without_source.pop("source", None)
         persisted_without_source.pop("source", None)
         if not json_semantically_equal(current_without_source, persisted_without_source):
-            raise SystemExit("Frozen execution profile differs from the current canonical configuration")
+            raise SystemExit("Frozen execution profile differs from the current published configuration")
         execution_source = persisted_profile.get("source")
         expected_commit = os.environ.get("BENCH_EXECUTION_SOURCE_COMMIT")
         expected_tree = os.environ.get("BENCH_EXECUTION_SOURCE_TREE")
@@ -255,7 +255,7 @@ def write_execution_control_provenance(
         "mixed_execution_matrix": False,
         "explanation": (
             "The control source only normalizes JSON-semantic profile comparison, selects the "
-            "single retryable arm, and coordinates deterministic publication. Every file that "
+            "single retryable benchmark run, and coordinates deterministic publication. Every file that "
             "can affect child execution matches the frozen execution source."
         ),
     }
@@ -476,7 +476,7 @@ def initialize_ledger(
         }
         for field, value in expected.items():
             if not json_semantically_equal(ledger.get(field), value):
-                raise SystemExit(f"Canonical ledger {field} does not match the resumed suite")
+                raise SystemExit(f"Published-suite ledger {field} does not match the resumed suite")
         contract_path = os.environ.get("BENCH_CHILD_EXECUTION_CONTRACT")
         if os.environ.get("BENCH_FROZEN_EXECUTION_LEDGER"):
             if not contract_path:
@@ -492,7 +492,7 @@ def initialize_ledger(
         for row in schedule["blocks"] for variant in row["order"]
     ]
     if len(planned) != maximum_unique_arms or len(set(planned)) != maximum_unique_arms:
-        raise SystemExit("Canonical planned arm set does not match the configured unique-arm budget")
+        raise SystemExit("Published planned run set does not match the configured unique-run budget")
     ledger = {
         "schema_version": LEDGER_VERSION,
         "profile": normalize_json_value(profile),
@@ -521,11 +521,11 @@ def initialize_ledger(
 def _write_ledger(suite_dir: Path, ledger: dict[str, Any]) -> None:
     atomic_json(suite_dir / "execution-ledger.json", ledger)
     lines = [
-        "# Canonical execution ledger", "",
+        "# Published-suite execution ledger", "",
         f"- Actual implementation child spawns: `{ledger['actual_implementation_child_spawns']}/{ledger['maximum_launches']}`",
         f"- Orchestration attempts: `{ledger['orchestration_attempts']}`",
-        f"- Completed arms: `{sum(item['terminal'] for item in ledger['arms'].values())}/{ledger['maximum_unique_arms']}`", "",
-        "| Arm | Orchestration attempts | Actual child spawns | Terminal |",
+        f"- Completed benchmark runs: `{sum(item['terminal'] for item in ledger['arms'].values())}/{ledger['maximum_unique_arms']}`", "",
+        "| Benchmark run | Orchestration attempts | Actual child spawns | Terminal |",
         "| --- | ---: | ---: | --- |",
     ]
     lines.extend(
@@ -538,7 +538,7 @@ def _write_ledger(suite_dir: Path, ledger: dict[str, Any]) -> None:
 def check_kill_switches(output_root: Path, suite_dir: Path) -> None:
     for path in (output_root / "canonical-three-repetition" / "STOP", Path.cwd() / "STOP_CANONICAL_BENCHMARK", suite_dir / "STOP"):
         if path.exists():
-            raise SystemExit(f"Canonical benchmark stopped by operator kill switch: {path}")
+            raise SystemExit(f"Published benchmark stopped by operator kill switch: {path}")
 
 
 def write_qualification_only_result(
@@ -575,7 +575,7 @@ def write_qualification_only_result(
     }
     atomic_json(suite_dir / "qualification-only.json", payload)
     (suite_dir / "qualification-only.md").write_text(
-        "# Canonical qualification-only rehearsal\n\n"
+        "# Published-suite qualification-only rehearsal\n\n"
         f"- Passed: `{passed}`\n"
         f"- Qualification cells: `{len(cells)}/21`\n"
         "- Implementation child launches: `0`\n"
@@ -584,7 +584,7 @@ def write_qualification_only_result(
         encoding="utf-8",
     )
     if not passed:
-        raise SystemExit("Canonical qualification-only matrix is incomplete or invalid")
+        raise SystemExit("Published-suite qualification-only comparison is incomplete or invalid")
     return payload
 
 
@@ -602,18 +602,18 @@ def begin_block(
     for key in scheduled_keys:
         arm = ledger["arms"].get(key)
         if arm is None:
-            raise SystemExit(f"Unscheduled canonical arm: {key}")
+            raise SystemExit(f"Unscheduled benchmark run: {key}")
         if arm["terminal"]:
             continue
         if arm["orchestration_attempt_count"] and arm.get("status") not in retryable_statuses:
-            raise SystemExit(f"Canonical arm is unfinished without a retryable status: {key}")
+            raise SystemExit(f"Benchmark run is unfinished without a retryable status: {key}")
         if arm["actual_child_spawn_count"] >= ledger["maximum_launches_per_arm"]:
-            raise SystemExit(f"Per-arm launch budget exhausted: {key}")
+            raise SystemExit(f"Per-run launch budget exhausted: {key}")
         keys.append(key)
     if not keys:
-        raise SystemExit("Refusing to relaunch a canonical block with no incomplete arms")
+        raise SystemExit("Refusing to relaunch a published-suite block with no incomplete runs")
     if ledger["actual_implementation_child_spawns"] + len(keys) > ledger["maximum_launches"]:
-        raise SystemExit("Canonical child launch budget would be exceeded")
+        raise SystemExit("Published-suite child launch budget would be exceeded")
     timestamp = datetime.now(timezone.utc).isoformat()
     for key in keys:
         reserve_attempt(ledger, key, started_at=timestamp)
@@ -693,7 +693,7 @@ def write_full_suite_readiness(
     )
     blockers = []
     if len(completed) != ledger["maximum_unique_arms"]:
-        blockers.append("canonical matrix is incomplete")
+        blockers.append("published suite is incomplete")
     if nonadherent:
         blockers.append("non-baseline treatment non-adherence: " + ", ".join(nonadherent))
     if not artifacts_valid:
@@ -717,7 +717,7 @@ def write_full_suite_readiness(
     (destination / "full-suite-readiness.md").write_text(
         "# Full-suite readiness\n\n"
         f"- Decision: **{decision}**\n"
-        f"- Completed arms: `{len(completed)}/{ledger['maximum_unique_arms']}`\n"
+        f"- Completed benchmark runs: `{len(completed)}/{ledger['maximum_unique_arms']}`\n"
         f"- Actual implementation child spawns: `{ledger['actual_implementation_child_spawns']}/{ledger['maximum_launches']}`\n"
         f"- All treatments adherent: `{not nonadherent}`\n"
         f"- Artifact integrity: `{artifacts_valid}`\n"

@@ -383,7 +383,7 @@ def validate_dashboard(
     join_ok = stored == expected
     report["canonical_join"] = "passed" if join_ok else "failed"
     if not join_ok:
-        schema_errors.append("dashboard data differs from canonical suite analysis")
+        schema_errors.append("dashboard data differs from published suite analysis")
     page = (output / "index.html").read_text(encoding="utf-8")
     network_tokens = ("src=\"http", "href=\"http", "src='http", "href='http")
     offline_ok = not any(token in page.lower() for token in network_tokens)
