@@ -20,7 +20,7 @@ TOKEN_FIELDS = (
     "cache_write_tokens", "uncached_nonwrite_input_tokens",
     "output_tokens_including_reasoning", "reasoning_output_tokens",
     "non_reasoning_output_tokens", "total_reported_tokens", "cache_hit_rate",
-    "weighted_tokens", "cache_reads_observed",
+    "weighted_token_count", "cache_reads_observed",
     "cache_write_metrics_available", "cache_write_metrics_unavailable_reason",
     "cache_isolation_mode", "cache_reuse_source_identifiable",
     "cross_run_cache_reuse_identifiable", "request_level_usage_available",
@@ -81,7 +81,7 @@ def derive_token_usage(usage: Mapping[str, Any], *, cache_isolation_mode: str = 
         "cache_ttl_minimum_seconds": CACHE_TTL_MINIMUM_SECONDS,
         "cache_maximum_retention_known": False,
     }
-    result["weighted_tokens"] = weighted_token_count(result, 0.1)
+    result["weighted_token_count"] = weighted_token_count(result, 0.1)
     return result
 
 

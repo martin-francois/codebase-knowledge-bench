@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { DashboardData, DashboardRun, METRICS, QUALITY_AXES, TOKEN_VIEWS, deriveView, metricAvailability, qualityAvailability } from "../src/analysis";
 
 const metrics = (tokens: number, time: number, calls: number, cost: number | null = null) => ({
-  weighted_tokens: tokens,
+  weighted_token_count: tokens,
   observed_non_cached_input_tokens: tokens * .8,
   output_tokens_including_reasoning: tokens * .1,
   reasoning_output_tokens: tokens * .05,
   solve_wall_seconds: time,
   warm_end_to_end_seconds: time + 10,
-  execution_calls_started: calls,
+  tool_calls: calls,
   intended_tool_successful_calls: 2,
   estimated_monetary_cost: cost,
 });
@@ -42,8 +42,8 @@ describe("dashboard derivation", () => {
       .toBe(Object.keys(METRICS).length);
   });
   it("recomputes issue and repetition filters", () => {
-    const all = deriveView(fixture(), "weighted_tokens", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false});
-    const issue = deriveView(fixture(), "weighted_tokens", {issue: "b", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false});
+    const all = deriveView(fixture(), "weighted_token_count", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false});
+    const issue = deriveView(fixture(), "weighted_token_count", {issue: "b", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false});
     expect(all.points.find(point => point.tool === "tool")?.metricValue).not.toBe(issue.points.find(point => point.tool === "tool")?.metricValue);
     const repetition = deriveView(fixture(), "solve_wall_seconds", {issue: "a", repetition: "1", statistic: "average", tolerance: 0, includeInvalid: false});
     expect(repetition.points.find(point => point.tool === "tool")?.metricChangePercent).toBeCloseTo(-20);
@@ -58,7 +58,7 @@ describe("dashboard derivation", () => {
     expect(() => deriveView(fixture(), "solve_wall_seconds", {issue: "all", repetition: "all", statistic: "average", tolerance: 3, includeInvalid: false})).toThrow("unsupported");
   });
   it("displays invalid runs without adding them to frontiers", () => {
-    const result = deriveView(fixture(), "weighted_tokens", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: true});
+    const result = deriveView(fixture(), "weighted_token_count", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: true});
     expect(result.points.find(point => point.tool === "invalid")?.authoritative).toBe(false);
     expect(result.frontier).not.toContain("invalid");
   });
@@ -81,7 +81,7 @@ describe("dashboard derivation", () => {
       run("baseline-none", "a", 2, 30, 100, 100, 10),
       run("tool", "a", 2, 30, 200, 100, 10),
     ];
-    const result = deriveView(data, "weighted_tokens", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false}, "relative");
+    const result = deriveView(data, "weighted_token_count", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false}, "relative");
     expect(result.points.find(point => point.tool === "tool")?.metricChangePercent).toBeCloseTo(0);
   });
   it("uses paired coordinates for relative individual runs", () => {
@@ -92,7 +92,7 @@ describe("dashboard derivation", () => {
   });
   it("uses the complete block intersection for absolute points", () => {
     const data = fixture();
-    const result = deriveView(data, "weighted_tokens", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false}, "absolute");
+    const result = deriveView(data, "weighted_token_count", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false}, "absolute");
     expect(result.points.find(point => point.tool === "baseline-none")?.coverageFraction).toBe(1);
     expect(result.points.find(point => point.tool === "tool")?.coverageFraction).toBe(1);
     expect(result.points.find(point => point.tool === "baseline-none")?.metricValue).toBeCloseTo(800);
@@ -108,7 +108,7 @@ describe("dashboard derivation", () => {
       },
       estimability: {estimable: true, issue_cluster_status: "limited_cluster_evidence", reason: null},
     };
-    const result = deriveView(data, "weighted_tokens", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false}, "relative");
+    const result = deriveView(data, "weighted_token_count", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false}, "relative");
     const point = result.points.find(candidate => candidate.tool === "tool")!;
     expect(point.correctnessDelta).toBe(10);
     expect(point.metricChangePercent).toBeCloseTo(-20);

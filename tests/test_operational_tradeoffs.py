@@ -44,13 +44,13 @@ def row(
         "common_regression_full_pass": True,
         "common_regression_score": 100.0,
         "correctness_score": correctness,
-        "weighted_tokens": tokens,
+        "weighted_token_count": tokens,
         "observed_non_cached_input_tokens": tokens * 0.8,
         "output_tokens_including_reasoning": tokens * 0.1,
         "reasoning_output_tokens": tokens * 0.05,
         "solve_wall_seconds": seconds,
         "warm_end_to_end_seconds": warm if warm is not None else seconds + 10,
-        "execution_calls_started": calls,
+        "tool_calls": calls,
         "intended_tool_successful_solve_invocation_count": (
             0 if tool == "baseline-none" else 2
         ),
@@ -302,8 +302,8 @@ class DashboardDataTest(unittest.TestCase):
             descriptors["solve_wall_seconds"]["relative_field"],
         )
         self.assertEqual(
-            "execution_calls_started_change_percent",
-            descriptors["execution_calls_started"]["relative_field"],
+            "tool_calls_change_percent",
+            descriptors["tool_calls"]["relative_field"],
         )
         self.assertTrue(
             any(not run["operational_eligible"] for run in data["individual_runs"])

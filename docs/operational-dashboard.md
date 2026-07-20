@@ -23,4 +23,4 @@ Token selectors include total input,
 cached input, observed non-cached input, nullable cache writes, output, reasoning, cache-hit rate,
 weighted load, and conditional pricing cost. Cache and requirement panels explain telemetry gaps,
 critical violations, mutant calibration, and methodology non-retroactivity. Historical dashboards
-continue to default to protected correctness and weighted tokens.
+continue to default to protected correctness and weighted token count.
