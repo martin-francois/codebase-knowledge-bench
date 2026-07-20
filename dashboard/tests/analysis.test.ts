@@ -42,8 +42,18 @@ const run = (tool: string, issue: string, repetition: number, correctness: numbe
   metrics: metrics(tokens, time, calls),
 });
 const fixture = (): DashboardData => ({
-  schema_version: "operational-dashboard-v5", suite_id: "fixture", analysis_mode: "repeated_matched",
+  schema_version: "operational-dashboard-v6", suite_id: "fixture", analysis_mode: "repeated_matched",
   tolerance_grid: [0, 1, 2.5, 5, 7.5, 10], default_tolerance: 2.5,
+  run_to_run_correctness: {
+    schema_id: "run-to-run-correctness-current",
+    range_method_id: "observed-min-max-repetition-means-v1",
+    confidence_interval_method_id: "normal-95-sample-stddev-repetition-means-v1",
+    minimum_repetitions_for_confidence_interval: 4,
+    fixed_issue_ids: ["a", "b"], expected_repetitions: [1, 2, 3],
+    expected_tools: ["baseline-none", "tool"], unexpected_tools: [], complete: false,
+    interpretation: "Run-to-run variability on fixed issues, not generalization.",
+    by_tool: {},
+  },
   points: [],
   individual_runs: [
     run("baseline-none", "a", 1, 30, 1000, 500, 10),
@@ -102,11 +112,23 @@ describe("dashboard derivation", () => {
     expect(unavailable.status).toBe("unavailable");
     expect(formatEquivalentCost(unavailable)).toBe("Unavailable");
   });
-  it("does not invent intervals when published hierarchical uncertainty is unavailable", () => {
+  it("shows the observed repetition range below four complete repetitions", () => {
     const repeated = deriveView(fixture(), "solve_wall_seconds", {issue: "a", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false});
     const pilot = deriveView(fixture(), "solve_wall_seconds", {issue: "b", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false});
-    expect(repeated.points.find(point => point.tool === "tool")?.intervalStatus).toBe("not_estimable");
-    expect(pilot.points.find(point => point.tool === "tool")?.intervalStatus).toBe("not_estimable");
+    expect(repeated.points.find(point => point.tool === "tool")?.intervalStatus).toBe("observed_range");
+    expect(pilot.points.find(point => point.tool === "tool")?.intervalStatus).toBe("observed_range");
+  });
+  it("computes the specified 95% interval at four repetitions", () => {
+    const data = fixture();
+    data.individual_runs = [1, 2, 3, 4].flatMap(repetition => [
+      run("baseline-none", "a", repetition, 20 + repetition, 100, 100, 10),
+      run("tool", "a", repetition, 28 + 2 * repetition, 80, 80, 8),
+    ]);
+    const result = deriveView(data, "weighted_token_count", {issue: "a", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false});
+    const point = result.points.find(candidate => candidate.tool === "tool")!;
+    expect(point.intervalStatus).toBe("confidence_interval_95");
+    expect(point.correctnessUncertainty?.confidence_interval_95?.sample_stddev).toBeCloseTo(Math.sqrt(20 / 3));
+    expect(point.correctnessUncertainty?.confidence_interval_95?.half_width).toBeCloseTo(1.96 * Math.sqrt(20 / 3) / 2);
   });
   it("uses geometric paired resource ratios", () => {
     const data = fixture();

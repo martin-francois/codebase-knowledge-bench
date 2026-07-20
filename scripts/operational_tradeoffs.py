@@ -11,7 +11,9 @@ import statistics
 from collections import defaultdict
 from typing import Any, Iterable
 
-SCHEMA_VERSION = "operational-tradeoffs-v4"
+from run_to_run_correctness import summarize_run_to_run_correctness
+
+SCHEMA_VERSION = "operational-tradeoffs-v5"
 SCHEDULE_VERSION = "hierarchical-matched-block-schedule-v2"
 
 METRICS: dict[str, dict[str, Any]] = {
@@ -383,6 +385,9 @@ def analyze_operational_tradeoffs(
     *,
     seed: int | None = None,
     resamples: int | None = None,
+    expected_issue_ids: Iterable[str] | None = None,
+    expected_repetitions: Iterable[int] | None = None,
+    expected_tools: Iterable[str] | None = None,
 ) -> dict[str, Any]:
     config = policy["operational_tradeoffs"]
     seed = int(config["bootstrap_seed"] if seed is None else seed)
@@ -403,6 +408,12 @@ def analyze_operational_tradeoffs(
             int(row.get("repetition") or 0),
             str(row.get("run_id") or ""),
         ),
+    )
+    run_to_run_correctness = summarize_run_to_run_correctness(
+        ordered_rows,
+        expected_issue_ids=expected_issue_ids,
+        expected_repetitions=expected_repetitions,
+        expected_tools=expected_tools,
     )
     all_by_tool: dict[str, dict[tuple[str, int], dict[str, Any]]] = defaultdict(dict)
     eligible_by_tool: dict[str, dict[tuple[str, int], dict[str, Any]]] = defaultdict(dict)
@@ -1305,6 +1316,7 @@ def analyze_operational_tradeoffs(
         "correctness_loss_tolerance_grid_points": tolerances,
         "coverage": coverage,
         "absolute_quality": absolute_aggregates,
+        "run_to_run_correctness": run_to_run_correctness,
         "matched_comparisons": comparisons,
         "complete_block_frontier": complete_frontier,
         "pairwise_baseline_relative_frontier": {

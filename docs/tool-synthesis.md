@@ -41,7 +41,7 @@ adopted because this repository does not currently declare those dependencies or
 ### `SPEC_1.md`
 
 Strongest contribution: exhaustive lifecycle coverage and definition-of-done detail. Incorporated the
-explicit 63-run published suite, immutable plan input, versioned classification metadata, centralized
+explicit 84-run published suite, immutable plan input, versioned classification metadata, centralized
 derivation, audit method, and completion discipline. Its alternative focused-context rule (50 entities,
 25,000 characters, and 20 percent precision) was rejected because the current specification uses the implemented
 40-item, 4:1 rejected-to-accepted, and 400-node limits.

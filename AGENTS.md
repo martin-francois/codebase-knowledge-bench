@@ -156,7 +156,7 @@ Audit commands, JSONL, stderr, MCP calls, paths, Git configuration, remotes, and
 Likely solution leakage invalidates evidence. Record reduced confidence when hard network
 denial cannot be proved.
 Use the resolved configurable YOLO mode consistently across model preflight, smoke, and solve. Its
-published default is enabled, while user profiles may opt out. Keep Bubblewrap isolation and disable
+published default is disabled, while user profiles may explicitly opt in. Keep Bubblewrap isolation and disable
 untrusted hooks in either mode. A capability probe is not child enforcement; never claim network
 denial unless structured evidence says `enforced_for_child=true`.
 
@@ -374,9 +374,9 @@ For every requested behavior change, update `SPEC.md` and the machine-readable p
   together rather than adding filename exceptions in individual publishers.
 - Repeated conclusions come only from matched issue/repetition blocks and the versioned `operational_inference` policy. Keep the seed fixed for deterministic fixtures, retain null inferential fields below the configured repetitions and issue clusters, use one shared schedule for complete-block comparisons, and use a stable tool-derived pair schedule only for explicitly labeled incomplete coverage. Never promote scalar ordering to an operational conclusion.
 - Published repeated runs use only `configs/symphony-trello.toml`. Before launching,
-  validate its exact 3 x 3 x 7 identity, a clean pushed source commit, all 21 qualification cells,
+  validate its exact 3 x 4 x 7 identity, a clean pushed source commit, all 21 qualification cells,
   the sealed toolchain lock, and the precommitted balanced tool schedule. Update the atomic
-  execution ledger before each run; enforce 63 unique keys, 70 total launches, two launches per key,
+  execution ledger before each run; enforce 84 unique keys, 96 total launches, two launches per key,
   both kill switches, and no completed-run relaunch. Never use `configs/default.toml` as an
   unreviewed substitute for the published execution profile.
 - Count an implementation launch only after the implementation child process is observed. Keep

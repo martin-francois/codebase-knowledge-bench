@@ -10,8 +10,15 @@ saving. The tolerance control changes tolerance-aware Pareto membership without 
 correctness.
 
 Filters cover issue, repetition, solve or warm scope, average or median, individual runs, uncertainty,
-frontier display, and excluded evidence. Excluded evidence is off by default. Pilot suites display
-uncertainty as not estimable.
+frontier display, and excluded evidence. Excluded evidence is off by default. Pilot suites do not
+display inferential paired intervals; absolute correctness can still show its descriptive observed
+repetition range.
+
+For absolute correctness with average aggregation, vertical whiskers show the observed repetition
+range below four complete repetitions and the two-sided 95% run-to-run confidence interval at four
+or more. The accessible table renders the latter as `mean ± half-width`. The same lower and upper
+bounds drive both table and chart. These bounds cover repetition averages over the fixed selected
+issues and do not describe generalization to new tasks.
 
 The equivalent HTML table follows the chart. All controls are keyboard-operable, focus is visible,
 SVG carries an accessible description, and reduced-motion preferences disable animation.

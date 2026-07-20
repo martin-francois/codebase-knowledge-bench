@@ -15,7 +15,7 @@ from jsonschema import Draft202012Validator
 ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD = ROOT / "dashboard"
 SCHEMA = ROOT / "schemas" / "dashboard-data.schema.json"
-VERSION = "operational-dashboard-v5"
+VERSION = "operational-dashboard-v6"
 
 METRIC_DESCRIPTORS: dict[str, dict[str, Any]] = json.loads(
     (DASHBOARD / "src" / "metric-descriptors.json").read_text(encoding="utf-8")
@@ -190,6 +190,7 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
             ]
         ),
         "metric_descriptors": descriptors,
+        "run_to_run_correctness": analysis["run_to_run_correctness"],
         "points": points,
         "individual_runs": runs,
         "published": {
@@ -272,6 +273,7 @@ def _schema_check(data: dict[str, Any]) -> list[str]:
         "tolerance_grid",
         "default_tolerance",
         "metric_descriptors",
+        "run_to_run_correctness",
         "points",
         "individual_runs",
         "published",

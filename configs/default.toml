@@ -32,7 +32,7 @@ tools = [
   "serena",
   "graphify",
 ]
-repetitions = 3
+repetitions = 4
 setup_workers = 3
 test_retries = 1
 preflight_timeout_seconds = 600

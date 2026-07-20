@@ -20,6 +20,12 @@ Suite rows are reconstructed from execution results and add only the fields name
 `SUITE_ONLY_FIELDS`. Aggregates, matched analyses, Markdown reports, and dashboard data are derived
 from those reconstructed rows and independently compared during validation.
 
+`aggregates.operational_tradeoffs.run_to_run_correctness` records the fixed issue and repetition
+universe, each tool's repetition averages, mean, observed range, and nullable 95% confidence
+interval. The interval must be null below four complete repetitions and is derived at four or more
+with method `normal-95-sample-stddev-repetition-means-v1`. Dashboard data copies the same object;
+validators reject stale, incomplete, or recomputation-inconsistent values.
+
 The live schemas are:
 
 - `schemas/current-correctness-preflight.schema.json`
