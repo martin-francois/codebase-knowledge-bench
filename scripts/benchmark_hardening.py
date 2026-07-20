@@ -530,32 +530,32 @@ def matched_operational_comparisons(
     }
     fields = (
         "correctness_score",
-        "weighted_tokens",
+        "weighted_token_count",
         "solve_wall_seconds",
-        "execution_calls_started",
-        "execution_calls_completed",
-        "execution_calls_successful",
-        "execution_calls_failed",
-        "execution_calls_cancelled",
-        "execution_calls_unfinished",
-        "shell_calls_started",
-        "shell_calls_completed",
-        "shell_calls_successful",
-        "shell_calls_failed",
-        "shell_calls_cancelled",
-        "shell_calls_unfinished",
-        "mcp_calls_started",
-        "mcp_calls_completed",
-        "mcp_calls_successful",
-        "mcp_calls_failed",
-        "mcp_calls_cancelled",
-        "mcp_calls_unfinished",
-        "web_calls_started",
-        "web_calls_completed",
-        "web_calls_successful",
-        "web_calls_failed",
-        "web_calls_cancelled",
-        "web_calls_unfinished",
+        "tool_calls",
+        "tool_calls_completed",
+        "tool_calls_successful",
+        "tool_calls_failed",
+        "tool_calls_cancelled",
+        "tool_calls_unfinished",
+        "shell_tool_calls",
+        "shell_tool_calls_completed",
+        "shell_tool_calls_successful",
+        "shell_tool_calls_failed",
+        "shell_tool_calls_cancelled",
+        "shell_tool_calls_unfinished",
+        "mcp_tool_calls",
+        "mcp_tool_calls_completed",
+        "mcp_tool_calls_successful",
+        "mcp_tool_calls_failed",
+        "mcp_tool_calls_cancelled",
+        "mcp_tool_calls_unfinished",
+        "web_tool_calls",
+        "web_tool_calls_completed",
+        "web_tool_calls_successful",
+        "web_tool_calls_failed",
+        "web_tool_calls_cancelled",
+        "web_tool_calls_unfinished",
         "intended_tool_successful_solve_invocation_count",
         "intended_tool_failed_solve_invocation_count",
         "native_search_call_count",
@@ -704,8 +704,8 @@ EXECUTION_ITEM_KINDS = {
 }
 
 
-def execution_call_lifecycle(path: Path) -> dict[str, Any]:
-    """Reconstruct execution-call lifecycle from stable JSONL item IDs."""
+def tool_call_lifecycle(path: Path) -> dict[str, Any]:
+    """Reconstruct tool-call lifecycle from stable JSONL item IDs."""
 
     starts: dict[str, tuple[str, dict[str, Any]]] = {}
     terminals: dict[str, tuple[str, dict[str, Any]]] = {}
@@ -738,7 +738,7 @@ def execution_call_lifecycle(path: Path) -> dict[str, Any]:
                 if item_id not in starts:
                     anomalies.append({"kind": "terminal_without_start", "item_id": item_id, "line": line_number})
 
-    metrics: dict[str, Any] = {"execution_lifecycle_anomalies": anomalies}
+    metrics: dict[str, Any] = {"tool_call_lifecycle_anomalies": anomalies}
     states: list[dict[str, Any]] = []
     for item_id, (kind, start_item) in starts.items():
         terminal = terminals.get(item_id)
@@ -792,16 +792,26 @@ def execution_call_lifecycle(path: Path) -> dict[str, Any]:
             "state": "cancelled" if cancelled else "completed_failure" if failed else "completed_success",
             "start_missing": True,
         })
-    metrics["execution_call_lifecycle"] = states
+    metrics["tool_call_lifecycle"] = states
     for kind in ("execution", "shell", "mcp", "web"):
         selected = states if kind == "execution" else [row for row in states if row["kind"] == kind]
-        prefix = "execution" if kind == "execution" else kind
-        metrics[f"{prefix}_calls_started"] = len(selected)
-        metrics[f"{prefix}_calls_completed"] = sum(row["state"].startswith("completed_") for row in selected)
-        metrics[f"{prefix}_calls_successful"] = sum(row["state"] == "completed_success" for row in selected)
-        metrics[f"{prefix}_calls_failed"] = sum(row["state"] == "completed_failure" for row in selected)
-        metrics[f"{prefix}_calls_cancelled"] = sum(row["state"] == "cancelled" for row in selected)
-        metrics[f"{prefix}_calls_unfinished"] = sum(row["state"] == "unfinished" for row in selected)
+        prefix = "" if kind == "execution" else f"{kind}_"
+        metrics[f"{prefix}tool_calls"] = len(selected)
+        metrics[f"{prefix}tool_calls_completed"] = sum(
+            row["state"].startswith("completed_") for row in selected
+        )
+        metrics[f"{prefix}tool_calls_successful"] = sum(
+            row["state"] == "completed_success" for row in selected
+        )
+        metrics[f"{prefix}tool_calls_failed"] = sum(
+            row["state"] == "completed_failure" for row in selected
+        )
+        metrics[f"{prefix}tool_calls_cancelled"] = sum(
+            row["state"] == "cancelled" for row in selected
+        )
+        metrics[f"{prefix}tool_calls_unfinished"] = sum(
+            row["state"] == "unfinished" for row in selected
+        )
     return metrics
 
 
@@ -1034,7 +1044,7 @@ def efficiency_views(row: dict[str, Any], *, amortization_tasks: Iterable[int] =
     cold_measured = bool(row.get("clean_install_measured"))
     persistent = setup + index
     return {
-        "solve_only_provisioned": {"seconds": solve, "weighted_tokens": row.get("weighted_tokens")},
+        "solve_only_provisioned": {"seconds": solve, "weighted_token_count": row.get("weighted_token_count")},
         "warm_end_to_end": {"seconds": warm, "includes": ["setup", "index", "smoke", "solve", "common_verification"]},
         "cold_install_first_use": ({"seconds": install + warm, "measured": True} if cold_measured else {"measured": False}),
         "persistent_index_amortized": {

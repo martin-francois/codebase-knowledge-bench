@@ -24,7 +24,7 @@ function Chart({spec, label}: {spec: object; label: string}) {
 
 function App() {
   const [view, setView] = useState<"absolute" | "relative">("absolute");
-  const [metric, setMetric] = useState<MetricKey>("weighted_tokens");
+  const [metric, setMetric] = useState<MetricKey>("weighted_token_count");
   const [qualityAxis, setQualityAxis] = useState<QualityAxis>("correctness");
   const [tokenView, setTokenView] = useState<TokenView>("weighted_load");
   const [filters, setFilters] = useState<Filters>({

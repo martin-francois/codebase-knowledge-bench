@@ -22,10 +22,10 @@ const publishedDescriptors = Object.fromEntries(Object.entries(descriptorSource)
 }]));
 
 const metricValues = (tokens: number, time: number, calls: number) => ({
-  weighted_tokens: tokens, observed_non_cached_input_tokens: tokens * .8,
+  weighted_token_count: tokens, observed_non_cached_input_tokens: tokens * .8,
   output_tokens_including_reasoning: tokens * .1, reasoning_output_tokens: tokens * .05,
   solve_wall_seconds: time, warm_end_to_end_seconds: time + 10,
-  execution_calls_started: calls, intended_tool_successful_calls: 2,
+  tool_calls: calls, intended_tool_successful_calls: 2,
   estimated_monetary_cost: null,
 });
 const makeRun = (tool: string, issue: string, repetition: number, correctness: number, tokens: number, time: number, calls: number, eligible = true) => ({
@@ -74,7 +74,7 @@ test("offline dashboard controls and table remain synchronized", async ({page}) 
   await page.getByRole("button", {name: "Relative to baseline"}).click();
   await page.getByLabel("X-axis metric").selectOption("solve_wall_seconds");
   await expect(page.locator('tr[data-tool="tool"]')).toContainText("-35.07");
-  await page.getByLabel("X-axis metric").selectOption("execution_calls_started");
+  await page.getByLabel("X-axis metric").selectOption("tool_calls");
   await expect(page.locator('tr[data-tool="tool"]')).toContainText("-38.40");
   await expect(page.locator('tr[data-tool="tool"]')).toContainText("Not estimable");
   await page.getByLabel("Issue", {exact: true}).selectOption("b");
@@ -82,7 +82,7 @@ test("offline dashboard controls and table remain synchronized", async ({page}) 
   await page.getByLabel("Issue", {exact: true}).selectOption("a");
   await page.getByLabel("Summary statistic").selectOption("median");
   await page.getByRole("button", {name: "Absolute"}).click();
-  await page.getByLabel("X-axis metric").selectOption("weighted_tokens");
+  await page.getByLabel("X-axis metric").selectOption("weighted_token_count");
   await expect(page.locator('tr[data-tool="tool"]')).toContainText("70.00");
   const before = await page.locator("svg path").count();
   await page.getByLabel("Individual runs").check();

@@ -10,8 +10,8 @@
         "repo://tests/test_current_methodology.py"
       ],
       "findings": [
-        "Renaming the reviewed repeated suite changes only its configuration, execution-profile, suite, resume-directory, and operator-command identity.",
-        "Each sanitized issue, requirement, exact selector, protected source identity, and channel owner remains unchanged and consistent with the methodology registry."
+        "The terminology change replaces the live weighted-token and started-call names across specification, schemas, derivation, reports, dashboard data, fixtures, and tests.",
+        "Each issue, requirement, exact selector, protected source identity, scoring rule, and channel owner remains unchanged and consistent with the methodology registry."
       ],
       "id": "LLM-001",
       "residual_uncertainty": "This review did not rerun a solve; it relied on current contracts, fixtures, and deterministic contract validation.",
@@ -24,8 +24,8 @@
         "repo://tests/test_publication_and_inference.py"
       ],
       "findings": [
-        "Base and reference expectations, requirement weights, observed outcomes, and correctness calculations are unchanged.",
-        "The suite identity rename does not reinterpret completed observations or alter any numeric result."
+        "Base and reference expectations, requirement weights, observed outcomes, token weighting, and correctness calculations are unchanged.",
+        "The renamed fields preserve every numeric result: weighted_token_count uses the existing formula, and tool_calls continues to count calls started by Codex."
       ],
       "id": "LLM-002",
       "residual_uncertainty": "No new benchmark observations were generated, so plausibility is bounded by the existing immutable evidence and fixtures.",
@@ -74,8 +74,8 @@
         "repo://tests/test_published_suite.py"
       ],
       "findings": [
-        "The current configuration, execution profile, suite ID, resume directory, documentation, and verification registry consistently identify the reviewed suite as Symphony for Trello.",
-        "The parser rejects execution-profile values outside the current custom, acceptance-canary, and Symphony for Trello contract.",
+        "The current specification, schemas, generated fixture, dashboard descriptors, reports, and provenance registry consistently use weighted token count and tool calls.",
+        "Obsolete weighted_tokens, calls_started, total_tool_calls, and actual_execution_calls fields are rejected rather than translated.",
         "Immutable historical evidence retains its original recorded identity; no compatibility reader, fallback key, alias, or migration translation was added."
       ],
       "id": "LLM-005",
@@ -106,11 +106,11 @@
     "This is implementing-agent self-review, not independent verification.",
     "No additional model call or model-backed verifier was authorized or invoked.",
     "No benchmark solve, canary, qualification, benchmark matrix, or exact-final artifact-backed proof was run.",
-    "The source_commit and report_envelope_commit identify the reviewed base commit; reviewed_subject_tree_sha256 binds its full Git tree manifest while the suite-identity working-tree diff is covered by the listed deterministic checks."
+    "The source_commit and report_envelope_commit identify the reviewed base commit; reviewed_subject_tree_sha256 binds its full Git tree manifest while the terminology-contract working-tree diff is covered by the listed deterministic checks."
   ],
   "overall_status": "passed",
   "report_envelope_commit": "d5f2cea9e7b27058964a4c921601093aef21ddeb",
-  "review_session_description": "The implementing coding agent reviewed the Symphony for Trello suite-identity rename after focused configuration, readiness, preflight, and registry tests and the complete Python suite. The review checked contract fidelity, outcome meaning, skip and process semantics, provenance, and replay-package behavior without invoking another model.",
+  "review_session_description": "The implementing coding agent reviewed the public terminology and machine-contract alignment after focused methodology, aggregation, dashboard, schema, and provenance tests and the complete Python suite. The review checked calculation fidelity, call-count semantics, strict old-field rejection, outcome meaning, provenance, and replay behavior without invoking another model.",
   "reviewed_artifacts": [
     "repo://AGENTS.md",
     "repo://README.md",

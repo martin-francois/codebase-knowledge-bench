@@ -34,7 +34,7 @@ candidate-test quality are separate diagnostics and never compensate for failed 
 ```text
 observed_non_cached_input_tokens = input_tokens - cached_input_tokens
 total_reported_tokens = input_tokens + output_tokens_including_reasoning
-weighted_tokens =
+weighted_token_count =
     observed_non_cached_input_tokens
   + cache_weight * cached_input_tokens
   + output_tokens_including_reasoning

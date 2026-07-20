@@ -18,7 +18,8 @@ class PresentationTerminologyTest(unittest.TestCase):
         forbidden = re.compile(
             r"(^|_)(arm|arms|variant|variants|treatment|treatments|canonical)($|_)"
             r"|behavioral_correctness|modeled_weighted|warm_workflow|run_records|tool_rows"
-            r"|execution_ids?$"
+            r"|execution_ids?$|weighted_tokens|calls_started|total_tool_calls"
+            r"|actual_execution_calls"
         )
 
         def contract_names(value: object) -> list[str]:
@@ -67,10 +68,10 @@ class PresentationTerminologyTest(unittest.TestCase):
         descriptors = json.loads(
             (ROOT / "dashboard/src/metric-descriptors.json").read_text(encoding="utf-8")
         )
-        weighted = descriptors["weighted_tokens"]
-        self.assertEqual("Weighted tokens", weighted["label"])
-        self.assertEqual("weighted_tokens", weighted["absoluteField"])
-        self.assertEqual("weighted_tokens_average", weighted["averageField"])
+        weighted = descriptors["weighted_token_count"]
+        self.assertEqual("Weighted token count", weighted["label"])
+        self.assertEqual("weighted_token_count", weighted["absoluteField"])
+        self.assertEqual("weighted_token_count_average", weighted["averageField"])
 
         analysis = (ROOT / "dashboard/src/analysis.ts").read_text(encoding="utf-8")
         dashboard = (ROOT / "dashboard/src/main.tsx").read_text(encoding="utf-8")
@@ -85,12 +86,12 @@ class PresentationTerminologyTest(unittest.TestCase):
         report = execution_report({"tools": []})
         self.assertIn("| tool or baseline |", report)
         self.assertIn("| correctness |", report)
-        self.assertIn("| weighted tokens |", report)
+        self.assertIn("| weighted token count |", report)
         self.assertNotIn("behavioral correctness", report.lower())
 
         suite = suite_report("example", [], {"by_tool": {}})
         self.assertIn("| tool or baseline |", suite)
-        self.assertIn("| weighted tokens per success |", suite)
+        self.assertIn("| weighted token count per success |", suite)
 
     def test_operator_guidance_uses_runs_and_tools(self) -> None:
         example = (ROOT / "examples/custom-suite.toml").read_text(encoding="utf-8")
@@ -105,7 +106,7 @@ class PresentationTerminologyTest(unittest.TestCase):
         self.assertIn("expensive benchmark runs", suite_runner)
         self.assertIn("primary operational tool comparison", suite_runner)
         self.assertNotIn("primary operational run ranking", suite_runner)
-        self.assertNotIn("lowest weighted tokens", suite_runner)
+        self.assertIn("lowest weighted token count", suite_runner)
 
         scoring = (ROOT / "SCORING-MODEL.md").read_text(encoding="utf-8")
         tool_guide = (ROOT / "tool-guides/quickstart-sources.md").read_text(
