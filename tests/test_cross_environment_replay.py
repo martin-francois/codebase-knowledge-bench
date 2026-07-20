@@ -53,7 +53,7 @@ from source_only_ci import (  # noqa: E402
     REQUIRED_COMMAND_NAMES,
     SOURCE_ONLY_USERSPACE_IMAGE,
     SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
-    canonical_bytes,
+    normalized_bytes,
     command_plan,
     command_plan_identity,
     sha256_file,
@@ -1090,7 +1090,7 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                         "path": browser_receipt.name,
                         "bytes": browser_receipt.stat().st_size,
                         "sha256": hashlib.sha256(
-                            canonical_bytes(browser_value)
+                            normalized_bytes(browser_value)
                         ).hexdigest(),
                         "status": "passed",
                     },

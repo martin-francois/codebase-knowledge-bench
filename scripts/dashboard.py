@@ -32,8 +32,8 @@ def _number(value: Any) -> float | None:
 
 def _run_metrics(row: dict[str, Any]) -> dict[str, float | None]:
     return {
-        "modeled_weighted_token_load": _number(
-            row.get("modeled_weighted_token_load")
+        "weighted_tokens": _number(
+            row.get("weighted_tokens")
         ),
         "input_tokens": _number(row.get("input_tokens")),
         "cached_input_tokens": _number(row.get("cached_input_tokens")),
@@ -45,7 +45,7 @@ def _run_metrics(row: dict[str, Any]) -> dict[str, float | None]:
         "total_reported_tokens": _number(row.get("total_reported_tokens")),
         "cache_hit_rate": _number(row.get("cache_hit_rate")),
         "solve_wall_seconds": _number(row.get("solve_wall_seconds")),
-        "warm_workflow_seconds": _number(row.get("warm_workflow_seconds")),
+        "warm_end_to_end_seconds": _number(row.get("warm_end_to_end_seconds")),
         "execution_calls_started": _number(row.get("execution_calls_started")),
         "intended_tool_successful_calls": _number(
             row.get("intended_tool_successful_solve_invocation_count")
@@ -62,11 +62,11 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
     analysis = suite_result["aggregates"]["operational_tradeoffs"]
     runs = []
     for row in sorted(
-        suite_result.get("variant_rows", []),
+        suite_result.get("runs", []),
         key=lambda item: (
             str(item.get("issue_id")),
             int(item.get("repetition") or 0),
-            str(item.get("variant")),
+            str(item.get("tool")),
         ),
     ):
         attribution = row.get("attribution") or {}
@@ -74,7 +74,7 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
             {
                 "issue_id": str(row.get("issue_id")),
                 "repetition": int(row.get("repetition") or 0),
-                "treatment": str(row.get("variant")),
+                "tool": str(row.get("tool")),
                 "operational_eligible": bool(
                     row.get("operational_rank_eligible")
                 ),
@@ -84,7 +84,7 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
                     "strict_direct_attribution_supported"
                 ),
                 "correctness": _number(
-                    row.get("behavioral_correctness_score")
+                    row.get("correctness_score")
                 ),
                 "requested_behavior": _number(row.get("requested_behavior_score")),
                 "critical_requirement_pass_rate": (
@@ -128,19 +128,19 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
             }
         )
     points = []
-    for treatment, aggregate in sorted(analysis["absolute_quality"].items()):
-        mean = aggregate["mean"]
-        comparison = analysis["matched_comparisons"].get(treatment, {})
+    for tool, aggregate in sorted(analysis["absolute_quality"].items()):
+        average = aggregate["average"]
+        comparison = analysis["matched_comparisons"].get(tool, {})
         points.append(
             {
-                "treatment": treatment,
-                "correctness": mean["correctness"],
+                "tool": tool,
+                "correctness": average["correctness"],
                 "metrics": {
-                    key: mean.get(
+                    key: average.get(
                         {
-                            "modeled_weighted_token_load": "tokens",
+                            "weighted_tokens": "tokens",
                             "solve_wall_seconds": "time",
-                            "warm_workflow_seconds": "warm_time",
+                            "warm_end_to_end_seconds": "warm_time",
                             "execution_calls_started": "calls",
                             "intended_tool_successful_calls": "intended_tool_calls",
                         }.get(key, key)
@@ -148,7 +148,7 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
                     for key in METRIC_DESCRIPTORS
                 },
                 "task_success": aggregate["task_success"],
-                "coverage": analysis["coverage"][treatment],
+                "coverage": analysis["coverage"][tool],
                 "paired_intervals": comparison.get("paired_intervals"),
             }
         )
@@ -156,7 +156,7 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
         key: {
             "absolute_field": key,
             "relative_field": value["relativeField"],
-            "mean_field": value["meanField"],
+            "average_field": value["averageField"],
             "median_field": value["medianField"],
             "direction": value["direction"],
             "label": value["label"],
@@ -167,7 +167,7 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
                 run["metrics"][key] is not None for run in runs
             ),
             "relative_available": any(
-                run["treatment"] == "baseline-none"
+                run["tool"] == "baseline-none"
                 and run["operational_eligible"]
                 and run["metrics"][key] not in {None, 0.0}
                 for run in runs
@@ -194,7 +194,7 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
         "metric_descriptors": descriptors,
         "points": points,
         "individual_runs": runs,
-        "canonical": {
+        "published": {
             "comparisons": analysis["matched_comparisons"],
             "coverage": analysis["coverage"],
             "complete_block_frontier": analysis["complete_block_frontier"],
@@ -276,7 +276,7 @@ def _schema_check(data: dict[str, Any]) -> list[str]:
         "metric_descriptors",
         "points",
         "individual_runs",
-        "canonical",
+        "published",
     }
     missing = sorted(required - set(data))
     if missing:
@@ -368,7 +368,7 @@ def validate_dashboard(
     report: dict[str, Any] = {
         "schema_version": "dashboard-semantic-validation-v1",
         "data_schema": "failed",
-        "canonical_join": "failed",
+        "published_join": "failed",
         "offline_dependencies": "failed",
         "browser_smoke": {"status": "not_run"},
         "errors": [],
@@ -381,7 +381,7 @@ def validate_dashboard(
     report["data_schema"] = "passed" if not schema_errors else "failed"
     expected = dashboard_data(suite_result)
     join_ok = stored == expected
-    report["canonical_join"] = "passed" if join_ok else "failed"
+    report["published_join"] = "passed" if join_ok else "failed"
     if not join_ok:
         schema_errors.append("dashboard data differs from published suite analysis")
     page = (output / "index.html").read_text(encoding="utf-8")

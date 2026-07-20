@@ -5,9 +5,9 @@ automated checks and six semantic self-review checks. Every automated check has 
 one positive fixture, one narrowly targeted negative fixture, structured evidence, and measured
 duration.
 
-| ID | Kind | Invariant |
+| ID | Kind | Intool |
 | --- | --- | --- |
-| `LIVE-PREFLIGHT-001` | automated | Canonical current config and `IssueSpec` invoke production issue preflight. |
+| `LIVE-PREFLIGHT-001` | automated | Published current config and `IssueSpec` invoke production issue preflight. |
 | `SELECTOR-EQUALITY-001` | automated | Contract evidence and observed preflight selectors have exact ownership and equality. |
 | `BASE-REFERENCE-001` | automated | Base/reference outcomes are observed through valid processes and satisfy scope rules. |
 | `OLD-CONFIG-REJECTION-001` | automated | Removed configuration fields are rejected without translation. |

@@ -30,7 +30,7 @@ from typing import Any, Callable, Mapping, Sequence
 from safe_archive import (
     MANIFEST_SCHEMA_ID,
     build_exact_tar,
-    canonical_root,
+    normalized_root,
     inspect_tree,
     safe_extract_exact_tar,
     sha256_file,
@@ -166,7 +166,7 @@ def _write_markdown(path: Path, title: str, rows: Mapping[str, Any]) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def _canonical_sha256(value: Any) -> str:
+def _published_sha256(value: Any) -> str:
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":")).encode(
             "utf-8"
@@ -728,7 +728,7 @@ def _rootfs_artifacts(
         "root": "runtime/replay-rootfs",
         "entries": entries,
         "entry_count": len(entries),
-        "manifest_root": canonical_root(entries),
+        "manifest_root": normalized_root(entries),
         "source_image_digest": build_receipt["source_image_digest"],
     }
     package_versions = {
@@ -792,7 +792,7 @@ def _rootfs_artifacts(
         "source_image_digest": build_receipt["source_image_digest"],
         "entries": license_entries,
         "entry_count": len(license_entries),
-        "manifest_root": _canonical_sha256(license_entries),
+        "manifest_root": _published_sha256(license_entries),
         "packages": build_receipt.get("packages", []),
     }
     return manifest, lock, license_manifest
@@ -1009,7 +1009,7 @@ def _runtime_lock(
             name: {
                 "entries": rows,
                 "entry_count": len(rows),
-                "manifest_root": _canonical_sha256(rows),
+                "manifest_root": _published_sha256(rows),
             }
             for name, rows in sorted(closure.items())
         },
@@ -1101,7 +1101,7 @@ def preflight_semantic_hashes(root: Path) -> dict[str, Any]:
         issues.append(
             {
                 "issue_id": issue,
-                "semantic_sha256": _canonical_sha256(projection),
+                "semantic_sha256": _published_sha256(projection),
                 "artifact_sha256": sha256_file(artifact_path),
                 "passed": artifact["passed"],
                 "exact_status_pairs": [
@@ -1117,7 +1117,7 @@ def preflight_semantic_hashes(root: Path) -> dict[str, Any]:
     return {
         "schema_id": "preflight-semantic-hashes-current",
         "issues": issues,
-        "semantic_root": _canonical_sha256(
+        "semantic_root": _published_sha256(
             [
                 {
                     "issue_id": row["issue_id"],
@@ -1344,7 +1344,7 @@ def build_target_package(
             "schema_id": "target-commit-manifest-current",
             "required_commits": commit_rows,
             "commit_count": len(commit_rows),
-            "manifest_root": canonical_root(commit_rows),
+            "manifest_root": normalized_root(commit_rows),
         },
     )
     _write_json(
@@ -1353,7 +1353,7 @@ def build_target_package(
             "schema_id": "target-tree-manifest-current",
             "trees": tree_rows,
             "tree_count": len(tree_rows),
-            "manifest_root": canonical_root(tree_rows),
+            "manifest_root": normalized_root(tree_rows),
         },
     )
     _create_bundle(
@@ -1506,7 +1506,7 @@ def build_target_package(
         bootstrap_manifest.update(
             {
                 "entry_count": len(bootstrap_manifest["entries"]),
-                "manifest_root": canonical_root(
+                "manifest_root": normalized_root(
                     bootstrap_manifest["entries"]
                 ),
             }
@@ -1723,7 +1723,7 @@ def build_target_package(
         "schema_id": "target-package-manifest-current",
         "entries": package_rows,
         "entry_count": len(package_rows),
-        "manifest_root": canonical_root(package_rows),
+        "manifest_root": normalized_root(package_rows),
         "excluded_self_paths": [
             "target/package-manifest.json",
             "target/target-package-validation.json",
@@ -1922,7 +1922,7 @@ def inspect_target_package(
             errors.append("target package exact member set mismatch")
         if package_manifest.get("entry_count") != len(observed):
             errors.append("target package manifest count mismatch")
-        if package_manifest.get("manifest_root") != canonical_root(
+        if package_manifest.get("manifest_root") != normalized_root(
             observed
         ):
             errors.append("target package manifest root mismatch")
@@ -1935,7 +1935,7 @@ def inspect_target_package(
         if (
             bootstrap_manifest.get("entries") != bootstrap_rows
             or bootstrap_manifest.get("manifest_root")
-            != canonical_root(bootstrap_rows)
+            != normalized_root(bootstrap_rows)
         ):
             errors.append("bootstrap Python exact member set mismatch")
         lock = json.loads(
@@ -1952,7 +1952,7 @@ def inspect_target_package(
             rootfs_manifest.get("entries") != rootfs_rows
             or rootfs_manifest.get("entry_count") != len(rootfs_rows)
             or rootfs_manifest.get("manifest_root")
-            != canonical_root(rootfs_rows)
+            != normalized_root(rootfs_rows)
         ):
             errors.append("replay rootfs exact member set mismatch")
         rootfs_lock = json.loads(
@@ -2821,7 +2821,7 @@ def _replay_review_handoff(
         "schema_id": "replay-review-handoff-manifest-current",
         "entries": entries,
         "entry_count": len(entries),
-        "manifest_root": canonical_root(entries),
+        "manifest_root": normalized_root(entries),
     }
     selected["review-handoff-manifest.json"] = (
         json.dumps(manifest, indent=2, sort_keys=True) + "\n"
@@ -2894,7 +2894,7 @@ def write_replay_evidence_manifest(
         "schema_id": "replay-evidence-manifest-current",
         "entries": entries,
         "entry_count": len(entries),
-        "manifest_root": canonical_root(entries),
+        "manifest_root": normalized_root(entries),
         "excluded_self": "replay-evidence-manifest.json",
     }
     _write_json(
@@ -2946,7 +2946,7 @@ def _write_partial_evidence_manifest(
         "schema_id": "partial-replay-evidence-manifest-current",
         "entries": entries,
         "entry_count": len(entries),
-        "manifest_root": canonical_root(entries),
+        "manifest_root": normalized_root(entries),
         "excluded_self": "partial-evidence-manifest.json",
     }
     _write_json(
@@ -3799,7 +3799,7 @@ def validate_replay_evidence(
     if (
         manifest.get("entries") != entries
         or manifest.get("entry_count") != len(entries)
-        or manifest.get("manifest_root") != canonical_root(entries)
+        or manifest.get("manifest_root") != normalized_root(entries)
     ):
         errors.append("replay evidence manifest is stale")
     return {

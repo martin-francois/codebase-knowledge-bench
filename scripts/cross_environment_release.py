@@ -79,7 +79,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def canonical_bytes(value: Any) -> bytes:
+def normalized_bytes(value: Any) -> bytes:
     return (
         json.dumps(value, indent=2, sort_keys=True) + "\n"
     ).encode("utf-8")
@@ -107,7 +107,7 @@ def validate_source_generated_equality(
 
 def write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(canonical_bytes(value))
+    path.write_bytes(normalized_bytes(value))
 
 
 def final_outer_identity(path: Path) -> dict[str, Any]:
@@ -970,7 +970,7 @@ REQUIRED = {
     "task-receipt.md",
 }
 
-def canonical(value):
+def normalized(value):
     return (json.dumps(value, indent=2, sort_keys=True) + "\\n").encode()
 
 def digest(data):
@@ -1028,8 +1028,8 @@ def zip_write(archive, name, data):
 def normalized_archive(payload_name, payload, shared, manifest):
     zero = zero_part_hashes(manifest)
     metadata = dict(shared)
-    metadata["split-delivery-manifest.json"] = canonical(zero)
-    metadata["split-index.json"] = canonical(zero)
+    metadata["split-delivery-manifest.json"] = normalized(zero)
+    metadata["split-index.json"] = normalized(zero)
     metadata["split-index.md"] = split_markdown(zero)
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, "w") as archive:
@@ -1095,16 +1095,16 @@ for part in parts:
             shared = current_shared
         elif current_shared != shared:
             raise SystemExit("shared split metadata differs")
-        normalized = digest(normalized_archive(
+        normalized_digest = digest(normalized_archive(
             payload_names[0], payload, current_shared, manifest
         ))
-        if normalized != row["part_zip_sha256"]:
+        if normalized_digest != row["part_zip_sha256"]:
             raise SystemExit("normalized part ZIP SHA-256 mismatch")
         observed.append({
             "filename": part.name,
             "bytes": len(raw),
             "sha256": digest(raw),
-            "normalized_sha256": normalized,
+            "normalized_sha256": normalized_digest,
         })
         rows.append((row["index"], row, payload))
 manifest = json.loads(manifest_bytes)
@@ -1381,8 +1381,8 @@ def _metadata_payloads(
         "source-only-browser-receipt.json":
             source_only_browser_receipt,
         "source-only-ci-receipt.json": source_only_ci_receipt,
-        "split-delivery-manifest.json": canonical_bytes(manifest),
-        "split-index.json": canonical_bytes(manifest),
+        "split-delivery-manifest.json": normalized_bytes(manifest),
+        "split-index.json": normalized_bytes(manifest),
         "split-index.md": _split_index_markdown(manifest),
         "task-receipt.json": task_receipt,
         "task-receipt.md": task_receipt_markdown,
@@ -1756,7 +1756,7 @@ def build_split_delivery(
         path.write_bytes(data)
         outputs.append(path)
     write_json(output / "split-delivery-manifest.json", manifest)
-    (output / "split-index.json").write_bytes(canonical_bytes(manifest))
+    (output / "split-index.json").write_bytes(normalized_bytes(manifest))
     (output / "split-index.md").write_bytes(
         _split_index_markdown(manifest)
     )

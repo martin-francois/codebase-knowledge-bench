@@ -32,7 +32,7 @@ FIELDS = {
     "stage_idle_warning_seconds": "BENCH_STAGE_IDLE_WARNING_SECONDS",
     "stage_terminate_on_idle": "BENCH_STAGE_TERMINATE_ON_IDLE",
     "stage_idle_termination_seconds": "BENCH_STAGE_IDLE_TERMINATION_SECONDS",
-    "variants": "BENCH_VARIANTS",
+    "tools": "BENCH_TOOLS",
     "selected_issues": "BENCH_ISSUES",
     "repetitions": "BENCH_REPETITIONS",
     "suite_id": "BENCH_SUITE_ID",
@@ -72,10 +72,10 @@ FIELDS = {
     "dashboard_enabled": "BENCH_DASHBOARD_ENABLED",
     "semantic_archive_validation": "BENCH_SEMANTIC_ARCHIVE_VALIDATION",
     "require_clean_pushed_source": "BENCH_REQUIRE_CLEAN_PUSHED_SOURCE",
-    "treatment_order_seed": "BENCH_TREATMENT_ORDER_SEED",
-    "maximum_unique_implementation_arms": "BENCH_MAXIMUM_UNIQUE_IMPLEMENTATION_ARMS",
+    "tool_order_seed": "BENCH_TOOL_ORDER_SEED",
+    "maximum_unique_implementation_runs": "BENCH_MAXIMUM_UNIQUE_IMPLEMENTATION_RUNS",
     "maximum_implementation_child_launches": "BENCH_MAXIMUM_IMPLEMENTATION_CHILD_LAUNCHES",
-    "maximum_launches_per_arm": "BENCH_MAXIMUM_LAUNCHES_PER_ARM",
+    "maximum_launches_per_run": "BENCH_MAXIMUM_LAUNCHES_PER_RUN",
 }
 
 BOOLEAN_FIELDS = {
@@ -100,8 +100,8 @@ POSITIVE_INTEGER_FIELDS = {
     "indexing_timeout_seconds", "smoke_timeout_seconds", "verification_timeout_seconds",
     "validation_timeout_seconds", "report_timeout_seconds", "setup_workers",
     "preflight_timeout_seconds", "repetitions", "progress_min_samples",
-    "treatment_order_seed", "maximum_unique_implementation_arms",
-    "maximum_implementation_child_launches", "maximum_launches_per_arm",
+    "tool_order_seed", "maximum_unique_implementation_runs",
+    "maximum_implementation_child_launches", "maximum_launches_per_run",
 }
 NONNEGATIVE_INTEGER_FIELDS = {"stage_retries", "test_retries", "preflight_retries"}
 POSITIVE_NUMBER_FIELDS = {
@@ -188,7 +188,7 @@ def read_config(path: Path) -> dict[str, Any]:
     for key in BOOLEAN_FIELDS:
         if key in section and not isinstance(section[key], bool):
             raise ValueError(f"benchmark {key} must be a boolean")
-    for key in ("variants", "selected_issues"):
+    for key in ("tools", "selected_issues"):
         if key in section and not isinstance(section[key], list):
             raise ValueError(f"benchmark {key} must be an array")
     for key in POSITIVE_INTEGER_FIELDS:

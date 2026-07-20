@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Canonical publication supplement validation receipt",
+  "title": "Published publication supplement validation receipt",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", "canonical_archive_sha256", "canonical_manifest_root",
+    "schema_version", "published_archive_sha256", "published_manifest_root",
     "supplement_archive", "supplement_archive_sha256", "supplement_archive_bytes",
     "supplement_manifest_root", "supplement_manifest_entry_count",
     "retry_provenance_complete", "evidence_gaps", "independent_archive_validation",
@@ -12,10 +12,10 @@
     "validation_result", "new_model_calls", "new_child_processes"
   ],
   "properties": {
-    "schema_version": {"const": "canonical-publication-supplement-v1"},
-    "canonical_archive_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "canonical_manifest_root": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "supplement_archive": {"const": "canonical-publication-supplement.zip"},
+    "schema_version": {"const": "published-publication-supplement-v1"},
+    "published_archive_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "published_manifest_root": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "supplement_archive": {"const": "published-publication-supplement.zip"},
     "supplement_archive_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "supplement_archive_bytes": {"type": "integer", "minimum": 1},
     "supplement_manifest_root": {"type": "string", "pattern": "^[0-9a-f]{64}$"},

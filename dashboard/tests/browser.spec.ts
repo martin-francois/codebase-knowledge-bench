@@ -6,14 +6,14 @@ import { pathToFileURL } from "node:url";
 const descriptorSource = JSON.parse(
   fs.readFileSync(path.join(process.cwd(), "src", "metric-descriptors.json"), "utf8"),
 ) as Record<string, {
-  absoluteField: string; relativeField: string; meanField: string; medianField: string;
+  absoluteField: string; relativeField: string; averageField: string; medianField: string;
   direction: "lower"; label: string; unit: string; availability: "required" | "optional";
   baselineRelativeMeaningful: boolean;
 }>;
 
 const publishedDescriptors = Object.fromEntries(Object.entries(descriptorSource).map(([key, value]) => [key, {
   absolute_field: value.absoluteField, relative_field: value.relativeField,
-  mean_field: value.meanField, median_field: value.medianField,
+  average_field: value.averageField, median_field: value.medianField,
   direction: value.direction, label: value.label, unit: value.unit,
   availability: value.availability,
   baseline_relative_meaningful: value.baselineRelativeMeaningful,
@@ -22,16 +22,16 @@ const publishedDescriptors = Object.fromEntries(Object.entries(descriptorSource)
 }]));
 
 const metricValues = (tokens: number, time: number, calls: number) => ({
-  modeled_weighted_token_load: tokens, observed_non_cached_input_tokens: tokens * .8,
+  weighted_tokens: tokens, observed_non_cached_input_tokens: tokens * .8,
   output_tokens_including_reasoning: tokens * .1, reasoning_output_tokens: tokens * .05,
-  solve_wall_seconds: time, warm_workflow_seconds: time + 10,
+  solve_wall_seconds: time, warm_end_to_end_seconds: time + 10,
   execution_calls_started: calls, intended_tool_successful_calls: 2,
   estimated_monetary_cost: null,
 });
-const makeRun = (treatment: string, issue: string, repetition: number, correctness: number, tokens: number, time: number, calls: number, eligible = true) => ({
-  treatment, issue_id: issue, repetition, correctness, operational_eligible: eligible,
+const makeRun = (tool: string, issue: string, repetition: number, correctness: number, tokens: number, time: number, calls: number, eligible = true) => ({
+  tool, issue_id: issue, repetition, correctness, operational_eligible: eligible,
   exclusion_reason: eligible ? null : "trust-invalid", task_success: false,
-  strict_attribution_supported: treatment === "baseline-none" ? null : false,
+  strict_attribution_supported: tool === "baseline-none" ? null : false,
   metrics: metricValues(tokens, time, calls),
 });
 const data = {
@@ -49,7 +49,7 @@ const data = {
     makeRun("tool", "b", 1, 35, 1000, 300, 15),
     makeRun("invalid", "a", 1, 100, 1, 1, 1, false),
   ],
-  canonical: {comparisons: {}, coverage: {}, complete_block_frontier: {}, exact_pareto_frontier: [], tolerance_aware_pareto_frontiers: {}, preference_profiles: {}, objective_specific_winners: {}, operational_stability: {}, observed_findings: {}, supported_findings: {}, correctness_tolerance_lenses: {}, resource_priority_candidates: {}},
+  published: {comparisons: {}, coverage: {}, complete_block_frontier: {}, exact_pareto_frontier: [], tolerance_aware_pareto_frontiers: {}, preference_profiles: {}, objective_specific_winners: {}, operational_stability: {}, observed_findings: {}, supported_findings: {}, correctness_tolerance_lenses: {}, resource_priority_candidates: {}},
 };
 
 test("offline dashboard controls and table remain synchronized", async ({page}) => {
@@ -70,20 +70,20 @@ test("offline dashboard controls and table remain synchronized", async ({page}) 
   await expect(page.getByLabel("Token view").locator('option[value="cache_writes"]')).toHaveAttribute("disabled", "");
   await expect(page.getByText(/minimum eligibility period, not an eviction guarantee/)).toBeVisible();
   await expect(page.getByText(/does not retroactively rescore historical suites/)).toBeVisible();
-  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("460.00");
+  await expect(page.locator('tr[data-tool="tool"]')).toContainText("460.00");
   await page.getByRole("button", {name: "Relative to baseline"}).click();
   await page.getByLabel("X-axis metric").selectOption("solve_wall_seconds");
-  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("-35.07");
+  await expect(page.locator('tr[data-tool="tool"]')).toContainText("-35.07");
   await page.getByLabel("X-axis metric").selectOption("execution_calls_started");
-  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("-38.40");
-  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("Not estimable");
+  await expect(page.locator('tr[data-tool="tool"]')).toContainText("-38.40");
+  await expect(page.locator('tr[data-tool="tool"]')).toContainText("Not estimable");
   await page.getByLabel("Issue", {exact: true}).selectOption("b");
-  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("-50.00");
+  await expect(page.locator('tr[data-tool="tool"]')).toContainText("-50.00");
   await page.getByLabel("Issue", {exact: true}).selectOption("a");
   await page.getByLabel("Summary statistic").selectOption("median");
   await page.getByRole("button", {name: "Absolute"}).click();
-  await page.getByLabel("X-axis metric").selectOption("modeled_weighted_token_load");
-  await expect(page.locator('tr[data-treatment="tool"]')).toContainText("70.00");
+  await page.getByLabel("X-axis metric").selectOption("weighted_tokens");
+  await expect(page.locator('tr[data-tool="tool"]')).toContainText("70.00");
   const before = await page.locator("svg path").count();
   await page.getByLabel("Individual runs").check();
   await expect.poll(() => page.locator("svg path").count()).toBeGreaterThan(before);
@@ -91,7 +91,7 @@ test("offline dashboard controls and table remain synchronized", async ({page}) 
   await expect(page.getByLabel("Correctness-loss tolerance")).toHaveValue("5");
   await expect(page.getByLabel("X-axis metric").locator('option[value="estimated_monetary_cost"]')).toHaveAttribute("disabled", "");
   await page.getByLabel("Include non-adherent or trust-invalid").check();
-  await expect(page.locator('tr[data-treatment="invalid"]')).toContainText("Excluded: trust-invalid");
+  await expect(page.locator('tr[data-tool="invalid"]')).toContainText("Excluded: trust-invalid");
   await page.getByRole("button", {name: "Absolute"}).focus();
   await expect(page.getByRole("button", {name: "Absolute"})).toBeFocused();
   await page.keyboard.press("Tab");

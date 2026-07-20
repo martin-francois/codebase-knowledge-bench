@@ -85,13 +85,13 @@ class ReviewHandoffTest(unittest.TestCase):
             with tarfile.open(tar_path) as archive:
                 from safe_archive import safe_extract_tar
                 safe_extract_tar(archive, extracted)
-            variants = {
+            tools = {
                 "byte": lambda: (extracted / "plain.txt").write_text("changed\n"),
                 "mode": lambda: (extracted / "tool.sh").chmod(0o644),
                 "missing": lambda: (extracted / "plain-link").unlink(),
                 "extra": lambda: (extracted / "extra.txt").write_text("extra\n"),
             }
-            for name, mutate in variants.items():
+            for name, mutate in tools.items():
                 with self.subTest(name=name):
                     subprocess.run(["git", "-C", str(extracted), "init", "-q"], check=True)
                     mutate()

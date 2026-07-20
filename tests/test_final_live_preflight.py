@@ -143,7 +143,7 @@ class ReplayDependencyArchiveValidationTest(unittest.TestCase):
             value["entries"][1]["sha256"] = "0" * 64
             value["manifest_root"] = __import__(
                 "safe_archive"
-            ).canonical_root(value["entries"])
+            ).normalized_root(value["entries"])
             manifest.write_text(json.dumps(value), encoding="utf-8")
             result = _validate_archive(archive, manifest)
             self.assertEqual("failed", result["status"])

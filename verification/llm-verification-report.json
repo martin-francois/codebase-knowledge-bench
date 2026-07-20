@@ -4,105 +4,144 @@
     {
       "evidence": [
         "repo://SPEC.md",
-        "repo://tests/test_presentation_terminology.py"
+        "repo://verification/methodology-current/contracts/issue-486.json",
+        "repo://verification/methodology-current/contracts/issue-488.json",
+        "repo://verification/methodology-current/contracts/issue-498.json",
+        "repo://tests/test_current_methodology.py"
       ],
       "findings": [
-        "The presentation-only vocabulary contract does not alter sanitized issues, requirement contracts, protected selectors, source identities, or channel ownership."
+        "The terminology contract changes field names but preserves each sanitized issue, requirement, exact selector, protected source identity, and channel owner.",
+        "The three current issue contracts remain internally consistent with the methodology registry and focused contract tests."
       ],
       "id": "LLM-001",
-      "residual_uncertainty": "Not applicable beyond confirming that the terminology diff does not touch issue-contract evidence.",
-      "status": "not_applicable"
-    },
-    {
-      "evidence": [
-        "repo://docs/methodology.md",
-        "repo://scripts/current_reports.py"
-      ],
-      "findings": [
-        "No base or reference observations, expected outcomes, requirement weights, or correctness calculations changed."
-      ],
-      "id": "LLM-002",
-      "residual_uncertainty": "Not applicable because no behavioral evidence or scoring path changed.",
-      "status": "not_applicable"
-    },
-    {
-      "evidence": [
-        "repo://SPEC.md",
-        "repo://docs/methodology.md"
-      ],
-      "findings": [
-        "The fail-closed common-test skip policy is unchanged; only its reader-facing correctness terminology was aligned."
-      ],
-      "id": "LLM-003",
-      "residual_uncertainty": "Not applicable because no test-result or skip interpretation changed.",
-      "status": "not_applicable"
-    },
-    {
-      "evidence": [
-        "repo://scripts/run_benchmark.py",
-        "repo://scripts/run_benchmark_suite.py"
-      ],
-      "findings": [
-        "Timeouts, signals, JUnit requirements, exit-code handling, launch gates, and resume behavior are unchanged; only operator-facing messages changed."
-      ],
-      "id": "LLM-004",
-      "residual_uncertainty": "Not applicable because process-validity logic and machine status values were not modified.",
-      "status": "not_applicable"
-    },
-    {
-      "evidence": [
-        "repo://dashboard/src/metric-descriptors.json",
-        "repo://dashboard/src/analysis.ts",
-        "repo://tests/test_presentation_terminology.py"
-      ],
-      "findings": [
-        "The transcript-wide terminology audit aligned reader-facing reports, guides, readiness output, and operator messages while the established arm, treatment, canonical, behavioral_correctness, modeled_weighted_token_load, and mean fields remain exact and unaliased."
-      ],
-      "id": "LLM-005",
-      "residual_uncertainty": "This is implementing-agent self-review; deterministic tests establish label-to-field parity.",
+      "residual_uncertainty": "This review did not rerun a solve; it relied on current contracts, fixtures, and deterministic contract validation.",
       "status": "passed"
     },
     {
       "evidence": [
-        "repo://README.md",
-        "repo://docs/spec-compliance.md",
+        "repo://fixtures/current-execution-results.json",
+        "repo://scripts/current_reports.py",
+        "repo://tests/test_publication_and_inference.py"
+      ],
+      "findings": [
+        "Base and reference expectations, requirement weights, observed outcomes, and correctness calculations are unchanged.",
+        "Fixture-backed recomputation continues to produce the same numeric results through the renamed current fields."
+      ],
+      "id": "LLM-002",
+      "residual_uncertainty": "No new benchmark observations were generated, so plausibility is bounded by the existing immutable evidence and fixtures.",
+      "status": "passed"
+    },
+    {
+      "evidence": [
+        "repo://SPEC.md",
+        "repo://docs/methodology.md",
+        "repo://scripts/current_validator.py",
         "repo://tests/test_harness.py"
       ],
       "findings": [
-        "Replay stages, dependency identities, network controls, Git bindings, and package contents are unchanged; documentation now consistently distinguishes reader-facing tools and benchmark runs from exact machine identifiers."
+        "A skipped or empty common test suite still cannot establish regression safety.",
+        "The current validator remains fail-closed for skipped common tests and missing evidence."
+      ],
+      "id": "LLM-003",
+      "residual_uncertainty": "The policy review covers current source and deterministic fixtures, not a fresh protected target execution.",
+      "status": "passed"
+    },
+    {
+      "evidence": [
+        "repo://scripts/run_benchmark.py",
+        "repo://scripts/run_benchmark_suite.py",
+        "repo://scripts/stage_process.py",
+        "repo://tests/test_harness.py",
+        "repo://tests/test_stage_process.py"
+      ],
+      "findings": [
+        "Behavioral failures remain distinct from timeouts, signals, missing JUnit evidence, and unexplained nonzero exits.",
+        "Timeout cleanup, process ownership, retry eligibility, and completion rules retain their existing semantics."
+      ],
+      "id": "LLM-004",
+      "residual_uncertainty": "This is implementing-agent self-review; deterministic process fixtures cover the changed vocabulary but cannot represent every host-kernel condition.",
+      "status": "passed"
+    },
+    {
+      "evidence": [
+        "repo://verification/methodology-current/execution-field-provenance.json",
+        "repo://schemas/execution-results.schema.json",
+        "repo://schemas/suite-results.schema.json",
+        "repo://schemas/operator-summary.schema.json",
+        "repo://dashboard/src/metric-descriptors.json",
+        "repo://tests/test_presentation_terminology.py"
+      ],
+      "findings": [
+        "The same tool, run, comparison, correctness, weighted-token, average, warm end-to-end, and published vocabulary now identifies fields across source, schemas, reports, and the dashboard.",
+        "Provenance categories remain explicit, and the current schemas reject fields outside the single current contract.",
+        "No compatibility reader, fallback key, duplicate container, or migration translation was added."
+      ],
+      "id": "LLM-005",
+      "residual_uncertainty": "The terminology audit is deterministic but remains an implementing-agent review rather than independent semantic verification.",
+      "status": "passed"
+    },
+    {
+      "evidence": [
+        "repo://scripts/cross_environment_release.py",
+        "repo://scripts/protected_verifier.py",
+        "repo://scripts/published_suite.py",
+        "repo://tests/test_cross_environment_replay.py",
+        "repo://tests/test_published_suite.py"
+      ],
+      "findings": [
+        "Target Git bindings, exact trees, dependency identities, network controls, and replay stages remain required.",
+        "Generated reconstruction and split-delivery validation use the renamed current contract and preserve exact archive identity checks."
       ],
       "id": "LLM-006",
-      "residual_uncertainty": "Not applicable because no replay or package-building behavior changed.",
-      "status": "not_applicable"
+      "residual_uncertainty": "No exact-final artifact-backed proof was run for this source-only terminology change.",
+      "status": "passed"
     }
   ],
   "independent_review": false,
   "limitations": [
     "This is implementing-agent self-review, not independent verification.",
     "No additional model call or model-backed verifier was authorized or invoked.",
-    "The source_commit and report_envelope_commit identify the reviewed base commit; reviewed_subject_tree_sha256 binds the post-change source diff with this self-referential report excluded."
+    "No benchmark solve, canary, qualification, benchmark matrix, or exact-final artifact-backed proof was run.",
+    "The source_commit and report_envelope_commit identify the reviewed base commit; reviewed_subject_tree_sha256 binds its full Git tree manifest while the working-tree diff is covered by the listed deterministic checks."
   ],
   "overall_status": "passed",
-  "report_envelope_commit": "318ebe9616a2b20a4a29fbb3750cc0c854605ecb",
-  "review_session_description": "The implementing coding agent reviewed the transcript-wide terminology audit after the complete Python suite and focused report tests. Stable machine fields, scoring, issue contracts, process semantics, provenance, and replay behavior were preserved.",
+  "report_envelope_commit": "f4fd94a6979cca85beddd632075ea3c2e607c4ad",
+  "review_session_description": "The implementing coding agent reviewed the breaking terminology and schema refactor after focused tests, dashboard validation, and the complete Python suite. The review checked contract fidelity, outcome meaning, skip and process semantics, provenance, and replay-package behavior without invoking another model.",
   "reviewed_artifacts": [
     "repo://AGENTS.md",
     "repo://README.md",
+    "repo://SCORING-MODEL.md",
     "repo://SPEC.md",
     "repo://dashboard/src/analysis.ts",
     "repo://dashboard/src/main.tsx",
     "repo://dashboard/src/metric-descriptors.json",
     "repo://docs/methodology.md",
-    "repo://SCORING-MODEL.md",
-    "repo://scripts/canonical_suite.py",
-    "repo://scripts/operator_summary.py",
+    "repo://fixtures/current-execution-results.json",
+    "repo://schemas/execution-results.schema.json",
+    "repo://schemas/operator-summary.schema.json",
+    "repo://schemas/suite-results.schema.json",
+    "repo://scripts/cross_environment_release.py",
     "repo://scripts/current_reports.py",
+    "repo://scripts/current_validator.py",
+    "repo://scripts/protected_verifier.py",
+    "repo://scripts/published_suite.py",
     "repo://scripts/run_benchmark.py",
     "repo://scripts/run_benchmark_suite.py",
-    "repo://tests/test_presentation_terminology.py"
+    "repo://scripts/stage_process.py",
+    "repo://tests/test_cross_environment_replay.py",
+    "repo://tests/test_current_methodology.py",
+    "repo://tests/test_harness.py",
+    "repo://tests/test_presentation_terminology.py",
+    "repo://tests/test_publication_and_inference.py",
+    "repo://tests/test_published_suite.py",
+    "repo://tests/test_stage_process.py",
+    "repo://verification/methodology-current/contracts/issue-486.json",
+    "repo://verification/methodology-current/contracts/issue-488.json",
+    "repo://verification/methodology-current/contracts/issue-498.json",
+    "repo://verification/methodology-current/execution-field-provenance.json"
   ],
-  "reviewed_subject_tree_sha256": "ea7bafbc482be63eb607b768a655dc907745276fb8b2d09046d14d879b7e291c",
+  "reviewed_subject_tree_sha256": "c472a29a329a75c00ca1c0b91f73397398e717d47a5105e960aaba25a7107e59",
   "reviewer_kind": "implementing_coding_agent",
   "self_review": true,
-  "source_commit": "318ebe9616a2b20a4a29fbb3750cc0c854605ecb"
+  "source_commit": "f4fd94a6979cca85beddd632075ea3c2e607c4ad"
 }

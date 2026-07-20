@@ -26,7 +26,7 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def canonical_sha256(value: Any) -> str:
+def published_sha256(value: Any) -> str:
     return sha256_bytes(json.dumps(value, sort_keys=True, separators=(",", ":")).encode())
 
 
@@ -92,7 +92,7 @@ def build(inner_zip: Path, checksum: Path, receipt: Path, agent_response: Path, 
         "schema_id": "external-review-delivery-manifest-current",
         "entries": entries,
         "entry_count": len(entries),
-        "manifest_root": canonical_sha256(entries),
+        "manifest_root": published_sha256(entries),
     }
     detailed = json.loads(receipt.read_text(encoding="utf-8"))
     inner_member = "review-handoff/" + inner_zip.name
@@ -196,7 +196,7 @@ def validate(path: Path) -> dict[str, Any]:
         manifest = json.loads(archive.read("delivery-manifest.json"))
         validation = json.loads(archive.read("delivery-validation.json"))
         entries = manifest["entries"]
-        if manifest["entry_count"] != len(entries) or manifest["manifest_root"] != canonical_sha256(entries):
+        if manifest["entry_count"] != len(entries) or manifest["manifest_root"] != published_sha256(entries):
             raise ValueError("delivery manifest count or root mismatch")
         for entry in entries:
             data = archive.read(entry["path"])

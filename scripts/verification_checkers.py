@@ -207,7 +207,7 @@ def observed_outcomes(repo: Path, fault: bool) -> dict[str, Any]:
 
 
 def old_config_rejection(repo: Path, fault: bool) -> dict[str, Any]:
-    source = (repo / "configs/canonical-three-repetition.toml").read_text(encoding="utf-8")
+    source = (repo / "configs/published-three-repetition.toml").read_text(encoding="utf-8")
     if fault:
         candidate = source
     else:
@@ -1101,7 +1101,7 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
         REQUIRED_COMMAND_NAMES,
         SOURCE_ONLY_USERSPACE_IMAGE,
         SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
-        canonical_bytes,
+        normalized_bytes,
         command_plan,
         command_plan_identity,
         sha256_file,
@@ -1231,7 +1231,7 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
             "errors": [],
             "validation_errors": [],
         }
-        browser_receipt.write_bytes(canonical_bytes(browser_value))
+        browser_receipt.write_bytes(normalized_bytes(browser_value))
         plan = command_plan(root / "source-only-methodology.json")
         plan_identity = command_plan_identity(plan, root)
         source_ci.write_text(
@@ -1266,7 +1266,7 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
                         "path": browser_receipt.name,
                         "bytes": browser_receipt.stat().st_size,
                         "sha256": hashlib.sha256(
-                            canonical_bytes(browser_value)
+                            normalized_bytes(browser_value)
                         ).hexdigest(),
                         "status": "passed",
                     },
@@ -1300,14 +1300,14 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
         debian_12 = root / "exact-final-debian-12-receipt.json"
         debian_13 = root / "exact-final-debian-13-receipt.json"
         debian_12.write_bytes(
-            canonical_bytes(matrix_value["environments"][0])
+            normalized_bytes(matrix_value["environments"][0])
         )
         debian_13.write_bytes(
-            canonical_bytes(matrix_value["environments"][1])
+            normalized_bytes(matrix_value["environments"][1])
         )
         task_receipt = root / "task-receipt.json"
         task_receipt_markdown = root / "task-receipt.md"
-        task_receipt.write_bytes(canonical_bytes(TASK_RECEIPT))
+        task_receipt.write_bytes(normalized_bytes(TASK_RECEIPT))
         task_receipt_markdown.write_text(
             "# Task receipt\n", encoding="utf-8"
         )
@@ -1370,7 +1370,7 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
         release_descriptor = root / "release-descriptor.json"
         release_descriptor_markdown = root / "release-descriptor.md"
         release_descriptor.write_bytes(
-            canonical_bytes(descriptor_value)
+            normalized_bytes(descriptor_value)
         )
         release_descriptor_markdown.write_text(
             descriptor_markdown(descriptor_value),
@@ -1378,7 +1378,7 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
         )
         package_origin = root / "package-origin.json"
         package_origin.write_bytes(
-            canonical_bytes(
+            normalized_bytes(
                 build_package_origin(
                     descriptor_value,
                     release_descriptor.read_bytes(),

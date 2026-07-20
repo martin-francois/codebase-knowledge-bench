@@ -1,19 +1,19 @@
-# Variant Synthesis
+# Tool Synthesis
 
-This document records the comparison of the six uploaded documentation variants under
-`/home/server/variants` with the repository's root `AGENTS.md` and `SPEC.md`.
+This document records the comparison of the six uploaded documentation tools under
+`/home/server/tools` with the repository's root `AGENTS.md` and `SPEC.md`.
 
 ## Decision rules
 
 - Preserve the current operational tool comparison and attributable-tool-effect model.
 - Preserve stable requirement IDs, root-level layout, private status, exact published profile,
   anti-leak gates, formulas, and existing traceability.
-- Adopt a variant clause only when it is clearer, stricter, or more reproducible and does not
+- Adopt a tool clause only when it is clearer, stricter, or more reproducible and does not
   restore superseded eligibility or scoring behavior.
 - Do not copy alternate focus thresholds, field names, commands, or paths that conflict with the
   implemented versioned contract.
 
-## Agent variants
+## Agent tools
 
 ### `AGENTS_1.md`
 
@@ -25,7 +25,7 @@ existing scoring and benchmark requirements were not duplicated because `SPEC.md
 ### `agents_2.md`
 
 Strongest contribution: concise engineering boundaries. Incorporated pure derivation primitives,
-treatment-specific adapters versus treatment-neutral scoring, untrusted-input handling, persisted rule
+tool-specific adapters versus tool-neutral scoring, untrusted-input handling, persisted rule
 versions and denominators, complete-diff review, and formal read-only compliance-audit behavior.
 References to lowercase `spec.md` were normalized to the root `SPEC.md`.
 
@@ -36,7 +36,7 @@ ladder, full-precision/report-rounding discipline, explicit no-child-solve defau
 and stronger final checks for schemas, reports, output, and secrets. Pyrefly/Ruff mandates were not
 adopted because this repository does not currently declare those dependencies or configurations.
 
-## Specification variants
+## Specification tools
 
 ### `SPEC_1.md`
 
@@ -62,6 +62,6 @@ fixtures, artifacts, and anti-leak rules were not repeated.
 
 ## Result
 
-The current documents remain shorter than the union of all variants while now retaining their best
+The current documents remain shorter than the union of all tools while now retaining their best
 non-conflicting engineering guidance. `SPEC.md` remains implementation-independent and authoritative;
 `AGENTS.md` translates it into repository-specific working rules.

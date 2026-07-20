@@ -67,14 +67,14 @@ def sanitize_payload(data: bytes, suffix: str, prefixes: dict[str, str]) -> byte
     return data
 
 
-def canonical_relative_path(raw: str) -> PurePosixPath:
+def normalized_relative_path(raw: str) -> PurePosixPath:
     if not raw or PLACEHOLDER_RE.search(raw) or "\\" in raw:
         raise ValueError(f"non-portable manifest path: {raw!r}")
     path = PurePosixPath(raw)
     if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
-        raise ValueError(f"non-canonical manifest path: {raw!r}")
+        raise ValueError(f"non-normalized manifest path: {raw!r}")
     if path.as_posix() != raw:
-        raise ValueError(f"non-canonical manifest path: {raw!r}")
+        raise ValueError(f"non-normalized manifest path: {raw!r}")
     return path
 
 
@@ -103,7 +103,7 @@ def validate_embedded_manifests(root: Path) -> dict[str, Any]:
             for entry in entries:
                 if not isinstance(entry, dict) or not entry.get("required", True):
                     continue
-                rel = canonical_relative_path(str(entry.get("path", "")))
+                rel = normalized_relative_path(str(entry.get("path", "")))
                 target = manifest_path.parent.joinpath(*rel.parts)
                 if not target.is_file():
                     raise ValueError(f"missing required artifact {rel}")
@@ -123,14 +123,14 @@ def validate_embedded_manifests(root: Path) -> dict[str, Any]:
             ]
             if results_path.is_file() and telemetry_contract_entries:
                 results = json.loads(results_path.read_text(encoding="utf-8"))
-                for row in results.get("variants", []):
+                for row in results.get("runs", []):
                     run_id = str(row.get("run_id") or "")
                     if not run_id:
                         continue
                     telemetry = manifest_path.parent / "runs" / run_id / "tool-invocations-solve.jsonl"
                     telemetry_errors = validate_tool_invocation_artifact(
                         telemetry,
-                        treatment=str(row.get("variant") or ""),
+                        tool=str(row.get("tool") or ""),
                         solve_expected=bool(row.get("implementation_evaluated") or row.get("operational_rank_eligible")),
                     )
                     if telemetry_errors:
@@ -143,7 +143,7 @@ def validate_embedded_manifests(root: Path) -> dict[str, Any]:
 
 def _safe_tar_members(archive: tarfile.TarFile) -> Iterable[tarfile.TarInfo]:
     for member in archive.getmembers():
-        canonical_relative_path(member.name.rstrip("/"))
+        normalized_relative_path(member.name.rstrip("/"))
         if member.issym() or member.islnk():
             raise ValueError(f"source archive contains link: {member.name}")
         yield member
@@ -174,7 +174,7 @@ def _reconstruct_source_archive(
             raise ValueError("effective-source file manifest is empty")
         reconstructed_entries: list[dict[str, str]] = []
         for entry in declared_entries:
-            rel = canonical_relative_path(str(entry["path"]))
+            rel = normalized_relative_path(str(entry["path"]))
             source_path = target.joinpath(*rel.parts)
             if not source_path.is_file():
                 raise ValueError(f"effective source is missing {rel}")
@@ -218,7 +218,7 @@ def _reconstruct_source_archive(
             if not files:
                 raise ValueError(f"{role}: source file list is empty")
             for source in files:
-                rel = canonical_relative_path(str(source["path"]))
+                rel = normalized_relative_path(str(source["path"]))
                 source_path = target.joinpath(*rel.parts)
                 if not source_path.is_file():
                     raise ValueError(f"{role}: missing source {rel}")
@@ -306,14 +306,14 @@ def validate_report_consistency(root: Path) -> dict[str, Any]:
         except (OSError, json.JSONDecodeError) as exc:
             errors.append(f"{results_path.relative_to(root)}: invalid results JSON: {exc}")
             continue
-        rows = document.get("variants", document.get("variant_rows", []))
+        rows = document.get("runs", [])
         if isinstance(rows, list):
             for row in rows:
                 if not isinstance(row, dict):
                     continue
                 if (not row.get("task_success") or not row.get("operational_rank_eligible")) and row.get("operational_rank") is not None:
-                    errors.append(f"{results_path.relative_to(root)}: failed/ineligible arm has operational_rank")
-                if row.get("variant") != "baseline-none" and row.get("operational_rank_eligible") and int(
+                    errors.append(f"{results_path.relative_to(root)}: failed/ineligible run has operational_rank")
+                if row.get("tool") != "baseline-none" and row.get("operational_rank_eligible") and int(
                     row.get("intended_tool_successful_solve_invocation_count")
                     or row.get("intended_tool_successful_calls") or 0
                 ) < 1:
@@ -328,6 +328,6 @@ def validate_report_consistency(root: Path) -> dict[str, Any]:
             text = report_path.read_text(encoding="utf-8", errors="replace")
             if "## Ranked Table" in text:
                 errors.append(f"{report_path.relative_to(root)}: descriptive ordering presented as operational ranking")
-            if no_winner and re.search(r"(?i)(?:best operational (?:workflow|treatment)|scalar leader|observed pilot leader:\s*\*\*[^n])", text):
+            if no_winner and re.search(r"(?i)(?:best operational (?:workflow|tool)|scalar leader|observed pilot leader:\s*\*\*[^n])", text):
                 errors.append(f"{report_path.relative_to(root)}: human report names a positive leader despite no winner")
     return {"schema_version": "report-consistency-validation-v1", "reports": sorted(set(checked)), "errors": errors}

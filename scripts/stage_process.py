@@ -119,7 +119,7 @@ class StageResult:
     command: list[str] | str
     cwd: str
     stage: str
-    treatment: str
+    tool: str
     returncode: int
     stdout: str
     stderr: str
@@ -222,7 +222,7 @@ def run_stage(
     cwd: Path,
     stage: str,
     evidence_dir: Path,
-    treatment: str = "orchestrator",
+    tool: str = "orchestrator",
     policy: StagePolicy | None = None,
     env: dict[str, str] | None = None,
     input_text: str | None = None,
@@ -310,7 +310,7 @@ def run_stage(
                     "kind": "progress",
                     "at": utc_now(),
                     "stage": stage,
-                    "treatment": treatment,
+                    "tool": tool,
                     "attempt": attempt_number,
                     "elapsed_seconds": elapsed,
                     "configured_timeout_seconds": timeout,
@@ -383,7 +383,7 @@ def run_stage(
             json.dumps({
                 **asdict(attempts[-1]),
                 "stage": stage,
-                "treatment": treatment,
+                "tool": tool,
                 "command": sanitize(str(command)),
                 "started_at": started_at,
                 "ended_at": utc_now(),
@@ -397,7 +397,7 @@ def run_stage(
         command=command,
         cwd=str(cwd),
         stage=stage,
-        treatment=treatment,
+        tool=tool,
         returncode=final_code,
         stdout=final_stdout,
         stderr=final_stderr,

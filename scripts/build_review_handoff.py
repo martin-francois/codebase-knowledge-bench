@@ -22,7 +22,7 @@ from typing import Any
 from safe_archive import _resolved_link, safe_extract_tar, safe_extract_zip
 
 
-CANONICAL_SHA = "b4a77687b40bea1ff97117224d08e00b0b66ee0a6fc1875c87d0b95da19e49e0"
+PUBLISHED_SHA = "b4a77687b40bea1ff97117224d08e00b0b66ee0a6fc1875c87d0b95da19e49e0"
 SUPPLEMENT_SHA = "2b560a78410e47ee1cec4d9f000cfed4a0c633e6339cbc8c422ebee452bcb387"
 REVIEW_ZIP_MAX_MEMBERS = 20_000
 REVIEW_ZIP_MAX_MEMBER_BYTES = 300_000_000
@@ -43,7 +43,7 @@ SOURCE_SCAN_ALLOWLIST = {
     "tests/test_harness.py": {
         "host-only path": "isolated temporary fixture path",
     },
-    "docs/variant-synthesis.md": {
+    "docs/tool-synthesis.md": {
         "host-only path": "documented historical builder layout",
     },
     "scripts/run_benchmark.py": {
@@ -94,7 +94,7 @@ def git(repo: Path, *args: str, raw: bool = False):
     )
 
 
-def canonical_root(entries: list[dict[str, Any]]) -> str:
+def normalized_root(entries: list[dict[str, Any]]) -> str:
     return sha256_bytes(
         json.dumps(entries, sort_keys=True, separators=(",", ":")).encode()
     )
@@ -423,8 +423,8 @@ MANDATORY_FILES = {
     "target/target-package-validation.json",
     "tests/test-results.json",
     "tests/command-log.txt",
-    "immutable-evidence/canonical-suite-bundle.zip",
-    "immutable-evidence/canonical-publication-supplement.zip",
+    "immutable-evidence/published-suite-bundle.zip",
+    "immutable-evidence/published-publication-supplement.zip",
     "review-handoff-validation.json",
 }
 MANDATORY_PREFIXES = (
@@ -505,7 +505,7 @@ def review_manifest_path_errors(
             continue
         clean = str(PurePosixPath(path)).rstrip("/")
         if clean != path:
-            errors.append(f"non-canonical review manifest path: {path}")
+            errors.append(f"non-normalized review manifest path: {path}")
         if clean in seen:
             errors.append(f"duplicate review manifest path: {clean}")
         folded_path = clean.casefold()
@@ -590,7 +590,7 @@ def _source_state(repo: Path, commit_id: str, tree: str) -> dict[str, Any]:
 
 def build(
     repo: Path,
-    canonical: Path,
+    published: Path,
     supplement: Path,
     reports: Path,
     agent_response: Path,
@@ -599,7 +599,7 @@ def build(
     extras: Path | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     del target, extras
-    if sha256_file(canonical) != CANONICAL_SHA or sha256_file(supplement) != SUPPLEMENT_SHA:
+    if sha256_file(published) != PUBLISHED_SHA or sha256_file(supplement) != SUPPLEMENT_SHA:
         raise ValueError("immutable evidence hash mismatch")
     commit = git(repo, "rev-parse", "HEAD").strip()
     tree = git(repo, "rev-parse", "HEAD^{tree}").strip()
@@ -643,8 +643,8 @@ def build(
                 json.dumps(reconstruction, indent=2, sort_keys=True) + "\n"
             ).encode(),
             "source/full-diff.patch": full_diff,
-            "immutable-evidence/canonical-suite-bundle.zip": canonical.read_bytes(),
-            "immutable-evidence/canonical-publication-supplement.zip": supplement.read_bytes(),
+            "immutable-evidence/published-suite-bundle.zip": published.read_bytes(),
+            "immutable-evidence/published-publication-supplement.zip": supplement.read_bytes(),
         }
         payload_modes = {name: 0o644 for name in payloads}
         symlink_targets: dict[str, str] = {}
@@ -889,7 +889,7 @@ def build(
                     ),
                     "dashboard_browser": dashboard.get("status"),
                     "immutable_evidence": {
-                        "canonical_sha256": CANONICAL_SHA,
+                        "published_sha256": PUBLISHED_SHA,
                         "supplement_sha256": SUPPLEMENT_SHA,
                     },
                     "full_diff_portability_notes": diff_notes,
@@ -994,11 +994,11 @@ def build(
             "source_tree": tree,
             "entries": entries,
             "entry_count": len(entries),
-            "manifest_root": canonical_root(entries),
+            "manifest_root": normalized_root(entries),
             "qualifying_payload_entry_count": len(
                 qualifying_payload_entries(entries)
             ),
-            "qualifying_payload_root": canonical_root(
+            "qualifying_payload_root": normalized_root(
                 qualifying_payload_entries(entries)
             ),
             "source_scan_exceptions": exceptions,
@@ -1132,11 +1132,11 @@ def validate(zip_path: Path) -> dict[str, Any]:
                 errors.append(f"manifest mismatch: {row['path']}")
         if manifest.get("entry_count") != len(manifest["entries"]):
             errors.append("manifest count mismatch")
-        if canonical_root(manifest["entries"]) != manifest["manifest_root"]:
+        if normalized_root(manifest["entries"]) != manifest["manifest_root"]:
             errors.append("manifest root mismatch")
-        if sha256_file(root / "immutable-evidence/canonical-suite-bundle.zip") != CANONICAL_SHA:
-            errors.append("canonical immutable hash mismatch")
-        if sha256_file(root / "immutable-evidence/canonical-publication-supplement.zip") != SUPPLEMENT_SHA:
+        if sha256_file(root / "immutable-evidence/published-suite-bundle.zip") != PUBLISHED_SHA:
+            errors.append("published immutable hash mismatch")
+        if sha256_file(root / "immutable-evidence/published-publication-supplement.zip") != SUPPLEMENT_SHA:
             errors.append("supplement immutable hash mismatch")
         reconstruction = reconstruct_tree(
             (root / "source/source.tar").read_bytes(), manifest["source_tree"]
@@ -1256,7 +1256,7 @@ def validate(zip_path: Path) -> dict[str, Any]:
         if replay_validation["status"] != "passed":
             errors.append("packaged replay evidence validation failed")
         qualifying = qualifying_payload_entries(manifest["entries"])
-        qualifying_root = canonical_root(qualifying)
+        qualifying_root = normalized_root(qualifying)
         if (
             manifest.get("qualifying_payload_entry_count")
             != len(qualifying)
@@ -1298,7 +1298,7 @@ def validate(zip_path: Path) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--canonical", type=Path, required=True)
+    parser.add_argument("--published", type=Path, required=True)
     parser.add_argument("--supplement", type=Path, required=True)
     parser.add_argument("--reports", type=Path, required=True)
     parser.add_argument("--agent-response", type=Path, required=True)
@@ -1308,7 +1308,7 @@ def main() -> int:
     args = parser.parse_args()
     path, result = build(
         args.repo.resolve(),
-        args.canonical.resolve(),
+        args.published.resolve(),
         args.supplement.resolve(),
         args.reports.resolve(),
         args.agent_response.resolve(),

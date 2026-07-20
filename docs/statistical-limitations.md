@@ -6,7 +6,7 @@ make three selected tasks representative of all repositories or issue types.
 
 Bootstrap support is descriptive. It is not a posterior probability or proof of equivalence.
 Undefined standardized effects and non-estimable pilot intervals remain null. Timeouts,
-infrastructure exclusions, missing blocks, and treatment non-adherence are reported rather than
+infrastructure exclusions, missing blocks, and tool non-adherence are reported rather than
 silently removed.
 
 Correctness-loss tolerances express preferences, not scientific constants. Reports therefore show a

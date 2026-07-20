@@ -10,7 +10,7 @@ from typing import Any
 SCHEMA_VERSION = "model-preflight-lock-v1"
 
 
-def _canonical(value: Any) -> bytes:
+def _published(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
@@ -46,9 +46,9 @@ def write_model_preflight_lock(
         "harness_tree": harness_tree,
         "source_execution": record["source"],
         "artifacts": files,
-        "artifact_manifest_sha256": hashlib.sha256(_canonical(files)).hexdigest(),
+        "artifact_manifest_sha256": hashlib.sha256(_published(files)).hexdigest(),
     }
-    payload["model_preflight_lock_sha256"] = hashlib.sha256(_canonical(payload)).hexdigest()
+    payload["model_preflight_lock_sha256"] = hashlib.sha256(_published(payload)).hexdigest()
     (suite_dir / "model-preflight-lock.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -71,13 +71,13 @@ def validate_model_preflight_lock(payload: dict[str, Any], root: Path) -> list[s
         return errors
     source = dict(payload)
     expected = source.pop("model_preflight_lock_sha256", None)
-    if expected != hashlib.sha256(_canonical(source)).hexdigest():
+    if expected != hashlib.sha256(_published(source)).hexdigest():
         errors.append("model preflight lock metadata hash mismatch")
     artifacts = payload.get("artifacts")
     if not isinstance(artifacts, list) or len(artifacts) != 4:
         errors.append("model preflight lock artifact set is incomplete")
         return errors
-    if payload.get("artifact_manifest_sha256") != hashlib.sha256(_canonical(artifacts)).hexdigest():
+    if payload.get("artifact_manifest_sha256") != hashlib.sha256(_published(artifacts)).hexdigest():
         errors.append("model preflight lock artifact manifest mismatch")
     for item in artifacts:
         relative = Path(str(item.get("path") or ""))

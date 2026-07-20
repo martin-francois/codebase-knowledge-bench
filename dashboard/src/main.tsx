@@ -24,11 +24,11 @@ function Chart({spec, label}: {spec: object; label: string}) {
 
 function App() {
   const [view, setView] = useState<"absolute" | "relative">("absolute");
-  const [metric, setMetric] = useState<MetricKey>("modeled_weighted_token_load");
-  const [qualityAxis, setQualityAxis] = useState<QualityAxis>("behavioral_correctness");
+  const [metric, setMetric] = useState<MetricKey>("weighted_tokens");
+  const [qualityAxis, setQualityAxis] = useState<QualityAxis>("correctness");
   const [tokenView, setTokenView] = useState<TokenView>("weighted_load");
   const [filters, setFilters] = useState<Filters>({
-    issue: "all", repetition: "all", statistic: "mean",
+    issue: "all", repetition: "all", statistic: "average",
     tolerance: data.default_tolerance, includeInvalid: false,
   });
   const [showRuns, setShowRuns] = useState(false);
@@ -50,13 +50,13 @@ function App() {
     xUpper: view === "relative" ? point.metricUpper : null,
     yLower: view === "relative" ? point.correctnessLower : null,
     yUpper: view === "relative" ? point.correctnessUpper : null,
-    baseline: point.treatment === "baseline-none",
+    baseline: point.tool === "baseline-none",
     pointKind: "aggregate",
   }));
   const individualRows = showRuns ? derived.individualRuns
     .filter(run => run.metrics[metric] != null && run.selectedQuality != null)
     .map(run => ({
-      treatment: run.treatment,
+      tool: run.tool,
       issue_id: run.issue_id,
       repetition: run.repetition,
       x: view === "absolute" ? run.metrics[metric] : run.metricChangePercent,
@@ -91,7 +91,7 @@ function App() {
           stroke: {field: "frontier", type: "nominal", scale: {domain: [true, false], range: ["#111", "transparent"]}, legend: {title: "Tolerance frontier"}},
           shape: {field: "baseline", type: "nominal", scale: {domain: [true, false], range: ["diamond", "circle"]}, legend: {title: "Baseline"}},
           tooltip: [
-            {field: "treatment", title: "Tool or baseline"}, {field: "issue_id", title: "Issue"},
+            {field: "tool", title: "Tool or baseline"}, {field: "issue_id", title: "Issue"},
             {field: "repetition", title: "Repetition"}, {field: "y", title: "Correctness", format: ".2f"},
             {field: "x", title: descriptor.label, format: ",.2f"}, {field: "coverageFraction", title: "Coverage", format: ".1%"},
             {field: "taskSuccessRate", title: "Task success", format: ".1%"},
@@ -99,7 +99,7 @@ function App() {
           ],
         },
       },
-      {transform: [{filter: "datum.pointKind === 'aggregate'"}], mark: {type: "text", dy: -13, fontWeight: 650}, encoding: {x: {field: "x", type: "quantitative"}, y: {field: "y", type: "quantitative"}, text: {field: "treatment"}}},
+      {transform: [{filter: "datum.pointKind === 'aggregate'"}], mark: {type: "text", dy: -13, fontWeight: 650}, encoding: {x: {field: "x", type: "quantitative"}, y: {field: "y", type: "quantitative"}, text: {field: "tool"}}},
     ],
     config: {view: {stroke: null}, axis: {labelFontSize: 12, titleFontSize: 13}},
   }), [chartRows, descriptor, qualityLabel, showUncertainty, view]);
@@ -124,7 +124,7 @@ function App() {
       </select></label>
       <label>Issue<select aria-label="Issue" value={filters.issue} onChange={event => update("issue", event.target.value)}><option value="all">All issues</option>{issues.map(value => <option key={value}>{value}</option>)}</select></label>
       <label>Repetition<select aria-label="Repetition" value={filters.repetition} onChange={event => update("repetition", event.target.value)}><option value="all">All repetitions</option>{repetitions.map(value => <option key={value}>{value}</option>)}</select></label>
-      <label>Summary<select aria-label="Summary statistic" value={filters.statistic} onChange={event => update("statistic", event.target.value as "mean" | "median")}><option value="mean">Average</option><option value="median">Median</option></select></label>
+      <label>Summary<select aria-label="Summary statistic" value={filters.statistic} onChange={event => update("statistic", event.target.value as "average" | "median")}><option value="average">Average</option><option value="median">Median</option></select></label>
       <label>Correctness-loss tolerance<select aria-label="Correctness-loss tolerance" value={filters.tolerance} onChange={event => update("tolerance", Number(event.target.value))}>{data.tolerance_grid.map(value => <option key={value} value={value}>{value} points</option>)}</select></label>
       <label><input type="checkbox" checked={showRuns} onChange={event => setShowRuns(event.target.checked)} /> Individual runs</label>
       <label><input type="checkbox" checked={showUncertainty} onChange={event => setShowUncertainty(event.target.checked)} /> Uncertainty</label>
@@ -134,19 +134,19 @@ function App() {
     <section><h2>{view === "absolute" ? "Absolute quality and efficiency" : "Matched change from baseline"}</h2>
       {view === "relative" && <ul className="quadrants" aria-label="Relative chart quadrants"><li>Upper-left: better and lower resource use</li><li>Lower-left: lower resource use with a quality trade-off</li><li>Upper-right: better but higher resource use</li><li>Lower-right: worse and higher resource use</li></ul>}
       <Chart spec={spec} label={view === "absolute" ? "Absolute correctness and selected resource scatter chart" : "Baseline-relative correctness and selected resource scatter chart"} />
-      <p className="note">Selected-chart 2D frontier: {showPareto ? derived.frontier.join(", ") || "not comparable" : "hidden"}. Full-suite operational frontier: {data.canonical.exact_pareto_frontier.join(", ") || "not comparable"}. Uncertainty: {aggregateRows.every(row => row.intervalStatus === "not_estimable") ? "not estimable" : "95% paired intervals shown where estimable"}.</p>
+      <p className="note">Selected-chart 2D frontier: {showPareto ? derived.frontier.join(", ") || "not comparable" : "hidden"}. Full-suite operational frontier: {data.published.exact_pareto_frontier.join(", ") || "not comparable"}. Uncertainty: {aggregateRows.every(row => row.intervalStatus === "not_estimable") ? "not estimable" : "95% paired intervals shown where estimable"}.</p>
     </section>
     <section><h2>Accessible filtered data table</h2><div className="table-wrap"><table data-testid="data-table"><thead><tr>
       <th>Tool or baseline</th><th>{view === "absolute" ? qualityLabel : `${qualityLabel} delta`}</th><th>{view === "absolute" ? descriptor.label : `${descriptor.label} change`}</th><th>Task success</th><th>Configured protected common pass/fail/skip</th><th>Coverage</th><th>Eligibility</th><th>Frontier at {filters.tolerance}</th><th>Uncertainty</th><th>Candidate-test quality / diagnostics</th>
-    </tr></thead><tbody>{aggregateRows.map(row => { const diagnosticRuns = data.individual_runs.filter(run => run.treatment === row.treatment); const changed = diagnosticRuns.reduce((total, run) => { const changes = run.candidate_test_changes; return total + (changes?.added?.length ?? 0) + (changes?.modified?.length ?? 0) + (changes?.deleted?.length ?? 0) + (changes?.renamed?.length ?? 0); }, 0); const candidateQuality = diagnosticRuns.map(run => run.candidate_test_quality).filter((value): value is number => value != null); const commonPass = diagnosticRuns.reduce((total, run) => total + run.protected_common_pass_count, 0); const commonFail = diagnosticRuns.reduce((total, run) => total + run.protected_common_fail_count, 0); const commonSkip = diagnosticRuns.reduce((total, run) => total + run.protected_common_skip_count, 0); return <tr key={row.treatment} data-treatment={row.treatment}><th>{row.treatment}</th><td>{(view === "absolute" ? row.correctness : row.correctnessDelta)?.toFixed(2) ?? "N/A"}</td><td>{(view === "absolute" ? row.metricValue : row.metricChangePercent)?.toFixed(2) ?? "N/A"} {view === "relative" ? "%" : descriptor.unit}</td><td>{row.taskSuccessRate == null ? "N/A" : `${(row.taskSuccessRate * 100).toFixed(0)}%`}</td><td>{commonPass}/{commonFail}/{commonSkip}</td><td>{row.coverageFraction == null ? "N/A" : `${(row.coverageFraction * 100).toFixed(0)}%`}</td><td>{row.authoritative ? "Authoritative" : `Excluded: ${row.exclusionReason}`}</td><td>{showPareto && row.frontier ? "Yes" : "No"}</td><td>{row.intervalStatus === "estimable" ? "95% interval shown" : "Not estimable"}</td><td>{candidateQuality.length ? `${(candidateQuality.reduce((sum, value) => sum + value, 0) / candidateQuality.length).toFixed(2)}; ` : "N/A; "}{changed} candidate test change(s); protected effect none</td></tr>})}</tbody></table></div>
+    </tr></thead><tbody>{aggregateRows.map(row => { const diagnosticRuns = data.individual_runs.filter(run => run.tool === row.tool); const changed = diagnosticRuns.reduce((total, run) => { const changes = run.candidate_test_changes; return total + (changes?.added?.length ?? 0) + (changes?.modified?.length ?? 0) + (changes?.deleted?.length ?? 0) + (changes?.renamed?.length ?? 0); }, 0); const candidateQuality = diagnosticRuns.map(run => run.candidate_test_quality).filter((value): value is number => value != null); const commonPass = diagnosticRuns.reduce((total, run) => total + run.protected_common_pass_count, 0); const commonFail = diagnosticRuns.reduce((total, run) => total + run.protected_common_fail_count, 0); const commonSkip = diagnosticRuns.reduce((total, run) => total + run.protected_common_skip_count, 0); return <tr key={row.tool} data-tool={row.tool}><th>{row.tool}</th><td>{(view === "absolute" ? row.correctness : row.correctnessDelta)?.toFixed(2) ?? "N/A"}</td><td>{(view === "absolute" ? row.metricValue : row.metricChangePercent)?.toFixed(2) ?? "N/A"} {view === "relative" ? "%" : descriptor.unit}</td><td>{row.taskSuccessRate == null ? "N/A" : `${(row.taskSuccessRate * 100).toFixed(0)}%`}</td><td>{commonPass}/{commonFail}/{commonSkip}</td><td>{row.coverageFraction == null ? "N/A" : `${(row.coverageFraction * 100).toFixed(0)}%`}</td><td>{row.authoritative ? "Authoritative" : `Excluded: ${row.exclusionReason}`}</td><td>{showPareto && row.frontier ? "Yes" : "No"}</td><td>{row.intervalStatus === "estimable" ? "95% interval shown" : "Not estimable"}</td><td>{candidateQuality.length ? `${(candidateQuality.reduce((sum, value) => sum + value, 0) / candidateQuality.length).toFixed(2)}; ` : "N/A; "}{changed} candidate test change(s); protected effect none</td></tr>})}</tbody></table></div>
     </section>
     <section aria-labelledby="cache-panel-title"><h2 id="cache-panel-title">Prompt-cache observability</h2>
       <p>Cached and observed non-cached input are separate. Cache-write tokens and pricing-based cost are unavailable unless telemetry is explicit and pinned prices are complete.</p>
       <p className="note">A 30-minute cache lifetime is a minimum eligibility period, not an eviction guarantee. Cache isolation mode: natural unless an official, verified per-run key capability is recorded.</p>
     </section>
     <section aria-labelledby="requirement-panel-title"><h2 id="requirement-panel-title">Requirement-based correctness</h2>
-      <p>Current methodology <code>behavioral-correctness-current</code> exposes requested behavior, configured protected common regression, non-blocking reference diagnostics, patch quality, and candidate-test quality as separate dimensions. Direct and diagnostic selectors cannot appear in the configured-common inventory.</p>
-      <p>Each run carries exact base/reference status details; <code>failed</code> is distinct from a skipped or errored process and the published Boolean is derived from status.</p>
+      <p>Current methodology <code>correctness-current</code> exposes requested behavior, configured protected common regression, non-blocking reference diagnostics, patch quality, and candidate-test quality as separate dimensions. Direct and diagnostic selectors cannot appear in the configured-common inventory.</p>
+      <p>Each run carries exact base/reference status details; <code>failed</code> is distinct from a skipped or errored process and the completion Boolean is derived from status.</p>
       <p className="note">This panel does not retroactively rescore historical suites.</p>
     </section>
   </main>;

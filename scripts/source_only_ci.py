@@ -67,11 +67,11 @@ REQUIRED_COMMAND_NAMES = (
 HEX_64 = re.compile(r"[0-9a-f]{64}")
 INDEPENDENCE_CONTRACT = {
     "plain_git_checkout_compatible": True,
-    "canonical_target_required": False,
+    "published_target_required": False,
     "bench_target_repo_path_present": False,
     "bubblewrap_required": False,
     "privileged_namespaces_required": False,
-    "canonical_output_directories_required": False,
+    "published_output_directories_required": False,
     "builder_home_required": False,
     "builder_caches_required": False,
     "packaged_replay_runtimes_required": False,
@@ -80,7 +80,7 @@ INDEPENDENCE_CONTRACT = {
 }
 
 
-def canonical_bytes(value: Any) -> bytes:
+def normalized_bytes(value: Any) -> bytes:
     return (
         json.dumps(value, indent=2, sort_keys=True) + "\n"
     ).encode("utf-8")
@@ -113,7 +113,7 @@ def file_identity(path: Path, *, root: Path | None = None) -> dict[str, Any]:
 def write_receipt(path: Path, value: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_bytes(canonical_bytes(value))
+    temporary.write_bytes(normalized_bytes(value))
     os.replace(temporary, path)
 
 
@@ -246,7 +246,7 @@ def command_plan_identity(
     output_root: Path,
 ) -> dict[str, Any]:
     portable = portable_command_plan(plan, output_root)
-    payload = canonical_bytes(portable)
+    payload = normalized_bytes(portable)
     return {
         "command_count": len(portable),
         "commands": portable,
@@ -809,7 +809,7 @@ def source_only_receipt_errors(
     if plan.get("commands") != expected_plan["commands"]:
         errors.append("source-only command-plan commands differ")
     embedded_plan_hash = hashlib.sha256(
-        canonical_bytes(plan.get("commands", []))
+        normalized_bytes(plan.get("commands", []))
     ).hexdigest()
     if (
         plan.get("sha256") != expected_plan["sha256"]
@@ -867,7 +867,7 @@ def source_only_receipt_errors(
                     f"source-only CI/browser {field} identities differ"
                 )
         declared = receipt.get("source_only_browser_receipt", {})
-        browser_bytes = canonical_bytes(browser_receipt)
+        browser_bytes = normalized_bytes(browser_receipt)
         if (
             not str(declared.get("path", "")).strip()
             or declared.get("bytes") != len(browser_bytes)

@@ -1,5 +1,5 @@
 export type MetricKey =
-  | "modeled_weighted_token_load"
+  | "weighted_tokens"
   | "input_tokens"
   | "cached_input_tokens"
   | "observed_non_cached_input_tokens"
@@ -10,7 +10,7 @@ export type MetricKey =
   | "total_reported_tokens"
   | "cache_hit_rate"
   | "solve_wall_seconds"
-  | "warm_workflow_seconds"
+  | "warm_end_to_end_seconds"
   | "execution_calls_started"
   | "intended_tool_successful_calls"
   | "estimated_monetary_cost";
@@ -18,7 +18,7 @@ export type MetricKey =
 export type MetricDescriptor = {
   absoluteField: MetricKey;
   relativeField: string;
-  meanField: string;
+  averageField: string;
   medianField: string;
   direction: "lower";
   label: string;
@@ -33,11 +33,11 @@ export const METRICS = descriptorSource as Record<MetricKey, MetricDescriptor>;
 /* The checked-in JSON is also consumed by Python publication code. */
 
 export type QualityAxis =
-  | "behavioral_correctness" | "requested_behavior" | "critical_requirement_pass_rate"
+  | "correctness" | "requested_behavior" | "critical_requirement_pass_rate"
   | "common_regression" | "patch_quality" | "candidate_test_quality" | "reference_behavior_match";
 
 export const QUALITY_AXES: Record<QualityAxis, {label: string}> = {
-  behavioral_correctness: {label: "Correctness"},
+  correctness: {label: "Correctness"},
   requested_behavior: {label: "Requested behavior"},
   critical_requirement_pass_rate: {label: "Critical requirement pass rate"},
   common_regression: {label: "Configured protected common regression"},
@@ -57,14 +57,14 @@ export const TOKEN_VIEWS: Record<TokenView, {label: string; metric: MetricKey | 
   output: {label: "Output tokens including reasoning", metric: "output_tokens_including_reasoning"},
   reasoning: {label: "Reasoning output tokens (subset of output)", metric: "reasoning_output_tokens"},
   cache_hit_rate: {label: "Cache hit rate", metric: "cache_hit_rate"},
-  weighted_load: {label: "Weighted tokens", metric: "modeled_weighted_token_load"},
+  weighted_load: {label: "Weighted tokens", metric: "weighted_tokens"},
   pricing_cost: {label: "Pricing-based cost", metric: "estimated_monetary_cost", caveat: "Available only with complete pinned price and cache-write telemetry"},
 };
 
 export type DashboardRun = {
   issue_id: string;
   repetition: number;
-  treatment: string;
+  tool: string;
   operational_eligible: boolean;
   exclusion_reason: string | null;
   task_success: boolean;
@@ -112,7 +112,7 @@ export type DashboardData = {
   metric_descriptors: Record<string, {
     absolute_field: string;
     relative_field: string;
-    mean_field: string;
+    average_field: string;
     median_field: string;
     direction: "lower";
     label: string;
@@ -123,7 +123,7 @@ export type DashboardData = {
     relative_available: boolean;
   }>;
   points: Array<{
-    treatment: string;
+    tool: string;
     correctness: number | null;
     metrics: Record<MetricKey, number | null>;
     task_success: {numerator: number; denominator: number};
@@ -131,8 +131,8 @@ export type DashboardData = {
     paired_intervals: Record<string, Interval> | null;
   }>;
   individual_runs: DashboardRun[];
-  canonical: {
-    comparisons: Record<string, CanonicalComparison>;
+  published: {
+    comparisons: Record<string, PublishedComparison>;
     coverage: Record<string, unknown>;
     exact_pareto_frontier: string[];
     tolerance_aware_pareto_frontiers: Record<string, string[]>;
@@ -145,15 +145,15 @@ export type DashboardData = {
 };
 
 type Interval = {estimable: boolean; lower_95: number | null; median: number | null; upper_95: number | null};
-type CanonicalComparison = {
+type PublishedComparison = {
   coverage: {coverage_fraction: number | null};
-  paired_effects: {mean_correctness_delta_points: number | null; geometric_mean_ratios: Record<string, number | null>};
+  paired_effects: {average_correctness_delta_points: number | null; geometric_average_ratios: Record<string, number | null>};
   paired_intervals: Record<string, Interval>;
   estimability: {estimable: boolean; issue_cluster_status: string; reason: string | null};
 };
 
-const CANONICAL_METRIC: Record<MetricKey, {ratio: string; interval: string}> = {
-  modeled_weighted_token_load: {ratio: "tokens", interval: "tokens_ratio"},
+const PUBLISHED_METRIC: Record<MetricKey, {ratio: string; interval: string}> = {
+  weighted_tokens: {ratio: "tokens", interval: "tokens_ratio"},
   input_tokens: {ratio: "input_tokens", interval: "input_tokens_ratio"},
   cached_input_tokens: {ratio: "cached_input_tokens", interval: "cached_input_tokens_ratio"},
   observed_non_cached_input_tokens: {ratio: "observed_non_cached_input_tokens", interval: "observed_non_cached_input_tokens_ratio"},
@@ -164,7 +164,7 @@ const CANONICAL_METRIC: Record<MetricKey, {ratio: string; interval: string}> = {
   total_reported_tokens: {ratio: "total_reported_tokens", interval: "total_reported_tokens_ratio"},
   cache_hit_rate: {ratio: "cache_hit_rate", interval: "cache_hit_rate_ratio"},
   solve_wall_seconds: {ratio: "time", interval: "time_ratio"},
-  warm_workflow_seconds: {ratio: "warm_time", interval: "warm_time_ratio"},
+  warm_end_to_end_seconds: {ratio: "warm_time", interval: "warm_time_ratio"},
   execution_calls_started: {ratio: "calls", interval: "calls_ratio"},
   intended_tool_successful_calls: {ratio: "intended_tool_calls", interval: "intended_tool_calls_ratio"},
   estimated_monetary_cost: {ratio: "cost", interval: "cost_ratio"},
@@ -174,7 +174,7 @@ export function assertMetricDescriptorParity(data: DashboardData): void {
   const published = data.metric_descriptors;
   const expectedKeys = (Object.keys(METRICS) as MetricKey[]).sort();
   if (JSON.stringify(Object.keys(published).sort()) !== JSON.stringify(expectedKeys)) {
-    throw new Error("published metric descriptor keys differ from the dashboard kernel");
+    throw new Error("declared metric descriptor keys differ from the dashboard kernel");
   }
   for (const key of expectedKeys) {
     const expected = METRICS[key];
@@ -182,7 +182,7 @@ export function assertMetricDescriptorParity(data: DashboardData): void {
     const pairs: Array<[unknown, unknown, string]> = [
       [actual.absolute_field, expected.absoluteField, "absolute field"],
       [actual.relative_field, expected.relativeField, "relative field"],
-      [actual.mean_field, expected.meanField, "mean field"],
+      [actual.average_field, expected.averageField, "average field"],
       [actual.median_field, expected.medianField, "median field"],
       [actual.direction, expected.direction, "direction"],
       [actual.label, expected.label, "label"],
@@ -199,13 +199,13 @@ export function assertMetricDescriptorParity(data: DashboardData): void {
 export type Filters = {
   issue: string;
   repetition: string;
-  statistic: "mean" | "median";
+  statistic: "average" | "median";
   tolerance: number;
   includeInvalid: boolean;
 };
 
 export type ViewPoint = {
-  treatment: string;
+  tool: string;
   correctness: number | null;
   metricValue: number | null;
   correctnessDelta: number | null;
@@ -237,13 +237,13 @@ const median = (values: number[]) => {
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 };
-const summarize = (values: number[], statistic: "mean" | "median") =>
-  statistic === "mean" ? average(values) : median(values);
+const summarize = (values: number[], statistic: "average" | "median") =>
+  statistic === "average" ? average(values) : median(values);
 const blockId = (run: DashboardRun) => `${run.issue_id}::${run.repetition}`;
 
 export function qualityValue(run: DashboardRun, axis: QualityAxis): number | null {
   const fields: Record<QualityAxis, number | null | undefined> = {
-    behavioral_correctness: run.correctness,
+    correctness: run.correctness,
     requested_behavior: run.requested_behavior,
     critical_requirement_pass_rate: run.critical_requirement_pass_rate,
     common_regression: run.common_regression,
@@ -261,7 +261,7 @@ export function qualityAvailability(data: DashboardData): Record<QualityAxis, bo
 }
 
 export function metricAvailability(data: DashboardData, relative: boolean): Record<MetricKey, boolean> {
-  const baseline = data.individual_runs.filter(run => run.treatment === "baseline-none" && run.operational_eligible);
+  const baseline = data.individual_runs.filter(run => run.tool === "baseline-none" && run.operational_eligible);
   return Object.fromEntries((Object.keys(METRICS) as MetricKey[]).map(key => {
     const hasValues = data.individual_runs.some(run => run.metrics[key] != null);
     const baselineHasNonzero = baseline.some(run => (run.metrics[key] ?? 0) > 0);
@@ -276,7 +276,7 @@ function dominates(a: ViewPoint, b: ViewPoint, tolerance: number): boolean {
     && (a.correctness > b.correctness || a.metricValue < b.metricValue);
 }
 
-const summarizeRatios = (ratios: number[], statistic: "mean" | "median") => {
+const summarizeRatios = (ratios: number[], statistic: "average" | "median") => {
   if (!ratios.length) return null;
   const logs = ratios.map(Math.log);
   const logSummary = summarize(logs, statistic);
@@ -288,7 +288,7 @@ export function deriveView(
   metric: MetricKey,
   filters: Filters,
   view: "absolute" | "relative" = "absolute",
-  qualityAxis: QualityAxis = "behavioral_correctness",
+  qualityAxis: QualityAxis = "correctness",
 ): {points: ViewPoint[]; individualRuns: IndividualViewPoint[]; frontier: string[]; objectiveWinners: Record<string, string[]>} {
   if (!data.tolerance_grid.includes(filters.tolerance)) {
     throw new Error(`unsupported correctness tolerance: ${filters.tolerance}`);
@@ -300,25 +300,25 @@ export function deriveView(
   const displayed = filters.includeInvalid ? selected : authoritative;
   const baselineByBlock = new Map(
     authoritative
-      .filter(run => run.treatment === "baseline-none")
+      .filter(run => run.tool === "baseline-none")
       .map(run => [blockId(run), run]),
   );
   const scheduled = baselineByBlock.size;
-  const treatments = [...new Set(displayed.map(run => run.treatment))].sort();
-  const authoritativeTreatments = [...new Set(authoritative.map(run => run.treatment))].sort();
-  const blockSets = authoritativeTreatments.map(treatment => new Set(
-    authoritative.filter(run => run.treatment === treatment).map(blockId),
+  const tools = [...new Set(displayed.map(run => run.tool))].sort();
+  const authoritativeTools = [...new Set(authoritative.map(run => run.tool))].sort();
+  const blockSets = authoritativeTools.map(tool => new Set(
+    authoritative.filter(run => run.tool === tool).map(blockId),
   ));
   const completeBlocks = new Set(
     blockSets.length ? [...blockSets[0]].filter(block => blockSets.every(set => set.has(block))) : [],
   );
-  const canonicalScope = filters.issue === "all" && filters.repetition === "all" && filters.statistic === "mean";
-  const points: ViewPoint[] = treatments.map(treatment => {
-    const treatmentRows = authoritative.filter(run => run.treatment === treatment);
+  const publishedScope = filters.issue === "all" && filters.repetition === "all" && filters.statistic === "average";
+  const points: ViewPoint[] = tools.map(tool => {
+    const toolRows = authoritative.filter(run => run.tool === tool);
     const rows = view === "absolute"
-      ? treatmentRows.filter(run => completeBlocks.has(blockId(run)))
-      : treatmentRows;
-    const visibleRows = displayed.filter(run => run.treatment === treatment);
+      ? toolRows.filter(run => completeBlocks.has(blockId(run)))
+      : toolRows;
+    const visibleRows = displayed.filter(run => run.tool === tool);
     const matched = rows.filter(run => baselineByBlock.has(blockId(run)));
     const correctnessValues = rows.flatMap(run => qualityValue(run, qualityAxis) == null ? [] : [qualityValue(run, qualityAxis) as number]);
     const metricValues = rows.flatMap(run => run.metrics[metric] == null ? [] : [run.metrics[metric] as number]);
@@ -329,20 +329,20 @@ export function deriveView(
       const runQuality = qualityValue(run, qualityAxis);
       const baselineQuality = qualityValue(baseline, qualityAxis);
       if (runQuality != null && baselineQuality != null) correctnessDeltas.push(runQuality - baselineQuality);
-      const treatmentValue = run.metrics[metric];
+      const toolValue = run.metrics[metric];
       const baselineValue = baseline.metrics[metric];
-      if (treatmentValue != null && baselineValue != null && baselineValue !== 0) {
-        metricRatios.push(treatmentValue / baselineValue);
+      if (toolValue != null && baselineValue != null && baselineValue !== 0) {
+        metricRatios.push(toolValue / baselineValue);
       }
     }
     const summarizedRatio = summarizeRatios(metricRatios, filters.statistic);
     const isAuthoritative = rows.length > 0;
     const point: ViewPoint = {
-      treatment,
+      tool,
       correctness: summarize(correctnessValues, filters.statistic),
       metricValue: summarize(metricValues, filters.statistic),
-      correctnessDelta: treatment === "baseline-none" ? 0 : summarize(correctnessDeltas, filters.statistic),
-      metricChangePercent: treatment === "baseline-none" ? 0 : summarizedRatio == null ? null : 100 * (summarizedRatio - 1),
+      correctnessDelta: tool === "baseline-none" ? 0 : summarize(correctnessDeltas, filters.statistic),
+      metricChangePercent: tool === "baseline-none" ? 0 : summarizedRatio == null ? null : 100 * (summarizedRatio - 1),
       taskSuccessRate: rows.length ? rows.filter(run => run.task_success).length / rows.length : null,
       coverageFraction: scheduled ? matched.length / scheduled : null,
       frontier: false,
@@ -354,24 +354,24 @@ export function deriveView(
       metricLower: null,
       metricUpper: null,
     };
-    const canonical = data.canonical.comparisons[treatment];
-    if (canonicalScope && qualityAxis === "behavioral_correctness" && view === "relative" && treatment !== "baseline-none" && canonical) {
-      const descriptor = CANONICAL_METRIC[metric];
-      const correctnessInterval = canonical.paired_intervals.correctness_delta_points;
-      const metricInterval = canonical.paired_intervals[descriptor.interval];
-      const ratio = canonical.paired_effects.geometric_mean_ratios[descriptor.ratio];
-      point.correctnessDelta = canonical.paired_effects.mean_correctness_delta_points;
+    const published = data.published.comparisons[tool];
+    if (publishedScope && qualityAxis === "correctness" && view === "relative" && tool !== "baseline-none" && published) {
+      const descriptor = PUBLISHED_METRIC[metric];
+      const correctnessInterval = published.paired_intervals.correctness_delta_points;
+      const metricInterval = published.paired_intervals[descriptor.interval];
+      const ratio = published.paired_effects.geometric_average_ratios[descriptor.ratio];
+      point.correctnessDelta = published.paired_effects.average_correctness_delta_points;
       point.metricChangePercent = ratio == null ? null : 100 * (ratio - 1);
-      point.coverageFraction = canonical.coverage.coverage_fraction;
-      point.intervalStatus = canonical.estimability.estimable && correctnessInterval?.estimable
+      point.coverageFraction = published.coverage.coverage_fraction;
+      point.intervalStatus = published.estimability.estimable && correctnessInterval?.estimable
         ? "estimable" : "not_estimable";
       point.correctnessLower = correctnessInterval?.lower_95 ?? null;
       point.correctnessUpper = correctnessInterval?.upper_95 ?? null;
       point.metricLower = metricInterval?.lower_95 == null ? null : 100 * (metricInterval.lower_95 - 1);
       point.metricUpper = metricInterval?.upper_95 == null ? null : 100 * (metricInterval.upper_95 - 1);
     }
-    if (canonicalScope && qualityAxis === "behavioral_correctness" && view === "absolute") {
-      const published = data.points.find(candidate => candidate.treatment === treatment);
+    if (publishedScope && qualityAxis === "correctness" && view === "absolute") {
+      const published = data.points.find(candidate => candidate.tool === tool);
       if (published) {
         point.correctness = published.correctness;
         point.metricValue = published.metrics[metric];
@@ -383,14 +383,14 @@ export function deriveView(
   const authoritativePoints = points.filter(point => point.authoritative);
   const frontier = authoritativePoints
     .filter(point => !authoritativePoints.some(other => other !== point && dominates(other, point, filters.tolerance)))
-    .map(point => point.treatment).sort();
-  points.forEach(point => { point.frontier = frontier.includes(point.treatment); });
+    .map(point => point.tool).sort();
+  points.forEach(point => { point.frontier = frontier.includes(point.tool); });
   const winners = (field: "correctness" | "metricValue", direction: "higher" | "lower") => {
     const available = authoritativePoints.filter(point => point[field] != null);
     if (!available.length) return [];
     const values = available.map(point => point[field] as number);
     const best = direction === "higher" ? Math.max(...values) : Math.min(...values);
-    return available.filter(point => point[field] === best).map(point => point.treatment).sort();
+    return available.filter(point => point[field] === best).map(point => point.tool).sort();
   };
   const individualRuns: IndividualViewPoint[] = displayed.map(run => {
     const baseline = baselineByBlock.get(blockId(run));
@@ -401,10 +401,10 @@ export function deriveView(
     return {
       ...run,
       selectedQuality: runQuality,
-      matched: run.treatment === "baseline-none" || Boolean(baseline),
-      correctnessDelta: run.treatment === "baseline-none" ? 0 :
+      matched: run.tool === "baseline-none" || Boolean(baseline),
+      correctnessDelta: run.tool === "baseline-none" ? 0 :
         baseline && runQuality != null && baselineQuality != null ? runQuality - baselineQuality : null,
-      metricChangePercent: run.treatment === "baseline-none" ? 0 :
+      metricChangePercent: run.tool === "baseline-none" ? 0 :
         baselineMetric != null && baselineMetric !== 0 && runMetric != null ? 100 * (runMetric / baselineMetric - 1) : null,
     };
   });

@@ -28,7 +28,7 @@ from build_review_handoff import (
 from preflight_status_faults import FAULTS, run as status_fault_matrix
 from safe_archive import (
     build_exact_tar,
-    canonical_root,
+    normalized_root,
     exact_archive_manifest,
     safe_extract_exact_tar,
     safe_extract_zip,
@@ -455,7 +455,7 @@ class ExactArchiveBoundaryTest(unittest.TestCase):
                 row for row in manifest["entries"] if row["type"] == "file"
             )
             file_row["mode"] ^= 0o100
-            manifest["manifest_root"] = canonical_root(manifest["entries"])
+            manifest["manifest_root"] = normalized_root(manifest["entries"])
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             result = validate_exact_tar(archive, manifest_path)
             self.assertEqual("failed", result["status"])
@@ -474,7 +474,7 @@ class ExactArchiveBoundaryTest(unittest.TestCase):
                 copy.deepcopy(manifest["entries"][-1])
             )
             manifest["entry_count"] = len(manifest["entries"])
-            manifest["manifest_root"] = canonical_root(
+            manifest["manifest_root"] = normalized_root(
                 manifest["entries"]
             )
             manifest_path.write_text(

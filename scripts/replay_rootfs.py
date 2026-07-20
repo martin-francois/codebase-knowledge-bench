@@ -393,11 +393,11 @@ def build_minimal_rootfs(
     (output / "etc").mkdir(parents=True, exist_ok=True)
     (output / "etc/resolv.conf").write_bytes(b"")
     _normalize_absolute_symlinks(output)
-    tool_rows: dict[str, Any] = {}
+    tools: dict[str, Any] = {}
     for name, path_text in TOOL_PATHS.items():
         path = output / _safe_relative(path_text)
         resolved = _resolve_staged(output, path_text)
-        tool_rows[name] = {
+        tools[name] = {
             "path": path_text,
             "resolved_path": "/"
             + resolved.relative_to(output.resolve()).as_posix(),
@@ -427,7 +427,7 @@ def build_minimal_rootfs(
         },
         "packages": package_rows,
         "package_count": len(package_rows),
-        "tools": tool_rows,
+        "tools": tools,
         "copied_package_member_count": len(copied_paths),
     }
 

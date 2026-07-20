@@ -9,7 +9,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping
 
-from current_methodology import canonical_sha256, score_requirement_contract, validate_requirement_contract
+from current_methodology import published_sha256, score_requirement_contract, validate_requirement_contract
 from protected_verifier import CHANNELS, channel_process_validity
 
 
@@ -102,7 +102,7 @@ def common_regression_summary(rows: list[dict[str, Any]], *, process_valid: bool
         "common_regression_skips": [
             row for row in common_rows if row["status"] == "skipped"
         ],
-        "common_regression_evidence_sha256": canonical_sha256(common_rows),
+        "common_regression_evidence_sha256": published_sha256(common_rows),
     }
 
 
@@ -281,7 +281,7 @@ def derive_requirement_evidence(*, contract: Mapping[str, Any], channel_director
         "missing_expected_cases": [],
         "protected_process_valid": protected_process_valid,
         "protected_process_audit": process_audit,
-        "evidence_sha256": canonical_sha256(trace),
+        "evidence_sha256": published_sha256(trace),
     }
 
 

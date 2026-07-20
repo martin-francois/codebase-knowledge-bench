@@ -18,12 +18,12 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from benchmark_config import FIELDS
-from benchmark_progress import ARM_STAGES, DurationHistory, ProgressReporter, estimate_seconds, render_line, stage_fingerprint, unclassified_config_keys
+from benchmark_progress import RUN_STAGES, DurationHistory, ProgressReporter, estimate_seconds, render_line, stage_fingerprint, unclassified_config_keys
 
 
 class ProgressTest(unittest.TestCase):
     def context(self, **changes):
-        value = {"issue": "#8", "repository_tree": "tree-a", "reference_commit": "ref-a", "treatment": "serena", "model": "gpt-5.6-sol", "reasoning_effort": "high", "yolo": "true", "host": {"system": "Linux", "machine": "x86_64"}, "contract_hash": "c", "channel_plan_hash": "p", "preflight_hash": "f"}
+        value = {"issue": "#8", "repository_tree": "tree-a", "reference_commit": "ref-a", "tool": "serena", "model": "gpt-5.6-sol", "reasoning_effort": "high", "yolo": "true", "host": {"system": "Linux", "machine": "x86_64"}, "contract_hash": "c", "channel_plan_hash": "p", "preflight_hash": "f"}
         value.update(changes)
         return value
 
@@ -34,11 +34,11 @@ class ProgressTest(unittest.TestCase):
     def test_every_public_setting_has_timing_classification(self):
         self.assertEqual(set(), unclassified_config_keys(FIELDS))
 
-    def test_suite_coordinator_does_not_shadow_configured_variants_function(self):
+    def test_suite_coordinator_does_not_shadow_configured_tools_function(self):
         tree = ast.parse((Path(__file__).resolve().parents[1] / "scripts" / "run_benchmark_suite.py").read_text())
         main = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "_main")
         assigned = {target.id for node in ast.walk(main) if isinstance(node, (ast.Assign, ast.AnnAssign)) for target in ([*node.targets] if isinstance(node, ast.Assign) else [node.target]) if isinstance(target, ast.Name)}
-        self.assertNotIn("configured_variants", assigned)
+        self.assertNotIn("configured_tools", assigned)
 
     def test_identity_changes_do_not_change_solve_cohort(self):
         self.assertEqual(stage_fingerprint("solve", self.context(suite_id="one", repetitions=1))[0], stage_fingerprint("solve", self.context(suite_id="two", repetitions=9))[0])
@@ -57,7 +57,7 @@ class ProgressTest(unittest.TestCase):
             timeout=100, retry_policy=1, harness_version="h1",
         )
         changes = {
-            "repository_tree": "tree-b", "issue": "#9", "treatment": "graphify",
+            "repository_tree": "tree-b", "issue": "#9", "tool": "graphify",
             "adapter_version": "a2", "tool_version": "2", "model": "other",
             "reasoning_effort": "low", "yolo": "false", "codex_version": "2",
             "prompt_hash": "p2", "sanitized_issue_hash": "i2", "tool_config": "c2", "indexed_state": "s2",
@@ -78,10 +78,10 @@ class ProgressTest(unittest.TestCase):
         self.assertEqual(stage_fingerprint("solve", base)[0], stage_fingerprint("solve", {**base, "cache_state": "reused"})[0])
 
     def test_stage_categories_never_share_a_fingerprint(self):
-        fingerprints = {stage_fingerprint(stage, self.context())[0] for stage in ARM_STAGES}
-        self.assertEqual(len(ARM_STAGES), len(fingerprints))
+        fingerprints = {stage_fingerprint(stage, self.context())[0] for stage in RUN_STAGES}
+        self.assertEqual(len(RUN_STAGES), len(fingerprints))
 
-    def test_fingerprint_is_canonical_across_mapping_order(self):
+    def test_fingerprint_is_published_across_mapping_order(self):
         left = self.context(host={"machine": "x86_64", "system": "Linux"})
         right = self.context(host={"system": "Linux", "machine": "x86_64"})
         self.assertEqual(stage_fingerprint("solve", left)[0], stage_fingerprint("solve", right)[0])
@@ -110,7 +110,7 @@ import json, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, 'scripts')
 from benchmark_progress import DurationHistory, estimate_seconds, stage_fingerprint
-context = {'issue':'#8','repository_tree':'tree','treatment':'serena','model':'gpt-5.6-sol','host':{'system':'Linux','machine':'x86_64'}}
+context = {'issue':'#8','repository_tree':'tree','tool':'serena','model':'gpt-5.6-sol','host':{'system':'Linux','machine':'x86_64'}}
 with tempfile.TemporaryDirectory() as tmp:
     history = DurationHistory(Path(tmp) / 'history.json')
     fingerprint, inputs = stage_fingerprint('solve', context)
@@ -189,7 +189,7 @@ with tempfile.TemporaryDirectory() as tmp:
             self.assertTrue(list(Path(tmp).glob("history.json.corrupt-*")))
 
     def test_plain_and_interactive_rendering_contract(self):
-        snapshot = {"percent": 34, "remaining_seconds": 5100, "repetition": 1, "repetitions": 3, "task_position": 2, "task_total": 3, "issue_id": "#498", "variant": "serena", "variant_position": 4, "variant_total": 7}
+        snapshot = {"percent": 34, "remaining_seconds": 5100, "repetition": 1, "repetitions": 3, "task_position": 2, "task_total": 3, "issue_id": "#498", "tool": "serena", "tool_position": 4, "tool_total": 7}
         plain = render_line(snapshot, interactive=False)
         self.assertEqual("Progress: 34% | Remaining: 1h 25m | Rep: 1/3 | Task: 2/3 (#498) | Serena (4/7)", plain)
         self.assertTrue(render_line(snapshot, interactive=True).startswith("⠋ Progress:"))
@@ -210,7 +210,7 @@ with tempfile.TemporaryDirectory() as tmp:
                     plain_interval_seconds=0,
                 )
                 self.assertIs(reporter.stream, stream)
-                reporter.consume({"stage": "setup", "status": "active", "issue": "#8", "variant": "serena"})
+                reporter.consume({"stage": "setup", "status": "active", "issue": "#8", "tool": "serena"})
                 reporter.close()
             self.assertIn("Progress:", stream.getvalue())
 
@@ -218,7 +218,7 @@ with tempfile.TemporaryDirectory() as tmp:
         with tempfile.TemporaryDirectory() as tmp:
             root, stream = Path(tmp), io.StringIO()
             reporter = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=stream, interactive=False, plain_interval_seconds=0.05)
-            reporter.consume({"stage": "setup", "status": "active", "issue": "#8", "variant": "serena"})
+            reporter.consume({"stage": "setup", "status": "active", "issue": "#8", "tool": "serena"})
             time.sleep(0.32)
             reporter.close()
             self.assertGreaterEqual(stream.getvalue().count("Progress:"), 2)
@@ -238,10 +238,10 @@ with tempfile.TemporaryDirectory() as tmp:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             reporter = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8", "base_ref": "a", "reference_commit": "b"}], ["baseline-none", "serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False, plain_interval_seconds=0, resumed_completed=[("#8", 1, "baseline-none")])
-            reporter.consume({"stage": "arm", "status": "resumed", "issue": "#8", "repetition": 1, "variant": "baseline-none", "variant_position": 1})
-            reporter.consume({"stage": "arm", "status": "excluded", "issue": "#8", "repetition": 1, "variant": "serena", "variant_position": 2})
-            reporter.consume({"stage": "report", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "variant": "serena", "variant_position": 2})
-            reporter.consume({"stage": "validation", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "variant": "serena", "variant_position": 2})
+            reporter.consume({"stage": "run", "status": "resumed", "issue": "#8", "repetition": 1, "tool": "baseline-none", "tool_position": 1})
+            reporter.consume({"stage": "run", "status": "excluded", "issue": "#8", "repetition": 1, "tool": "serena", "tool_position": 2})
+            reporter.consume({"stage": "report", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "tool": "serena", "tool_position": 2})
+            reporter.consume({"stage": "validation", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "tool": "serena", "tool_position": 2})
             reporter.close(complete=True)
             snapshots = [json.loads(line) for line in (root / "suite" / "progress-snapshots.jsonl").read_text().splitlines()]
             self.assertEqual([44, 88, 94, 100], [row["percent"] for row in snapshots])
@@ -255,7 +255,7 @@ with tempfile.TemporaryDirectory() as tmp:
             for index, (stage, context) in enumerate(plan):
                 reporter.history.append(self.observation(stage, context, 10, suite="prior", suffix=str(index)))
             setup_context = next(context for stage, context in plan if stage == "setup")
-            event = {**setup_context, "stage": "setup", "status": "active", "issue": "#8", "repetition": 1, "variant": "serena"}
+            event = {**setup_context, "stage": "setup", "status": "active", "issue": "#8", "repetition": 1, "tool": "serena"}
             reporter.consume(event)
             before = reporter.current["remaining_seconds"]
             reporter.consume({**event, "status": "completed", "duration_seconds": 10})
@@ -269,23 +269,23 @@ with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             reporter = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False, plain_interval_seconds=0)
             percentages = []
-            for stage in ARM_STAGES:
-                reporter.consume({"run_id": "run-a", "stage": stage, "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "variant": "serena"})
+            for stage in RUN_STAGES:
+                reporter.consume({"run_id": "run-a", "stage": stage, "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "tool": "serena"})
                 percentages.append(reporter.current["percent"])
-            reporter.consume({"run_id": "run-a", "stage": "arm", "status": "completed", "issue": "#8", "repetition": 1, "variant": "serena"})
-            reporter.consume({"run_id": "suite", "stage": "report", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "variant": "serena"})
+            reporter.consume({"run_id": "run-a", "stage": "run", "status": "completed", "issue": "#8", "repetition": 1, "tool": "serena"})
+            reporter.consume({"run_id": "suite", "stage": "report", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "tool": "serena"})
             percentages.append(reporter.current["percent"])
-            reporter.consume({"run_id": "suite", "stage": "validation", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "variant": "serena"})
+            reporter.consume({"run_id": "suite", "stage": "validation", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "tool": "serena"})
             percentages.append(reporter.current["percent"])
             reporter.close(complete=True)
             self.assertEqual([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], percentages)
 
-    def test_resume_reconstructs_terminal_arms_and_stage_state(self):
+    def test_resume_reconstructs_terminal_runs_and_stage_state(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             first = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False, plain_interval_seconds=0)
-            first.consume({"stage": "setup", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "variant": "serena"})
-            first.consume({"stage": "arm", "status": "completed", "issue": "#8", "repetition": 1, "variant": "serena"})
+            first.consume({"stage": "setup", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "tool": "serena"})
+            first.consume({"stage": "run", "status": "completed", "issue": "#8", "repetition": 1, "tool": "serena"})
             first.close()
             resumed = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False)
             self.assertEqual({("#8", 1, "serena")}, resumed.completed)
@@ -298,7 +298,7 @@ with tempfile.TemporaryDirectory() as tmp:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             reporter = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False)
-            event = {"run_id": "run-a", "stage": "solve", "status": "completed", "duration_seconds": 4, "issue": "#8", "repetition": 1, "variant": "serena"}
+            event = {"run_id": "run-a", "stage": "solve", "status": "completed", "duration_seconds": 4, "issue": "#8", "repetition": 1, "tool": "serena"}
             reporter.consume({**event, "timestamp": "2026-01-01T00:00:00+00:00"})
             reporter.consume({**event, "timestamp": "2026-01-01T00:01:00+00:00"})
             reporter.close()
@@ -308,8 +308,8 @@ with tempfile.TemporaryDirectory() as tmp:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             reporter = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False)
-            reporter.consume({"run_id": "run-a", "stage": "indexing", "status": "timed_out", "duration_seconds": 300, "issue": "#8", "repetition": 1, "variant": "serena"})
-            reporter.consume({"run_id": "run-a", "stage": "arm", "status": "excluded", "issue": "#8", "repetition": 1, "variant": "serena"})
+            reporter.consume({"run_id": "run-a", "stage": "indexing", "status": "timed_out", "duration_seconds": 300, "issue": "#8", "repetition": 1, "tool": "serena"})
+            reporter.consume({"run_id": "run-a", "stage": "run", "status": "excluded", "issue": "#8", "repetition": 1, "tool": "serena"})
             reporter.close(complete=True)
             rows = reporter.history.read()["observations"]
             self.assertEqual("timed_out", rows[0]["outcome"])
@@ -328,9 +328,9 @@ with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             suite_dir = root / "suite"
             reporter = ProgressReporter(suite_dir, "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False)
-            reporter.consume({"run_id": "run-a", "stage": "arm", "status": "completed", "issue": "#8", "repetition": 1, "variant": "serena"})
-            reporter.consume({"run_id": "suite", "stage": "report", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "variant": "serena"})
-            reporter.consume({"run_id": "suite", "stage": "validation", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "variant": "serena"})
+            reporter.consume({"run_id": "run-a", "stage": "run", "status": "completed", "issue": "#8", "repetition": 1, "tool": "serena"})
+            reporter.consume({"run_id": "suite", "stage": "report", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "tool": "serena"})
+            reporter.consume({"run_id": "suite", "stage": "validation", "status": "completed", "duration_seconds": 1, "issue": "#8", "repetition": 1, "tool": "serena"})
             reporter.close(complete=True)
             audit = json.loads((suite_dir / "progress-history-inputs.json").read_text())
             snapshots = (suite_dir / "progress-snapshots.jsonl").read_text().splitlines()
@@ -342,7 +342,7 @@ with tempfile.TemporaryDirectory() as tmp:
             assert spec.loader is not None
             spec.loader.exec_module(module)
             errors = []
-            module.validate_suite_progress(suite_dir, {"repetitions": 1, "issues": [{"issue_id": "#8"}], "variants": "serena", "resolved_configuration": {"progress_enabled": True}}, errors)
+            module.validate_suite_progress(suite_dir, {"repetitions": 1, "issues": [{"issue_id": "#8"}], "tools": "serena", "resolved_configuration": {"progress_enabled": True}}, errors)
             self.assertEqual([], errors)
 
     def test_progress_persistence_overhead_is_negligible_and_out_of_band(self):
@@ -359,7 +359,7 @@ with tempfile.TemporaryDirectory() as tmp:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             reporter = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False, plain_interval_seconds=60)
-            reporter.consume({"stage": "solve", "status": "active", "issue": "#8", "variant": "serena"})
+            reporter.consume({"stage": "solve", "status": "active", "issue": "#8", "tool": "serena"})
             started = time.process_time()
             time.sleep(0.6)
             cpu_seconds = time.process_time() - started

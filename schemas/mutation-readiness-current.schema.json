@@ -5,7 +5,7 @@
   "required": ["schema_id", "methodology_id", "requirements", "ready"],
   "properties": {
     "schema_id": {"const": "mutation-readiness-current"},
-    "methodology_id": {"const": "behavioral-correctness-current"},
+    "methodology_id": {"const": "correctness-current"},
     "requirements": {
       "type": "array",
       "items": {

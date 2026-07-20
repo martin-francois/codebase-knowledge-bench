@@ -24,7 +24,7 @@ from pathlib import PurePosixPath
 from typing import Any
 
 
-CANONICAL_SHA = (
+PUBLISHED_SHA = (
     "b4a77687b40bea1ff97117224d08e00b0b66ee0a6fc1875c87d0b95da19e49e0"
 )
 SUPPLEMENT_SHA = (
@@ -68,7 +68,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def canonical_root(rows: list[dict[str, Any]]) -> str:
+def normalized_root(rows: list[dict[str, Any]]) -> str:
     return sha256_bytes(
         json.dumps(
             rows, sort_keys=True, separators=(",", ":")
@@ -152,7 +152,7 @@ def _manifest_path_errors(
             continue
         clean = str(PurePosixPath(path)).rstrip("/")
         if clean != path:
-            errors.append(f"non-canonical manifest path: {path}")
+            errors.append(f"non-normalized manifest path: {path}")
         if clean in seen:
             errors.append(f"duplicate manifest path: {clean}")
         folded_path = clean.casefold()
@@ -534,7 +534,7 @@ def _validate_outer(outer: Path) -> tuple[dict[str, Any], bytes, str]:
         if (
             manifest.get("entry_count") != len(manifest_entries)
             or manifest.get("manifest_root")
-            != canonical_root(manifest_entries)
+            != normalized_root(manifest_entries)
         ):
             errors.append("outer manifest count/root mismatch")
         for row in manifest_entries:
@@ -691,7 +691,7 @@ def _validate_inner(inner: bytes, work: Path) -> dict[str, Any]:
         if (
             manifest.get("entry_count") != len(manifest["entries"])
             or manifest.get("manifest_root")
-            != canonical_root(manifest["entries"])
+            != normalized_root(manifest["entries"])
         ):
             errors.append("inner manifest count/root mismatch")
         qualifying = [
@@ -700,7 +700,7 @@ def _validate_inner(inner: bytes, work: Path) -> dict[str, Any]:
             if row["path"].split("/", 1)[0]
             in QUALIFYING_PAYLOAD_ROOTS
         ]
-        qualifying_root = canonical_root(qualifying)
+        qualifying_root = normalized_root(qualifying)
         if (
             manifest.get("qualifying_payload_entry_count")
             != len(qualifying)
@@ -740,12 +740,12 @@ def _validate_inner(inner: bytes, work: Path) -> dict[str, Any]:
             if mismatch or row["hardlink_target"] is not None:
                 errors.append(f"inner member mismatch: {row['path']}")
     if sha256_file(
-        inner_root / "immutable-evidence/canonical-suite-bundle.zip"
-    ) != CANONICAL_SHA:
-        errors.append("canonical immutable evidence mismatch")
+        inner_root / "immutable-evidence/published-suite-bundle.zip"
+    ) != PUBLISHED_SHA:
+        errors.append("published immutable evidence mismatch")
     if sha256_file(
         inner_root
-        / "immutable-evidence/canonical-publication-supplement.zip"
+        / "immutable-evidence/published-publication-supplement.zip"
     ) != SUPPLEMENT_SHA:
         errors.append("supplement immutable evidence mismatch")
     commit_object = (
@@ -870,7 +870,7 @@ def _content_manifest(root: Path, excluded: set[str]) -> dict[str, Any]:
     return {
         "entries": entries,
         "entry_count": len(entries),
-        "manifest_root": canonical_root(entries),
+        "manifest_root": normalized_root(entries),
     }
 
 

@@ -22,7 +22,7 @@ from requirement_evidence import common_regression_counts
 from protected_verifier import (
     CHANNELS,
     ProtectedVerificationPolicy,
-    canonical_sha256,
+    published_sha256,
     channel_process_validity,
     command_runner_with_timeout,
     execute_protected_verification,
@@ -142,7 +142,7 @@ def _source_for_selector(channel_result: Mapping[str, Any], selector: str) -> tu
 
 
 def _inventory_hash(rows: Iterable[Mapping[str, Any]]) -> str:
-    return canonical_sha256(sorted(str(row["junit_selector"]) for row in rows))
+    return published_sha256(sorted(str(row["junit_selector"]) for row in rows))
 
 
 def _audit_contract_selectors(contract: Mapping[str, Any],
@@ -417,10 +417,10 @@ def validate_current_preflight_bundle(
         source_manifest = _read_json(source_manifest_path)
         plan_artifact = _read_json(side_root / "protected-channel-plan.json")
         for field, value in (
-            ("selector_inventory_sha256", canonical_sha256(inventory)),
-            ("overlap_audit_sha256", canonical_sha256(overlap)),
-            ("source_manifest_sha256", canonical_sha256(source_manifest)),
-            ("protected_channel_plan_sha256", canonical_sha256(plan_artifact)),
+            ("selector_inventory_sha256", published_sha256(inventory)),
+            ("overlap_audit_sha256", published_sha256(overlap)),
+            ("source_manifest_sha256", published_sha256(source_manifest)),
+            ("protected_channel_plan_sha256", published_sha256(plan_artifact)),
         ):
             if verification[field] != value:
                 raise ValueError(f"{side} protected receipt hash mismatch: {field}")
@@ -529,7 +529,7 @@ def validate_current_preflight_bundle(
         verifications["base"], verifications["reference"]
     ):
         raise ValueError("current preflight common audit differs from protected receipts")
-    source_root = canonical_sha256(source_manifest_hashes)
+    source_root = published_sha256(source_manifest_hashes)
     if artifact["protected_source_manifest_root"] != source_root:
         raise ValueError("current preflight protected-source manifest root mismatch")
     return artifact
@@ -596,7 +596,7 @@ def preflight_issue(*, source_repo: Path, benchmark_root: Path, issue_id: str,
                 f"base_only={sorted(set(base_by)-set(reference_by))} "
                 f"reference_only={sorted(set(reference_by)-set(base_by))}"
             )
-        inventory_hashes[channel] = canonical_sha256(sorted(base_by))
+        inventory_hashes[channel] = published_sha256(sorted(base_by))
         for selector in sorted(base_by):
             source_path, source_hash = _source_for_selector(base["channels"][channel], selector)
             ref_source_path, ref_source_hash = _source_for_selector(
@@ -633,7 +633,7 @@ def preflight_issue(*, source_repo: Path, benchmark_root: Path, issue_id: str,
     ]
     overlap = {"status": "passed" if not overlap_errors else "failed", "errors": overlap_errors}
     common = _common_audit(base, reference)
-    source_manifest_root = canonical_sha256({
+    source_manifest_root = published_sha256({
         "base": sha256_file(base_output / "protected-channel-source-manifest.json"),
         "reference": sha256_file(reference_output / "protected-channel-source-manifest.json"),
     })

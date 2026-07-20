@@ -129,7 +129,7 @@ def execution_root(path: Path) -> Path:
     return path.parent if path.name == "results.json" else path
 
 
-def variant_run_dir(root: Path, run_id: str) -> Path:
+def tool_run_dir(root: Path, run_id: str) -> Path:
     if not re.fullmatch(r"run-[0-9]{3}", run_id):
         raise ValueError(f"invalid benchmark run id: {run_id!r}")
     runs_root = (root / "runs").resolve()
@@ -154,7 +154,7 @@ def validate_stale_checkpoint_diagnostic(
     except (OSError, ValueError, json.JSONDecodeError):
         result = {}
         fail(errors, f"{run_id}: stale-checkpoint diagnostic results are missing or malformed")
-    rows = result.get("variants") if isinstance(result.get("variants"), list) else []
+    rows = result.get("runs") if isinstance(result.get("runs"), list) else []
     if not rows or any(
         not isinstance(row, dict) or float(row.get("solve_wall_seconds") or 0) != 0
         for row in rows
@@ -220,22 +220,25 @@ def validate_suite_export(suite_dir: Path, data: dict[str, Any], errors: list[st
         "suite-report.md",
         "suite-plan.json",
         "suite-validator.log",
-        "tool-treatment.md",
+        "tool-tool.md",
         "model-preflight.json",
     }
     for name in sorted(required - names):
         fail(errors, f"{bundle}: missing {name}")
-    records = list(data.get("run_records") or []) + list(data.get("infrastructure_attempts") or [])
+    records = list(data.get("comparison_records") or []) + list(data.get("infrastructure_attempts") or [])
     for record in records:
         if record.get("infrastructure_failure_kind") in {
             "coordinator_handoff_before_results",
             "provider_interruption_after_partial_implementation",
         }:
             continue
-        run_id = str(record.get("run_id") or "")
-        expected = f"executions/{run_id}/export/benchmark-bundle.zip"
-        if run_id and expected not in names:
-            fail(errors, f"{bundle}: missing sanitized execution bundle for {run_id}")
+        comparison_id = str(record.get("comparison_id") or "")
+        expected = f"executions/{comparison_id}/export/benchmark-bundle.zip"
+        if comparison_id and expected not in names:
+            fail(
+                errors,
+                f"{bundle}: missing sanitized comparison bundle for {comparison_id}",
+            )
 
 
 def _load_suite_module():
@@ -252,13 +255,13 @@ def _load_suite_module():
 def validate_suite_derived_rows(data: dict[str, Any], errors: list[str]) -> None:
     try:
         suite_module = _load_suite_module()
-        rebuilt_rows = suite_module.load_variant_records(list(data.get("run_records") or []))
+        rebuilt_rows = suite_module.load_runs(list(data.get("comparison_records") or []))
         rebuilt_aggregates = suite_module.aggregate(rebuilt_rows)
     except Exception as exc:  # validator boundary must report rather than crash
         fail(errors, f"harness/evidence failure: cannot rebuild suite rows: {type(exc).__name__}: {exc}")
         return
-    if data.get("variant_rows") != rebuilt_rows:
-        fail(errors, "harness/evidence failure: suite variant_rows were mutated after execution")
+    if data.get("runs") != rebuilt_rows:
+        fail(errors, "harness/evidence failure: suite runs were mutated after execution")
     if data.get("aggregates") != rebuilt_aggregates:
         fail(errors, "harness/evidence failure: suite aggregates or rankings are not recomputation-consistent")
 
@@ -319,18 +322,18 @@ def validate_suite_progress(
     if not snapshots:
         return
     final = snapshots[-1]
-    configured_variants = plan.get("variants") or []
-    variant_count = (
-        len(configured_variants)
-        if isinstance(configured_variants, list)
-        else len([item for item in str(configured_variants).split(",") if item])
+    configured_tools = plan.get("tools") or []
+    tool_count = (
+        len(configured_tools)
+        if isinstance(configured_tools, list)
+        else len([item for item in str(configured_tools).split(",") if item])
     )
     selected_issues = config.get("selected_issues") or []
     issue_count = len(selected_issues) if selected_issues else len(plan.get("issues") or [])
-    expected_arms = int(plan.get("repetitions") or 1) * issue_count * variant_count
-    expected_units = expected_arms * 8 + 2
+    expected_runs = int(plan.get("repetitions") or 1) * issue_count * tool_count
+    expected_units = expected_runs * 8 + 2
     if int(final.get("total_units") or 0) != expected_units:
-        fail(errors, "progress total_units differs from the scheduled issue/repetition/variant matrix")
+        fail(errors, "progress total_units differs from the scheduled issue/repetition/tool matrix")
     finished_suite_stages = {
         str(snapshot.get("stage"))
         for snapshot in snapshots
@@ -350,13 +353,13 @@ def validate_suite_progress(
 
 def _rank_key(row: Mapping[str, Any]) -> tuple[float, float, float]:
     return (
-        -float(row.get("behavioral_correctness_score") or 0),
-        float(row.get("modeled_weighted_token_load") or 10**18),
+        -float(row.get("correctness_score") or 0),
+        float(row.get("weighted_tokens") or 10**18),
         float(row.get("solve_wall_seconds") or 10**18),
     )
 
 
-def _expected_execution_ids(rows: list[dict[str, Any]]) -> dict[str, list[str]]:
+def _expected_comparison_ids(rows: list[dict[str, Any]]) -> dict[str, list[str]]:
     from benchmark_model import operational_rank_eligible, tool_effect_eligible
 
     rankable = sorted((row for row in rows if operational_rank_eligible(row)), key=_rank_key)
@@ -377,9 +380,9 @@ def _expected_execution_ids(rows: list[dict[str, Any]]) -> dict[str, list[str]]:
     }
 
 
-def _validate_current_variant(row: dict[str, Any], run_dir: Path, errors: list[str]) -> None:
+def _validate_current_tool(row: dict[str, Any], run_dir: Path, errors: list[str]) -> None:
     run_id = str(row.get("run_id") or "")
-    variant = str(row.get("variant") or "")
+    tool = str(row.get("tool") or "")
     try:
         from current_pipeline import validate_rederived_row
 
@@ -391,12 +394,12 @@ def _validate_current_variant(row: dict[str, Any], run_dir: Path, errors: list[s
     except (OSError, RuntimeError, ValueError, KeyError, json.JSONDecodeError) as exc:
         fail(
             errors,
-            f"{run_id}/{variant}: complete current-row rederivation failed: {exc}",
+            f"{run_id}/{tool}: complete current-row rederivation failed: {exc}",
         )
 
 
 def _validate_row_policy(row: dict[str, Any], errors: list[str]) -> None:
-    label = f"{row.get('run_id')}/{row.get('variant')}"
+    label = f"{row.get('run_id')}/{row.get('tool')}"
     if set(row) != set(EXECUTION_FIELDS):
         fail(errors, f"{label}: execution row field set differs from the current descriptor")
     if set(row).intersection(SUITE_ONLY_FIELDS):
@@ -434,15 +437,15 @@ def validate_execution(
         results = load_json(results_path)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return [f"{results_path}: unreadable results: {exc}"]
-    validate_required_schema_fields(results, "execution-results.schema.json", "variants", errors)
+    validate_required_schema_fields(results, "execution-results.schema.json", "runs", errors)
     scoring = results.get("scoring_model") if isinstance(results.get("scoring_model"), dict) else {}
     if scoring.get("schema_version") != "current":
         fail(errors, "unsupported result schema; current evidence is required")
         return errors
-    rows = results.get("variants") if isinstance(results.get("variants"), list) else []
+    rows = results.get("runs") if isinstance(results.get("runs"), list) else []
     if len({str(row.get("run_id")) for row in rows if isinstance(row, dict)}) != len(rows):
         fail(errors, "execution contains duplicate run ids")
-    expected_ids = _expected_execution_ids(rows)
+    expected_ids = _expected_comparison_ids(rows)
     for field, expected in expected_ids.items():
         if results.get(field) != expected:
             fail(errors, f"{field} differs from independently derived current execution order")
@@ -452,15 +455,15 @@ def validate_execution(
         _validate_row_policy(row, errors)
         if row.get("correctness_evidence_available"):
             try:
-                run_dir = variant_run_dir(root, str(row.get("run_id") or ""))
+                run_dir = tool_run_dir(root, str(row.get("run_id") or ""))
             except ValueError as exc:
                 fail(errors, str(exc))
                 continue
-            _validate_current_variant(row, run_dir, errors)
+            _validate_current_tool(row, run_dir, errors)
         else:
             projected = project_execution_row(row)
             if projected != row:
-                fail(errors, f"{row.get('run_id')}/{row.get('variant')}: non-solve row does not match the required current form")
+                fail(errors, f"{row.get('run_id')}/{row.get('tool')}: non-solve row does not match the required current form")
     if (root / "review-manifest.json").exists() or (root / "export/benchmark-bundle.zip").exists():
         validate_export(root, errors)
     return errors
@@ -562,7 +565,7 @@ def validate_suite(
             validate_suite_progress(suite_dir, plan, errors)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             fail(errors, f"current suite plan/progress validation failed: {exc}")
-    for record in data.get("run_records") or []:
+    for record in data.get("comparison_records") or []:
         execution = Path(str(record.get("execution_root") or ""))
         if not execution.is_absolute():
             execution = suite_dir / execution

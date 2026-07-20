@@ -13,7 +13,7 @@ from typing import Mapping
 DOCUMENTS = ("SPEC.md", "SCORING-MODEL.md", "README.md", "CONTRIBUTING.md", "docs/methodology.md", "docs/result-schema.md")
 RETIRED = (
     "Token accounting v2",
-    "legacy_modeled_weighted_token_load_v1_reasoning_double_counted",
+    "legacy_weighted_tokens_v1_reasoning_double_counted",
     "common_regression_pass_fraction",
 )
 STALE_FORMULA = re.compile(
@@ -25,7 +25,7 @@ STALE_FORMULA = re.compile(
 
 def _production_formula(repo: Path) -> dict[str, object]:
     tree = ast.parse((repo / "scripts/current_methodology.py").read_text(encoding="utf-8"))
-    function = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "modeled_token_load")
+    function = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "weighted_token_count")
     returned = next(node for node in ast.walk(function) if isinstance(node, ast.Return))
     names = sorted(node.id for node in ast.walk(returned.value) if isinstance(node, ast.Name))
     attributes = sorted(node.attr for node in ast.walk(returned.value) if isinstance(node, ast.Attribute))

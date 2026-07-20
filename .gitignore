@@ -19,7 +19,6 @@ anti-leak-bin/
 test-output/
 *-bundle.zip
 *-report.md
-!verification/current-canonical-verification-report.md
 !verification/llm-verification-report.md
 latest-*.txt
 .codebase-knowledge-bench-output/

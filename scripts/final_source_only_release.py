@@ -16,7 +16,7 @@ from source_only_ci import (
     ROUTING_NONCE,
     TASK_ID,
     browser_receipt_errors,
-    canonical_bytes,
+    normalized_bytes,
     source_only_receipt_errors,
 )
 
@@ -66,7 +66,7 @@ def sha256_file(path: Path) -> str:
 
 def write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(canonical_bytes(value))
+    path.write_bytes(normalized_bytes(value))
 
 
 def _read_json(path: Path) -> dict[str, Any]:

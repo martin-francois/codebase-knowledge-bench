@@ -40,7 +40,7 @@ source-only stratum runs in the full-digest Playwright userspace declared in
 `.github/workflows/ci.yml`, selects Node 22.22.0, uses frozen dependencies and the checked-in
 synthetic target, and injects external executable paths. It executes Vitest, the dashboard build,
 and the real `dashboard/tests/browser.spec.ts` Playwright test. It deliberately does not require the
-canonical target checkout or Bubblewrap integration.
+published target checkout or Bubblewrap integration.
 
 From the repository root:
 
@@ -102,7 +102,7 @@ Never recursively include an older `suite-bundle.zip` in a new archive.
 
 ## Determinism and current-format discipline
 
-- Sort paths, mappings, issues, variants, and report rows before serialization.
+- Sort paths, mappings, issues, tools, and report rows before serialization.
 - Never depend on Python hash or set iteration order.
 - Resolve basenames only when uniquely identifiable.
 - Treat schemas and machine-readable field names as private pre-release internal formats.

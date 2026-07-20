@@ -31,7 +31,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def canonical_root(rows: list[dict[str, Any]]) -> str:
+def normalized_root(rows: list[dict[str, Any]]) -> str:
     encoded = json.dumps(
         rows, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
@@ -200,7 +200,7 @@ def exact_archive_manifest(
         "expanded_bytes": sum(
             int(row["bytes"]) for row in rows if row["type"] == "file"
         ),
-        "manifest_root": canonical_root(rows),
+        "manifest_root": normalized_root(rows),
         "limits": {
             "members": MAX_MEMBERS,
             "member_bytes": MAX_MEMBER_BYTES,
@@ -275,7 +275,7 @@ def _manifest_errors(
             continue
         if member_path != row["path"]:
             errors.append(
-                f"archive manifest path is not canonical: {row['path']}"
+                f"archive manifest path is not normalized: {row['path']}"
             )
         manifest_members.append(
             (member_path, member_type == "directory")
@@ -292,7 +292,7 @@ def _manifest_errors(
             else ""
         ),
     ):
-        errors.append("archive manifest entries are not canonically ordered")
+        errors.append("archive manifest entries are not deterministically ordered")
     if manifest.get("entry_count") != len(expected):
         errors.append("archive manifest count mismatch")
     if manifest.get("expanded_bytes") != sum(
@@ -301,7 +301,7 @@ def _manifest_errors(
         if row.get("type") == "file"
     ):
         errors.append("archive expanded byte count mismatch")
-    if manifest.get("manifest_root") != canonical_root(expected):
+    if manifest.get("manifest_root") != normalized_root(expected):
         errors.append("archive manifest root mismatch")
     if manifest.get("limits") != {
         "members": MAX_MEMBERS,
@@ -332,7 +332,7 @@ def _manifest_errors(
         if expected_by_path.get(row["path"]) != row:
             errors.append(f"archive member mismatch: {row['path']}")
     if observed != sorted(observed, key=lambda row: row["path"]):
-        errors.append("archive members are not canonically ordered")
+        errors.append("archive members are not deterministically ordered")
     return errors
 
 
@@ -361,7 +361,7 @@ def validate_exact_tar(
         ),
         "entry_count": len(observed),
         "manifest_root": (
-            canonical_root(observed) if observed else None
+            normalized_root(observed) if observed else None
         ),
     }
 

@@ -21,7 +21,7 @@ AUDIT_FIXTURE_DEFINITIONS = {
 REMOVED_ARTIFACTS = (
     "docs/prompt-history-traceability.md",
     "docs/SAME_SOURCE_RECOVERY.md",
-    "configs/fresh-final-arm-retry-v2.json",
+    "configs/fresh-final-run-retry-v2.json",
     "schemas/fresh-workspace-retry.schema.json",
     "schemas/correctness-preflight.schema.json",
     "scripts/recompute_results.py",
@@ -156,7 +156,7 @@ def main() -> int:
     args = parser.parse_args()
     repo = args.repo.resolve()
     result = audit(repo)
-    negative = audit(repo, "fresh-final-arm-retry-v2.json")
+    negative = audit(repo, "fresh-final-run-retry-v2.json")
     result["positive_fixture_passed"] = result["status"] == "passed"
     result["targeted_negative_fixture_rejected"] = negative["status"] == "failed"
     result["negative_fixture_evidence"] = negative["live_import_or_dataflow_references"]

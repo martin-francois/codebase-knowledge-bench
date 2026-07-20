@@ -29,8 +29,8 @@ def main() -> int:
     suite.write_report(
         suite_dir,
         str(result["suite_id"]),
-        list(result.get("run_records", [])),
-        list(result.get("variant_rows", [])),
+        list(result.get("comparison_records", [])),
+        list(result.get("runs", [])),
         dict(result.get("aggregates", {})),
     )
     return 0

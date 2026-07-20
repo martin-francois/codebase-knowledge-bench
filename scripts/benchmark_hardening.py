@@ -177,7 +177,7 @@ SEMANTICALLY_EMPTY_ARTIFACT_NAMES = frozenset({
 
 
 def artifact_contract() -> dict[str, Any]:
-    """Return the authoritative existence/emptiness policy for treatment telemetry."""
+    """Return the authoritative existence/emptiness policy for tool telemetry."""
     return {
         "schema_version": ARTIFACT_CONTRACT_VERSION,
         "artifact": "tool-invocations-solve.jsonl",
@@ -197,7 +197,7 @@ def artifact_contract() -> dict[str, Any]:
 
 def artifact_may_be_empty(
     relative_path: str,
-    arm_contexts: dict[str, dict[str, Any]],
+    run_contexts: dict[str, dict[str, Any]],
 ) -> bool:
     """Apply one emptiness policy across execution and suite publication."""
     relative = Path(relative_path)
@@ -216,10 +216,10 @@ def artifact_may_be_empty(
         return True
     if len(relative.parts) < 3 or relative.parts[0] != "runs":
         return False
-    context = arm_contexts.get(relative.parts[1], {})
+    context = run_contexts.get(relative.parts[1], {})
     if not context.get("runnable", True):
         return True
-    if context.get("treatment") == "baseline-none" and relative.parts[2] in {
+    if context.get("tool") == "baseline-none" and relative.parts[2] in {
         "tool-smoke.jsonl",
         "tool-invocations-solve.jsonl",
     }:
@@ -232,15 +232,15 @@ def artifact_may_be_empty(
 def validate_tool_invocation_artifact(
     path: Path,
     *,
-    treatment: str,
+    tool: str,
     solve_expected: bool,
 ) -> list[str]:
-    """Validate treatment-aware solve telemetry without trusting manifest optionality."""
+    """Validate tool-aware solve telemetry without trusting manifest optionality."""
     errors: list[str] = []
     if not path.is_file():
         return [f"required solve invocation telemetry is missing: {path.name}"]
     size = path.stat().st_size
-    if treatment == "baseline-none":
+    if tool == "baseline-none":
         if size:
             errors.append("baseline solve invocation telemetry must be empty")
     elif solve_expected and size == 0:
@@ -303,7 +303,7 @@ def _case_map(cases: Iterable[TestCaseResult]) -> dict[str, TestCaseResult]:
 
 
 def junit_cases_from_directory(root: Path) -> list[TestCaseResult]:
-    """Read exported JUnit XML and reject duplicate canonical identifiers."""
+    """Read exported JUnit XML and reject duplicate test-case identifiers."""
     rows: list[TestCaseResult] = []
     for path in sorted(root.glob("*.xml")):
         try:
@@ -348,7 +348,7 @@ def patch_review_score(dimensions: dict[str, float]) -> float:
     return float(sum(dimensions.values()))
 
 
-def modeled_token_load(input_tokens: int, cached_input_tokens: int,
+def weighted_token_count(input_tokens: int, cached_input_tokens: int,
                        output_tokens_including_reasoning: int, reasoning_output_tokens: int,
                        cached_weight: float = 0.1) -> float:
     if cached_weight < 0:
@@ -361,7 +361,7 @@ def modeled_token_load(input_tokens: int, cached_input_tokens: int,
 
 def token_sensitivity(record: dict[str, Any]) -> dict[str, float]:
     return {
-        str(weight): modeled_token_load(
+        str(weight): weighted_token_count(
             int(record.get("input_tokens") or 0),
             int(record.get("cached_input_tokens") or 0),
             int(record.get("output_tokens_including_reasoning") or 0),
@@ -472,27 +472,27 @@ def balanced_tool_effect_blocks(rows: Iterable[dict[str, Any]], *,
                                 baseline: str = "baseline-none") -> dict[str, Any]:
     records = list(rows)
     blocks = sorted({(str(row.get("issue_id")), int(row.get("repetition") or 0)) for row in records})
-    variants = sorted({str(row.get("variant")) for row in records if row.get("variant") != baseline})
+    tools = sorted({str(row.get("tool")) for row in records if row.get("tool") != baseline})
     complete: dict[str, list[tuple[str, int]]] = {}
-    for variant in variants:
+    for tool in tools:
         eligible = {
             (str(row.get("issue_id")), int(row.get("repetition") or 0))
             for row in records
-            if row.get("variant") == variant and row.get("tool_effect_eligible")
+            if row.get("tool") == tool and row.get("tool_effect_eligible")
         }
         baseline_blocks = {
             (str(row.get("issue_id")), int(row.get("repetition") or 0))
             for row in records
-            if row.get("variant") == baseline and row.get("operational_rank_eligible")
+            if row.get("tool") == baseline and row.get("operational_rank_eligible")
         }
-        complete[variant] = sorted(eligible & baseline_blocks)
+        complete[tool] = sorted(eligible & baseline_blocks)
     shared = set(blocks)
-    for variant in variants:
-        shared &= set(complete[variant])
+    for tool in tools:
+        shared &= set(complete[tool])
     winner_supported = bool(blocks) and len(shared) == len(blocks)
     return {
         "scheduled_blocks": [list(block) for block in blocks],
-        "eligible_blocks_by_variant": {k: [list(v) for v in values] for k, values in complete.items()},
+        "eligible_blocks_by_tool": {k: [list(v) for v in values] for k, values in complete.items()},
         "balanced_blocks": [list(block) for block in sorted(shared)],
         "coverage_threshold": 1.0,
         "coverage_met": winner_supported,
@@ -509,7 +509,7 @@ def matched_operational_comparisons(
     policy: dict[str, Any],
     *,
     baseline: str = "baseline-none",
-    canonical: dict[str, Any] | None = None,
+    published: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     from operational_tradeoffs import (
         matched_effect,
@@ -520,11 +520,11 @@ def matched_operational_comparisons(
     baselines = {
         (str(row.get("issue_id")), int(row.get("repetition") or 0)): row
         for row in records
-        if row.get("variant") == baseline and row.get("operational_rank_eligible")
+        if row.get("tool") == baseline and row.get("operational_rank_eligible")
     }
     fields = (
-        "behavioral_correctness_score",
-        "modeled_weighted_token_load",
+        "correctness_score",
+        "weighted_tokens",
         "solve_wall_seconds",
         "execution_calls_started",
         "execution_calls_completed",
@@ -559,12 +559,12 @@ def matched_operational_comparisons(
         "setup_seconds",
         "index_seconds",
         "tool_smoke_seconds",
-        "warm_workflow_seconds",
+        "warm_end_to_end_seconds",
     )
     comparisons: list[dict[str, Any]] = []
     for row in records:
-        variant = str(row.get("variant"))
-        if variant == baseline or not row.get("operational_rank_eligible"):
+        tool = str(row.get("tool"))
+        if tool == baseline or not row.get("operational_rank_eligible"):
             continue
         block = (str(row.get("issue_id")), int(row.get("repetition") or 0))
         base = baselines.get(block)
@@ -574,23 +574,23 @@ def matched_operational_comparisons(
         comparison: dict[str, Any] = {
             "issue_id": block[0],
             "repetition": block[1],
-            "variant": variant,
+            "tool": tool,
             "baseline": baseline,
             "intended_tool_successful_calls": int(row.get("intended_tool_successful_solve_invocation_count") or 0),
             "intended_tool_failed_calls": int(row.get("intended_tool_failed_solve_invocation_count") or 0),
             "absolute_task_quality": {
-                "treatment_task_success": bool(row.get("task_success")),
+                "tool_task_success": bool(row.get("task_success")),
                 "baseline_task_success": bool(base.get("task_success")),
             },
         }
         for field in fields:
-            treatment_value = float(row.get(field) or 0)
+            tool_value = float(row.get(field) or 0)
             baseline_value = float(base.get(field) or 0)
             comparison[field] = {
-                "treatment": treatment_value,
+                "tool": tool_value,
                 "baseline": baseline_value,
-                "delta": treatment_value - baseline_value,
-                "ratio": treatment_value / baseline_value if baseline_value > 0 else None,
+                "delta": tool_value - baseline_value,
+                "ratio": tool_value / baseline_value if baseline_value > 0 else None,
             }
         correctness_delta = effect["correctness_delta_points"]
         token_ratio = effect["ratios"]["tokens"]
@@ -604,25 +604,25 @@ def matched_operational_comparisons(
         )
         comparison["paired_effect"] = effect
         comparisons.append(comparison)
-    if canonical is None:
+    if published is None:
         from operational_tradeoffs import analyze_operational_tradeoffs
 
-        canonical = analyze_operational_tradeoffs(records, policy)
-    by_variant: dict[str, Any] = {}
-    for variant, comparison in sorted(canonical["matched_comparisons"].items()):
+        published = analyze_operational_tradeoffs(records, policy)
+    by_tool: dict[str, Any] = {}
+    for tool, comparison in sorted(published["matched_comparisons"].items()):
         effects = comparison["paired_effects"]
         raw_deltas = [
             block["correctness_delta_points"]
             for block in effects["raw_blocks"]
             if block["correctness_delta_points"] is not None
         ]
-        by_variant[variant] = {
+        by_tool[tool] = {
             "matched_blocks": comparison["coverage"]["eligible_matched_block_count"],
-            "paired_correctness_delta_mean": effects["mean_correctness_delta_points"],
+            "paired_correctness_delta_average": effects["average_correctness_delta_points"],
             "paired_correctness_delta_median": statistics.median(raw_deltas)
             if raw_deltas else None,
-            "paired_token_ratio_geometric_mean": effects["geometric_mean_ratios"].get("tokens"),
-            "paired_time_ratio_geometric_mean": effects["geometric_mean_ratios"].get("time"),
+            "paired_token_ratio_geometric_average": effects["geometric_average_ratios"].get("tokens"),
+            "paired_time_ratio_geometric_average": effects["geometric_average_ratios"].get("time"),
             "sign_consistency": effects["empirical_correctness_signs"],
             "coverage": comparison["coverage"],
             "paired_intervals": comparison["paired_intervals"],
@@ -632,7 +632,7 @@ def matched_operational_comparisons(
         "projection_role": "raw_block_projection_only",
         "decision_source": "operational_tradeoffs.analyze_operational_tradeoffs",
         "blocks": comparisons,
-        "by_variant": by_variant,
+        "by_tool": by_tool,
     }
 
 
@@ -666,11 +666,11 @@ def apply_absolute_quality_status(row: dict[str, Any]) -> dict[str, Any]:
         else "task_unsuccessful"
     )
     row.update({
-        "behavioral_correctness_score": float(row.get("behavioral_correctness_score") or 0.0),
+        "correctness_score": float(row.get("correctness_score") or 0.0),
         "task_success": task_success,
         "task_quality_class": task_quality_class,
         "absolute_quality": {
-            "behavioral_correctness_score": float(row.get("behavioral_correctness_score") or 0.0),
+            "correctness_score": float(row.get("correctness_score") or 0.0),
             "requested_behavior_score": row.get("requested_behavior_score"),
             "critical_requirement_status": row.get("critical_requirement_status"),
             "common_regression_score": row.get("common_regression_score"),
@@ -801,13 +801,13 @@ def execution_call_lifecycle(path: Path) -> dict[str, Any]:
 
 def operational_rank_eligible(row: dict[str, Any]) -> bool:
     base = bool(row.get("trust_valid") and row.get("implementation_evaluated"))
-    if row.get("variant") == "baseline-none":
+    if row.get("tool") == "baseline-none":
         return base
     return base and int(row.get("intended_tool_successful_solve_invocation_count") or 0) >= 1
 
 
 def attribution_record(row: dict[str, Any]) -> dict[str, Any]:
-    if row.get("variant") == "baseline-none":
+    if row.get("tool") == "baseline-none":
         return {
             "applicable": False,
             "state": "not_applicable",
@@ -878,7 +878,7 @@ def _safe_argv(command: str) -> list[str]:
 
 
 def command_invokes_tool(command: str, expected: str) -> bool:
-    """Treatment-neutral compound-shell audit detector."""
+    """Tool-neutral compound-shell audit detector."""
     if not expected:
         return False
     try:
@@ -918,7 +918,7 @@ def command_invokes_tool(command: str, expected: str) -> bool:
 def invocation_records_from_codex_jsonl(
     path: Path,
     *,
-    treatment: str,
+    tool: str,
     expected_cli: str,
     intended_mcp_servers: Iterable[str],
     phase: str,
@@ -957,7 +957,7 @@ def invocation_records_from_codex_jsonl(
         records.append({
             "schema_version": INVOCATION_SCHEMA_VERSION,
             "phase": phase,
-            "tool": treatment,
+            "tool": tool,
             "invocation_id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"{path}:{line_number}:{command}")),
             "started_at": event.get("started_at"),
             "finished_at": event.get("timestamp") or event.get("completed_at"),
@@ -986,7 +986,7 @@ def invocation_summary(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
         "intended_tool_attempted_solve_invocation_count": len(rows),
         "intended_tool_successful_solve_invocation_count": len(successful),
         "intended_tool_failed_solve_invocation_count": len(failed),
-        "treatment_adherent": bool(successful),
+        "tool_adherent": bool(successful),
     }
 
 
@@ -1028,8 +1028,8 @@ def efficiency_views(row: dict[str, Any], *, amortization_tasks: Iterable[int] =
     cold_measured = bool(row.get("clean_install_measured"))
     persistent = setup + index
     return {
-        "solve_only_provisioned": {"seconds": solve, "modeled_weighted_token_load": row.get("modeled_weighted_token_load")},
-        "warm_workflow": {"seconds": warm, "includes": ["setup", "index", "smoke", "solve", "common_verification"]},
+        "solve_only_provisioned": {"seconds": solve, "weighted_tokens": row.get("weighted_tokens")},
+        "warm_end_to_end": {"seconds": warm, "includes": ["setup", "index", "smoke", "solve", "common_verification"]},
         "cold_install_first_use": ({"seconds": install + warm, "measured": True} if cold_measured else {"measured": False}),
         "persistent_index_amortized": {
             str(n): {"seconds_per_task": (persistent + n * (smoke + solve + verify)) / n,

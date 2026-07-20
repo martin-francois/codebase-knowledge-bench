@@ -40,7 +40,7 @@ from source_only_ci import (  # noqa: E402
     SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
     TASK_ID,
     browser_receipt_errors,
-    canonical_bytes,
+    normalized_bytes,
     command_plan,
     command_plan_errors,
     command_plan_identity,
@@ -142,11 +142,11 @@ def valid_source_receipt(browser: dict | None = None) -> dict:
         "execution_stratum": "source-only",
         "python_support": ">=3.14,<3.15",
         "plain_git_checkout_compatible": True,
-        "canonical_target_required": False,
+        "published_target_required": False,
         "bench_target_repo_path_present": False,
         "bubblewrap_required": False,
         "privileged_namespaces_required": False,
-        "canonical_output_directories_required": False,
+        "published_output_directories_required": False,
         "builder_home_required": False,
         "builder_caches_required": False,
         "packaged_replay_runtimes_required": False,
@@ -176,9 +176,9 @@ def valid_source_receipt(browser: dict | None = None) -> dict:
         },
         "source_only_browser_receipt": {
             "path": "source-only-browser-receipt.json",
-            "bytes": len(canonical_bytes(browser)),
+            "bytes": len(normalized_bytes(browser)),
             "sha256": hashlib.sha256(
-                canonical_bytes(browser)
+                normalized_bytes(browser)
             ).hexdigest(),
             "status": "passed",
         },
@@ -504,7 +504,7 @@ class SourceOnlyReceiptTest(unittest.TestCase):
             "print('mock pass')",
         ]
         receipt["command_plan"]["sha256"] = hashlib.sha256(
-            canonical_bytes(receipt["command_plan"]["commands"])
+            normalized_bytes(receipt["command_plan"]["commands"])
         ).hexdigest()
         self.assertTrue(
             any(

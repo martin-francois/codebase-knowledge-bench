@@ -19,7 +19,7 @@ POLICY = json.loads((ROOT / "configs" / "methodology-policy.json").read_text())
 
 
 def row(
-    variant: str,
+    tool: str,
     correctness: float,
     tokens: float,
     seconds: float,
@@ -33,33 +33,33 @@ def row(
     exclusion_reason: str | None = None,
 ) -> dict:
     return {
-        "variant": variant,
+        "tool": tool,
         "issue_id": issue,
         "repetition": repetition,
-        "run_id": f"{issue}-{repetition}-{variant}",
+        "run_id": f"{issue}-{repetition}-{tool}",
         "operational_rank_eligible": eligible,
         "implementation_evaluated": True,
         "task_success": task_success,
         "requested_behavior_score": 100.0 if task_success else 0.0,
         "common_regression_full_pass": True,
         "common_regression_score": 100.0,
-        "behavioral_correctness_score": correctness,
-        "modeled_weighted_token_load": tokens,
+        "correctness_score": correctness,
+        "weighted_tokens": tokens,
         "observed_non_cached_input_tokens": tokens * 0.8,
         "output_tokens_including_reasoning": tokens * 0.1,
         "reasoning_output_tokens": tokens * 0.05,
         "solve_wall_seconds": seconds,
-        "warm_workflow_seconds": warm if warm is not None else seconds + 10,
+        "warm_end_to_end_seconds": warm if warm is not None else seconds + 10,
         "execution_calls_started": calls,
         "intended_tool_successful_solve_invocation_count": (
-            0 if variant == "baseline-none" else 2
+            0 if tool == "baseline-none" else 2
         ),
         "estimated_monetary_cost": None,
         "exclusion_reason": exclusion_reason,
         "attribution": {
-            "applicable": variant != "baseline-none",
+            "applicable": tool != "baseline-none",
             "strict_direct_attribution_supported": (
-                False if variant != "baseline-none" else None
+                False if tool != "baseline-none" else None
             ),
         },
     }
@@ -116,7 +116,7 @@ class OperationalTradeoffTest(unittest.TestCase):
         self.assertEqual("materially_worse_correctness", sensitivity[2.5])
         self.assertEqual("tolerance_acceptable_tradeoff", sensitivity[5.0])
 
-    def test_identical_treatments_have_identical_shared_distributions(self) -> None:
+    def test_identical_tools_have_identical_shared_distributions(self) -> None:
         records = []
         for issue, offset in (("a", -3), ("b", 0), ("c", 4)):
             for repetition in (1, 2, 3):
@@ -137,7 +137,7 @@ class OperationalTradeoffTest(unittest.TestCase):
             if isinstance(values, dict) and "tool-a" in values:
                 self.assertEqual(values["tool-a"], values["tool-b"])
 
-    def test_adding_treatment_does_not_change_existing_interval(self) -> None:
+    def test_adding_tool_does_not_change_existing_interval(self) -> None:
         records = self.repeated()
         initial = self.analyze(*records)["matched_comparisons"]["tool"]["paired_intervals"]
         augmented = records + [
@@ -162,7 +162,7 @@ class OperationalTradeoffTest(unittest.TestCase):
             record
             for record in records
             if not (
-                record["variant"] == "tool"
+                record["tool"] == "tool"
                 and record["issue_id"] == "c"
                 and record["repetition"] == 3
             )
@@ -200,7 +200,7 @@ class OperationalTradeoffTest(unittest.TestCase):
         records = self.repeated()
         self.assertEqual(self.analyze(*records), self.analyze(*reversed(records)))
 
-    def test_ten_point_improvement_uses_canonical_interval_and_supported_finding(self) -> None:
+    def test_ten_point_improvement_uses_published_interval_and_supported_finding(self) -> None:
         result = self.analyze(*self.repeated(tool_correctness=40, tool_tokens=800, tool_time=450))
         comparison = result["matched_comparisons"]["tool"]
         self.assertEqual(
@@ -209,14 +209,14 @@ class OperationalTradeoffTest(unittest.TestCase):
         )
         self.assertNotIn("correctness_delta", comparison["paired_intervals"])
         findings = result["supported_findings"]["correctness_improvements"]
-        self.assertEqual(["tool"], [finding["variant"] for finding in findings])
+        self.assertEqual(["tool"], [finding["tool"] for finding in findings])
         self.assertEqual(1.0, findings[0]["bootstrap_support"])
 
     def test_strict_dominator_is_not_duplicated_by_tolerance_grid(self) -> None:
         result = self.analyze(*self.repeated(tool_correctness=40, tool_tokens=700, tool_time=400))
         self.assertEqual(
             ["tool"],
-            [item["variant"] for item in result["supported_findings"]["strict_dominators"]],
+            [item["tool"] for item in result["supported_findings"]["strict_dominators"]],
         )
 
     def test_incomplete_tool_does_not_suppress_complete_pairwise_findings(self) -> None:
@@ -232,7 +232,7 @@ class OperationalTradeoffTest(unittest.TestCase):
         self.assertEqual("not_comparable", result["complete_block_frontier"]["status"])
         self.assertEqual(
             ["tool"],
-            [item["variant"] for item in result["supported_findings"]["correctness_improvements"]],
+            [item["tool"] for item in result["supported_findings"]["correctness_improvements"]],
         )
 
     def test_observed_and_supported_findings_are_distinct_in_pilot(self) -> None:
@@ -247,16 +247,16 @@ class OperationalTradeoffTest(unittest.TestCase):
 
     def test_mixed_success_wording_counts_individual_implementations(self) -> None:
         records = []
-        for variant in ("baseline-none", "tool"):
+        for tool in ("baseline-none", "tool"):
             records.extend((
-                row(variant, 100, 1000, 500, issue="a", task_success=True),
-                row(variant, 50, 1000, 500, issue="b", task_success=False),
+                row(tool, 100, 1000, 500, issue="a", task_success=True),
+                row(tool, 50, 1000, 500, issue="b", task_success=False),
             ))
         result = self.analyze(*records)
         summary = result["decision_summary"]
         self.assertFalse(summary["all_individual_evaluated_implementations_unsuccessful"])
         self.assertTrue(summary["at_least_one_implementation_succeeded"])
-        self.assertTrue(summary["every_treatment_had_at_least_one_unsuccessful_block"])
+        self.assertTrue(summary["every_tool_had_at_least_one_unsuccessful_block"])
         self.assertNotIn("All implementations were task-unsuccessful", summary["absolute_quality_statement"])
 
     def test_resource_heterogeneity_preserves_all_primary_log_ratios(self) -> None:
@@ -290,7 +290,7 @@ class DashboardDataTest(unittest.TestCase):
         analysis = analyze_operational_tradeoffs(rows, POLICY)
         return {
             "suite_id": "fixture",
-            "variant_rows": rows,
+            "runs": rows,
             "aggregates": {"operational_tradeoffs": analysis},
         }
 
@@ -308,8 +308,8 @@ class DashboardDataTest(unittest.TestCase):
         self.assertTrue(
             any(not run["operational_eligible"] for run in data["individual_runs"])
         )
-        self.assertNotIn("invalid", data["canonical"]["exact_pareto_frontier"])
-        tool = next(run for run in data["individual_runs"] if run["treatment"] == "tool")
+        self.assertNotIn("invalid", data["published"]["exact_pareto_frontier"])
+        tool = next(run for run in data["individual_runs"] if run["tool"] == "tool")
         self.assertEqual(2.0, tool["metrics"]["intended_tool_successful_calls"])
         self.assertFalse(
             data["metric_descriptors"]["estimated_monetary_cost"][

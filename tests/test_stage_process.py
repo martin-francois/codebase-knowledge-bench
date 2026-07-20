@@ -38,7 +38,7 @@ class StageProcessTest(unittest.TestCase):
             [sys.executable, "-c", code],
             cwd=root,
             stage="indexing",
-            treatment="fake-tool",
+            tool="fake-tool",
             evidence_dir=root / "evidence",
             policy=policy,
             activity_paths=activity,
