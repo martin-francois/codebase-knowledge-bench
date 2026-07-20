@@ -78,6 +78,45 @@ class PublicationSafetyTest(unittest.TestCase):
             self.assertTrue(report["source_reconstruction_passed"])
             self.assertGreater(len(report["roles"]), 0)
 
+    def test_suite_source_archive_is_refreshed_after_harness_change(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            harness = root / "harness"
+            harness.mkdir()
+            source = harness / "runner.py"
+            source.write_text("print('first')\n")
+            subprocess.run(["git", "init", "-q"], cwd=harness, check=True)
+            subprocess.run(["git", "add", "-A"], cwd=harness, check=True)
+            subprocess.run(
+                ["git", "-c", "user.name=Benchmark", "-c",
+                 "user.email=benchmark@example.invalid", "commit", "-qm", "fixture"],
+                cwd=harness,
+                check=True,
+            )
+
+            suite.ensure_suite_source_archive(root, harness)
+            first = json.loads(
+                (root / "report-assets" / "harness-source.json").read_text()
+            )
+            source.write_text("print('second')\n")
+            suite.ensure_suite_source_archive(root, harness)
+            second = json.loads(
+                (root / "report-assets" / "harness-source.json").read_text()
+            )
+
+            self.assertNotEqual(
+                first["effective_source_content_sha256"],
+                second["effective_source_content_sha256"],
+            )
+            self.assertEqual(
+                hashlib.sha256(source.read_bytes()).hexdigest(),
+                next(
+                    entry["sha256"]
+                    for entry in second["effective_source_files"]
+                    if entry["path"] == "runner.py"
+                ),
+            )
+
     def test_fresh_source_archive_reconstructs_every_declared_role(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -117,7 +156,9 @@ class PublicationSafetyTest(unittest.TestCase):
             (report_assets / "harness-source.json").write_text(json.dumps(metadata))
             (root / "suite-plan.json").write_text(json.dumps({
                 "model_provenance": {"roles": {
-                    "validator": {"files": ["runner.py"], "hashes": {"runner.py": file_hash}}
+                    # A resumed publisher can have a different source hash;
+                    # the embedded execution must authenticate its own snapshot.
+                    "validator": {"files": ["runner.py"], "hashes": {"runner.py": "0" * 64}}
                 }}
             }))
             report = validate_source_roles(root)

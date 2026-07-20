@@ -164,7 +164,11 @@ def validate_stale_checkpoint_diagnostic(
     if not log_path.is_absolute():
         log_path = root / log_path
     log_text = log_path.read_text(encoding="utf-8", errors="replace") if log_path.is_file() else ""
-    if "Refusing qualification checkpoint reuse" not in log_text:
+    refusal_evidence = (
+        "Refusing qualification checkpoint reuse",
+        "Refusing smoke resume with changed execution identity",
+    )
+    if not any(marker in log_text for marker in refusal_evidence):
         fail(errors, f"{run_id}: stale-checkpoint diagnostic lacks refusal evidence")
     return errors
 

@@ -138,6 +138,18 @@ class ArtifactContractTest(unittest.TestCase):
                 path, tool="graphify", solve_expected=False
             ))
 
+    def test_missing_smoke_only_telemetry_is_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tool-invocations-solve.jsonl"
+            self.assertEqual([], validate_tool_invocation_artifact(
+                path, tool="graphify", solve_expected=False
+            ))
+
+    def test_empty_base_preflight_patch_is_semantically_valid(self) -> None:
+        self.assertTrue(artifact_may_be_empty(
+            "preflight/issue-486/implementation-patches/base.patch", {}
+        ))
+
 
 if __name__ == "__main__":
     unittest.main()

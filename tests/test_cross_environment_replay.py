@@ -2,6 +2,7 @@ import hashlib
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -1257,17 +1258,16 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
             self.assertEqual("passed", reconstruction["status"])
             self.assertEqual(identity, reconstruction["final_outer"])
             interpreter = reconstruction["interpreter"]
+            default_python = Path(shutil.which("python3") or "python3").resolve()
             self.assertEqual(
-                Path(sys.executable).resolve(),
+                default_python,
                 Path(interpreter["path"]),
             )
             self.assertRegex(
                 interpreter["version"], r"^\d+\.\d+\.\d+"
             )
             self.assertEqual(
-                hashlib.sha256(
-                    Path(sys.executable).resolve().read_bytes()
-                ).hexdigest(),
+                hashlib.sha256(default_python.read_bytes()).hexdigest(),
                 interpreter["sha256"],
             )
 

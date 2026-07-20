@@ -257,9 +257,32 @@ def validate_source_roles(root: Path) -> dict[str, Any]:
     for metadata_path in harness_metadata_paths:
         try:
             source_metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            provenance = source_metadata.get("role_source_provenance")
+            if not provenance:
+                if metadata_path.parent.parent == root:
+                    provenance = suite_provenance
+                else:
+                    # Executions may have been sealed before a resumed suite
+                    # publication.  Preserve the suite's declared role/file
+                    # mapping, but authenticate those files with this
+                    # execution archive's own manifest rather than later
+                    # publisher hashes.
+                    manifest_hashes = {
+                        str(entry["path"]): str(entry["sha256"])
+                        for entry in source_metadata.get("effective_source_files", [])
+                    }
+                    provenance = {}
+                    for role, record in suite_provenance.items():
+                        files = [str(path) for path in record.get("files", [])]
+                        provenance[role] = {
+                            "sources": [
+                                {"path": path, "sha256": manifest_hashes.get(path)}
+                                for path in files
+                            ]
+                        }
             role_checks, archive_record = _reconstruct_source_archive(
                 metadata_path, source_metadata,
-                source_metadata.get("role_source_provenance") or suite_provenance,
+                provenance,
                 root,
             )
             checked.extend(role_checks)
