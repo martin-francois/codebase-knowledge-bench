@@ -81,7 +81,7 @@
     "availability": "required",
     "baselineRelativeMeaningful": true,
     "direction": "lower",
-    "label": "Modeled weighted token load",
+    "label": "Weighted tokens",
     "meanField": "modeled_weighted_token_load_mean",
     "medianField": "modeled_weighted_token_load_median",
     "relativeField": "modeled_weighted_token_load_change_percent",

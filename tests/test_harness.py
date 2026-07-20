@@ -2280,7 +2280,7 @@ class ComplianceRegressionTest(unittest.TestCase):
         positions = [readme.index(heading) for heading in headings]
         self.assertEqual(positions, sorted(positions))
         early = readme[: readme.index("## Quick start with the included suite")]
-        for warning in ("63 implementation attempts", "YOLO mode is enabled by default", "does not prove"):
+        for warning in ("63 benchmark runs", "YOLO mode is enabled by default", "does not prove"):
             self.assertIn(warning, early)
         self.assertIn("When it finishes, open the path stored in", readme)
         self.assertIn("## README order and language", agents)
@@ -2293,7 +2293,7 @@ class ComplianceRegressionTest(unittest.TestCase):
             "Define and select challenges",
             "Top-level `[[issues]]` entries",
             "`[benchmark].selected_issues` selects which defined challenges",
-            "selection applies to preflight, every workflow and repetition",
+            "selection applies to preflight, every tool or baseline and repetition",
             "JSON configuration and separate issue-matrix files are not supported",
         ):
             self.assertIn(contract, readme)

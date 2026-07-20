@@ -279,6 +279,15 @@ contract check available.
   implementation, tests, `SPEC.md`, and this file. Fix discovered drift as part of the task rather than
   merely reporting it.
 
+## Reader-facing terminology
+
+Use `tool` or `baseline`, `benchmark run`, `correctness`, `weighted tokens`, and `average` in
+reader-facing reports, dashboard labels, configuration guidance, and operator messages. Keep exact
+machine-readable field names and internal statistical or orchestration identifiers unchanged when
+they are part of a stable contract, including `arm`, `mean`, `canonical`,
+`behavioral_correctness_score`, and `modeled_weighted_token_load`. Do not replace `workflow` when it
+literally names a GitHub Actions workflow or target-project business behavior.
+
 ## Commit and push after every prompt
 
 After fulfilling every user prompt, commit all task-related repository changes and push the current

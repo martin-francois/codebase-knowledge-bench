@@ -298,6 +298,13 @@ show common fail and skip counts and protected process validity.
 presentation projection is rejected by independent validation even if surrounding arithmetic is
 self-consistent.
 
+`RPT-005` Reader-facing reports, dashboard labels, configuration guidance, and operator messages use
+plain-language presentation terms: `tool` or `baseline` for compared setups, `benchmark run` for one
+executed treatment, `correctness`, `weighted tokens`, and `average`. Stable machine-readable fields
+and statistical or orchestration identifiers retain their precise current names, including
+`arm`, `mean`, `canonical`, `behavioral_correctness_score`, and
+`modeled_weighted_token_load`.
+
 ## 13. Mutation calibration
 
 `MUT-001` Curated mutation calibration invokes the same current issue preflight, channel plan,

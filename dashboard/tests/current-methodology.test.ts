@@ -7,7 +7,7 @@ describe("token-accounting-current labels", () => {
     expect(TOKEN_VIEWS.reasoning.label).toContain("subset of output");
   });
   it("labels the sole current weighted-load field without a historical alias", () => {
-    expect(TOKEN_VIEWS.weighted_load.label).toBe("Modeled weighted token load");
+    expect(TOKEN_VIEWS.weighted_load.label).toBe("Weighted tokens");
     expect(TOKEN_VIEWS.weighted_load.label).not.toContain("double-counted");
   });
 });
