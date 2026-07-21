@@ -105,7 +105,7 @@
     "Final four-repetition and publication evidence must be generated from the fresh v3 identity after the final source commit."
   ],
   "overall_status": "passed",
-  "report_envelope_commit": "c2955aa6a12e2fca0cc328b52e234e4f2dff092d",
+  "report_envelope_commit": "21107c928be03ae83d9c0063a1a16951beed3802",
   "review_session_description": "The implementing coding agent reviewed the exact implementation commit after syntax checks, focused real login-shell and ledger fixtures, two hash-seed runs, and the complete 499-test suite under Python 3.14.3. No additional model call was made.",
   "reviewed_artifacts": [
     "repo://SPEC.md",
@@ -126,8 +126,8 @@
     "repo://verification/methodology-current/complete-rederivation-coverage.json",
     "repo://verification/methodology-current/execution-field-provenance.json"
   ],
-  "reviewed_subject_tree_sha256": "77031fbd53513f901610054a62f4cd495b2ea4b45b99a76f689fcee93bacf086",
+  "reviewed_subject_tree_sha256": "77f573c623b6507babdb6d86724886011eda14410b14d0e693ac237142327054",
   "reviewer_kind": "implementing_coding_agent",
   "self_review": true,
-  "source_commit": "c2955aa6a12e2fca0cc328b52e234e4f2dff092d"
+  "source_commit": "21107c928be03ae83d9c0063a1a16951beed3802"
 }
