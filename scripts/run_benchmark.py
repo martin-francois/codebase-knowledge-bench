@@ -2446,6 +2446,18 @@ def setup_serena(v: Tool, setup_log: Path, version_file: Path, config_file: Path
     log_command(setup_log, create)
     if create.returncode != 0:
         raise RuntimeError("serena project creation failed")
+    initialize_memories = run(
+        [str(cli), "memories", "initialize", str(v.repo)],
+        cwd=v.repo,
+        timeout=STAGE_POLICY.timeout_for("setup"),
+        env=env,
+        stage="setup",
+        tool=v.name,
+        activity_paths=(v.repo,),
+    )
+    log_command(setup_log, initialize_memories)
+    if initialize_memories.returncode != 0:
+        raise RuntimeError("serena memory initialization failed")
     start = time.monotonic()
     res = run(
         [str(cli), "project", "index", "--log-level", "ERROR", str(v.repo)],
@@ -2466,7 +2478,7 @@ def setup_serena(v: Tool, setup_log: Path, version_file: Path, config_file: Path
         codex_config_snapshot(
             v,
             "Official setup: uv tool install -p 3.13; serena init; serena setup codex; project "
-            "create followed by retry-safe project index. The documented Codex context/project-from-cwd launch is retained with "
+            "create, memory initialization, and retry-safe project index. The documented Codex context/project-from-cwd launch is retained with "
             "the preinstalled absolute binary. Version-matched immutable language-server cache "
             f"reused: {reused_dependencies or 'none'}; published: {published_dependencies or 'none'}. "
             f"Safety-only update hooks removed: {len(removed)}.",
