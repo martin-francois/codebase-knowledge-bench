@@ -631,6 +631,15 @@ not rerun to repair derivation or packaging.
 commits, schedule, and preserved raw artifacts. It resumes pending work only and never combines
 incompatible methodology identities.
 
+`LIF-004` A coordinator interruption inside an issue/repetition block is recoverable only when the
+preserved execution proves at least one complete child lifecycle and at least one incomplete child.
+Recovery MUST content-address and retain the interrupted infrastructure envelope, reuse complete
+child and protected-verifier evidence without relaunching those children, restore incomplete run
+workspaces from a content-addressed post-smoke/pre-solve snapshot into fresh trees, retain the
+interrupted trees as infrastructure evidence, and launch only incomplete children. Stale smoke-only
+derived output MUST NOT be mistaken for a completed execution. An execution without the restorable
+snapshot MUST fail closed rather than cleaning or reusing its interrupted workspace.
+
 ## 18. Verification registry and semantic review
 
 `VER-001` Every automated verification registry entry has a callable checker, positive fixture,
