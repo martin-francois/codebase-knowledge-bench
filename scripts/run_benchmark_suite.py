@@ -3309,7 +3309,7 @@ def _main() -> None:
     controlled = EXECUTION_PROFILE in {"acceptance_canary", "symphony_trello"}
     ledger = None
     ledger_dir = (
-        OUTPUT_ROOT / "symphony-trello"
+        OUTPUT_ROOT / suite_id
         if EXECUTION_PROFILE == "symphony_trello" else suite_dir
     )
     if controlled:
