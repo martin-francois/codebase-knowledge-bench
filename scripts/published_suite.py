@@ -133,7 +133,7 @@ def validate_execution_profile(
             "issues": list(PUBLISHED_ISSUES),
             "tools": list(PUBLISHED_TOOLS),
             "repetitions": 4,
-            "suite_id": "symphony-trello-ci4-no-yolo-mnt-isolated-20260721-v2",
+            "suite_id": "symphony-trello-ci4-no-yolo-mnt-isolated-20260721-v3",
             "model": "gpt-5.6-sol",
             "reasoning_effort": "high",
         }
@@ -654,8 +654,29 @@ def reject_pre_spawn_attempt(
 
 
 def finish_block(suite_dir: Path, ledger: dict[str, Any], keys: Iterable[str], result_path: Path) -> None:
+    keys = list(keys)
     result = json.loads(result_path.read_text()) if result_path.is_file() else {}
-    by_tool = {str(row.get("tool")): row for row in result.get("tools", [])}
+    rows = result.get("runs")
+    if result_path.is_file() and not isinstance(rows, list):
+        raise SystemExit("Published-suite results.json has no current runs array")
+    rows = rows or []
+    by_tool: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("tool"), str):
+            raise SystemExit("Published-suite results.json contains a malformed run row")
+        tool = str(row["tool"])
+        if tool in by_tool:
+            raise SystemExit(f"Published-suite results.json contains duplicate tool row: {tool}")
+        by_tool[tool] = row
+    missing = sorted(
+        key.rsplit("::", 1)[1]
+        for key in keys
+        if key.rsplit("::", 1)[1] not in by_tool
+    )
+    if result_path.is_file() and missing:
+        raise SystemExit(
+            "Published-suite results.json is missing scheduled tool rows: " + ", ".join(missing)
+        )
     timestamp = datetime.now(timezone.utc).isoformat()
     for key in keys:
         tool = key.rsplit("::", 1)[1]
