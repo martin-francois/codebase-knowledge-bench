@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -104,7 +105,7 @@ class CodexAppServerClientTest(unittest.TestCase):
             result = run_app_server(
                 [sys.executable, str(server)],
                 cwd=root,
-                environment={},
+                environment=os.environ,
                 prompt="Reply MODEL_READY",
                 model="gpt-5.6-sol",
                 reasoning_effort="high",
@@ -114,7 +115,7 @@ class CodexAppServerClientTest(unittest.TestCase):
                 normalized_path=normalized,
                 stderr_path=stderr,
                 final_path=final,
-                timeout_seconds=60,
+                timeout_seconds=10,
             )
 
             self.assertEqual(0, result["returncode"], result)
