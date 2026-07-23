@@ -3371,12 +3371,16 @@ with mock.patch.object(module, 'run', return_value=result):
         self.assertEqual(1, aggregate["zero_valued_tool_failures"])
         self.assertEqual(40, aggregate["expected_correctness"])
 
-    def test_suite_archive_never_recurses_prior_bundles(self) -> None:
+    def test_suite_archive_excludes_local_recovery_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             suite_dir = Path(tmp)
             nested = suite_dir / "resume-history" / "old"
             nested.mkdir(parents=True)
             (nested / "suite-bundle.zip").write_bytes(b"old")
+            (nested / "suite-validator.log").write_text("old validation")
+            diagnostics = suite_dir / "stage-diagnostics" / "publication-old"
+            diagnostics.mkdir(parents=True)
+            (diagnostics / "stdout.log").write_text("old publication output")
             (suite_dir / "suite-results.json").write_text("{}", encoding="utf-8")
             with mock.patch.object(suite, "read_comparison_records", return_value=[]), mock.patch.object(
                 suite, "read_jsonl_records", return_value=[]
@@ -3384,6 +3388,11 @@ with mock.patch.object(module, 'run', return_value=result):
                 suite.write_zip(suite_dir)
             with zipfile.ZipFile(suite_dir / "suite-bundle.zip") as archive:
                 self.assertNotIn("resume-history/old/suite-bundle.zip", archive.namelist())
+                self.assertNotIn("resume-history/old/suite-validator.log", archive.namelist())
+                self.assertNotIn(
+                    "stage-diagnostics/publication-old/stdout.log", archive.namelist()
+                )
+                self.assertIn("suite-results.json", archive.namelist())
 
     def test_issue_488_uses_semantic_direct_channel_overlay(self) -> None:
         issue = next(item for item in suite.ISSUES if item.issue_id == "issue-488")

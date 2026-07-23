@@ -2396,6 +2396,14 @@ def write_zip(suite_dir: Path) -> None:
             relative = path.relative_to(suite_dir)
             if relative.parts and relative.parts[0] == "executions":
                 continue
+            if relative.parts and relative.parts[0] in {
+                "resume-history",
+                "stage-diagnostics",
+            }:
+                # These are local recovery/audit artifacts from superseded publication
+                # attempts. Keep them beside the suite, but never recursively publish
+                # them as benchmark evidence in the portable bundle.
+                continue
             if (
                 relative.name == "suite-bundle.zip"
                 or "maven-home" in relative.parts
@@ -2411,8 +2419,6 @@ def write_zip(suite_dir: Path) -> None:
             ):
                 continue
             relative = path.relative_to(suite_dir)
-            if "resume-history" in relative.parts and relative.name == "suite-bundle.zip":
-                continue
             add_bytes(zf, relative, path.read_bytes(), "suite-publication-v3")
         bundle_records = (
             read_comparison_records(suite_dir)
