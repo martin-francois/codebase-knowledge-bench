@@ -18,7 +18,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from benchmark_config import FIELDS
-from benchmark_progress import RUN_STAGES, DurationHistory, ProgressReporter, estimate_seconds, render_line, stage_fingerprint, unclassified_config_keys
+from benchmark_progress import RUN_STAGES, DurationHistory, ProgressReporter, estimate_details, estimate_seconds, render_line, stage_fingerprint, unclassified_config_keys
 
 
 class ProgressTest(unittest.TestCase):
@@ -142,6 +142,26 @@ with tempfile.TemporaryDirectory() as tmp:
             self.assertEqual((None, "insufficient_history", 0), estimate_seconds(history, [("solve", context)], suite_id="current", min_samples=2))
             history.append(self.observation("solve", context, 20, suite="prior", suffix="2"))
             self.assertEqual((15.0, "persisted_exact_cohort", 2), estimate_seconds(history, [("solve", context)], suite_id="current", min_samples=2))
+
+    def test_partial_estimate_reports_unique_observation_ids(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            history = DurationHistory(Path(tmp) / "history.json")
+            context = self.context()
+            history.append(self.observation("solve", context, 10, suffix="1"))
+            result = estimate_details(
+                history,
+                [
+                    ("solve", context),
+                    ("solve", context),
+                    ("solve", self.context(tool="graphify")),
+                ],
+                suite_id="suite-a",
+                min_samples=1,
+            )
+            self.assertEqual(
+                (None, "insufficient_history", 2, ["suite-a-solve-1"]),
+                result,
+            )
 
     def test_current_suite_samples_take_precedence_over_prior_suite(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -294,6 +314,45 @@ with tempfile.TemporaryDirectory() as tmp:
             snapshots = (root / "suite" / "progress-snapshots.jsonl").read_text().splitlines()
             self.assertEqual(len(snapshots), len(resumed.history_audit["events"]))
             resumed.close()
+
+    def test_resume_normalizes_duplicate_selected_observation_ids(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            suite_dir = root / "suite"
+            suite_dir.mkdir()
+            snapshot = {
+                "timestamp": "2026-01-01T00:00:00+00:00",
+                "stage": "solve",
+                "stage_status": "active",
+                "issue_id": "#8",
+                "repetition": 1,
+                "tool": "serena",
+                "estimate_source": "insufficient_history",
+                "sample_count": 2,
+                "selected_observation_ids": ["b", "a", "b"],
+            }
+            (suite_dir / "progress-snapshots.jsonl").write_text(
+                json.dumps(snapshot) + "\n", encoding="utf-8"
+            )
+            reporter = ProgressReporter(
+                suite_dir,
+                "suite",
+                [{"issue_id": "#8"}],
+                ["serena"],
+                1,
+                history_path=root / "history.json",
+                stream=io.StringIO(),
+                interactive=False,
+            )
+            restored = json.loads(
+                (suite_dir / "progress-snapshots.jsonl").read_text()
+            )
+            self.assertEqual(["a", "b"], restored["selected_observation_ids"])
+            self.assertEqual(
+                ["a", "b"],
+                reporter.history_audit["events"][0]["selected_observation_ids"],
+            )
+            reporter.close()
 
     def test_history_observation_is_deduplicated_across_replayed_event(self):
         with tempfile.TemporaryDirectory() as tmp:

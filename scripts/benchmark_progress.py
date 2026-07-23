@@ -281,7 +281,12 @@ def estimate_details(history: DurationHistory, planned: Iterable[tuple[str, dict
             selected_rows, source = exact, "persisted_exact_cohort"
             samples = [float(row["duration_seconds"]) for row in selected_rows]
         if len(samples) < min_samples:
-            return None, "insufficient_history", sample_count, selected
+            return (
+                None,
+                "insufficient_history",
+                sample_count,
+                sorted(set(selected)),
+            )
         total += statistics.median(samples)
         sample_count += len(samples)
         sources.add(source)
@@ -380,11 +385,21 @@ class ProgressReporter:
     def _restore_snapshots(self) -> None:
         if not self.snapshot_path.is_file():
             return
+        restored_lines: list[str] = []
+        normalized = False
         for line in self.snapshot_path.read_text(encoding="utf-8").splitlines():
             try:
                 snapshot = json.loads(line)
             except json.JSONDecodeError:
+                restored_lines.append(line)
                 continue
+            selected = snapshot.get("selected_observation_ids", [])
+            unique_selected = sorted({str(item) for item in selected})
+            if selected != unique_selected:
+                snapshot["selected_observation_ids"] = unique_selected
+                line = json.dumps(snapshot, sort_keys=True)
+                normalized = True
+            restored_lines.append(line)
             issue = str(snapshot.get("issue_id"))
             repetition = int(snapshot.get("repetition") or 1)
             tool = str(snapshot.get("tool"))
@@ -411,6 +426,18 @@ class ProgressReporter:
                 }
             )
             self.current = snapshot
+        if normalized:
+            descriptor, temporary_name = tempfile.mkstemp(
+                prefix=f".{self.snapshot_path.name}.", dir=self.suite_dir
+            )
+            try:
+                with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                    handle.write("\n".join(restored_lines) + "\n")
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(temporary_name, self.snapshot_path)
+            finally:
+                Path(temporary_name).unlink(missing_ok=True)
 
     def _set_run_status(self, run: tuple[str, int, str], status: str) -> None:
         self.completed.add(run)
