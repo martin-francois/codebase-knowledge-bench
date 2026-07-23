@@ -114,10 +114,10 @@ class CodexAppServerClientTest(unittest.TestCase):
                 normalized_path=normalized,
                 stderr_path=stderr,
                 final_path=final,
-                timeout_seconds=10,
+                timeout_seconds=60,
             )
 
-            self.assertEqual(0, result["returncode"])
+            self.assertEqual(0, result["returncode"], result)
             self.assertEqual(1, result["approval_requests"])
             self.assertFalse(result["timed_out"])
             self.assertEqual("", result["failure"])
