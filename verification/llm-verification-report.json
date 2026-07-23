@@ -113,8 +113,8 @@
     "No historical benchmark evidence is reinterpreted and no compatibility reader is retained."
   ],
   "overall_status": "passed",
-  "report_envelope_commit": "990123d012c05cfd22910b0824b66d223cdd6a23",
-  "review_session_description": "The implementing coding agent reviewed the Codex 0.145.0 app-server raw-usage implementation after the exact-executable schema probe, Python 3.14.3 checks, focused protocol, phase-bound evidence-name, publication-lock, dashboard-install, and equivalent-cost tests, the source-only production shadow, the complete 512-test repository suite, and a bounded two-run paid canary. Both canary implementations and protected validators passed; exact request costs reconciled; all three approval requests were declined. Derivation-only publication repairs reused the preserved completed runs and passed extracted archive and strict suite validation. Two concurrent hosted source-only jobs exposed only the fixture's narrow ten-second protocol deadline; the diagnostic fixture deadline was raised to 60 seconds without changing production timeout behavior and passed 50 consecutive focused executions locally. No additional review model call was made.",
+  "report_envelope_commit": "a7286c054f2ede51d7eb6d5a9599393825d3a20f",
+  "review_session_description": "The implementing coding agent reviewed the Codex 0.145.0 app-server raw-usage implementation after the exact-executable schema probe, Python 3.14.3 checks, focused protocol, phase-bound evidence-name, publication-lock, dashboard-install, and equivalent-cost tests, the source-only production shadow, the complete 512-test repository suite, and a bounded two-run paid canary. Both canary implementations and protected validators passed; exact request costs reconciled; all three approval requests were declined. Derivation-only publication repairs reused the preserved completed runs and passed extracted archive and strict suite validation. Two concurrent hosted source-only jobs showed that the synthetic server had discarded setup-Python's required runtime environment, producing an immediate broken pipe. The fixture now preserves that environment and emits the full result on failure while retaining the original deadline and production behavior; it passed 50 consecutive focused executions plus the complete local suite. No additional review model call was made.",
   "reviewed_artifacts": [
     "repo://SPEC.md",
     "repo://schemas/model-preflight-lock.schema.json",
@@ -139,8 +139,8 @@
     "repo://verification/methodology-current/contracts/issue-488.json",
     "repo://verification/methodology-current/contracts/issue-498.json"
   ],
-  "reviewed_subject_tree_sha256": "f3625cc2492c38a888f3622a40b1dc92db39c51176ee3f66d64f4fb67214e456",
+  "reviewed_subject_tree_sha256": "39beeb4b5c97a6f96b9455d470032348b62b1f5acad7e5f8abec88bd9e39d28c",
   "reviewer_kind": "implementing_coding_agent",
   "self_review": true,
-  "source_commit": "990123d012c05cfd22910b0824b66d223cdd6a23"
+  "source_commit": "a7286c054f2ede51d7eb6d5a9599393825d3a20f"
 }
