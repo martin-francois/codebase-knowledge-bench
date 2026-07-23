@@ -28,6 +28,8 @@ You need:
 
 - Linux with `bash`, Python 3.14.x, Git, and Bubblewrap (`bwrap`) for
   artifact-backed benchmark and release qualification.
+- Node.js and npm. The suite installs the dashboard's checked-in lockfile with `npm ci` before
+  starting any paid implementation child.
 - The Codex CLI with access to your configured model.
 - The GitHub CLI (`gh`). Authenticate it when the target or its issues are private.
 - The build tools required by the target repository.

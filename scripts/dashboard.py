@@ -22,6 +22,16 @@ METRIC_DESCRIPTORS: dict[str, dict[str, Any]] = json.loads(
 )
 
 
+def install_dashboard_dependencies(dashboard: Path = DASHBOARD) -> None:
+    """Install the exact dashboard lock before any paid benchmark child starts."""
+    subprocess.run(
+        ["npm", "ci", "--prefix", str(dashboard)],
+        cwd=ROOT,
+        check=True,
+        timeout=180,
+    )
+
+
 def _number(value: Any) -> float | None:
     return (
         float(value)

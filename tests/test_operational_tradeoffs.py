@@ -5,11 +5,12 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from dashboard import dashboard_data, validate_dashboard
+from dashboard import dashboard_data, install_dashboard_dependencies, validate_dashboard
 from operational_tradeoffs import (
     analyze_operational_tradeoffs,
     matched_operational_decision,
@@ -306,6 +307,18 @@ class OperationalTradeoffTest(unittest.TestCase):
 
 
 class DashboardDataTest(unittest.TestCase):
+    def test_dashboard_dependencies_use_exact_lock_install(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            dashboard = Path(temporary)
+            with mock.patch("dashboard.subprocess.run") as run:
+                install_dashboard_dependencies(dashboard)
+        run.assert_called_once_with(
+            ["npm", "ci", "--prefix", str(dashboard)],
+            cwd=ROOT,
+            check=True,
+            timeout=180,
+        )
+
     def suite_result(self) -> dict:
         rows = [
             row("baseline-none", 30, 1000, 500),
