@@ -22,10 +22,11 @@ try:
         PRICING_DESCRIPTOR_RELATIVE_PATH,
         derive_equivalent_cost,
         load_pricing_descriptor,
-        request_usage_from_codex_jsonl,
+        request_usage_from_codex_app_server_jsonl,
         validate_pricing_descriptor,
         validate_request_usage,
     )
+    from codex_app_server import normalized_events_from_app_server
     from current_row import EXECUTION_FIELDS, TOKEN_FIELDS, project_execution_row
     from requirement_evidence import derive_requirement_evidence
     from current_preflight import validate_current_preflight
@@ -41,10 +42,11 @@ except ModuleNotFoundError:  # pragma: no cover - imported as scripts.current_pi
         PRICING_DESCRIPTOR_RELATIVE_PATH,
         derive_equivalent_cost,
         load_pricing_descriptor,
-        request_usage_from_codex_jsonl,
+        request_usage_from_codex_app_server_jsonl,
         validate_pricing_descriptor,
         validate_request_usage,
     )
+    from scripts.codex_app_server import normalized_events_from_app_server
     from scripts.current_row import EXECUTION_FIELDS, TOKEN_FIELDS, project_execution_row
     from scripts.requirement_evidence import derive_requirement_evidence
     from scripts.current_preflight import validate_current_preflight
@@ -350,10 +352,19 @@ def write_raw_run_metadata(
         repo_root / PRICING_DESCRIPTOR_RELATIVE_PATH,
         pricing_descriptor_path,
     )
-    request_usage = request_usage_from_codex_jsonl(
-        run_dir / "run.jsonl",
+    app_server_journal = run_dir / "app-server.jsonl"
+    capability_receipt = run_dir / "codex-raw-usage-capability.json"
+    app_server_control = run_dir / "app-server-control.json"
+    request_usage = request_usage_from_codex_app_server_jsonl(
+        app_server_journal,
         run_id=str(run_metadata.get("run_id") or ""),
         configured_model_identity=configured_model_identity,
+        execution_mode=str(descriptor["execution_mode"]),
+        service_tier=str(descriptor["service_tier"]),
+        region=str(descriptor["region"]),
+        long_context_threshold_input_tokens=int(
+            descriptor["long_context"]["threshold_input_tokens"]
+        ),
     )
     validate_request_usage(
         request_usage,
@@ -365,6 +376,11 @@ def write_raw_run_metadata(
 
     evidence = {
         "run_jsonl": _file_descriptor(run_dir / "run.jsonl", run_dir),
+        "app_server_journal": _file_descriptor(app_server_journal, run_dir),
+        "codex_capability_receipt": _file_descriptor(
+            capability_receipt, run_dir
+        ),
+        "app_server_control": _file_descriptor(app_server_control, run_dir),
         "candidate_patch": _file_descriptor(run_dir / "diff.patch", run_dir),
         "changed_files": _file_descriptor(run_dir / "changed-files.txt", run_dir),
         "current_preflight": _file_descriptor(current_preflight_path, run_dir),
@@ -425,6 +441,15 @@ def _derive_current_row_from_verified_inputs(
     evidence: Mapping[str, Any],
 ) -> dict[str, Any]:
     run_jsonl = _verify_file_descriptor(run_dir, evidence["run_jsonl"])
+    app_server_journal = _verify_file_descriptor(
+        run_dir, evidence["app_server_journal"]
+    )
+    capability_receipt_path = _verify_file_descriptor(
+        run_dir, evidence["codex_capability_receipt"]
+    )
+    app_server_control_path = _verify_file_descriptor(
+        run_dir, evidence["app_server_control"]
+    )
     patch_path = _verify_file_descriptor(run_dir, evidence["candidate_patch"])
     changed_files_path = _verify_file_descriptor(run_dir, evidence["changed_files"])
     current_preflight_path = _verify_file_descriptor(run_dir, evidence["current_preflight"])
@@ -515,6 +540,39 @@ def _derive_current_row_from_verified_inputs(
     request_usage = json.loads(
         request_usage_path.read_text(encoding="utf-8")
     )
+    capability_receipt = json.loads(
+        capability_receipt_path.read_text(encoding="utf-8")
+    )
+    if not (
+        capability_receipt.get("passed") is True
+        and capability_receipt.get("experimental_raw_events") is True
+        and capability_receipt.get("raw_response_completed") is True
+        and {
+            "inputTokens",
+            "cachedInputTokens",
+            "cacheWriteInputTokens",
+            "outputTokens",
+            "reasoningOutputTokens",
+        }.issubset(set(capability_receipt.get("usage_fields") or []))
+    ):
+        raise RuntimeError(
+            "stored Codex capability receipt does not prove raw usage support"
+        )
+    app_server_control = json.loads(
+        app_server_control_path.read_text(encoding="utf-8")
+    )
+    if app_server_control.get("failure") or app_server_control.get(
+        "returncode"
+    ) != 0 or app_server_control.get("timed_out") is not False:
+        raise RuntimeError("stored app-server control receipt is not successful")
+    normalized_bytes = "".join(
+        json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n"
+        for event in normalized_events_from_app_server(app_server_journal)
+    ).encode("utf-8")
+    if run_jsonl.read_bytes() != normalized_bytes:
+        raise RuntimeError(
+            "normalized Codex JSONL differs from the app-server journal"
+        )
     repo_root = Path(__file__).resolve().parents[1]
     validate_pricing_descriptor(
         descriptor,
@@ -538,10 +596,16 @@ def _derive_current_row_from_verified_inputs(
         descriptor=descriptor,
         schema_path=repo_root / "schemas/request-usage.schema.json",
     )
-    reconstructed_request_usage = request_usage_from_codex_jsonl(
-        run_jsonl,
+    reconstructed_request_usage = request_usage_from_codex_app_server_jsonl(
+        app_server_journal,
         run_id=str(metadata.get("run_id") or ""),
         configured_model_identity=str(descriptor["model_identity"]),
+        execution_mode=str(descriptor["execution_mode"]),
+        service_tier=str(descriptor["service_tier"]),
+        region=str(descriptor["region"]),
+        long_context_threshold_input_tokens=int(
+            descriptor["long_context"]["threshold_input_tokens"]
+        ),
     )
     if reconstructed_request_usage != request_usage:
         raise RuntimeError(

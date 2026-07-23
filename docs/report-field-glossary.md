@@ -22,6 +22,8 @@
   descriptor. Its state is `exact`, `bounded`, or `unavailable`; it is not the actual invoice.
 - `request_evidence_level`: whether cost evidence has request boundaries, only a turn aggregate, or
   no usable request usage.
+- `app_server_journal`: the durable bidirectional JSONL record used to rederive normalized events,
+  completed-response usage, and final aggregate reconciliation.
 - `requested_behavior_score`: current methodology requirement-weighted protected behavior.
 - `critical_requirement_full_pass`: current methodology safety gate that cannot be averaged away.
 - `reference_behavior_match_rate`: black-box diagnostic over declared scenarios, never source similarity.

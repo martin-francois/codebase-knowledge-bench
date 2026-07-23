@@ -18,7 +18,7 @@ from equivalent_cost import (
     canonical_sha256,
     derive_equivalent_cost,
     load_pricing_descriptor,
-    request_usage_from_codex_jsonl,
+    request_usage_from_codex_app_server_jsonl,
     validate_pricing_descriptor,
 )
 
@@ -41,14 +41,16 @@ class EquivalentCostTest(unittest.TestCase):
         cache_write: int | None = 0,
         output: int = 0,
         reasoning: int = 0,
-        retry_of: int | None = None,
         outcome: str = "completed",
         billable: bool = True,
     ) -> dict:
         observed = input_tokens - cached
         return {
             "ordinal": ordinal,
-            "retry_of_ordinal": retry_of,
+            "journal_ordinal": ordinal * 3,
+            "response_id": f"response-{ordinal}",
+            "thread_id": "thread-test",
+            "turn_id": "turn-test",
             "attempt_outcome": outcome,
             "billable": billable,
             "input_tokens": input_tokens,
@@ -67,8 +69,7 @@ class EquivalentCostTest(unittest.TestCase):
             "service_tier": "standard",
             "region": "global",
             "hosted_tool_usage": [],
-            "evidence_source": "deterministic fixture",
-            "evidence_schema_version": "current",
+            "evidence_source": "deterministic_fixture",
         }
 
     def artifact(self, requests: list[dict]) -> dict:
@@ -114,9 +115,7 @@ class EquivalentCostTest(unittest.TestCase):
             "billable_request_count": sum(
                 item["billable"] for item in requests
             ),
-            "retry_count": sum(
-                item["retry_of_ordinal"] is not None for item in requests
-            ),
+            "retry_count": None,
             "terminal_attempts_complete": True,
             "request_aggregate_reconciled": True,
             "unavailable_reason": "",
@@ -149,6 +148,157 @@ class EquivalentCostTest(unittest.TestCase):
             value, excluded_field="descriptor_content_sha256"
         )
         return value
+
+    def app_server_artifact(
+        self,
+        usages: list[dict | None],
+        *,
+        aggregate: dict | None | bool = False,
+        duplicate_response_id: bool = False,
+        include_terminal: bool = True,
+    ) -> dict:
+        thread_id = "thread-live"
+        turn_id = "turn-live"
+        messages: list[tuple[str, dict]] = [
+            (
+                "client_to_server",
+                {
+                    "id": 2,
+                    "method": "thread/start",
+                    "params": {
+                        "ephemeral": True,
+                        "experimentalRawEvents": True,
+                        "model": "gpt-5.6-sol",
+                    },
+                },
+            ),
+            (
+                "server_to_client",
+                {
+                    "id": 2,
+                    "result": {"thread": {"id": thread_id}},
+                },
+            ),
+            (
+                "server_to_client",
+                {
+                    "method": "turn/started",
+                    "params": {
+                        "threadId": thread_id,
+                        "turn": {"id": turn_id, "status": "inProgress"},
+                    },
+                },
+            ),
+        ]
+        for index, usage in enumerate(usages, 1):
+            messages.append(
+                (
+                    "server_to_client",
+                    {
+                        "method": "rawResponse/completed",
+                        "params": {
+                            "responseId": (
+                                "response-1"
+                                if duplicate_response_id
+                                else f"response-{index}"
+                            ),
+                            "threadId": thread_id,
+                            "turnId": turn_id,
+                            "usage": usage,
+                        },
+                    },
+                )
+            )
+        if aggregate is False:
+            complete = [usage for usage in usages if usage is not None]
+            aggregate = {
+                field: sum(int(usage[field]) for usage in complete)
+                for field in (
+                    "inputTokens",
+                    "cachedInputTokens",
+                    "cacheWriteInputTokens",
+                    "outputTokens",
+                    "reasoningOutputTokens",
+                    "totalTokens",
+                )
+            }
+        if isinstance(aggregate, dict):
+            messages.append(
+                (
+                    "server_to_client",
+                    {
+                        "method": "thread/tokenUsage/updated",
+                        "params": {
+                            "threadId": thread_id,
+                            "turnId": turn_id,
+                            "tokenUsage": {
+                                "last": aggregate,
+                                "total": aggregate,
+                            },
+                        },
+                    },
+                )
+            )
+        if include_terminal:
+            messages.append(
+                (
+                    "server_to_client",
+                    {
+                        "method": "turn/completed",
+                        "params": {
+                            "threadId": thread_id,
+                            "turn": {
+                                "id": turn_id,
+                                "status": "completed",
+                            },
+                        },
+                    },
+                )
+            )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "app-server.jsonl"
+            path.write_text(
+                "".join(
+                    json.dumps(
+                        {
+                            "ordinal": ordinal,
+                            "direction": direction,
+                            "message": message,
+                        },
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                    + "\n"
+                    for ordinal, (direction, message) in enumerate(messages, 1)
+                ),
+                encoding="utf-8",
+            )
+            return request_usage_from_codex_app_server_jsonl(
+                path,
+                run_id="run-live",
+                configured_model_identity="gpt-5.6-sol",
+                execution_mode="standard",
+                service_tier="standard",
+                region="global",
+            )
+
+    @staticmethod
+    def raw_usage(
+        input_tokens: int,
+        *,
+        cached: int = 0,
+        cache_write: int = 0,
+        output: int = 0,
+        reasoning: int = 0,
+    ) -> dict:
+        return {
+            "inputTokens": input_tokens,
+            "cachedInputTokens": cached,
+            "cacheWriteInputTokens": cache_write,
+            "outputTokens": output,
+            "reasoningOutputTokens": reasoning,
+            "totalTokens": input_tokens + output,
+        }
 
     def test_descriptor_is_frozen_content_addressed_and_official(self) -> None:
         path = ROOT / PRICING_DESCRIPTOR_RELATIVE_PATH
@@ -197,12 +347,7 @@ class EquivalentCostTest(unittest.TestCase):
         self.assertNotIn("±", result["reason"])
 
     def test_missing_usage_is_unavailable_not_zero(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            artifact = request_usage_from_codex_jsonl(
-                Path(temporary) / "missing.jsonl",
-                run_id="run-missing",
-                configured_model_identity="gpt-5.6-sol",
-            )
+        artifact = self.app_server_artifact([], aggregate=None)
         result = derive_equivalent_cost(
             artifact,
             descriptor=self.descriptor,
@@ -239,6 +384,88 @@ class EquivalentCostTest(unittest.TestCase):
         self.assertEqual(272000 * 5000, at["exact_usd_nanos"])
         self.assertEqual(272001 * 5000 * 2, above["exact_usd_nanos"])
 
+    def test_app_server_multiple_standard_responses_do_not_use_aggregate_band(
+        self,
+    ) -> None:
+        artifact = self.app_server_artifact(
+            [self.raw_usage(200_000), self.raw_usage(200_000)]
+        )
+        result = derive_equivalent_cost(
+            artifact,
+            descriptor=self.descriptor,
+            request_schema_path=self.request_schema,
+        )
+        self.assertEqual("request", artifact["evidence_level"])
+        self.assertEqual("exact", result["status"])
+        self.assertEqual(400_000 * 5_000, result["exact_usd_nanos"])
+        self.assertEqual(
+            ["standard", "standard"],
+            [
+                request["long_context_classification"]
+                for request in artifact["requests"]
+            ],
+        )
+
+    def test_app_server_mixed_bands_and_cache_writes_are_exact(self) -> None:
+        artifact = self.app_server_artifact(
+            [
+                self.raw_usage(272_000, cache_write=10),
+                self.raw_usage(272_001, cached=1, cache_write=20),
+            ]
+        )
+        result = derive_equivalent_cost(
+            artifact,
+            descriptor=self.descriptor,
+            request_schema_path=self.request_schema,
+        )
+        self.assertEqual("exact", result["status"])
+        self.assertEqual(
+            ["standard", "long_context"],
+            [
+                request["long_context_classification"]
+                for request in artifact["requests"]
+            ],
+        )
+        self.assertEqual(30, artifact["turn_aggregate"]["cache_write_tokens"])
+
+    def test_app_server_null_duplicate_and_mismatch_prevent_exact(self) -> None:
+        usage = self.raw_usage(10)
+        cases = {
+            "null usage": self.app_server_artifact(
+                [None],
+                aggregate=usage,
+            ),
+            "duplicate response": self.app_server_artifact(
+                [usage, usage],
+                duplicate_response_id=True,
+            ),
+            "aggregate disagreement": self.app_server_artifact(
+                [usage],
+                aggregate=self.raw_usage(11),
+            ),
+            "missing terminal": self.app_server_artifact(
+                [usage],
+                include_terminal=False,
+            ),
+        }
+        for name, artifact in cases.items():
+            with self.subTest(name=name):
+                self.assertEqual("turn_aggregate", artifact["evidence_level"])
+                result = derive_equivalent_cost(
+                    artifact,
+                    descriptor=self.descriptor,
+                    request_schema_path=self.request_schema,
+                )
+                self.assertNotEqual("exact", result["status"])
+
+    def test_app_server_missing_aggregate_is_unavailable(self) -> None:
+        artifact = self.app_server_artifact(
+            [self.raw_usage(10)],
+            aggregate=None,
+        )
+        self.assertEqual("unavailable", artifact["evidence_level"])
+        self.assertIn("aggregate", artifact["unavailable_reason"])
+
     def test_service_and_regional_rational_modifiers(self) -> None:
         descriptor = copy.deepcopy(self.descriptor)
         descriptor["service_tier_multiplier"] = {
@@ -261,17 +488,17 @@ class EquivalentCostTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "request-usage.schema"):
             self.derive([request])
 
-    def test_multiple_requests_and_completed_retry_are_included(self) -> None:
+    def test_multiple_completed_responses_are_included_without_guessing_retries(
+        self,
+    ) -> None:
         result = self.derive([
             self.request(1, input_tokens=10),
-            self.request(
-                2, input_tokens=20, retry_of=1, outcome="completed"
-            ),
+            self.request(2, input_tokens=20, outcome="completed"),
         ])
         self.assertEqual("exact", result["status"])
         self.assertEqual(150_000, result["exact_usd_nanos"])
         self.assertEqual(2, result["billable_request_count"])
-        self.assertEqual(1, result["retry_count"])
+        self.assertIsNone(result["retry_count"])
 
     def test_nonbillable_failed_attempt_without_usage_is_excluded(self) -> None:
         result = self.derive([
@@ -396,12 +623,7 @@ class EquivalentCostTest(unittest.TestCase):
 
     def test_exact_zero_remains_distinct_from_unavailable(self) -> None:
         exact = self.derive([self.request(1)])
-        with tempfile.TemporaryDirectory() as temporary:
-            unavailable_artifact = request_usage_from_codex_jsonl(
-                Path(temporary) / "missing",
-                run_id="run-missing",
-                configured_model_identity="gpt-5.6-sol",
-            )
+        unavailable_artifact = self.app_server_artifact([], aggregate=None)
         unavailable = derive_equivalent_cost(
             unavailable_artifact,
             descriptor=self.descriptor,
@@ -415,22 +637,16 @@ class EquivalentCostTest(unittest.TestCase):
         ))
 
     def test_turn_aggregate_bounds_cache_and_long_context_without_midpoint(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / "run.jsonl"
-            path.write_text(json.dumps({
-                "type": "turn.completed",
-                "usage": {
-                    "input_tokens": 300000,
-                    "cached_input_tokens": 100000,
-                    "output_tokens": 1000,
-                    "reasoning_output_tokens": 500,
-                },
-            }) + "\n", encoding="utf-8")
-            artifact = request_usage_from_codex_jsonl(
-                path,
-                run_id="run-aggregate",
-                configured_model_identity="gpt-5.6-sol",
-            )
+        artifact = self.app_server_artifact(
+            [self.raw_usage(1)],
+            aggregate=self.raw_usage(
+                300_000,
+                cached=100_000,
+                cache_write=50_000,
+                output=1_000,
+                reasoning=500,
+            ),
+        )
         result = derive_equivalent_cost(
             artifact,
             descriptor=self.descriptor,
