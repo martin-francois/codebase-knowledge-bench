@@ -109,8 +109,8 @@
     "No historical benchmark evidence is reinterpreted and no compatibility reader is retained."
   ],
   "overall_status": "passed",
-  "report_envelope_commit": "ac7eb104e6b96f4a80651fe39a4062cf1817f631",
-  "review_session_description": "The implementing coding agent reviewed the Codex 0.145.0 app-server raw-usage implementation after the exact-executable schema probe, Python 3.14.3 syntax checks, focused protocol and equivalent-cost tests, the 18-case production shadow, deterministic mutation qualification, and the complete 510-test repository suite. No additional model call was made.",
+  "report_envelope_commit": "b22acbd9299f5293a6b27d1ecf485c976def42ff",
+  "review_session_description": "The implementing coding agent reviewed the Codex 0.145.0 app-server raw-usage implementation after the exact-executable schema probe, Python 3.14.3 syntax checks, focused protocol, phase-bound evidence-name, and equivalent-cost tests, the 18-case production shadow, deterministic mutation qualification, and the complete 510-test repository suite. The first paid preflight exposed a phase-specific evidence-name mismatch; its evidence was preserved, the source was repaired on a new commit, and the same-commit attempt was not retried. No additional review model call was made.",
   "reviewed_artifacts": [
     "repo://SPEC.md",
     "repo://schemas/model-preflight-lock.schema.json",
@@ -133,8 +133,8 @@
     "repo://verification/methodology-current/contracts/issue-488.json",
     "repo://verification/methodology-current/contracts/issue-498.json"
   ],
-  "reviewed_subject_tree_sha256": "15adfc538524b43cb7bed1512302f85bf45d55f3df557fb57e800c23e31d68af",
+  "reviewed_subject_tree_sha256": "6fd92ac8fd6fdbf25002e35ccbf6a7874a3ddf0fdadcfec5995149c913623891",
   "reviewer_kind": "implementing_coding_agent",
   "self_review": true,
-  "source_commit": "ac7eb104e6b96f4a80651fe39a4062cf1817f631"
+  "source_commit": "b22acbd9299f5293a6b27d1ecf485c976def42ff"
 }
