@@ -2935,6 +2935,21 @@ def codex_app_server_cmd(v: Tool, phase: str) -> list[str]:
     return cmd
 
 
+def app_server_artifact_paths(
+    v: Tool,
+    phase: str,
+) -> tuple[Path, Path]:
+    if phase == "solve":
+        return (
+            v.run_dir / "app-server.jsonl",
+            v.run_dir / "app-server-control.json",
+        )
+    return (
+        v.run_dir / f"{phase}-app-server.jsonl",
+        v.run_dir / f"{phase}-app-server-control.json",
+    )
+
+
 def run_codex_process(
     v: Tool,
     prompt: str,
@@ -2968,11 +2983,7 @@ def run_codex_process(
         stale.unlink(missing_ok=True)
     cmd = codex_app_server_cmd(v, phase)
     launch_cmd = external_sandbox_cmd(v, cmd)
-    app_server_journal = (
-        v.run_dir / "app-server.jsonl"
-        if phase == "solve"
-        else run_jsonl.parent / f"{run_jsonl.stem}-app-server.jsonl"
-    )
+    app_server_journal, control_path = app_server_artifact_paths(v, phase)
     result = run_app_server(
         launch_cmd,
         cwd=v.repo,
@@ -2991,11 +3002,6 @@ def run_codex_process(
     returncode = int(result["returncode"])
     timed_out = bool(result["timed_out"])
     elapsed = float(result["wall_seconds"])
-    control_path = (
-        v.run_dir / "app-server-control.json"
-        if phase == "solve"
-        else run_jsonl.parent / f"{run_jsonl.stem}-app-server-control.json"
-    )
     control_path.write_text(
         json.dumps(
             {
