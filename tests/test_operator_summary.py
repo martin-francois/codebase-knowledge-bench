@@ -89,9 +89,12 @@ class ArchiveBoundOperatorSummaryTest(unittest.TestCase):
             evidence.mkdir()
             for name, value in {
                 "model-preflight.json": "{}\n",
-                "run-command.txt": "codex exec --model gpt-5.6-sol\n",
+                "run-command.txt": "codex app-server --listen stdio://\n",
                 "run.jsonl": "{}\n",
                 "run.stderr": "",
+                "app-server.jsonl": "{}\n",
+                "app-server-control.json": "{}\n",
+                "codex-raw-usage-capability.json": "{}\n",
             }.items():
                 (evidence / name).write_text(value)
             lock = write_model_preflight_lock(

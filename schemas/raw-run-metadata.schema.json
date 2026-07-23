@@ -48,7 +48,8 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "run_jsonl", "candidate_patch", "changed_files", "current_preflight",
+        "run_jsonl", "app_server_journal", "codex_capability_receipt",
+        "app_server_control", "candidate_patch", "changed_files", "current_preflight",
         "protected_verification_receipt", "current_contract", "current_channel_plan",
         "tool_invocation_telemetry", "pricing_descriptor", "request_usage",
         "trust_evidence", "candidate_test_quality", "patch_integrity",
@@ -56,6 +57,9 @@
       ],
       "properties": {
         "run_jsonl": {"$ref": "#/$defs/file"},
+        "app_server_journal": {"$ref": "#/$defs/file"},
+        "codex_capability_receipt": {"$ref": "#/$defs/file"},
+        "app_server_control": {"$ref": "#/$defs/file"},
         "candidate_patch": {"$ref": "#/$defs/file"},
         "changed_files": {"$ref": "#/$defs/file"},
         "current_preflight": {"$ref": "#/$defs/file"},

@@ -13,6 +13,8 @@ from typing import Any, Mapping
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from codex_app_server import extract_app_server_usage
+
 
 CONTRACT_ID = "equivalent-codex-api-cost-current"
 PRICING_SCHEMA_ID = "equivalent-model-pricing-descriptor-current"
@@ -174,80 +176,236 @@ def _with_content_hash(value: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
-def request_usage_from_codex_jsonl(
+def _app_server_usage(usage: Mapping[str, Any]) -> dict[str, Any]:
+    return _usage_from_codex_mapping(
+        {
+            "input_tokens": usage["input_tokens"],
+            "cached_input_tokens": usage["cached_input_tokens"],
+            "cache_write_tokens": usage["cache_write_tokens"],
+            "output_tokens": usage["output_tokens"],
+            "reasoning_output_tokens": usage["reasoning_output_tokens"],
+        }
+    )
+
+
+def request_usage_from_codex_app_server_jsonl(
     path: Path,
     *,
     run_id: str,
     configured_model_identity: str,
+    execution_mode: str,
+    service_tier: str,
+    region: str,
+    long_context_threshold_input_tokens: int = 272_000,
 ) -> dict[str, Any]:
-    """Preserve supported Codex usage without inventing request boundaries."""
+    """Derive request evidence from one fresh app-server wire journal."""
 
-    completed: list[tuple[int, Mapping[str, Any], str]] = []
-    if path.is_file():
-        for line_number, line in enumerate(
-            path.read_text(encoding="utf-8", errors="strict").splitlines(),
-            start=1,
-        ):
-            if not line.strip():
-                continue
-            try:
-                event = json.loads(line)
-            except json.JSONDecodeError as exc:
-                raise ValueError(
-                    f"malformed Codex JSONL at line {line_number}: {exc.msg}"
-                ) from exc
-            if event.get("type") == "turn.completed":
-                usage = event.get("usage")
-                if not isinstance(usage, Mapping):
-                    raise ValueError("turn.completed usage must be an object")
-                completed.append(
-                    (
-                        line_number,
-                        usage,
-                        hashlib.sha256(line.encode("utf-8")).hexdigest(),
-                    )
-                )
-    if len(completed) > 1:
-        raise ValueError("solve JSONL contains duplicate terminal turn usage")
-    if not completed:
+    try:
+        evidence = extract_app_server_usage(path)
+    except (OSError, UnicodeError, ValueError) as exc:
         return _with_content_hash(
             {
                 "schema_id": REQUEST_USAGE_SCHEMA_ID,
                 "run_id": run_id,
                 "configured_model_identity": configured_model_identity,
                 "evidence_level": "unavailable",
-                "evidence_source": "codex_jsonl_structured_usage",
+                "evidence_source": "codex_app_server_raw_response_completed",
                 "turn_aggregate": None,
                 "requests": [],
                 "request_count": None,
                 "billable_request_count": None,
                 "retry_count": None,
-                "terminal_attempts_complete": None,
-                "request_aggregate_reconciled": None,
-                "unavailable_reason": "turn.completed usage is absent",
+                "terminal_attempts_complete": False,
+                "request_aggregate_reconciled": False,
+                "unavailable_reason": (
+                    "Codex app-server evidence is malformed: " + str(exc)
+                ),
             }
         )
-    line_number, usage, line_sha256 = completed[0]
-    aggregate = _usage_from_codex_mapping(usage)
+
+    failures: list[str] = []
+    starts = evidence["successful_thread_starts"]
+    if len(starts) != 1:
+        failures.append(
+            f"expected one successful thread/start, observed {len(starts)}"
+        )
+        thread_id = ""
+        start_params: Mapping[str, Any] = {}
+    else:
+        _, thread_id, start_params = starts[0]
+        if start_params.get("experimentalRawEvents") is not True:
+            failures.append("thread/start did not enable experimentalRawEvents")
+        if start_params.get("ephemeral") is not True:
+            failures.append("thread/start was not ephemeral")
+        if start_params.get("model") != configured_model_identity:
+            failures.append("thread/start model does not match configured model")
+
+    terminals = evidence["terminal_turns"]
+    if len(terminals) != 1:
+        failures.append(
+            f"expected one terminal turn, observed {len(terminals)}"
+        )
+        turn_id = ""
+    else:
+        _, terminal_thread, turn_id, terminal_status = terminals[0]
+        if terminal_status != "completed":
+            failures.append(
+                f"turn terminal status was {terminal_status or 'absent'}"
+            )
+        if thread_id and terminal_thread != thread_id:
+            failures.append("terminal turn belongs to a different thread")
+
+    raw_responses = evidence["raw_responses"]
+    if not raw_responses:
+        failures.append("no rawResponse/completed notification was observed")
+    response_ids = [item["response_id"] for item in raw_responses]
+    if any(not value for value in response_ids):
+        failures.append("raw response identity is absent")
+    if len(response_ids) != len(set(response_ids)):
+        failures.append("duplicate raw response identity was observed")
+    if any(item["usage"] is None for item in raw_responses):
+        failures.append("a raw response omitted usage")
+    if thread_id and any(
+        item["thread_id"] != thread_id for item in raw_responses
+    ):
+        failures.append("a raw response belongs to a different thread")
+    if turn_id and any(
+        item["turn_id"] != turn_id for item in raw_responses
+    ):
+        failures.append("a raw response belongs to a different turn")
+
+    aggregates = [
+        item
+        for item in evidence["aggregate_updates"]
+        if (not thread_id or item["thread_id"] == thread_id)
+        and (not turn_id or item["turn_id"] == turn_id)
+    ]
+    final_aggregate = aggregates[-1]["usage"] if aggregates else None
+    if final_aggregate is None:
+        failures.append("final thread token aggregate is absent")
+
+    requests: list[dict[str, Any]] = []
+    threshold = int(long_context_threshold_input_tokens)
+    if threshold < 0:
+        raise ValueError("long-context threshold must be non-negative")
+    if not any(item["usage"] is None for item in raw_responses):
+        for ordinal, item in enumerate(raw_responses, 1):
+            usage = _app_server_usage(item["usage"])
+            requests.append(
+                {
+                    "ordinal": ordinal,
+                    "journal_ordinal": item["journal_ordinal"],
+                    "response_id": item["response_id"],
+                    "thread_id": item["thread_id"],
+                    "turn_id": item["turn_id"],
+                    "attempt_outcome": "completed",
+                    "billable": True,
+                    **usage,
+                    "model_identity": configured_model_identity,
+                    "long_context_classification": (
+                        "long_context"
+                        if usage["input_tokens"] > threshold
+                        else "standard"
+                    ),
+                    "execution_mode": execution_mode,
+                    "service_tier": service_tier,
+                    "region": region,
+                    "hosted_tool_usage": [],
+                    "evidence_source": (
+                        "codex_app_server_raw_response_completed"
+                    ),
+                }
+            )
+
+    aggregate = (
+        _app_server_usage(final_aggregate)
+        if final_aggregate is not None
+        else None
+    )
+    reconciled = False
+    if aggregate is not None and requests:
+        expected = {
+            "input_tokens": sum(item["input_tokens"] for item in requests),
+            "cached_input_tokens": sum(
+                item["cached_input_tokens"] for item in requests
+            ),
+            "cache_write_tokens": sum(
+                item["cache_write_tokens"] for item in requests
+            ),
+            "ordinary_uncached_nonwrite_tokens": sum(
+                item["ordinary_uncached_nonwrite_tokens"]
+                for item in requests
+            ),
+            "output_tokens_including_reasoning": sum(
+                item["output_tokens_including_reasoning"]
+                for item in requests
+            ),
+            "reasoning_output_tokens": sum(
+                item["reasoning_output_tokens"] for item in requests
+            ),
+        }
+        reconciled = expected == aggregate
+        if not reconciled:
+            failures.append(
+                "raw completed-response usage disagrees with final aggregate"
+            )
+
+    if failures:
+        if aggregate is not None:
+            return _with_content_hash(
+                {
+                    "schema_id": REQUEST_USAGE_SCHEMA_ID,
+                    "run_id": run_id,
+                    "configured_model_identity": configured_model_identity,
+                    "evidence_level": "turn_aggregate",
+                    "evidence_source": (
+                        "codex_app_server_raw_response_completed"
+                    ),
+                    "turn_aggregate": aggregate,
+                    "requests": [],
+                    "request_count": None,
+                    "billable_request_count": None,
+                    "retry_count": None,
+                    "terminal_attempts_complete": None,
+                    "request_aggregate_reconciled": None,
+                    "unavailable_reason": "; ".join(failures),
+                }
+            )
+        return _with_content_hash(
+            {
+                "schema_id": REQUEST_USAGE_SCHEMA_ID,
+                "run_id": run_id,
+                "configured_model_identity": configured_model_identity,
+                "evidence_level": "unavailable",
+                "evidence_source": (
+                    "codex_app_server_raw_response_completed"
+                ),
+                "turn_aggregate": None,
+                "requests": [],
+                "request_count": None,
+                "billable_request_count": None,
+                "retry_count": None,
+                "terminal_attempts_complete": False,
+                "request_aggregate_reconciled": False,
+                "unavailable_reason": "; ".join(failures),
+            }
+        )
+
     return _with_content_hash(
         {
             "schema_id": REQUEST_USAGE_SCHEMA_ID,
             "run_id": run_id,
             "configured_model_identity": configured_model_identity,
-            "evidence_level": "turn_aggregate",
-            "evidence_source": "codex_jsonl_structured_usage",
+            "evidence_level": "request",
+            "evidence_source": "codex_app_server_raw_response_completed",
             "turn_aggregate": aggregate,
-            "requests": [],
-            "request_count": None,
-            "billable_request_count": None,
+            "requests": requests,
+            "request_count": len(requests),
+            "billable_request_count": len(requests),
             "retry_count": None,
-            "terminal_attempts_complete": None,
-            "request_aggregate_reconciled": None,
-            "unavailable_reason": (
-                "Codex turn.completed usage is aggregate-only; request and "
-                f"retry boundaries are unavailable (line {line_number}, "
-                f"event SHA-256 {line_sha256})"
-            ),
+            "terminal_attempts_complete": True,
+            "request_aggregate_reconciled": reconciled,
+            "unavailable_reason": "",
         }
     )
 
@@ -348,6 +506,34 @@ def validate_request_usage(
     ordinals = [item.get("ordinal") for item in requests]
     if ordinals != list(range(1, len(requests) + 1)):
         raise ValueError("request ordinals must be contiguous and unique")
+    journal_ordinals = [item.get("journal_ordinal") for item in requests]
+    if (
+        any(
+            not isinstance(value, int)
+            or isinstance(value, bool)
+            or value <= 0
+            for value in journal_ordinals
+        )
+        or journal_ordinals != sorted(set(journal_ordinals))
+    ):
+        raise ValueError(
+            "request journal ordinals must be positive, ordered, and unique"
+        )
+    response_ids = [item.get("response_id") for item in requests]
+    if (
+        any(not isinstance(value, str) or not value for value in response_ids)
+        or len(response_ids) != len(set(response_ids))
+    ):
+        raise ValueError("request response identities must be non-empty and unique")
+    thread_ids = {item.get("thread_id") for item in requests}
+    turn_ids = {item.get("turn_id") for item in requests}
+    if (
+        len(thread_ids) != 1
+        or len(turn_ids) != 1
+        or any(not isinstance(value, str) or not value for value in thread_ids)
+        or any(not isinstance(value, str) or not value for value in turn_ids)
+    ):
+        raise ValueError("request records must belong to one thread and turn")
     threshold = int(descriptor["long_context"]["threshold_input_tokens"])
     totals = {
         key: 0
@@ -362,17 +548,8 @@ def validate_request_usage(
     ordinary_total = 0
     cache_components_complete = True
     billable_count = 0
-    retry_count = 0
     for request in requests:
         _validate_usage_counts(request)
-        ordinal = int(request["ordinal"])
-        retry_of = request.get("retry_of_ordinal")
-        if retry_of is not None:
-            if retry_of >= ordinal:
-                raise ValueError(
-                    "retry ordinal must reference an earlier request"
-                )
-            retry_count += 1
         if request["model_identity"] != descriptor["model_identity"]:
             raise ValueError("request model does not match pricing descriptor")
         for field in ("execution_mode", "service_tier", "region"):
@@ -428,8 +605,10 @@ def validate_request_usage(
         raise ValueError("request count does not match request records")
     if artifact.get("billable_request_count") != billable_count:
         raise ValueError("billable request count does not match records")
-    if artifact.get("retry_count") != retry_count:
-        raise ValueError("retry count does not match request records")
+    if artifact.get("retry_count") is not None:
+        raise ValueError(
+            "Codex raw response events do not expose retry relationships"
+        )
 
 
 def _apply_multiplier(value: Fraction, multiplier: Mapping[str, Any]) -> Fraction:

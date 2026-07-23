@@ -164,6 +164,10 @@ from current_preflight import (  # noqa: E402
     load_current_inputs,
     validate_current_preflight,
 )
+from codex_app_server import (  # noqa: E402
+    probe_raw_usage_capability,
+    run_app_server,
+)
 
 INVALID_STATUSES = {
     "invalid_leakage",
@@ -2876,19 +2880,15 @@ def commit_setup_state(v: Tool) -> None:
     )
 
 
-def codex_exec_cmd(v: Tool, final_path: Path, phase: str) -> list[str]:
+def codex_app_server_cmd(v: Tool, phase: str) -> list[str]:
     child_io = TOOL_CACHE / v.run_id / "child-io"
     cmd = [
         shutil.which("codex") or "codex",
-        "exec",
-        "--json",
-        "--ephemeral",
-        "--ignore-rules",
-        *(["--yolo"] if YOLO else []),
-        "--sandbox",
-        "workspace-write",
-        "--model",
-        MODEL,
+        "app-server",
+        "--listen",
+        "stdio://",
+        "-c",
+        f'model="{MODEL}"',
         "-c",
         f'model_reasoning_effort="{REASONING_EFFORT}"',
         "-c",
@@ -2931,11 +2931,6 @@ def codex_exec_cmd(v: Tool, final_path: Path, phase: str) -> list[str]:
         f"shell_environment_policy.set.CODEX_HOME={json.dumps(str(runtime_codex_home(v, phase)))}",
         "-c",
         'shell_environment_policy.set.UV_OFFLINE="1"',
-        "--cd",
-        str(v.repo),
-        "--output-last-message",
-        str(final_path),
-        "-",
     ]
     return cmd
 
@@ -2949,6 +2944,16 @@ def run_codex_process(
     timeout: int,
     phase: str = "solve",
 ) -> tuple[int, bool, float]:
+    codex_path = shutil.which("codex") or "codex"
+    capability_path = (
+        v.run_dir / "codex-raw-usage-capability.json"
+        if phase == "solve"
+        else v.run_dir / f"{phase}-codex-raw-usage-capability.json"
+    )
+    probe_raw_usage_capability(
+        codex_path,
+        receipt_path=capability_path,
+    )
     proof_path = v.run_dir / f"{phase}-network-isolation-proof.json"
     proof_path.write_text(
         json.dumps(network_namespace_probe(), indent=2, sort_keys=True) + "\n",
@@ -2958,51 +2963,57 @@ def run_codex_process(
     child_io = TOOL_CACHE / v.run_id / "child-io"
     child_io.mkdir(parents=True, exist_ok=True)
     runtime_home = prepare_runtime_codex_home(v, phase)
-    sandbox_final_path = child_io / f"{phase}-final-message.txt"
     sandbox_log_path = phase_anti_leak_log(v, phase)
-    for stale in [sandbox_final_path, sandbox_log_path]:
+    for stale in [final_path, sandbox_log_path]:
         stale.unlink(missing_ok=True)
-    cmd = codex_exec_cmd(v, sandbox_final_path, phase)
+    cmd = codex_app_server_cmd(v, phase)
     launch_cmd = external_sandbox_cmd(v, cmd)
-    started = time.monotonic()
-    returncode = 1
-    timed_out = False
-    timeout_cleanup: list[str] = []
-    with run_jsonl.open("w", encoding="utf-8") as stdout_fh, stderr_path.open("w", encoding="utf-8") as stderr_fh:
-        proc = subprocess.Popen(
-            launch_cmd,
-            cwd=v.repo,
-            env=child_env(v, phase),
-            stdin=subprocess.PIPE,
-            text=True,
-            stdout=stdout_fh,
-            stderr=stderr_fh,
-            start_new_session=True,
+    app_server_journal = (
+        v.run_dir / "app-server.jsonl"
+        if phase == "solve"
+        else run_jsonl.parent / f"{run_jsonl.stem}-app-server.jsonl"
+    )
+    result = run_app_server(
+        launch_cmd,
+        cwd=v.repo,
+        environment=child_env(v, phase),
+        prompt=prompt,
+        model=MODEL,
+        reasoning_effort=REASONING_EFFORT,
+        yolo=YOLO,
+        writable_roots=[str(child_io)],
+        journal_path=app_server_journal,
+        normalized_path=run_jsonl,
+        stderr_path=stderr_path,
+        final_path=final_path,
+        timeout_seconds=timeout,
+    )
+    returncode = int(result["returncode"])
+    timed_out = bool(result["timed_out"])
+    elapsed = float(result["wall_seconds"])
+    control_path = (
+        v.run_dir / "app-server-control.json"
+        if phase == "solve"
+        else run_jsonl.parent / f"{run_jsonl.stem}-app-server-control.json"
+    )
+    control_path.write_text(
+        json.dumps(
+            {
+                "approval_requests": result["approval_requests"],
+                "failure": result["failure"],
+                "returncode": returncode,
+                "timed_out": timed_out,
+            },
+            indent=2,
+            sort_keys=True,
         )
-        try:
-            proc.communicate(input=prompt, timeout=timeout)
-            returncode = proc.returncode
-        except subprocess.TimeoutExpired:
-            returncode = 124
-            timed_out = True
-            timeout_cleanup = terminate_process_session(proc.pid)
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                try:
-                    os.kill(proc.pid, signal.SIGKILL)
-                    timeout_cleanup.append(f"SIGKILL {proc.pid} timed-out Codex parent")
-                except ProcessLookupError:
-                    pass
-    elapsed = time.monotonic() - started
-    if sandbox_final_path.exists():
-        shutil.copy2(sandbox_final_path, final_path)
-        sandbox_final_path.unlink()
+        + "\n",
+        encoding="utf-8",
+    )
     artifact_log = phase_anti_leak_artifact(v, phase)
     if sandbox_log_path.exists():
         shutil.copy2(sandbox_log_path, artifact_log)
         sandbox_log_path.unlink()
-    append_process_cleanup_log(v, timeout_cleanup)
     if v.name == "serena":
         serena_logs = tool_home(v) / ".serena" / "logs"
         if serena_logs.is_dir():

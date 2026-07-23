@@ -41,7 +41,7 @@
     },
     "evidence_source": {
       "enum": [
-        "codex_jsonl_structured_usage",
+        "codex_app_server_raw_response_completed",
         "deterministic_fixture"
       ]
     },
@@ -155,7 +155,10 @@
       "additionalProperties": false,
       "required": [
         "ordinal",
-        "retry_of_ordinal",
+        "journal_ordinal",
+        "response_id",
+        "thread_id",
+        "turn_id",
         "attempt_outcome",
         "billable",
         "input_tokens",
@@ -170,20 +173,28 @@
         "service_tier",
         "region",
         "hosted_tool_usage",
-        "evidence_source",
-        "evidence_schema_version"
+        "evidence_source"
       ],
       "properties": {
         "ordinal": {
           "type": "integer",
           "minimum": 1
         },
-        "retry_of_ordinal": {
-          "type": [
-            "integer",
-            "null"
-          ],
+        "journal_ordinal": {
+          "type": "integer",
           "minimum": 1
+        },
+        "response_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "thread_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "turn_id": {
+          "type": "string",
+          "minLength": 1
         },
         "attempt_outcome": {
           "enum": [
@@ -252,12 +263,10 @@
           "maxItems": 0
         },
         "evidence_source": {
-          "type": "string",
-          "minLength": 1
-        },
-        "evidence_schema_version": {
-          "type": "string",
-          "minLength": 1
+          "enum": [
+            "codex_app_server_raw_response_completed",
+            "deterministic_fixture"
+          ]
         }
       }
     }
