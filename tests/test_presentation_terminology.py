@@ -18,7 +18,8 @@ class PresentationTerminologyTest(unittest.TestCase):
         forbidden = re.compile(
             r"(^|_)(arm|arms|variant|variants|treatment|treatments|canonical)($|_)"
             r"|behavioral_correctness|modeled_weighted|warm_workflow|run_records|tool_rows"
-            r"|execution_ids?$|weighted_tokens|calls_started|total_tool_calls"
+            r"|execution_ids?$|weighted_tokens|weighted_token_count"
+            r"|token_weight_sensitivity|calls_started|total_tool_calls"
             r"|actual_execution_calls"
         )
 
@@ -68,10 +69,7 @@ class PresentationTerminologyTest(unittest.TestCase):
         descriptors = json.loads(
             (ROOT / "dashboard/src/metric-descriptors.json").read_text(encoding="utf-8")
         )
-        weighted = descriptors["weighted_token_count"]
-        self.assertEqual("Weighted token count", weighted["label"])
-        self.assertEqual("weighted_token_count", weighted["absoluteField"])
-        self.assertEqual("weighted_token_count_average", weighted["averageField"])
+        self.assertNotIn("weighted_token_count", descriptors)
         total = descriptors["total_reported_tokens"]
         self.assertEqual("Total reported tokens", total["label"])
         self.assertEqual("total_reported_tokens", total["absoluteField"])

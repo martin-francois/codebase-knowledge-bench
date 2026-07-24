@@ -30,7 +30,6 @@ def fixture_suite(root: Path, suite_id: str, values: dict[str, float]) -> Path:
             "operational_rank_eligible": True,
             "correctness_score": 100.0,
             "total_reported_tokens": tokens,
-            "weighted_token_count": tokens,
             "solve_wall_seconds": 100.0,
             "warm_end_to_end_seconds": 120.0,
             "tool_calls": 10,

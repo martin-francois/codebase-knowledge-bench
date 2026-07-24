@@ -25,15 +25,38 @@ STALE_FORMULA = re.compile(
 
 def _production_formula(repo: Path) -> dict[str, object]:
     tree = ast.parse((repo / "scripts/current_methodology.py").read_text(encoding="utf-8"))
-    function = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "weighted_token_count")
-    returned = next(node for node in ast.walk(function) if isinstance(node, ast.Return))
-    names = sorted(node.id for node in ast.walk(returned.value) if isinstance(node, ast.Name))
-    attributes = sorted(node.attr for node in ast.walk(returned.value) if isinstance(node, ast.Attribute))
+    function = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "derive_token_usage"
+    )
+    expression = None
+    for node in ast.walk(function):
+        if not isinstance(node, ast.Dict):
+            continue
+        for key, value in zip(node.keys, node.values):
+            if (
+                isinstance(key, ast.Constant)
+                and key.value == "total_reported_tokens"
+            ):
+                expression = value
+                break
+        if expression is not None:
+            break
+    if expression is None:
+        raise ValueError("derive_token_usage lacks total_reported_tokens")
+    names = sorted(node.id for node in ast.walk(expression) if isinstance(node, ast.Name))
+    attributes = sorted(node.attr for node in ast.walk(expression) if isinstance(node, ast.Attribute))
     fields = sorted(
-        node.value for node in ast.walk(returned.value)
+        node.value for node in ast.walk(expression)
         if isinstance(node, ast.Constant) and isinstance(node.value, str)
     )
-    return {"names": names, "attributes": attributes, "fields": fields, "ast": ast.dump(returned.value, include_attributes=False)}
+    return {
+        "names": names,
+        "attributes": attributes,
+        "fields": fields,
+        "ast": ast.dump(expression, include_attributes=False),
+    }
 
 
 def audit_texts(repo: Path, texts: Mapping[str, str]) -> dict[str, object]:
@@ -45,15 +68,15 @@ def audit_texts(repo: Path, texts: Mapping[str, str]) -> dict[str, object]:
             findings.append({"document": name, "retired_fields": retired, "stale_formula_fragments": stale})
     production = _production_formula(repo)
     production_valid = (
-        "output_tokens_including_reasoning" in production["fields"]
+        "input_tokens" in production["fields"]
+        and "output" in production["names"]
         and "reasoning_output_tokens" not in production["fields"]
-        and "cached_input_tokens" in production["fields"]
     )
     spec = texts.get("SPEC.md", "")
     scoring = texts.get("SCORING-MODEL.md", "")
     formula_documents_valid = all(
-        "observed_non_cached_input_tokens" in text
-        and "cached_input_tokens" in text
+        "total_reported_tokens" in text
+        and "input_tokens" in text
         and "output_tokens_including_reasoning" in text
         for text in (spec, scoring)
     )

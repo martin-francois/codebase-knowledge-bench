@@ -175,9 +175,6 @@
         "intended_tool_successful_calls": {
           "$ref": "#/$defs/nullableNumber"
         },
-        "weighted_token_count": {
-          "$ref": "#/$defs/nullableNumber"
-        },
         "non_reasoning_output_tokens": {
           "$ref": "#/$defs/nullableNumber"
         },
@@ -207,7 +204,6 @@
         "tool_calls",
         "input_tokens",
         "intended_tool_successful_calls",
-        "weighted_token_count",
         "non_reasoning_output_tokens",
         "observed_non_cached_input_tokens",
         "output_tokens_including_reasoning",

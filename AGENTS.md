@@ -284,19 +284,20 @@ contract check available.
 
 Use the same vocabulary in source, configuration, schemas, machine-readable output, reports, and
 operator messages: `tool` or `baseline`, `run` or `benchmark run`, `comparison`, `correctness`,
-`total reported tokens`, `weighted token count`, `average`, `warm end-to-end`, and `published` or `full-suite`. Use
+`total reported tokens`, `average`, `warm end-to-end`, and `published` or `full-suite`. Use
 `codebase knowledge tool` without a hyphen and use `tool calls` for every reader-facing call count.
 A run is one tool or the baseline solving one issue once. A comparison contains the runs for all
 selected tools for one issue and repetition. Do not add aliases or migration readers for the
 obsolete `arm`, `variant`, `treatment`, `behavioral_correctness`, `weighted_tokens`,
+`weighted_token_count`, `token_weight_sensitivity`,
 `modeled_weighted_token_load`, `calls_started`, `total_tool_calls`, `actual_execution_calls`,
 `execution_call_lifecycle`, `warm_workflow`, or obsolete suite-profile names. These words may
 appear in this prohibition or opaque immutable historical evidence. Do not replace `workflow` when
 it literally names a GitHub Actions workflow or target-project business behavior.
 Use total reported tokens as the primary token-traffic axis, ordering, and Pareto dimension.
 Describe it as input plus output token traffic, with cached input counted as reported and reasoning
-already included in output. Keep weighted token count as a sensitivity diagnostic, not the primary
-resource ordering.
+already included in output. Do not compute, accept, publish, or expose a
+weighted token count or cache-weight sensitivity map.
 
 ## Commit and push after every prompt
 

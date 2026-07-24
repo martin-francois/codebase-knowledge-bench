@@ -1,5 +1,4 @@
 export type MetricKey =
-  | "weighted_token_count"
   | "input_tokens"
   | "cached_input_tokens"
   | "observed_non_cached_input_tokens"
@@ -46,7 +45,7 @@ export const QUALITY_AXES: Record<QualityAxis, {label: string}> = {
 };
 
 export type TokenView = "total_reported" | "total_input" | "cached_input" | "observed_non_cached_input" | "cache_writes"
-  | "output" | "reasoning" | "cache_hit_rate" | "weighted_load";
+  | "output" | "reasoning" | "cache_hit_rate";
 
 export const TOKEN_VIEWS: Record<TokenView, {label: string; metric: MetricKey | null; caveat?: string}> = {
   total_reported: {label: "Total reported tokens", metric: "total_reported_tokens"},
@@ -57,7 +56,6 @@ export const TOKEN_VIEWS: Record<TokenView, {label: string; metric: MetricKey | 
   output: {label: "Output tokens including reasoning", metric: "output_tokens_including_reasoning"},
   reasoning: {label: "Reasoning output tokens (subset of output)", metric: "reasoning_output_tokens"},
   cache_hit_rate: {label: "Cache hit rate", metric: "cache_hit_rate"},
-  weighted_load: {label: "Weighted token count", metric: "weighted_token_count"},
 };
 
 export type EquivalentCost = {
@@ -225,7 +223,6 @@ type PublishedComparison = {
 };
 
 const PUBLISHED_METRIC: Record<MetricKey, {ratio: string; interval: string}> = {
-  weighted_token_count: {ratio: "weighted_token_count", interval: "weighted_token_count_ratio"},
   input_tokens: {ratio: "input_tokens", interval: "input_tokens_ratio"},
   cached_input_tokens: {ratio: "cached_input_tokens", interval: "cached_input_tokens_ratio"},
   observed_non_cached_input_tokens: {ratio: "observed_non_cached_input_tokens", interval: "observed_non_cached_input_tokens_ratio"},

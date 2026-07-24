@@ -37,7 +37,7 @@ INTEGER_FIELDS = {
     "protected_common_skip_count",
 }
 NUMBER_FIELDS = {
-    "weighted_token_count", "cache_hit_rate", "requested_behavior_score",
+    "cache_hit_rate", "requested_behavior_score",
     "common_regression_score", "correctness_score",
 }
 NULLABLE_NUMBER_FIELDS = {

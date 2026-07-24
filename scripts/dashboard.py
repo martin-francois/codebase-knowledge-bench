@@ -42,9 +42,6 @@ def _number(value: Any) -> float | None:
 
 def _run_metrics(row: dict[str, Any]) -> dict[str, float | None]:
     return {
-        "weighted_token_count": _number(
-            row.get("weighted_token_count")
-        ),
         "input_tokens": _number(row.get("input_tokens")),
         "cached_input_tokens": _number(row.get("cached_input_tokens")),
         "observed_non_cached_input_tokens": _number(row.get("observed_non_cached_input_tokens")),
@@ -147,7 +144,6 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
                     key: average.get(
                         {
                             "total_reported_tokens": "tokens",
-                            "weighted_token_count": "weighted_token_count",
                             "solve_wall_seconds": "time",
                             "warm_end_to_end_seconds": "warm_time",
                             "tool_calls": "calls",

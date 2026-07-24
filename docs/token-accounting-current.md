@@ -1,8 +1,10 @@
-# Token accounting v2
+# Current token accounting
 
-`token-accounting-current` treats `reasoning_output_tokens` as a subset of `output_tokens_including_reasoning`. Weighted load is observed non-cached input plus the selected cached-read weight plus output including reasoning. Reasoning is never added or priced again.
-
-The published archive remains immutable and retains `legacy_weighted_token_count_v1_reasoning_double_counted`. The archive-bound erratum recomputes all 63 rows from raw usage fields and reports paired geometric effects and winner/frontier sensitivity without replacing historical results.
+`token-accounting-current` treats `reasoning_output_tokens` as a subset of
+`output_tokens_including_reasoning`. Total reported tokens equal input plus
+output including reasoning. Reasoning is never added or priced again. The
+current contract retains the raw input, cached-input, output, and reasoning
+components but does not derive a cache-weighted token count.
 
 `Equivalent Codex API cost` is derived separately under the frozen descriptor in
 `configs/pricing/`. Current live runs use one fresh ephemeral Codex app-server thread and durably

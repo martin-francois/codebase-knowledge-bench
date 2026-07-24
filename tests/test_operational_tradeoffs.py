@@ -72,7 +72,6 @@ def row(
         "common_regression_score": 100.0,
         "correctness_score": correctness,
         "total_reported_tokens": tokens,
-        "weighted_token_count": tokens,
         "observed_non_cached_input_tokens": tokens * 0.8,
         "output_tokens_including_reasoning": tokens * 0.1,
         "reasoning_output_tokens": tokens * 0.05,
@@ -117,11 +116,9 @@ class OperationalTradeoffTest(unittest.TestCase):
         self.assertFalse(comparison["absolute_quality"]["all_tasks_successful"])
         self.assertEqual("limited_cluster_evidence", comparison["estimability"]["issue_cluster_status"])
 
-    def test_total_reported_tokens_control_primary_axis_while_weighted_is_diagnostic(self) -> None:
+    def test_total_reported_tokens_control_primary_axis(self) -> None:
         baseline = row("baseline-none", 30, 1000, 500)
         tool = row("tool", 30, 700, 500)
-        baseline["weighted_token_count"] = 100
-        tool["weighted_token_count"] = 900
         result = self.analyze(baseline, tool)
         comparison = result["matched_comparisons"]["tool"]
         self.assertEqual(
@@ -132,14 +129,14 @@ class OperationalTradeoffTest(unittest.TestCase):
             0.7,
             comparison["paired_effects"]["geometric_average_ratios"]["tokens"],
         )
-        self.assertAlmostEqual(
-            9.0,
-            comparison["paired_effects"]["geometric_average_ratios"]["weighted_token_count"],
+        self.assertNotIn(
+            "weighted_token_count",
+            comparison["paired_effects"]["geometric_average_ratios"],
         )
 
     def test_policy_rejects_a_different_primary_token_metric(self) -> None:
         policy = copy.deepcopy(POLICY)
-        policy["operational_tradeoffs"]["primary_token_metric"] = "weighted_token_count"
+        policy["operational_tradeoffs"]["primary_token_metric"] = "cache_adjusted_proxy"
         with self.assertRaisesRegex(ValueError, "total_reported_tokens"):
             analyze_operational_tradeoffs(self.repeated(), policy)
 

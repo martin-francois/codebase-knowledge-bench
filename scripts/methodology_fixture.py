@@ -1623,7 +1623,7 @@ def run_fixture(repo: Path, defect: str | None = None, artifact_root: Path | Non
             else:
                 regressions["unknown_suite_field"] = False
             regressions["reasoning_not_double_counted"] = all(
-                row["weighted_token_count"] == 84.0 and row["total_reported_tokens"] == 120
+                row["total_reported_tokens"] == 120
                 for row in loaded
             )
             diagnostic, _ = _raw_run(repo, root, "issue-488", 1, "synthetic-tool", defect="nonblocking_diagnostic_failure")

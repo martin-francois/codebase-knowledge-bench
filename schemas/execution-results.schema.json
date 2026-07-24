@@ -760,10 +760,6 @@
             "number",
             "null"
           ]
-        },
-        "weighted_token_count": {
-          "minimum": 0,
-          "type": "number"
         }
       },
       "required": [
@@ -824,7 +820,6 @@
         "non_reasoning_output_tokens",
         "total_reported_tokens",
         "cache_hit_rate",
-        "weighted_token_count",
         "cache_reads_observed",
         "cache_write_metrics_available",
         "cache_write_metrics_unavailable_reason",

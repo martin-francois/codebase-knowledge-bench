@@ -280,33 +280,35 @@ field, or row field causes a source-specific validation failure.
 
 ## 11. Current token accounting
 
-`TOK-001` Reasoning tokens are a subset of output tokens. The only live weighted token count formula is:
-
-```text
-observed_non_cached_input_tokens
-    + cache_weight * cached_input_tokens
-    + output_tokens_including_reasoning
-```
+`TOK-001` Reasoning tokens are a subset of output tokens and MUST NOT be added
+again when deriving total reported tokens.
 
 `TOK-002` Input tokens equal cached plus observed non-cached input. Missing cache-write telemetry is
 `null`, never zero. It widens equivalent-cost bounds when a finite range is provable and otherwise
-makes cost unavailable. A pinned dated price table is always required. Weighted token count is not
-money.
+makes cost unavailable. A pinned dated price table is always required.
 
-`TOK-003` Reports publish cache-weight sensitivity at 0, 0.1, 0.25, and 1. Turn aggregates cannot
-identify cross-run cache reuse. Natural cache mode is explicit, and the documented cache lifetime is
-a minimum eligibility period rather than an eviction guarantee.
+`TOK-003` The current contract does not derive, publish, or accept a weighted
+token count or cache-weight sensitivity map. Those measures applied an
+unvalidated exchange rate between cached input, non-cached input, and output.
+Raw token components remain available separately. Turn aggregates cannot
+identify cross-run cache reuse. Natural cache mode is explicit, and the
+documented cache lifetime is a minimum eligibility period rather than an
+eviction guarantee.
 
 `TOK-004` `total_reported_tokens` is the unweighted sum of input tokens and output tokens including
 reasoning. Cached input is counted as reported input, and reasoning is already included in output
 and MUST NOT be added again. This value measures observed token traffic. It is not money, billed
 compute, or unique codebase context.
 
+```text
+total_reported_tokens = input_tokens + output_tokens_including_reasoning
+```
+
 `CST-001` Equivalent model cost is a separate solve-only metric named
 `Equivalent Codex API cost`. It is a deterministic equivalent under one frozen public pricing
 descriptor, not an actual invoice, subscription allocation, or claim about provider billing.
-Weighted token count retains its current formula and cache-weight sensitivity and MUST NOT be
-renamed, removed, or used as money.
+No weighted-token proxy substitutes for request-level equivalent-cost
+evidence.
 
 `CST-002` Every cost result has exactly one state:
 
@@ -415,8 +417,7 @@ show common fail and skip counts, protected process validity, and `Cost` qualifi
 value only when every compared run has exact, reconciled cost evidence. Otherwise,
 `total_reported_tokens` is the primary token-traffic value and the exact cost states and bounds
 remain separately available. A bounded midpoint MUST NOT replace either measure. Weighted token
-count and its cache-weight variants remain separately available as sensitivity and debugging
-metrics.
+count and cache-weight sensitivity fields are rejected by the current contract.
 
 `RPT-004` A mutation to execution correctness, tokens, suite aggregation, dashboard schema, or
 presentation projection is rejected by independent validation even if surrounding arithmetic is
@@ -428,10 +429,11 @@ the Native Codex baseline is a tool row with baseline kind. A `run` is one tool 
 solving one issue once and is identified by `run_id`; `run_key` identifies its scheduled
 tool/issue/repetition slot. A `comparison` executes all selected tools for one issue and repetition
 and is identified by `comparison_id`. Results use `correctness`,
-`weighted_token_count`, `average`, `warm_end_to_end`, `published`, and `normalized` names. The
+`total_reported_tokens`, `average`, `warm_end_to_end`, `published`, and `normalized` names. The
 `tool_calls` field counts every tool call started by Codex during the solve; lifecycle-specific
 completed, successful, failed, cancelled, and unfinished counts use distinct names. Obsolete
 `arm`, `variant`, `treatment`, `behavioral_correctness`, `weighted_tokens`,
+`weighted_token_count`, `token_weight_sensitivity`,
 `modeled_weighted_token_load`, `calls_started`, `total_tool_calls`,
 `actual_execution_calls`, `execution_call_lifecycle`, `warm_workflow`, and
 suite-profile `canonical` names are rejected
@@ -469,8 +471,9 @@ uses only that frozen installation.
 `RPT-008` The primary operational token axis, token-efficiency ordering, token Pareto dimension,
 matched token ratio, and token-per-success projection use `total_reported_tokens`. Reports MUST label
 this measure as total reported tokens and MUST explain that it counts input plus output token
-traffic, including cached input as reported. Weighted token count MUST NOT control the primary
-ordering or Pareto frontier; it remains a selectable sensitivity diagnostic.
+traffic, including cached input as reported. Weighted token count and
+cache-weight sensitivity MUST NOT be computed, accepted, published, or exposed
+as selectable diagnostics.
 
 ## 13. Mutation calibration
 

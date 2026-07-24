@@ -11,7 +11,6 @@ from typing import Any, Iterable, Mapping
 
 METHODOLOGY_ID = "correctness-current"
 TOKEN_ACCOUNTING_ID = "token-accounting-current"
-CACHE_WEIGHTS = (0.0, 0.1, 0.25, 1.0)
 CACHE_TTL_MINIMUM_SECONDS = 1800
 SCOPES = frozenset({"requested_behavior", "required_regression", "reference_diagnostic"})
 TOKEN_FIELDS = (
@@ -20,7 +19,7 @@ TOKEN_FIELDS = (
     "cache_write_tokens", "uncached_nonwrite_input_tokens",
     "output_tokens_including_reasoning", "reasoning_output_tokens",
     "non_reasoning_output_tokens", "total_reported_tokens", "cache_hit_rate",
-    "weighted_token_count", "cache_reads_observed",
+    "cache_reads_observed",
     "cache_write_metrics_available", "cache_write_metrics_unavailable_reason",
     "cache_isolation_mode", "cache_reuse_source_identifiable",
     "cross_run_cache_reuse_identifiable", "request_level_usage_available",
@@ -81,7 +80,6 @@ def derive_token_usage(usage: Mapping[str, Any], *, cache_isolation_mode: str = 
         "cache_ttl_minimum_seconds": CACHE_TTL_MINIMUM_SECONDS,
         "cache_maximum_retention_known": False,
     }
-    result["weighted_token_count"] = weighted_token_count(result, 0.1)
     return result
 
 
@@ -147,16 +145,6 @@ def token_usage_from_codex_jsonl(path: Path) -> dict[str, Any]:
     if completed_usage is None:
         return unavailable_token_usage(reason="turn.completed usage is absent")
     return token_usage_from_codex_turn(completed_usage)
-
-
-def weighted_token_count(usage: Mapping[str, Any], cache_weight: float) -> float:
-    if cache_weight < 0:
-        raise ValueError("cache weight must be non-negative")
-    return (
-        float(usage["observed_non_cached_input_tokens"])
-        + cache_weight * float(usage["cached_input_tokens"])
-        + float(usage["output_tokens_including_reasoning"])
-    )
 
 
 def validate_requirement_contract(contract: Mapping[str, Any]) -> None:
