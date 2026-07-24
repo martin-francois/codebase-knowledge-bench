@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DashboardData, DashboardRun, EquivalentCost, METRICS, QUALITY_AXES, TOKEN_VIEWS, deriveView, formatEquivalentCost, metricAvailability, qualityAvailability, summarizeEquivalentCost } from "../src/analysis";
 
 const metrics = (tokens: number, time: number, calls: number) => ({
+  total_reported_tokens: tokens,
   weighted_token_count: tokens,
   observed_non_cached_input_tokens: tokens * .8,
   output_tokens_including_reasoning: tokens * .1,
@@ -42,7 +43,7 @@ const run = (tool: string, issue: string, repetition: number, correctness: numbe
   metrics: metrics(tokens, time, calls),
 });
 const fixture = (): DashboardData => ({
-  schema_version: "operational-dashboard-v6", suite_id: "fixture", analysis_mode: "repeated_matched",
+  schema_version: "operational-dashboard-v7", suite_id: "fixture", analysis_mode: "repeated_matched",
   tolerance_grid: [0, 1, 2.5, 5, 7.5, 10], default_tolerance: 2.5,
   run_to_run_correctness: {
     schema_id: "run-to-run-correctness-current",
@@ -138,7 +139,7 @@ describe("dashboard derivation", () => {
       run("baseline-none", "a", 2, 30, 100, 100, 10),
       run("tool", "a", 2, 30, 200, 100, 10),
     ];
-    const result = deriveView(data, "weighted_token_count", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false}, "relative");
+    const result = deriveView(data, "total_reported_tokens", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false}, "relative");
     expect(result.points.find(point => point.tool === "tool")?.metricChangePercent).toBeCloseTo(0);
   });
   it("uses paired coordinates for relative individual runs", () => {
@@ -165,7 +166,7 @@ describe("dashboard derivation", () => {
       },
       estimability: {estimable: true, issue_cluster_status: "limited_cluster_evidence", reason: null},
     };
-    const result = deriveView(data, "weighted_token_count", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false}, "relative");
+    const result = deriveView(data, "total_reported_tokens", {issue: "all", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false}, "relative");
     const point = result.points.find(candidate => candidate.tool === "tool")!;
     expect(point.correctnessDelta).toBe(10);
     expect(point.metricChangePercent).toBeCloseTo(-20);

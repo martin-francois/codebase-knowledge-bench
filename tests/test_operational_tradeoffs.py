@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import sys
 import tempfile
@@ -70,6 +71,7 @@ def row(
         "common_regression_full_pass": True,
         "common_regression_score": 100.0,
         "correctness_score": correctness,
+        "total_reported_tokens": tokens,
         "weighted_token_count": tokens,
         "observed_non_cached_input_tokens": tokens * 0.8,
         "output_tokens_including_reasoning": tokens * 0.1,
@@ -114,6 +116,32 @@ class OperationalTradeoffTest(unittest.TestCase):
         self.assertEqual(1.0, zero["bootstrap_support"]["lower_tokens"])
         self.assertFalse(comparison["absolute_quality"]["all_tasks_successful"])
         self.assertEqual("limited_cluster_evidence", comparison["estimability"]["issue_cluster_status"])
+
+    def test_total_reported_tokens_control_primary_axis_while_weighted_is_diagnostic(self) -> None:
+        baseline = row("baseline-none", 30, 1000, 500)
+        tool = row("tool", 30, 700, 500)
+        baseline["weighted_token_count"] = 100
+        tool["weighted_token_count"] = 900
+        result = self.analyze(baseline, tool)
+        comparison = result["matched_comparisons"]["tool"]
+        self.assertEqual(
+            ["tool"],
+            result["objective_specific_winners"]["lowest_total_reported_tokens"],
+        )
+        self.assertAlmostEqual(
+            0.7,
+            comparison["paired_effects"]["geometric_average_ratios"]["tokens"],
+        )
+        self.assertAlmostEqual(
+            9.0,
+            comparison["paired_effects"]["geometric_average_ratios"]["weighted_token_count"],
+        )
+
+    def test_policy_rejects_a_different_primary_token_metric(self) -> None:
+        policy = copy.deepcopy(POLICY)
+        policy["operational_tradeoffs"]["primary_token_metric"] = "weighted_token_count"
+        with self.assertRaisesRegex(ValueError, "total_reported_tokens"):
+            analyze_operational_tradeoffs(self.repeated(), policy)
 
     def test_equal_incomplete_lower_time_is_relative_benefit(self) -> None:
         result = self.analyze(*self.repeated(tool_tokens=1000, tool_time=400))

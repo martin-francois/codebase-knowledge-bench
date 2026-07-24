@@ -24,9 +24,9 @@ function Chart({spec, label}: {spec: object; label: string}) {
 
 function App() {
   const [view, setView] = useState<"absolute" | "relative">("absolute");
-  const [metric, setMetric] = useState<MetricKey>("weighted_token_count");
+  const [metric, setMetric] = useState<MetricKey>("total_reported_tokens");
   const [qualityAxis, setQualityAxis] = useState<QualityAxis>("correctness");
-  const [tokenView, setTokenView] = useState<TokenView>("weighted_load");
+  const [tokenView, setTokenView] = useState<TokenView>("total_reported");
   const [filters, setFilters] = useState<Filters>({
     issue: "all", repetition: "all", statistic: "average",
     tolerance: data.default_tolerance, includeInvalid: false,
@@ -133,7 +133,7 @@ function App() {
     </section>
     <section aria-labelledby="cost-panel-title"><h2 id="cost-panel-title">Equivalent Codex API cost</h2>
       <p>This is a reproducible comparison under the suite&apos;s frozen model, service-tier, region, and dated pricing descriptor. It is not the actual invoice.</p>
-      <p className="note">Exact means every request-level pricing input was observed and reconciled. Observed range means missing request boundaries or cache-write telemetry require conservative bounds. Unavailable means the evidence cannot support a price. Weighted token count remains a separate workload metric.</p>
+      <p className="note">Exact means every request-level pricing input was observed and reconciled. Observed range means missing request boundaries or cache-write telemetry require conservative bounds. Unavailable means the evidence cannot support a price. Total reported tokens count input plus output token traffic; cached input is counted as reported and reasoning is already included in output. Weighted token count remains a separate sensitivity diagnostic.</p>
     </section>
     <section><h2>{view === "absolute" ? "Absolute quality and efficiency" : "Matched change from baseline"}</h2>
       {view === "relative" && <ul className="quadrants" aria-label="Relative chart quadrants"><li>Upper-left: better and lower resource use</li><li>Lower-left: lower resource use with a quality trade-off</li><li>Upper-right: better but higher resource use</li><li>Lower-right: worse and higher resource use</li></ul>}

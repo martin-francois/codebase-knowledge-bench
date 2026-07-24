@@ -42,9 +42,13 @@ weighted_token_count =
 
 Reasoning output is a subset of output and is never added again. Cache-write telemetry is nullable;
 pricing fails closed when required telemetry or pinned prices are unavailable.
+Total reported tokens are the primary token-traffic measure. They count cached input as reported
+and are not money, billed compute, or unique context. Weighted token counts remain sensitivity
+diagnostics for alternative cache weights.
 
 ## Operational analysis
 
 Operational tool comparison uses trust-valid task success. Attributable tool-effect analysis also
 requires successful, relevant, bounded intended-tool use on balanced matched blocks. Resource and
-time views remain separate from correctness.
+time views remain separate from correctness. The primary operational Pareto token dimension and
+token ordering use total reported tokens.

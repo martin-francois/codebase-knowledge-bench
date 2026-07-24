@@ -297,6 +297,11 @@ money.
 identify cross-run cache reuse. Natural cache mode is explicit, and the documented cache lifetime is
 a minimum eligibility period rather than an eviction guarantee.
 
+`TOK-004` `total_reported_tokens` is the unweighted sum of input tokens and output tokens including
+reasoning. Cached input is counted as reported input, and reasoning is already included in output
+and MUST NOT be added again. This value measures observed token traffic. It is not money, billed
+compute, or unique codebase context.
+
 `CST-001` Equivalent model cost is a separate solve-only metric named
 `Equivalent Codex API cost`. It is a deterministic equivalent under one frozen public pricing
 descriptor, not an actual invoice, subscription allocation, or claim about provider billing.
@@ -407,7 +412,11 @@ descriptive only.
 from validated current rows. The dashboard JSON validates under Draft 2020-12. Reports and dashboard
 show common fail and skip counts, protected process validity, and `Cost` qualified as
 `Equivalent Codex API cost` under the frozen descriptor. Cost is the primary reader-facing resource
-value; weighted token count remains separately available as a workload and debugging metric.
+value only when every compared run has exact, reconciled cost evidence. Otherwise,
+`total_reported_tokens` is the primary token-traffic value and the exact cost states and bounds
+remain separately available. A bounded midpoint MUST NOT replace either measure. Weighted token
+count and its cache-weight variants remain separately available as sensitivity and debugging
+metrics.
 
 `RPT-004` A mutation to execution correctness, tokens, suite aggregation, dashboard schema, or
 presentation projection is rejected by independent validation even if surrounding arithmetic is
@@ -456,6 +465,12 @@ range and repetition values remain in machine-readable and downloadable research
 locked Node dependencies with `npm ci`. Missing local `node_modules` therefore cannot consume paid
 model work and fail only during final publication. The dashboard build itself remains offline and
 uses only that frozen installation.
+
+`RPT-008` The primary operational token axis, token-efficiency ordering, token Pareto dimension,
+matched token ratio, and token-per-success projection use `total_reported_tokens`. Reports MUST label
+this measure as total reported tokens and MUST explain that it counts input plus output token
+traffic, including cached input as reported. Weighted token count MUST NOT control the primary
+ordering or Pareto frontier; it remains a selectable sensitivity diagnostic.
 
 ## 13. Mutation calibration
 

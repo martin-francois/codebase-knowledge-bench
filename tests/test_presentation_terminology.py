@@ -72,6 +72,9 @@ class PresentationTerminologyTest(unittest.TestCase):
         self.assertEqual("Weighted token count", weighted["label"])
         self.assertEqual("weighted_token_count", weighted["absoluteField"])
         self.assertEqual("weighted_token_count_average", weighted["averageField"])
+        total = descriptors["total_reported_tokens"]
+        self.assertEqual("Total reported tokens", total["label"])
+        self.assertEqual("total_reported_tokens", total["absoluteField"])
 
         analysis = (ROOT / "dashboard/src/analysis.ts").read_text(encoding="utf-8")
         dashboard = (ROOT / "dashboard/src/main.tsx").read_text(encoding="utf-8")
@@ -86,12 +89,12 @@ class PresentationTerminologyTest(unittest.TestCase):
         report = execution_report({"tools": []})
         self.assertIn("| tool or baseline |", report)
         self.assertIn("| correctness |", report)
-        self.assertIn("| weighted token count |", report)
+        self.assertIn("| total reported tokens |", report)
         self.assertNotIn("behavioral correctness", report.lower())
 
         suite = suite_report("example", [], {"by_tool": {}})
         self.assertIn("| tool or baseline |", suite)
-        self.assertIn("| weighted token count per success |", suite)
+        self.assertIn("| total reported tokens per success |", suite)
 
     def test_operator_guidance_uses_runs_and_tools(self) -> None:
         example = (ROOT / "examples/custom-suite.toml").read_text(encoding="utf-8")
@@ -106,7 +109,7 @@ class PresentationTerminologyTest(unittest.TestCase):
         self.assertIn("expensive benchmark runs", suite_runner)
         self.assertIn("primary operational tool comparison", suite_runner)
         self.assertNotIn("primary operational run ranking", suite_runner)
-        self.assertIn("lowest weighted token count", suite_runner)
+        self.assertIn("lowest total reported token count", suite_runner)
 
         scoring = (ROOT / "SCORING-MODEL.md").read_text(encoding="utf-8")
         tool_guide = (ROOT / "tool-guides/quickstart-sources.md").read_text(

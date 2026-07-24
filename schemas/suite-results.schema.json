@@ -1385,6 +1385,9 @@
         "tokens_ratio": {
           "$ref": "#/$defs/operational_interval"
         },
+        "weighted_token_count_ratio": {
+          "$ref": "#/$defs/operational_interval"
+        },
         "warm_time_ratio": {
           "$ref": "#/$defs/operational_interval"
         }
@@ -1392,6 +1395,7 @@
       "required": [
         "correctness_delta_points",
         "tokens_ratio",
+        "weighted_token_count_ratio",
         "time_ratio",
         "warm_time_ratio",
         "calls_ratio",
@@ -2036,7 +2040,7 @@
               "$ref": "#/$defs/operational_runToRunCorrectness"
             },
             "schema_version": {
-              "const": "operational-tradeoffs-v5"
+              "const": "operational-tradeoffs-v6"
             },
             "supported_findings": {
               "$ref": "#/$defs/operational_supported"

@@ -885,7 +885,7 @@
       "type": "array"
     },
     "schema_version": {
-      "const": "operational-dashboard-v6"
+      "const": "operational-dashboard-v7"
     },
     "run_to_run_correctness": {
       "$ref": "#/$defs/runToRunCorrectness"

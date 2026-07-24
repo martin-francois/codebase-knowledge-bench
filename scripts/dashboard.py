@@ -15,7 +15,7 @@ from jsonschema import Draft202012Validator
 ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD = ROOT / "dashboard"
 SCHEMA = ROOT / "schemas" / "dashboard-data.schema.json"
-VERSION = "operational-dashboard-v6"
+VERSION = "operational-dashboard-v7"
 
 METRIC_DESCRIPTORS: dict[str, dict[str, Any]] = json.loads(
     (DASHBOARD / "src" / "metric-descriptors.json").read_text(encoding="utf-8")
@@ -146,7 +146,8 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
                 "metrics": {
                     key: average.get(
                         {
-                            "weighted_token_count": "tokens",
+                            "total_reported_tokens": "tokens",
+                            "weighted_token_count": "weighted_token_count",
                             "solve_wall_seconds": "time",
                             "warm_end_to_end_seconds": "warm_time",
                             "tool_calls": "calls",

@@ -10,4 +10,10 @@ describe("token-accounting-current labels", () => {
     expect(TOKEN_VIEWS.weighted_load.label).toBe("Weighted token count");
     expect(TOKEN_VIEWS.weighted_load.label).not.toContain("double-counted");
   });
+  it("exposes total reported tokens as the primary token view", () => {
+    expect(TOKEN_VIEWS.total_reported).toEqual({
+      label: "Total reported tokens",
+      metric: "total_reported_tokens",
+    });
+  });
 });
