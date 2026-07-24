@@ -1,6 +1,6 @@
 # Semantic maintenance self-review
 
-Overall: **passed** for implementation commit `aea5aefe9dd999e6588d6e054f4fafec533a5211`.
+Overall: **passed** for implementation commit `0f4735e9280a623882774a443b30ed632eb01a18`.
 
 - `LLM-001` preflight contract fidelity: **passed**
 - `LLM-002` base/reference outcome plausibility: **passed**
@@ -9,9 +9,10 @@ Overall: **passed** for implementation commit `aea5aefe9dd999e6588d6e054f4fafec5
 - `LLM-005` field-provenance honesty: **passed**
 - `LLM-006` replay-package completeness: **not applicable**
 
-The review confirms that total reported tokens now control the primary token axis while weighted
-token count remains a separate sensitivity diagnostic. Total reported tokens measure input plus
-output token traffic, not cost, provider compute, or unique context.
+The review confirms that weighted-token counts, ratios, smoke values, efficiency projections, and
+cache-weight sensitivity maps are absent from the current derivation, schemas, aggregation,
+reports, and dashboard. Total reported tokens remain the primary token-traffic measure until exact
+equivalent cost is available.
 
 This is implementing-agent self-review. It used no additional model call and is not independent
 verification. A new exact-final replay package was not generated for this source-only reporting

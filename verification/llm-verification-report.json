@@ -11,7 +11,7 @@
         "repo://scripts/current_preflight.py"
       ],
       "findings": [
-        "The total-token change does not modify sanitized issue text, selector ownership, protected source identity, channel plans, or current preflight derivation.",
+        "Removing the weighted-token diagnostic does not modify sanitized issue text, selector ownership, protected source identity, channel plans, or current preflight derivation.",
         "Operational resource ordering remains downstream of protected correctness and cannot alter an issue contract or its observed selector outcomes."
       ],
       "id": "LLM-001",
@@ -28,7 +28,7 @@
       ],
       "findings": [
         "Base and reference plausibility remains governed by the same exact protected outcomes; no correctness weight, task-success gate, or diagnostic scope changed.",
-        "The no-model production-shadow and current-methodology fixtures passed after the resource change, including base/reference and nonblocking diagnostic behavior."
+        "The no-model production-shadow and current-methodology fixtures passed after the diagnostic removal, including base/reference and nonblocking diagnostic behavior."
       ],
       "id": "LLM-002",
       "residual_uncertainty": "No new protected execution was needed because the change rederives resource summaries from preserved token evidence and does not reinterpret base or reference behavior.",
@@ -43,7 +43,7 @@
       ],
       "findings": [
         "Common-channel skips, missing cases, and empty suites remain fail-closed and cannot prove regression safety.",
-        "A missing total-token value makes the resource comparison inconclusive; it does not synthesize a weighted-token fallback or change protected correctness."
+        "A missing total-token value makes the resource comparison inconclusive; the current contract does not synthesize a weighted-token fallback or change protected correctness."
       ],
       "id": "LLM-003",
       "residual_uncertainty": "The skip policy was not changed; this conclusion relies on the existing protected-verifier truth table and passing deterministic fixtures.",
@@ -78,8 +78,8 @@
       ],
       "findings": [
         "The primary token axis is honestly derived from total_reported_tokens, which is input plus output including reasoning; cached input remains part of reported input and reasoning is not added twice.",
-        "Weighted token count has a separate named ratio and interval and remains a sensitivity diagnostic, so its cache coefficient no longer controls primary ordering, Pareto membership, or token-per-success projections.",
-        "Operator summaries and dashboards derive total-token averages and relative changes from archived run rows, and missing total evidence remains unavailable rather than falling back to a differently weighted field."
+        "Weighted-token counts, ratios, smoke values, efficiency projections, and cache-weight sensitivity maps are absent from derivation, schemas, suite aggregation, reports, and dashboards.",
+        "Strict schemas and presentation tests reject the obsolete fields instead of reading, translating, or silently retaining them. Raw token components and equivalent-cost evidence remain available."
       ],
       "id": "LLM-005",
       "residual_uncertainty": "Total reported tokens measure token traffic, not price, provider compute, or unique retrieved context; exact equivalent cost remains the preferred monetary measure only when fully reconciled.",
@@ -109,8 +109,8 @@
     "Total reported tokens do not estimate money, provider compute, or unique context."
   ],
   "overall_status": "passed",
-  "report_envelope_commit": "aea5aefe9dd999e6588d6e054f4fafec533a5211",
-  "review_session_description": "The implementing coding agent reviewed the total-reported-token contract after rebasing onto the Codex 0.145 exact-cost implementation. Verification included Python syntax checks, 296 combined deterministic tests, two hash-seed runs, dashboard TypeScript tests and build, and the offline Chromium browser test. No additional model call was made.",
+  "report_envelope_commit": "0f4735e9280a623882774a443b30ed632eb01a18",
+  "review_session_description": "The implementing coding agent reviewed removal of the weighted-token diagnostic from the current benchmark contract. Verification included 513 deterministic Python tests, two focused hash-seed runs, dashboard TypeScript tests, and the dashboard production build. No additional model call was made.",
   "reviewed_artifacts": [
     "repo://AGENTS.md",
     "repo://README.md",
@@ -136,8 +136,8 @@
     "repo://tests/test_operator_summary.py",
     "repo://tests/test_publication_and_inference.py"
   ],
-  "reviewed_subject_tree_sha256": "993c54fbb0ec2fa3b00d212a309ce6aa7f3d3f3508e93369f2cc300c49ac050f",
+  "reviewed_subject_tree_sha256": "86aae54a7ad28a5130bbfed111b14ad28aba4884d1aedc3ae0f62e6ba0abd9cd",
   "reviewer_kind": "implementing_coding_agent",
   "self_review": true,
-  "source_commit": "aea5aefe9dd999e6588d6e054f4fafec533a5211"
+  "source_commit": "0f4735e9280a623882774a443b30ed632eb01a18"
 }
