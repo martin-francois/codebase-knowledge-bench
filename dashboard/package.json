@@ -9,15 +9,15 @@
     "test:browser": "playwright test"
   },
   "dependencies": {
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "vega": "6.2.0",
     "vega-embed": "7.1.0",
     "vega-lite": "6.4.3"
   },
   "devDependencies": {
     "@playwright/test": "1.61.1",
-    "@types/react": "19.2.14",
+    "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.3",
     "typescript": "7.0.2",
