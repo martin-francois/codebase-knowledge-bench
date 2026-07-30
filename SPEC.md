@@ -135,8 +135,12 @@ negative limits, unknown tools, and model substitution fail before child work.
 
 `CFG-007` The reviewed repeated Symphony for Trello suite uses
 `configs/symphony-trello.toml`, `execution_profile = "symphony_trello"`, and
-`suite_id = "symphony-trello"` as its sole current identity. The obsolete repeated-suite
-profile and suite identifiers are rejected rather than translated or accepted as aliases.
+`suite_id = "symphony-trello"` as its sole current logical identity. The coordinator derives a
+cohort ID from the effective configuration hash and a separate execution ID from that cohort ID
+and the frozen source commit. A changed cohort or execution source therefore receives a fresh
+immutable artifact namespace, while an interrupted execution resumes only its exact namespace.
+The obsolete repeated-suite profile and logical identifiers are rejected rather than translated
+or accepted as aliases.
 
 `CFG-008` The reviewed Symphony for Trello publication schedules exactly three fixed issues, four
 repetitions, and seven tool or baseline setups: 84 unique implementation runs. Its launch budget

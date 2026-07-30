@@ -6,6 +6,7 @@ import json
 import math
 import os
 import random
+import re
 import subprocess
 import tempfile
 import tomllib
@@ -28,6 +29,8 @@ SCHEMA_VERSION = "published-execution-controls-v1"
 SCHEDULE_VERSION = "balanced-rotating-tool-order-v1"
 LEDGER_VERSION = "published-execution-ledger-v2"
 TOOLCHAIN_VERSION = "qualified-toolchain-lock-v1"
+
+
 def normalize_json_value(value: Any, *, path: str = "$") -> Any:
     """Return a JSON-native, type-safe representation or fail closed."""
     if value is None or isinstance(value, (str, bool, int)):
@@ -192,6 +195,15 @@ def validate_execution_profile(
     payload["effective_configuration_sha256"] = sha256_bytes(
         normalized_bytes(resolved_configuration)
     )
+    if profile == "symphony_trello":
+        logical_suite_id = str(actual["suite_id"])
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", logical_suite_id):
+            raise SystemExit("Published logical suite ID is not a safe path component")
+        payload["logical_suite_id"] = logical_suite_id
+        payload["cohort_id"] = (
+            f"{logical_suite_id}-cohort-"
+            f"{payload['effective_configuration_sha256'][:12]}"
+        )
     frozen_ledger_path = os.environ.get("BENCH_FROZEN_EXECUTION_LEDGER")
     if frozen_ledger_path:
         ledger_path = Path(frozen_ledger_path).expanduser().resolve()
@@ -204,6 +216,8 @@ def validate_execution_profile(
         persisted_without_source = dict(persisted_profile)
         current_without_source.pop("source", None)
         persisted_without_source.pop("source", None)
+        current_without_source.pop("execution_id", None)
+        persisted_without_source.pop("execution_id", None)
         if not json_semantically_equal(current_without_source, persisted_without_source):
             raise SystemExit("Frozen execution profile differs from the current published configuration")
         execution_source = persisted_profile.get("source")
@@ -216,6 +230,10 @@ def validate_execution_profile(
         if expected_tree and execution_source.get("tree") != expected_tree:
             raise SystemExit("Frozen execution source tree does not match the authorized resume")
         payload["source"] = execution_source
+    if profile == "symphony_trello":
+        payload["execution_id"] = (
+            f"{payload['cohort_id']}-source-{payload['source']['commit'][:12]}"
+        )
     return normalize_json_value(payload)
 
 
@@ -580,6 +598,9 @@ def write_qualification_only_result(
         "effective_configuration_sha256": profile.get("effective_configuration_sha256"),
         "toolchain_lock_sha256": toolchain_lock["toolchain_lock_sha256"],
         "schedule_sha256": schedule["schedule_sha256"],
+        "logical_suite_id": profile.get("logical_suite_id"),
+        "cohort_id": profile.get("cohort_id"),
+        "execution_id": profile.get("execution_id"),
     }
     atomic_json(suite_dir / "qualification-only.json", payload)
     (suite_dir / "qualification-only.md").write_text(

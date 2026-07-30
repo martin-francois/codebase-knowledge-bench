@@ -62,6 +62,15 @@ class PublishedSuiteControlTest(unittest.TestCase):
                 tools=config["tools"], repetitions=config["repetitions"],
             )
             self.assertTrue(result["enforced"])
+            self.assertEqual("symphony-trello", result["logical_suite_id"])
+            self.assertRegex(
+                result["cohort_id"],
+                r"^symphony-trello-cohort-[0-9a-f]{12}$",
+            )
+            self.assertEqual(
+                f"{result['cohort_id']}-source-{'a' * 12}",
+                result["execution_id"],
+            )
             changed = dict(config)
             changed["suite_id"] = "wrong-suite"
             with self.assertRaisesRegex(SystemExit, "does not match the published profile"):
