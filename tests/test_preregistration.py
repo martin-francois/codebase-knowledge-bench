@@ -108,6 +108,15 @@ class PreregistrationContractTests(unittest.TestCase):
         Draft202012Validator(schema).validate(METHODOLOGY_POLICY)
         self.assertFalse(schema["additionalProperties"])
 
+    def test_production_qualification_is_frozen_as_no_model(self) -> None:
+        policy = METHODOLOGY_POLICY["production_qualification"]
+        self.assertEqual("direct_integration_without_codex", policy["mode"])
+        self.assertEqual(21, policy["cell_count"])
+        self.assertEqual(0, policy["model_turns_allowed"])
+        self.assertEqual(0, policy["implementation_child_launches_allowed"])
+        self.assertFalse(policy["reference_inputs_allowed"])
+        self.assertFalse(policy["codex_app_server_allowed"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -86,6 +86,10 @@ locking, schedule, and publication path without launching implementation solves:
 BENCH_QUALIFICATION_ONLY=true RUN_EXPENSIVE_BENCHMARK=true python3 scripts/run_benchmark_suite.py configs/symphony-trello.toml
 ```
 
+This mode invokes each configured integration directly from sanitized issue terms and the configured
+implementation paths. It launches no Codex app-server, creates no model turns, and writes a
+content-addressed receipt for every qualification cell.
+
 This uses the same stable suite ID. A later full-suite command resumes its sealed qualification
 state instead of starting another suite.
 Generate the exact-model proof once for that TOML, then set `model_preflight_reuse_from` in the TOML
