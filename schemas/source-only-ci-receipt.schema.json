@@ -132,10 +132,10 @@
       }
     },
     "source_only_userspace_image": {
-      "const": "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+      "const": "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
     },
     "source_only_userspace_image_digest": {
-      "const": "sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+      "const": "sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
     },
     "source_only_distribution": {
       "type": "string",
@@ -146,31 +146,31 @@
       "minLength": 1
     },
     "python_version": {
-      "const": "3.14.3"
+      "const": "3.14.6"
     },
     "python_executable_sha256": {
       "$ref": "#/$defs/sha256"
     },
     "node_version": {
-      "const": "v22.22.0"
+      "const": "v24.18.1"
     },
     "node_executable_sha256": {
       "$ref": "#/$defs/sha256"
     },
     "npm_version": {
-      "const": "10.9.4"
+      "const": "11.16.0"
     },
     "npm_entrypoint_sha256": {
       "$ref": "#/$defs/sha256"
     },
     "chromium_version": {
-      "const": "Google Chrome for Testing 149.0.7827.55"
+      "const": "Google Chrome for Testing 151.0.7922.34"
     },
     "chromium_executable": {
-      "const": "/ms-playwright/chromium-1228/chrome-linux64/chrome"
+      "const": "/ms-playwright/chromium-1234/chrome-linux64/chrome"
     },
     "chromium_executable_sha256": {
-      "const": "2d18db9d8608b052b6a552ee00ec1e830f93692e928b65ecc67d693bd33fe801"
+      "const": "0b20b130e7edd9dd51873be867761295fe0cfad490c2b9a64f95bd3cfc08fa71"
     },
     "source_only_browser_receipt": {
       "type": "object",
@@ -239,7 +239,7 @@
       "type": "object"
     },
     "source_only_executed_image": {
-      "const": "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+      "const": "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
     },
     "source_only_distribution_id": {
       "type": "string"

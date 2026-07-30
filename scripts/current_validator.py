@@ -360,6 +360,7 @@ def validate_suite_progress(
             ("stage", "stage"),
             ("stage_status", "status"),
             ("cohort", "cohort"),
+            ("elapsed_seconds", "elapsed_seconds"),
             ("estimate_source", "estimate_source"),
             ("sample_count", "sample_count"),
             ("selected_observation_ids", "selected_observation_ids"),
@@ -370,6 +371,48 @@ def validate_suite_progress(
                     f"progress snapshot {index} disagrees with preserved history inputs "
                     f"for {snapshot_key}",
                 )
+        completed_units = int(snapshot.get("completed_units") or 0)
+        total_units = int(snapshot.get("total_units") or 0)
+        expected_percent = (
+            100
+            if total_units == 0
+            else int(100 * completed_units / total_units)
+        )
+        if snapshot.get("percent") != expected_percent:
+            fail(
+                errors,
+                f"progress snapshot {index} has an invalid completed-unit percentage",
+            )
+        if index > 1 and float(snapshot.get("elapsed_seconds") or 0) < float(
+            snapshots[index - 2].get("elapsed_seconds") or 0
+        ):
+            fail(
+                errors,
+                f"progress snapshot {index} decreases cumulative active elapsed time",
+            )
+        if snapshot.get("estimate_source") == "elapsed_progress_fallback":
+            if completed_units <= 0 or total_units <= 0:
+                fail(
+                    errors,
+                    f"progress snapshot {index} uses elapsed fallback without completed progress",
+                )
+            else:
+                expected_remaining = (
+                    float(snapshot.get("elapsed_seconds") or 0)
+                    * (total_units - completed_units)
+                    / completed_units
+                )
+                actual_remaining = snapshot.get("remaining_seconds")
+                if actual_remaining is None or not math.isclose(
+                    float(actual_remaining),
+                    expected_remaining,
+                    rel_tol=1e-9,
+                    abs_tol=1e-6,
+                ):
+                    fail(
+                        errors,
+                        f"progress snapshot {index} has an invalid elapsed-progress estimate",
+                    )
     if not snapshots:
         return
     final = snapshots[-1]

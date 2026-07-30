@@ -377,6 +377,35 @@ class RetryPolicyTest(unittest.TestCase):
 
 
 class ToolEvidenceTest(unittest.TestCase):
+    def test_every_benchmarked_tool_uses_an_explicit_version_scoped_install(self) -> None:
+        self.assertEqual(
+            set(runner.TOOL_PACKAGE_VERSIONS),
+            set(runner.TOOL_PACKAGE_REQUESTS),
+        )
+        self.assertEqual(
+            {
+                "code-review-graph",
+                "gitnexus",
+                "graphify",
+                "jcodemunch-mcp",
+                "serena",
+                "sverklo",
+            },
+            set(runner.TOOL_PACKAGE_VERSIONS),
+        )
+        self.assertTrue(
+            all("latest" not in request for request in runner.TOOL_PACKAGE_REQUESTS.values())
+        )
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(
+            runner, "SHARED_INSTALL_ROOT", Path(tmp)
+        ):
+            for name, version in runner.TOOL_PACKAGE_VERSIONS.items():
+                tool = runner.Tool("run-001", name, Path(tmp), Path(tmp))
+                self.assertEqual(
+                    Path(tmp) / name / version,
+                    runner.shared_tool_install_root(tool),
+                )
+
     def test_headless_mcp_policy_is_server_scoped_and_read_only(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -1039,7 +1068,12 @@ class SharedInstallTest(unittest.TestCase):
             first_models.mkdir(parents=True)
             (first_models / "model.onnx").write_bytes(b"verified-model")
             (first_models / "tokenizer.json").write_text("{}", encoding="utf-8")
-            prefix = shared_install / "sverklo/prefix"
+            prefix = (
+                shared_install
+                / "sverklo"
+                / runner.TOOL_PACKAGE_VERSIONS["sverklo"]
+                / "prefix"
+            )
             package = prefix / "lib/node_modules/sverklo"
             package.mkdir(parents=True)
             model_hash = hashlib.sha256(b"verified-model").hexdigest()
@@ -1074,8 +1108,14 @@ class SharedInstallTest(unittest.TestCase):
             self.assertEqual(0o444, (second_models / "model.onnx").stat().st_mode & 0o777)
             self.assertIn("PUBLISHED_SVERKLO_MODEL_CACHE", first_log.read_text())
             self.assertIn("REUSED_SVERKLO_MODEL_CACHE", second_log.read_text())
-            (shared_install / "sverklo/models/model.onnx").chmod(0o644)
-            (shared_install / "sverklo/models/model.onnx").write_bytes(b"tampered")
+            shared_models = (
+                shared_install
+                / "sverklo"
+                / runner.TOOL_PACKAGE_VERSIONS["sverklo"]
+                / "models"
+            )
+            (shared_models / "model.onnx").chmod(0o644)
+            (shared_models / "model.onnx").write_bytes(b"tampered")
             with (
                 mock.patch.object(runner, "TOOL_CACHE", root / "tool-cache"),
                 mock.patch.object(runner, "SHARED_INSTALL_ROOT", shared_install),
@@ -1090,7 +1130,11 @@ class SharedInstallTest(unittest.TestCase):
             tool = runner.Tool(
                 "run-001", "serena", root / "repo", root / "runs" / "run-001"
             )
-            pinned = install_root / "serena"
+            pinned = (
+                install_root
+                / "serena"
+                / runner.TOOL_PACKAGE_VERSIONS["serena"]
+            )
             python = pinned / "venv" / "bin" / "python"
             python.parent.mkdir(parents=True)
             python.write_text("", encoding="utf-8")
@@ -1118,7 +1162,11 @@ class SharedInstallTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             install_root = root / "installs"
-            pinned = install_root / "serena"
+            pinned = (
+                install_root
+                / "serena"
+                / runner.TOOL_PACKAGE_VERSIONS["serena"]
+            )
             tool_python = pinned / "uv-tools/serena-agent/bin/python"
             outside_python = root / "tool-cache/python3.13"
             outside_python.parent.mkdir(parents=True)

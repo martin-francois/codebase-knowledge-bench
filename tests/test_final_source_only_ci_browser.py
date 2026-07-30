@@ -202,9 +202,8 @@ def valid_descriptor() -> dict:
             "digest": SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
         },
         "chromium_identity": {
-            "version": "Google Chrome for Testing 149.0.7827.55",
-            "executable":
-                "/ms-playwright/chromium-1228/chrome-linux64/chrome",
+            "version": EXPECTED_CHROMIUM_VERSION,
+            "executable": EXPECTED_CHROMIUM_EXECUTABLE,
             "sha256": SHA,
         },
         "source_only_ci_status": "passed",
@@ -397,7 +396,7 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
 
         identity = valid_environment()
         identity["source_only_userspace_image"] = (
-            "mcr.microsoft.com/playwright:v1.61.1-noble"
+            "mcr.microsoft.com/playwright:v1.62.0-noble"
         )
         self.assertTrue(environment_identity_errors(identity))
 
@@ -427,7 +426,7 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
             workflow.write_text(
                 source.replace(
                     SOURCE_ONLY_USERSPACE_IMAGE,
-                    "mcr.microsoft.com/playwright:v1.61.1-noble",
+                    "mcr.microsoft.com/playwright:v1.62.0-noble",
                 ),
                 encoding="utf-8",
             )
@@ -435,7 +434,7 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
                 self.assertTrue(workflow_image_errors())
 
             different = (
-                "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:"
+                "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:"
                 + "4" * 64
             )
             workflow.write_text(

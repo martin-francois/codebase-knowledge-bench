@@ -8,8 +8,8 @@ permissions:
   contents: read
 
 env:
-  SOURCE_ONLY_USERSPACE_IMAGE: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
-  SOURCE_ONLY_EXECUTED_IMAGE: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+  SOURCE_ONLY_USERSPACE_IMAGE: "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
+  SOURCE_ONLY_EXECUTED_IMAGE: "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
   SOURCE_ONLY_OUTPUT_ROOT: "/__w/_temp"
   SOURCE_ONLY_UNZIP_PACKAGE: "unzip=6.0-28ubuntu4.1"
   SOURCE_ONLY_UNZIP_PACKAGE_SHA256: "a505b9d491386167bd8e14e3383315a4a7d6539e4406745901ccf009a7988271"
@@ -18,9 +18,9 @@ jobs:
   source-only:
     runs-on: ubuntu-24.04
     container:
-      image: "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+      image: "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
       - name: Install pinned host bootstrap prerequisite
         shell: bash
         run: |
@@ -39,16 +39,16 @@ jobs:
           test "$(dpkg-query --showformat='${Version}' --show unzip)" = \
             "${SOURCE_ONLY_UNZIP_PACKAGE#unzip=}"
           rm -- "${packages[0]}"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v9.0.0
         with:
-          version: "0.10.3"
+          version: "0.12.0"
           enable-cache: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7.0.0
         with:
-          python-version: "3.14.3"
-      - uses: actions/setup-node@v4
+          python-version: "3.14.6"
+      - uses: actions/setup-node@v7.0.0
         with:
-          node-version: "22.22.0"
+          node-version: "24.18.1"
       - name: Resolve pinned Chromium
         shell: bash
         run: |
@@ -68,7 +68,7 @@ jobs:
           --output "$SOURCE_ONLY_OUTPUT_ROOT/source-only-ci-receipt.json"
           --browser-output
           "$SOURCE_ONLY_OUTPUT_ROOT/source-only-browser-receipt.json"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: source-only-ci-browser-receipts

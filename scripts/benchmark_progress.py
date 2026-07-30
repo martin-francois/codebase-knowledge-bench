@@ -302,6 +302,20 @@ def estimate_seconds(history: DurationHistory, planned: Iterable[tuple[str, dict
     return seconds, source, count
 
 
+def elapsed_progress_remaining(
+    elapsed_seconds: float, completed_units: int, total_units: int
+) -> float | None:
+    """Project remaining runtime from elapsed time and exact completed progress."""
+    if completed_units <= 0 or total_units <= 0:
+        return None
+    if completed_units >= total_units:
+        return 0.0
+    return max(
+        0.0,
+        float(elapsed_seconds) * (total_units - completed_units) / completed_units,
+    )
+
+
 def format_duration(seconds: float | None) -> str:
     if seconds is None:
         return "estimating..."
@@ -339,6 +353,8 @@ class ProgressReporter:
         self.cohort_contexts: dict[tuple[str, str, str], dict[str, Any]] = {}
         self.current: dict[str, Any] | None = None
         self.last_plain, self.frame, self.closed = 0.0, 0, False
+        self.elapsed_offset_seconds = 0.0
+        self.session_started_monotonic = time.monotonic()
         self.lock, self.stop = threading.Lock(), threading.Event()
         self.snapshot_path = suite_dir / "progress-snapshots.jsonl"
         self.history_inputs_path = suite_dir / "progress-history-inputs.json"
@@ -393,6 +409,15 @@ class ProgressReporter:
             except json.JSONDecodeError:
                 restored_lines.append(line)
                 continue
+            if snapshot.get("schema_version") != SNAPSHOT_SCHEMA_VERSION:
+                raise ValueError(
+                    "progress snapshot does not use the current schema version"
+                )
+            elapsed_seconds = float(snapshot["elapsed_seconds"])
+            if elapsed_seconds < 0:
+                raise ValueError(
+                    "progress snapshot elapsed_seconds must be non-negative"
+                )
             selected = snapshot.get("selected_observation_ids", [])
             unique_selected = sorted({str(item) for item in selected})
             if selected != unique_selected:
@@ -420,12 +445,17 @@ class ProgressReporter:
                     "status": status,
                     "cohort": snapshot.get("cohort"),
                     "cohort_inputs": snapshot.get("cohort_inputs"),
+                    "elapsed_seconds": elapsed_seconds,
                     "estimate_source": snapshot.get("estimate_source"),
                     "sample_count": snapshot.get("sample_count"),
                     "selected_observation_ids": snapshot.get("selected_observation_ids", []),
                 }
             )
             self.current = snapshot
+            self.elapsed_offset_seconds = max(
+                self.elapsed_offset_seconds,
+                elapsed_seconds,
+            )
         if normalized:
             descriptor, temporary_name = tempfile.mkstemp(
                 prefix=f".{self.snapshot_path.name}.", dir=self.suite_dir
@@ -541,19 +571,32 @@ class ProgressReporter:
                 self.active_run = run
             completed = len(self.completed)
             suite_complete = all(stage in self.finished_suite_stages for stage in SUITE_STAGES)
+            elapsed_seconds = self.elapsed_offset_seconds + (
+                now - self.session_started_monotonic
+            )
             if completed < self.total_runs or not suite_complete:
                 remaining, source, count, selected = estimate_details(
                     self.history, self._remaining_plan(), suite_id=self.suite_id, min_samples=self.min_samples
                 )
+                completed_units = self.completed_units
+                if remaining is None:
+                    fallback = elapsed_progress_remaining(
+                        elapsed_seconds, completed_units, self.total_units
+                    )
+                    if fallback is not None:
+                        remaining = fallback
+                        source = "elapsed_progress_fallback"
+                        count = 0
+                        selected = []
             else:
                 remaining, source, count, selected = 0.0, "complete", 0, []
             event_cohort, event_inputs = stage_fingerprint(stage, event) if stage in STAGES else (None, None)
             completed_units = self.completed_units
             percent = 100 if self.total_units == 0 else int(100 * completed_units / self.total_units)
-            snapshot = {"schema_version": SNAPSHOT_SCHEMA_VERSION, "timestamp": utc_now(), "suite_id": self.suite_id, "run_id": event.get("run_id"), "stage": stage, "stage_status": status, "issue_id": event.get("issue"), "repetition": int(event.get("repetition") or 1), "repetitions": self.repetitions, "task_position": int(event.get("task_position") or 1), "task_total": len(self.issues), "tool": event.get("tool") or self.tools[0], "tool_position": int(event.get("tool_position") or 1), "tool_total": len(self.tools), "completed_units": completed_units, "total_units": self.total_units, "percent": percent, "remaining_seconds": remaining, "estimate_source": source, "cohort": event_cohort, "cohort_inputs": event_inputs, "selected_observation_ids": selected, "sample_count": count, "states": {"completed": len(self.successful), "active": int(self.active_run is not None), "pending": max(0, self.total_runs - completed - int(self.active_run is not None)), "failed": len(self.failed), "excluded": len(self.excluded), "resumed": len(self.resumed)}, "history_diagnostics": list(self.history.diagnostics)}
+            snapshot = {"schema_version": SNAPSHOT_SCHEMA_VERSION, "timestamp": utc_now(), "suite_id": self.suite_id, "run_id": event.get("run_id"), "stage": stage, "stage_status": status, "issue_id": event.get("issue"), "repetition": int(event.get("repetition") or 1), "repetitions": self.repetitions, "task_position": int(event.get("task_position") or 1), "task_total": len(self.issues), "tool": event.get("tool") or self.tools[0], "tool_position": int(event.get("tool_position") or 1), "tool_total": len(self.tools), "completed_units": completed_units, "total_units": self.total_units, "percent": percent, "elapsed_seconds": elapsed_seconds, "remaining_seconds": remaining, "estimate_source": source, "cohort": event_cohort, "cohort_inputs": event_inputs, "selected_observation_ids": selected, "sample_count": count, "states": {"completed": len(self.successful), "active": int(self.active_run is not None), "pending": max(0, self.total_runs - completed - int(self.active_run is not None)), "failed": len(self.failed), "excluded": len(self.excluded), "resumed": len(self.resumed)}, "history_diagnostics": list(self.history.diagnostics)}
             with self.snapshot_path.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(snapshot, sort_keys=True) + "\n")
-            self.history_audit["events"].append({"timestamp": snapshot["timestamp"], "run_id": event.get("run_id"), "stage": stage, "status": status, "cohort": event_cohort, "cohort_inputs": event_inputs, "estimate_source": source, "sample_count": count, "selected_observation_ids": selected})
+            self.history_audit["events"].append({"timestamp": snapshot["timestamp"], "run_id": event.get("run_id"), "stage": stage, "status": status, "cohort": event_cohort, "cohort_inputs": event_inputs, "elapsed_seconds": elapsed_seconds, "estimate_source": source, "sample_count": count, "selected_observation_ids": selected})
             self._write_history_inputs()
             self.current = snapshot
             if not self.interactive and (now - self.last_plain >= self.plain_interval_seconds or snapshot["percent"] == 100):

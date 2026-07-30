@@ -626,7 +626,7 @@ def _stage_environment(source: Path, destination: Path) -> None:
     (destination / "pyvenv.cfg").write_text(
         "home = ../runtime/python-runtime/bin\n"
         "implementation = CPython\n"
-        "version_info = 3.14.3\n"
+        "version_info = 3.14.6\n"
         "include-system-site-packages = false\n"
         "prompt = offline-replay\n",
         encoding="utf-8",

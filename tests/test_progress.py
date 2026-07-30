@@ -18,7 +18,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from benchmark_config import FIELDS
-from benchmark_progress import RUN_STAGES, DurationHistory, ProgressReporter, estimate_details, estimate_seconds, render_line, stage_fingerprint, unclassified_config_keys
+from benchmark_progress import RUN_STAGES, DurationHistory, ProgressReporter, elapsed_progress_remaining, estimate_details, estimate_seconds, render_line, stage_fingerprint, unclassified_config_keys
 
 
 class ProgressTest(unittest.TestCase):
@@ -133,6 +133,11 @@ with tempfile.TemporaryDirectory() as tmp:
             history.append(self.observation("solve", self.context(), 20, suffix="1"))
             history.append(self.observation("solve", self.context(), 10, suffix="2"))
             self.assertEqual((15.0, "current_suite", 2), estimate_seconds(history, plan, suite_id="suite-a", min_samples=1))
+
+    def test_elapsed_progress_fallback_projects_total_and_remaining_runtime(self):
+        self.assertIsNone(elapsed_progress_remaining(100, 0, 10))
+        self.assertEqual(300, elapsed_progress_remaining(100, 1, 4))
+        self.assertEqual(0, elapsed_progress_remaining(100, 4, 4))
 
     def test_minimum_sample_threshold_and_prior_suite_fallback(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -301,6 +306,41 @@ with tempfile.TemporaryDirectory() as tmp:
             reporter.close(complete=True)
             self.assertEqual([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], percentages)
 
+    def test_reporter_falls_back_after_first_unit_when_history_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            reporter = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False, plain_interval_seconds=0)
+            reporter.session_started_monotonic = time.monotonic() - 100
+            reporter.consume({"run_id": "run-a", "stage": "installation", "status": "active", "issue": "#8", "repetition": 1, "tool": "serena"})
+            self.assertEqual("insufficient_history", reporter.current["estimate_source"])
+            self.assertIsNone(reporter.current["remaining_seconds"])
+            reporter.consume({"run_id": "run-a", "stage": "installation", "status": "completed", "duration_seconds": 100, "issue": "#8", "repetition": 1, "tool": "serena"})
+            snapshot = reporter.current
+            reporter.close()
+            self.assertEqual("elapsed_progress_fallback", snapshot["estimate_source"])
+            self.assertEqual(0, snapshot["sample_count"])
+            self.assertEqual([], snapshot["selected_observation_ids"])
+            self.assertAlmostEqual(
+                snapshot["elapsed_seconds"] * 9,
+                snapshot["remaining_seconds"],
+                places=5,
+            )
+
+    def test_resume_carries_active_elapsed_time_without_counting_downtime(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            first = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False)
+            first.session_started_monotonic = time.monotonic() - 10
+            first.consume({"run_id": "run-a", "stage": "installation", "status": "completed", "duration_seconds": 10, "issue": "#8", "repetition": 1, "tool": "serena"})
+            first_elapsed = first.current["elapsed_seconds"]
+            first.close()
+            resumed = ProgressReporter(root / "suite", "suite", [{"issue_id": "#8"}], ["serena"], 1, history_path=root / "history.json", stream=io.StringIO(), interactive=False)
+            resumed.session_started_monotonic = time.monotonic() - 5
+            resumed.consume({"run_id": "run-a", "stage": "setup", "status": "completed", "duration_seconds": 5, "issue": "#8", "repetition": 1, "tool": "serena"})
+            resumed_elapsed = resumed.current["elapsed_seconds"]
+            resumed.close()
+            self.assertAlmostEqual(first_elapsed + 5, resumed_elapsed, places=1)
+
     def test_resume_reconstructs_terminal_runs_and_stage_state(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -321,12 +361,14 @@ with tempfile.TemporaryDirectory() as tmp:
             suite_dir = root / "suite"
             suite_dir.mkdir()
             snapshot = {
+                "schema_version": "1",
                 "timestamp": "2026-01-01T00:00:00+00:00",
                 "stage": "solve",
                 "stage_status": "active",
                 "issue_id": "#8",
                 "repetition": 1,
                 "tool": "serena",
+                "elapsed_seconds": 1,
                 "estimate_source": "insufficient_history",
                 "sample_count": 2,
                 "selected_observation_ids": ["b", "a", "b"],
@@ -353,6 +395,35 @@ with tempfile.TemporaryDirectory() as tmp:
                 reporter.history_audit["events"][0]["selected_observation_ids"],
             )
             reporter.close()
+
+    def test_resume_rejects_snapshot_missing_current_elapsed_field(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            suite_dir = root / "suite"
+            suite_dir.mkdir()
+            (suite_dir / "progress-snapshots.jsonl").write_text(
+                json.dumps({
+                    "schema_version": "1",
+                    "timestamp": "2026-01-01T00:00:00+00:00",
+                    "stage": "solve",
+                    "stage_status": "active",
+                    "issue_id": "#8",
+                    "repetition": 1,
+                    "tool": "serena",
+                }) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(KeyError):
+                ProgressReporter(
+                    suite_dir,
+                    "suite",
+                    [{"issue_id": "#8"}],
+                    ["serena"],
+                    1,
+                    history_path=root / "history.json",
+                    stream=io.StringIO(),
+                    interactive=False,
+                )
 
     def test_history_observation_is_deduplicated_across_replayed_event(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -404,6 +475,22 @@ with tempfile.TemporaryDirectory() as tmp:
             errors = []
             module.validate_suite_progress(suite_dir, {"repetitions": 1, "issues": [{"issue_id": "#8"}], "tools": "serena", "resolved_configuration": {"progress_enabled": True}}, errors)
             self.assertEqual([], errors)
+            rows = [json.loads(line) for line in snapshots]
+            fallback = next(
+                row
+                for row in rows
+                if row["estimate_source"] == "elapsed_progress_fallback"
+            )
+            fallback["remaining_seconds"] += 1
+            (suite_dir / "progress-snapshots.jsonl").write_text(
+                "\n".join(json.dumps(row) for row in rows) + "\n",
+                encoding="utf-8",
+            )
+            errors = []
+            module.validate_suite_progress(suite_dir, {"repetitions": 1, "issues": [{"issue_id": "#8"}], "tools": "serena", "resolved_configuration": {"progress_enabled": True}}, errors)
+            self.assertTrue(
+                any("invalid elapsed-progress estimate" in error for error in errors)
+            )
 
     def test_progress_persistence_overhead_is_negligible_and_out_of_band(self):
         with tempfile.TemporaryDirectory() as tmp:

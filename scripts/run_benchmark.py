@@ -83,6 +83,23 @@ GLOBAL_TOOL_CACHE = OUTPUT_ROOT / "tool-cache"
 SHARED_INSTALL_ROOT = Path(
     os.environ.get("BENCH_SHARED_TOOL_INSTALL_ROOT", GLOBAL_TOOL_CACHE / "pinned-installs")
 ).resolve()
+TOOL_PACKAGE_VERSIONS = {
+    "code-review-graph": "2.3.7",
+    "gitnexus": "1.6.9",
+    "graphify": "0.9.30",
+    "jcodemunch-mcp": "1.108.200",
+    "serena": "1.6.1",
+    "sverklo": "0.29.3",
+}
+TOOL_PACKAGE_REQUESTS = {
+    "code-review-graph": f"code-review-graph=={TOOL_PACKAGE_VERSIONS['code-review-graph']}",
+    "gitnexus": f"gitnexus@{TOOL_PACKAGE_VERSIONS['gitnexus']}",
+    "graphify": f"graphifyy=={TOOL_PACKAGE_VERSIONS['graphify']}",
+    "jcodemunch-mcp": f"jcodemunch-mcp=={TOOL_PACKAGE_VERSIONS['jcodemunch-mcp']}",
+    "serena": f"serena-agent=={TOOL_PACKAGE_VERSIONS['serena']}",
+    "sverklo": f"sverklo@{TOOL_PACKAGE_VERSIONS['sverklo']}",
+}
+SVERKLO_NODE_VERSION = "24.18.1"
 RESUME_AFTER_SMOKE = os.environ.get("BENCH_RESUME_AFTER_SMOKE") == "true"
 RESUME_PARTIAL_EXECUTION = os.environ.get("BENCH_RESUME_PARTIAL_EXECUTION") == "true"
 RESUME_COMPLETED_DERIVATION = (
@@ -112,7 +129,12 @@ REPORT_ASSETS = COMPARISON_ROOT / "report-assets"
 ANTI_LEAK_BIN = COMPARISON_ROOT / "anti-leak-bin"
 SMOKE_STATE = COMPARISON_ROOT / "smoke-state"
 PRE_SOLVE_STATE = COMPARISON_ROOT / "pre-solve-state"
-NODE24_BIN = GLOBAL_TOOL_CACHE / "node24" / "node_modules" / ".bin"
+NODE24_BIN = (
+    GLOBAL_TOOL_CACHE
+    / f"node-{SVERKLO_NODE_VERSION}"
+    / "node_modules"
+    / ".bin"
+)
 HOST_CODEX_HOME = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))).expanduser()
 
 from benchmark_model import (  # noqa: E402 - local harness module
@@ -1635,7 +1657,10 @@ def setup_environment(v: Tool, extra_path: list[Path] | None = None) -> dict[str
 
 
 def shared_tool_install_root(v: Tool) -> Path:
-    return SHARED_INSTALL_ROOT / v.name
+    version = TOOL_PACKAGE_VERSIONS.get(v.name)
+    if version is None:
+        return SHARED_INSTALL_ROOT / v.name
+    return SHARED_INSTALL_ROOT / v.name / version
 
 
 @contextmanager
@@ -1991,7 +2016,13 @@ def ensure_sverklo_node_runtime(v: Tool, setup_log: Path) -> dict[str, str]:
             node_root.mkdir(parents=True, exist_ok=True)
             started = time.monotonic()
             result = run(
-                ["npm", "install", "--prefix", str(node_root), "node@24"],
+                [
+                    "npm",
+                    "install",
+                    "--prefix",
+                    str(node_root),
+                    f"node@{SVERKLO_NODE_VERSION}",
+                ],
                 timeout=STAGE_POLICY.timeout_for("installation"),
                 env=env,
                 stage="installation",
@@ -2106,7 +2137,7 @@ def seal_sverklo_model_cache(
 
 
 def stage_sverklo_model_cache(v: Tool, setup_log: Path, prefix: Path) -> bool:
-    shared = SHARED_INSTALL_ROOT / "sverklo" / "models"
+    shared = shared_tool_install_root(v) / "models"
     local = tool_home(v) / ".sverklo" / "models"
     with shared_install_lock(v):
         if not shared.exists():
@@ -2124,7 +2155,7 @@ def stage_sverklo_model_cache(v: Tool, setup_log: Path, prefix: Path) -> bool:
 
 def publish_sverklo_model_cache(v: Tool, setup_log: Path, prefix: Path) -> dict[str, Any]:
     local = tool_home(v) / ".sverklo" / "models"
-    shared = SHARED_INSTALL_ROOT / "sverklo" / "models"
+    shared = shared_tool_install_root(v) / "models"
     with shared_install_lock(v):
         manifest = seal_sverklo_model_cache(
             local, shared, prefix,
@@ -2140,7 +2171,7 @@ def setup_sverklo(v: Tool, setup_log: Path, version_file: Path, config_file: Pat
     if shutil.which("node", path=env.get("PATH")):
         node_version = run(["node", "--version"], env=env).stdout.strip()
         version_file.write_text(f"node {node_version}\n", encoding="utf-8")
-    prefix = npm_install_global(v, "sverklo@latest", setup_log)
+    prefix = npm_install_global(v, TOOL_PACKAGE_REQUESTS[v.name], setup_log)
     bin_path = prefix / "bin" / "sverklo"
     version = run([str(bin_path), "--version"], timeout=60, env=setup_environment(v, [prefix / "bin"]))
     version_file.write_text(
@@ -2196,7 +2227,7 @@ def setup_sverklo(v: Tool, setup_log: Path, version_file: Path, config_file: Pat
 
 
 def setup_code_review_graph(v: Tool, setup_log: Path, version_file: Path, config_file: Path) -> None:
-    venv = venv_install(v, ["code-review-graph"], setup_log)
+    venv = venv_install(v, [TOOL_PACKAGE_REQUESTS[v.name]], setup_log)
     cli = venv / "bin" / "code-review-graph"
     write_wrapper(v, "code-review-graph", cli)
     env = setup_environment(v, [venv / "bin"])
@@ -2266,7 +2297,7 @@ def setup_code_review_graph(v: Tool, setup_log: Path, version_file: Path, config
 
 
 def setup_gitnexus(v: Tool, setup_log: Path, version_file: Path, config_file: Path) -> None:
-    prefix = npm_install_global(v, "gitnexus@latest", setup_log)
+    prefix = npm_install_global(v, TOOL_PACKAGE_REQUESTS[v.name], setup_log)
     cli = prefix / "bin" / "gitnexus"
     write_wrapper(v, "gitnexus", cli)
     env = setup_environment(v, [prefix / "bin"])
@@ -2298,7 +2329,7 @@ def setup_gitnexus(v: Tool, setup_log: Path, version_file: Path, config_file: Pa
 
 
 def setup_jcodemunch(v: Tool, setup_log: Path, version_file: Path, config_file: Path) -> None:
-    venv = venv_install(v, ["jcodemunch-mcp"], setup_log)
+    venv = venv_install(v, [TOOL_PACKAGE_REQUESTS[v.name]], setup_log)
     cli = venv / "bin" / "jcodemunch-mcp"
     write_wrapper(v, "jcodemunch-mcp", cli)
     env = setup_environment(v, [venv / "bin"])
@@ -2344,10 +2375,15 @@ def setup_jcodemunch(v: Tool, setup_log: Path, version_file: Path, config_file: 
     )
 
 
-def serena_language_server_cache(version_text: str) -> Path:
+def serena_language_server_cache(v: Tool, version_text: str) -> Path:
     match = re.search(r"Serena\s+([A-Za-z0-9._-]+)", version_text)
     version = match.group(1) if match else "unknown"
-    return SHARED_INSTALL_ROOT / "serena" / "language-server-cache" / version / "EclipseJDTLS"
+    return (
+        shared_tool_install_root(v)
+        / "language-server-cache"
+        / version
+        / "EclipseJDTLS"
+    )
 
 
 def seed_serena_language_server_cache(v: Tool, shared: Path, setup_log: Path) -> list[str]:
@@ -2401,7 +2437,7 @@ def setup_serena(v: Tool, setup_log: Path, version_file: Path, config_file: Path
     uv = shutil.which("uv", path=env.get("PATH"))
     if not uv:
         raise RuntimeError("Serena quickstart requires uv, but uv is unavailable")
-    cli = uv_tool_install(v, "serena-agent", setup_log) / "serena"
+    cli = uv_tool_install(v, TOOL_PACKAGE_REQUESTS[v.name], setup_log) / "serena"
     if not cli.exists():
         raise RuntimeError("uv tool install did not expose the Serena CLI")
     write_wrapper(v, "serena", cli)
@@ -2415,7 +2451,7 @@ def setup_serena(v: Tool, setup_log: Path, version_file: Path, config_file: Path
         log_command(setup_log, res)
         if res.returncode != 0:
             raise RuntimeError(f"serena {' '.join(args)} failed")
-    dependency_cache = serena_language_server_cache(version_text)
+    dependency_cache = serena_language_server_cache(v, version_text)
     reused_dependencies = seed_serena_language_server_cache(v, dependency_cache, setup_log)
     # Keep the setup command's documented Codex semantics while replacing any network launcher
     # with the already-installed binary required by the benchmark's network-free solve phase.
@@ -2497,7 +2533,7 @@ def setup_graphify(v: Tool, setup_log: Path, version_file: Path, config_file: Pa
             "Setup attempts local CLI only; no code upload allowed.\n",
             encoding="utf-8",
         )
-    venv = venv_install(v, ["graphifyy"], setup_log)
+    venv = venv_install(v, [TOOL_PACKAGE_REQUESTS[v.name]], setup_log)
     cli = venv / "bin" / "graphify"
     if not cli.exists():
         raise RuntimeError("graphify CLI not installed by graphifyy")

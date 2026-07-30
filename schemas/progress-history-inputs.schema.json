@@ -27,6 +27,7 @@
           "timestamp",
           "stage",
           "status",
+          "elapsed_seconds",
           "estimate_source",
           "sample_count",
           "selected_observation_ids"
@@ -38,6 +39,7 @@
           "status": {"type": "string"},
           "cohort": {"type": ["string", "null"]},
           "cohort_inputs": {"type": ["object", "null"]},
+          "elapsed_seconds": {"type": "number", "minimum": 0},
           "estimate_source": {"type": "string"},
           "sample_count": {"type": "integer", "minimum": 0},
           "selected_observation_ids": {
