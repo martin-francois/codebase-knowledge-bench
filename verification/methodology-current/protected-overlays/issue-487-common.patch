@@ -1,0 +1,53 @@
+diff --git a/src/test/java/ch/fmartin/symphony/trello/orchestrator/SymphonyOrchestratorTest.java b/src/test/java/ch/fmartin/symphony/trello/orchestrator/SymphonyOrchestratorTest.java
+--- a/src/test/java/ch/fmartin/symphony/trello/orchestrator/SymphonyOrchestratorTest.java
++++ b/src/test/java/ch/fmartin/symphony/trello/orchestrator/SymphonyOrchestratorTest.java
+@@ -3,8 +3,6 @@ package ch.fmartin.symphony.trello.orchestrator;
+ import static com.google.common.collect.ImmutableMap.toImmutableMap;
+ import static org.assertj.core.api.Assertions.assertThat;
+ import static org.assertj.core.api.Assertions.catchThrowable;
+-import static org.junit.jupiter.api.Assumptions.assumeFalse;
+-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+ import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.Mockito.doAnswer;
+ import static org.mockito.Mockito.mock;
+@@ -31,8 +29,6 @@ import java.nio.charset.StandardCharsets;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
+ import java.nio.file.attribute.FileTime;
+-import java.nio.file.attribute.PosixFilePermission;
+-import java.nio.file.attribute.PosixFilePermissions;
+ import java.security.MessageDigest;
+ import java.security.NoSuchAlgorithmException;
+ import java.time.Duration;
+@@ -852,19 +848,10 @@ class SymphonyOrchestratorTest {
+         Files.createDirectories(workflowDirectory);
+         Path workflow = workflowDirectory.resolve("WORKFLOW.md");
+         writeWorkflow(workflow, "60000");
+-        Set<PosixFilePermission> originalPermissions;
+-        try {
+-            originalPermissions = Files.getPosixFilePermissions(workflowDirectory);
+-        } catch (UnsupportedOperationException e) {
+-            assumeTrue(false, "POSIX permissions are not available on this filesystem.");
+-            return;
+-        }
++        Files.writeString(workflowDirectory.resolve(".symphony-trello-locks"), "blocked");
+         FakeTracker tracker = new FakeTracker(List.of());
+         SymphonyOrchestrator orchestrator = orchestrator(workflow, tracker, mock());
+         try {
+-            Files.setPosixFilePermissions(workflowDirectory, PosixFilePermissions.fromString("r-x------"));
+-            assumeFalse(Files.isWritable(workflowDirectory), "The current user can still write to the test directory.");
+-
+             // when
+             Throwable failure = catchThrowable(orchestrator::start);
+ 
+@@ -872,10 +859,9 @@ class SymphonyOrchestratorTest {
+             assertThat(failure).isInstanceOfSatisfying(WorkflowException.class, exception -> {
+                 assertThat(exception.code()).isEqualTo("workflow_lock_unavailable");
+                 assertThat(exception).hasMessageContaining("Workflow runtime lock cannot be acquired");
+             });
+             assertThat(tracker.boardResolutions).hasValue(0);
+         } finally {
+-            Files.setPosixFilePermissions(workflowDirectory, originalPermissions);
+             orchestrator.stop();
+         }
+     }
