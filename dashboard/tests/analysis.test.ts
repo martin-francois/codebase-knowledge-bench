@@ -43,7 +43,7 @@ const run = (tool: string, issue: string, repetition: number, correctness: numbe
 });
 const fixture = (): DashboardData => ({
   schema_version: "operational-dashboard-v7", suite_id: "fixture", analysis_mode: "repeated_matched",
-  tolerance_grid: [0, 1, 2.5, 5, 7.5, 10], default_tolerance: 2.5,
+  tolerance_grid: [0, 1, 2, 5, 7.5, 10], default_tolerance: 2,
   run_to_run_correctness: {
     schema_id: "run-to-run-correctness-current",
     range_method_id: "observed-min-max-repetition-means-v1",

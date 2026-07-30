@@ -192,8 +192,8 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
             "correctness_loss_tolerance_grid_points"
         ],
         "default_tolerance": float(
-            METHODOLOGY_POLICY["operational_tradeoffs"][
-                "default_dashboard_correctness_tolerance_points"
+            METHODOLOGY_POLICY["operational_comparison"][
+                "correctness_equivalence_margin_points"
             ]
         ),
         "metric_descriptors": descriptors,

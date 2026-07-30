@@ -164,7 +164,7 @@ class OperationalTradeoffTest(unittest.TestCase):
                 "operational_tradeoff_sensitivity"
             ]
         }
-        self.assertEqual("materially_worse_correctness", sensitivity[2.5])
+        self.assertEqual("materially_worse_correctness", sensitivity[2.0])
         self.assertEqual("tolerance_acceptable_tradeoff", sensitivity[5.0])
 
     def test_identical_tools_have_identical_shared_distributions(self) -> None:

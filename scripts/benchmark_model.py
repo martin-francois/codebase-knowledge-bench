@@ -11,6 +11,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from jsonschema import Draft202012Validator
+
 from benchmark_hardening import (
     CLASSIFICATION_MODEL_VERSION,
     RESULT_SCHEMA_VERSION,
@@ -21,10 +23,100 @@ from benchmark_hardening import (
 
 SCHEMA_VERSION = RESULT_SCHEMA_VERSION
 DISPLAY_DECIMAL_PLACES = 2
-POLICY_PATH = Path(__file__).resolve().parents[1] / "configs" / "methodology-policy.json"
-METHODOLOGY_POLICY = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
-METHODOLOGY_POLICY_SHA256 = __import__("hashlib").sha256(POLICY_PATH.read_bytes()).hexdigest()
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+POLICY_PATH = REPOSITORY_ROOT / "configs" / "methodology-policy.json"
+POLICY_SCHEMA_PATH = REPOSITORY_ROOT / "schemas" / "methodology-policy.schema.json"
+RAW_METADATA_SCHEMA_PATH = REPOSITORY_ROOT / "schemas" / "raw-run-metadata.schema.json"
+REQUIRED_POST_RUN_DERIVATIONS = frozenset(
+    {
+        "task_success",
+        "requirement_weighted_correctness",
+        "exact_equivalent_cost",
+        "solve_wall_time",
+        "matched_comparisons",
+        "tool_use_diagnostics",
+        "anti_leak_findings",
+        "issue_repetition_values",
+        "finding_categories",
+        "source_and_archive_hashes",
+    }
+)
+
+
+def validate_methodology_policy(policy: dict[str, Any]) -> None:
+    """Validate the frozen policy and every declared raw derivation source."""
+
+    schema = json.loads(POLICY_SCHEMA_PATH.read_text(encoding="utf-8"))
+    Draft202012Validator.check_schema(schema)
+    errors = sorted(
+        Draft202012Validator(schema).iter_errors(policy),
+        key=lambda error: list(error.absolute_path),
+    )
+    if errors:
+        first = errors[0]
+        location = ".".join(map(str, first.absolute_path)) or "<root>"
+        raise ValueError(f"methodology policy invalid at {location}: {first.message}")
+
+    sufficiency = policy["raw_evidence_sufficiency"]
+    raw_schema = json.loads(RAW_METADATA_SCHEMA_PATH.read_text(encoding="utf-8"))
+    metadata_fields = set(
+        raw_schema["properties"]["metadata"]["required"]
+    )
+    evidence_descriptors = set(
+        raw_schema["properties"]["evidence"]["required"]
+    )
+    declared_metadata = set(sufficiency["run_metadata_fields"])
+    declared_evidence = set(sufficiency["run_evidence_descriptors"])
+    unknown_metadata = sorted(declared_metadata - metadata_fields)
+    unknown_evidence = sorted(declared_evidence - evidence_descriptors)
+    if unknown_metadata:
+        raise ValueError(
+            f"methodology policy names unknown raw metadata fields: {unknown_metadata}"
+        )
+    if unknown_evidence:
+        raise ValueError(
+            f"methodology policy names unknown raw evidence descriptors: {unknown_evidence}"
+        )
+
+    derivations = sufficiency["derivation_sources"]
+    if set(derivations) != REQUIRED_POST_RUN_DERIVATIONS:
+        raise ValueError("methodology policy post-run derivation set is incomplete")
+    suite_artifacts = set(sufficiency["suite_artifacts"])
+    for derivation, sources in sorted(derivations.items()):
+        for source in sources:
+            prefix, separator, name = source.partition(".")
+            if not separator or not name:
+                raise ValueError(
+                    f"methodology policy source is malformed for {derivation}: {source}"
+                )
+            if prefix == "run_metadata" and name in declared_metadata:
+                continue
+            if prefix == "run_evidence" and name in declared_evidence:
+                continue
+            if prefix == "suite_artifact" and name in suite_artifacts:
+                continue
+            raise ValueError(
+                f"methodology policy source is undeclared for {derivation}: {source}"
+            )
+
+    tolerance = float(
+        policy["operational_comparison"]["correctness_equivalence_margin_points"]
+    )
+    sensitivity_grid = {
+        float(value)
+        for value in policy["operational_tradeoffs"][
+            "correctness_loss_tolerance_grid_points"
+        ]
+    }
+    if tolerance not in sensitivity_grid:
+        raise ValueError(
+            "normative correctness-equivalence tolerance is absent from sensitivity grid"
+        )
+
+
+METHODOLOGY_POLICY = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
+validate_methodology_policy(METHODOLOGY_POLICY)
+METHODOLOGY_POLICY_SHA256 = hashlib.sha256(POLICY_PATH.read_bytes()).hexdigest()
 
 
 def _sha256_file(path: Path) -> str:
