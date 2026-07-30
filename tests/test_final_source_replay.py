@@ -376,6 +376,9 @@ class SourceGeneratedReplayTest(unittest.TestCase):
             'row.get("calibration_kind") == "targeted"', source
         )
         self.assertIn(
+            'str(row.get("issue_id")) in ISSUES', source
+        )
+        self.assertIn(
             'mutation_command.extend(["--only", mutant_id])', source
         )
 

@@ -428,7 +428,7 @@ MANDATORY_FILES = {
     "review-handoff-validation.json",
 }
 MANDATORY_PREFIXES = (
-    "preflight/current-preflight/issue-486/",
+    "preflight/current-preflight/issue-487/",
     "preflight/current-preflight/issue-488/",
     "preflight/current-preflight/issue-498/",
     "runtime/runtime-manifests/",

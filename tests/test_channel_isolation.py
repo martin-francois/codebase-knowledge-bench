@@ -23,7 +23,7 @@ from protected_verifier import load_channel_plan, validate_selector_isolation
 
 class ProtectedChannelPlanTests(unittest.TestCase):
     def contracts(self):
-        for issue in ("issue-486", "issue-488", "issue-498"):
+        for issue in ("issue-487", "issue-488", "issue-498"):
             contract = json.loads((ROOT / f"verification/methodology-current/contracts/{issue}.json").read_text())
             channel_plan = json.loads((ROOT / f"verification/methodology-current/channel-plans/{issue}.json").read_text())
             yield issue, contract, channel_plan
@@ -58,7 +58,7 @@ class ProtectedChannelPlanTests(unittest.TestCase):
             self.assertFalse(expected["common"] & expected["direct"], issue)
             self.assertFalse(expected["common"] & expected["extended"], issue)
             self.assertFalse(expected["direct"] & expected["extended"], issue)
-        self.assertEqual(1171, total_common)
+        self.assertEqual(681, total_common)
 
     def test_PCI_003_observed_selector_isolation_has_narrow_negative(self):
         _, contract, channel_plan = next(row for row in self.contracts() if row[0] == "issue-488")
