@@ -53,6 +53,8 @@ from published_suite import (
     validate_execution_profile,
     validate_toolchain_lock,
     check_kill_switches,
+    write_qualification_control,
+    validate_qualification_control,
     write_qualification_only_result,
     write_schedule,
     write_full_suite_readiness,
@@ -3368,26 +3370,44 @@ def _main() -> None:
     else:
         comparison_records = []
         suite_dir.mkdir(parents=True, exist_ok=False)
-        model_preflight_record = reuse_model_preflight(suite_dir)
-        model_preflight_lock = write_model_preflight_lock(
-            suite_dir,
-            model_preflight_record,
-            harness_commit=profile["source"]["commit"],
-            harness_tree=profile["source"]["tree"],
-        )
-        model_lock_errors = validate_model_preflight_lock(model_preflight_lock, suite_dir)
-        if model_lock_errors:
-            raise SystemExit("Invalid model preflight lock: " + "; ".join(model_lock_errors))
+        if QUALIFICATION_ONLY:
+            qualification_control = write_qualification_control(suite_dir, profile)
+            model_preflight_lock = None
+        else:
+            model_preflight_record = reuse_model_preflight(suite_dir)
+            model_preflight_lock = write_model_preflight_lock(
+                suite_dir,
+                model_preflight_record,
+                harness_commit=profile["source"]["commit"],
+                harness_tree=profile["source"]["tree"],
+            )
+            model_lock_errors = validate_model_preflight_lock(model_preflight_lock, suite_dir)
+            if model_lock_errors:
+                raise SystemExit("Invalid model preflight lock: " + "; ".join(model_lock_errors))
         (suite_dir / "effective-configuration.json").write_text(
             json.dumps(profile, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
         write_schedule(suite_dir, schedule)
     if RESUME_SUITE:
         schedule = json.loads((suite_dir / "tool-order-schedule.json").read_text())
-        model_preflight_lock = json.loads((suite_dir / "model-preflight-lock.json").read_text())
-        model_lock_errors = validate_model_preflight_lock(model_preflight_lock, suite_dir)
-        if model_lock_errors:
-            raise SystemExit("Invalid resumed model preflight lock: " + "; ".join(model_lock_errors))
+        if QUALIFICATION_ONLY:
+            qualification_control = json.loads(
+                (suite_dir / "qualification-control.json").read_text()
+            )
+            qualification_control_errors = validate_qualification_control(
+                qualification_control, profile
+            )
+            if qualification_control_errors:
+                raise SystemExit(
+                    "Invalid resumed qualification control: "
+                    + "; ".join(qualification_control_errors)
+                )
+            model_preflight_lock = None
+        else:
+            model_preflight_lock = json.loads((suite_dir / "model-preflight-lock.json").read_text())
+            model_lock_errors = validate_model_preflight_lock(model_preflight_lock, suite_dir)
+            if model_lock_errors:
+                raise SystemExit("Invalid resumed model preflight lock: " + "; ".join(model_lock_errors))
     controlled = EXECUTION_PROFILE in {"acceptance_canary", "symphony_trello"}
     ledger = None
     ledger_dir = (
@@ -3561,7 +3581,8 @@ def _main() -> None:
             if EXECUTION_PROFILE != "symphony_trello":
                 raise SystemExit("Qualification-only mode is restricted to the published profile")
             write_qualification_only_result(
-                suite_dir, qualification_records, toolchain_lock, schedule, profile
+                suite_dir, qualification_records, toolchain_lock, schedule, profile,
+                qualification_control,
             )
             for name in ("execution-ledger.json", "execution-ledger.md"):
                 shutil.copy2(ledger_dir / name, suite_dir / name)
