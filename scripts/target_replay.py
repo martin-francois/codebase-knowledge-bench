@@ -475,22 +475,35 @@ def _dashboard_node_modules_ignore(
     return {".vite"} & set(names)
 
 
-def _ldd_paths(executables: Sequence[Path]) -> list[Path]:
+def _ldd_paths(executables: Sequence[Path]) -> list[tuple[str, Path]]:
     paths: dict[str, Path] = {}
     for executable in executables:
         output = _command_version(["ldd", str(executable)])
         if "not found" in output:
             raise ValueError(f"shared-library closure is incomplete: {output}")
         for line in output.splitlines():
-            match = re.search(r"=>\s+(/\S+)", line)
-            if match is None:
-                match = re.search(r"^\s*(/\S+)\s+\(", line)
-            if match is None:
+            linked = re.search(r"^\s*(\S+)\s+=>\s+(/\S+)", line)
+            direct = re.search(r"^\s*(/\S+)\s+\(", line)
+            if linked is not None:
+                name = Path(linked.group(1)).name
+                source_text = linked.group(2)
+            elif direct is not None:
+                name = Path(direct.group(1)).name
+                source_text = direct.group(1)
+            else:
                 continue
-            path = Path(match.group(1)).resolve()
+            path = Path(source_text).resolve()
             if path.is_file():
-                paths[str(path)] = path
-    return [paths[key] for key in sorted(paths)]
+                previous = paths.get(name)
+                if (
+                    previous is not None
+                    and sha256_file(previous) != sha256_file(path)
+                ):
+                    raise ValueError(
+                        f"shared-library SONAME collision: {name}"
+                    )
+                paths[name] = path
+    return [(key, paths[key]) for key in sorted(paths)]
 
 
 def _copy_library_closure(
@@ -499,8 +512,7 @@ def _copy_library_closure(
     destination.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []
     by_name: dict[str, str] = {}
-    for source in _ldd_paths(executables):
-        name = source.name
+    for name, source in _ldd_paths(executables):
         digest = sha256_file(source)
         if name in by_name and by_name[name] != digest:
             raise ValueError(

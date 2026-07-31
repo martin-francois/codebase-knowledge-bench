@@ -62,6 +62,7 @@ from source_only_ci import (  # noqa: E402
 from target_replay import (  # noqa: E402
     REQUIRED_PACKAGED_SEMANTIC_RUNTIMES,
     ROOTFS_TOOL_PATHS,
+    _copy_library_closure,
     _copytree,
     _dashboard_node_modules_ignore,
     _generic_runtime_resolution,
@@ -629,6 +630,29 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
             "content-addressed Chromium fonts are missing",
             source,
         )
+
+    def test_library_closure_uses_requested_soname(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            resolved = root / "libfixture.so.1.2.3"
+            resolved.write_bytes(b"fixture library\n")
+            destination = root / "system-libs"
+            with mock.patch(
+                "target_replay._ldd_paths",
+                return_value=[("libfixture.so.1", resolved)],
+            ):
+                rows = _copy_library_closure(
+                    [root / "fixture-executable"], destination
+                )
+            copied = destination / "libfixture.so.1"
+            self.assertEqual(resolved.read_bytes(), copied.read_bytes())
+            self.assertEqual(
+                ["system-libs/libfixture.so.1"],
+                [row["path"] for row in rows],
+            )
+            self.assertFalse(
+                (destination / "libfixture.so.1.2.3").exists()
+            )
 
     def test_generated_package_has_an_explicit_larger_bounded_manifest(
         self,
