@@ -1700,6 +1700,9 @@ class ModelPreflightTest(unittest.TestCase):
             journal = run_dir / "app-server.jsonl"
             control = run_dir / "app-server-control.json"
             capability = run_dir / "codex-raw-usage-capability.json"
+            request_usage = run_dir / "request-usage.json"
+            equivalent_cost = run_dir / "equivalent-cost.json"
+            pricing_descriptor = run_dir / "pricing-descriptor.json"
             command.write_text(
                 'codex app-server --listen stdio:// '
                 '-c model="gpt-5.6-sol" '
@@ -1731,7 +1734,30 @@ class ModelPreflightTest(unittest.TestCase):
                 encoding="utf-8",
             )
             control.write_text("{}\n", encoding="utf-8")
-            capability.write_text("{}\n", encoding="utf-8")
+            capability_data = {
+                "codex_lock_sha256": "a" * 64,
+                "codex_identity": {"version_output": "codex fixture"},
+                "json_schema_file_count": 1,
+                "json_schema_canonical_tree_sha256": "b" * 64,
+                "json_schema_raw_reference_tree_sha256": "c" * 64,
+                "typescript_schema_file_count": 1,
+                "typescript_schema_tree_sha256": "d" * 64,
+                "required_schema_sha256": {},
+                "invalidating_notification_methods": [],
+                "cache_write_omission_policy": "reject-as-malformed",
+            }
+            capability.write_text(json.dumps(capability_data), encoding="utf-8")
+            request_usage.write_text("{}\n", encoding="utf-8")
+            cost_data = {"status": "exact", "exact_usd_nanos": 1}
+            equivalent_cost.write_text(json.dumps(cost_data), encoding="utf-8")
+            pricing_descriptor.write_text("{}\n", encoding="utf-8")
+            artifact_sha256 = {
+                "app_server_journal": hashlib.sha256(journal.read_bytes()).hexdigest(),
+                "codex_capability_receipt": hashlib.sha256(capability.read_bytes()).hexdigest(),
+                "request_usage": hashlib.sha256(request_usage.read_bytes()).hexdigest(),
+                "equivalent_cost": hashlib.sha256(equivalent_cost.read_bytes()).hexdigest(),
+                "pricing_descriptor": hashlib.sha256(pricing_descriptor.read_bytes()).hexdigest(),
+            }
             (source / "model-preflight.json").write_text(
                 json.dumps(
                     {
@@ -1751,13 +1777,19 @@ class ModelPreflightTest(unittest.TestCase):
                         "app_server_journal": str(journal),
                         "app_server_control": str(control),
                         "codex_capability_receipt": str(capability),
+                        "request_usage_artifact": str(request_usage),
+                        "equivalent_cost_artifact": str(equivalent_cost),
+                        "pricing_descriptor_artifact": str(pricing_descriptor),
+                        "artifact_sha256": artifact_sha256,
                         "raw_usage_capability": {
                             "passed": True,
                             "evidence_level": "request",
                             "cache_write_metrics_available": True,
                             "request_aggregate_reconciled": True,
                         },
+                        "equivalent_cost": cost_data,
                         "approval_requests": 0,
+                        "invalidating_notifications": [],
                         "codex_cli_version": "codex fixture",
                         "harness_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
                         "harness_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip(),
@@ -1774,6 +1806,11 @@ class ModelPreflightTest(unittest.TestCase):
             with (
                 mock.patch.object(suite, "EXECUTIONS", executions),
                 mock.patch.object(suite, "MODEL_PREFLIGHT_REUSE_FROM", str(source)),
+                mock.patch.object(
+                    suite,
+                    "probe_raw_usage_capability",
+                    return_value=capability_data,
+                ),
                 mock.patch.object(suite.subprocess, "run", side_effect=preflight_command),
                 mock.patch.dict(
                     os.environ,
@@ -1812,6 +1849,9 @@ class ModelPreflightTest(unittest.TestCase):
             journal = run_dir / "app-server.jsonl"
             control = run_dir / "app-server-control.json"
             capability = run_dir / "codex-raw-usage-capability.json"
+            request_usage = run_dir / "request-usage.json"
+            equivalent_cost = run_dir / "equivalent-cost.json"
+            pricing_descriptor = run_dir / "pricing-descriptor.json"
             command.write_text(
                 'codex app-server --listen stdio:// '
                 '-c model="gpt-5.6-sol" '
@@ -1841,7 +1881,30 @@ class ModelPreflightTest(unittest.TestCase):
                 encoding="utf-8",
             )
             control.write_text("{}\n", encoding="utf-8")
-            capability.write_text("{}\n", encoding="utf-8")
+            capability_data = {
+                "codex_lock_sha256": "a" * 64,
+                "codex_identity": {"version_output": "codex fixture"},
+                "json_schema_file_count": 1,
+                "json_schema_canonical_tree_sha256": "b" * 64,
+                "json_schema_raw_reference_tree_sha256": "c" * 64,
+                "typescript_schema_file_count": 1,
+                "typescript_schema_tree_sha256": "d" * 64,
+                "required_schema_sha256": {},
+                "invalidating_notification_methods": [],
+                "cache_write_omission_policy": "reject-as-malformed",
+            }
+            capability.write_text(json.dumps(capability_data), encoding="utf-8")
+            request_usage.write_text("{}\n", encoding="utf-8")
+            cost_data = {"status": "exact", "exact_usd_nanos": 1}
+            equivalent_cost.write_text(json.dumps(cost_data), encoding="utf-8")
+            pricing_descriptor.write_text("{}\n", encoding="utf-8")
+            artifact_sha256 = {
+                "app_server_journal": hashlib.sha256(journal.read_bytes()).hexdigest(),
+                "codex_capability_receipt": hashlib.sha256(capability.read_bytes()).hexdigest(),
+                "request_usage": hashlib.sha256(request_usage.read_bytes()).hexdigest(),
+                "equivalent_cost": hashlib.sha256(equivalent_cost.read_bytes()).hexdigest(),
+                "pricing_descriptor": hashlib.sha256(pricing_descriptor.read_bytes()).hexdigest(),
+            }
             (source / "model-preflight.json").write_text(
                 json.dumps({
                     "passed": True, "returncode": 0, "timed_out": False,
@@ -1852,13 +1915,19 @@ class ModelPreflightTest(unittest.TestCase):
                     "app_server_journal": str(journal),
                     "app_server_control": str(control),
                     "codex_capability_receipt": str(capability),
+                    "request_usage_artifact": str(request_usage),
+                    "equivalent_cost_artifact": str(equivalent_cost),
+                    "pricing_descriptor_artifact": str(pricing_descriptor),
+                    "artifact_sha256": artifact_sha256,
                     "raw_usage_capability": {
                         "passed": True,
                         "evidence_level": "request",
                         "cache_write_metrics_available": True,
                         "request_aggregate_reconciled": True,
                     },
+                    "equivalent_cost": cost_data,
                     "approval_requests": 0,
+                    "invalidating_notifications": [],
                     "codex_cli_version": "codex fixture",
                     "harness_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
                     "harness_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip(),
@@ -1872,6 +1941,11 @@ class ModelPreflightTest(unittest.TestCase):
             with (
                 mock.patch.object(suite, "EXECUTIONS", executions),
                 mock.patch.object(suite, "MODEL_PREFLIGHT_REUSE_FROM", str(source)),
+                mock.patch.object(
+                    suite,
+                    "probe_raw_usage_capability",
+                    return_value=capability_data,
+                ),
                 mock.patch.object(suite.subprocess, "run", side_effect=preflight_command),
                 mock.patch.dict(os.environ, {
                     "BENCH_MODEL": "gpt-5.6-sol", "BENCH_REASONING_EFFORT": "high",

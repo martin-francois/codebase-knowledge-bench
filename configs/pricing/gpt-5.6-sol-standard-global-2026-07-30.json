@@ -1,0 +1,56 @@
+{
+  "benchmark_effective_date": "2026-07-30",
+  "billable_attempt_policy": {
+    "completed_requests": "include",
+    "completed_retries": "include",
+    "failed_attempts_without_usage": "exclude"
+  },
+  "currency": "USD",
+  "descriptor_content_sha256": "249f44cadfdf81c738712af4643900f3f80aa3127ed5150f3fa0d0105d98a1a9",
+  "descriptor_id": "openai-gpt-5.6-sol-standard-global-2026-07-30",
+  "execution_mode": "standard",
+  "hosted_tool_rules": [],
+  "long_context": {
+    "input_multiplier": {
+      "denominator": 1,
+      "numerator": 2
+    },
+    "output_multiplier": {
+      "denominator": 2,
+      "numerator": 3
+    },
+    "threshold_comparison": "greater_than",
+    "threshold_input_tokens": 272000
+  },
+  "model_identity": "gpt-5.6-sol",
+  "rate_unit": "USD nanos per token",
+  "rates_usd_nanos_per_token": {
+    "cache_write": 6250,
+    "cached_input_read": 500,
+    "ordinary_uncached_input": 5000,
+    "output_including_reasoning": 30000
+  },
+  "region": "global",
+  "regional_processing_multiplier": {
+    "denominator": 1,
+    "numerator": 1
+  },
+  "retrieved_date": "2026-07-30",
+  "rounding_policy": {
+    "aggregate": "sum_unrounded_request_values",
+    "arithmetic": "integer_usd_nanos",
+    "presentation_currency_places": 2,
+    "presentation_mode": "half_up"
+  },
+  "schema_id": "equivalent-model-pricing-descriptor-current",
+  "service_tier": "standard",
+  "service_tier_multiplier": {
+    "denominator": 1,
+    "numerator": 1
+  },
+  "source_urls": [
+    "https://developers.openai.com/api/docs/pricing",
+    "https://developers.openai.com/api/docs/guides/latest-model",
+    "https://developers.openai.com/api/docs/models/gpt-5.6-sol"
+  ]
+}

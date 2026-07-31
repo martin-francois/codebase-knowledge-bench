@@ -95,6 +95,9 @@ class ArchiveBoundOperatorSummaryTest(unittest.TestCase):
                 "app-server.jsonl": "{}\n",
                 "app-server-control.json": "{}\n",
                 "codex-raw-usage-capability.json": "{}\n",
+                "request-usage.json": "{}\n",
+                "equivalent-cost.json": "{}\n",
+                "pricing-descriptor.json": "{}\n",
             }.items():
                 (evidence / name).write_text(value)
             lock = write_model_preflight_lock(

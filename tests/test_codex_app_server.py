@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from scripts.codex_app_server import (
+    _token_usage,
     extract_app_server_usage,
     run_app_server,
 )
@@ -91,8 +92,49 @@ for line in sys.stdin:
         })
 '''
 
+FAKE_REROUTE_SERVER = r'''
+import json
+import sys
+
+def send(message):
+    print(json.dumps(message, separators=(",", ":")), flush=True)
+
+for line in sys.stdin:
+    message = json.loads(line)
+    method = message.get("method")
+    if method == "initialize":
+        send({"id": message["id"], "result": {}})
+    elif method == "thread/start":
+        send({"id": message["id"], "result": {"thread": {"id": "thread-1"}}})
+    elif method == "turn/start":
+        send({
+            "method": "model/rerouted",
+            "params": {
+                "threadId": "thread-1",
+                "turnId": "turn-1",
+                "fromModel": "gpt-5.6-sol",
+                "toModel": "another-model",
+                "reason": "fixture",
+            },
+        })
+'''
+
 
 class CodexAppServerClientTest(unittest.TestCase):
+    def test_missing_cache_write_usage_is_rejected_not_defaulted_to_zero(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError, "cacheWriteInputTokens"
+        ):
+            _token_usage(
+                {
+                    "inputTokens": 20,
+                    "cachedInputTokens": 5,
+                    "outputTokens": 7,
+                    "reasoningOutputTokens": 2,
+                    "totalTokens": 27,
+                }
+            )
+
     def test_runs_protocol_declines_approval_and_preserves_raw_usage(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -152,6 +194,39 @@ class CodexAppServerClientTest(unittest.TestCase):
             self.assertEqual(
                 [{"id": 90, "result": {"decision": "decline"}}],
                 declined,
+            )
+
+    def test_model_reroute_is_preserved_and_fails_the_child(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            server = root / "fake_reroute_server.py"
+            server.write_text(FAKE_REROUTE_SERVER, encoding="utf-8")
+            result = run_app_server(
+                [sys.executable, str(server)],
+                cwd=root,
+                environment=os.environ,
+                prompt="Reply MODEL_READY",
+                model="gpt-5.6-sol",
+                reasoning_effort="high",
+                yolo=False,
+                writable_roots=[str(root)],
+                journal_path=root / "app-server.jsonl",
+                normalized_path=root / "run.jsonl",
+                stderr_path=root / "run.stderr",
+                final_path=root / "final.txt",
+                timeout_seconds=10,
+            )
+            self.assertEqual(1, result["returncode"])
+            self.assertEqual(
+                ["model/rerouted"],
+                [
+                    item["method"]
+                    for item in result["invalidating_notifications"]
+                ],
+            )
+            self.assertIn(
+                "invalidating Codex model notification",
+                result["failure"],
             )
 
 

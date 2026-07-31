@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Any
 
 
-SCHEMA_VERSION = "model-preflight-lock-v1"
+SCHEMA_VERSION = "model-preflight-lock-v2"
+LEGACY_SCHEMA_VERSION = "model-preflight-lock-v1"
 
 
 def _published(value: Any) -> bytes:
@@ -34,6 +35,9 @@ def write_model_preflight_lock(
         "model-preflight/app-server.jsonl",
         "model-preflight/app-server-control.json",
         "model-preflight/codex-raw-usage-capability.json",
+        "model-preflight/request-usage.json",
+        "model-preflight/equivalent-cost.json",
+        "model-preflight/pricing-descriptor.json",
     ):
         path = suite_dir / relative
         if not path.is_file():
@@ -69,7 +73,8 @@ def write_model_preflight_lock(
 
 def validate_model_preflight_lock(payload: dict[str, Any], root: Path) -> list[str]:
     errors: list[str] = []
-    if payload.get("schema_version") != SCHEMA_VERSION:
+    schema_version = payload.get("schema_version")
+    if schema_version not in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}:
         errors.append("model preflight lock schema mismatch")
         return errors
     source = dict(payload)
@@ -77,7 +82,8 @@ def validate_model_preflight_lock(payload: dict[str, Any], root: Path) -> list[s
     if expected != hashlib.sha256(_published(source)).hexdigest():
         errors.append("model preflight lock metadata hash mismatch")
     artifacts = payload.get("artifacts")
-    if not isinstance(artifacts, list) or len(artifacts) != 7:
+    expected_count = 7 if schema_version == LEGACY_SCHEMA_VERSION else 10
+    if not isinstance(artifacts, list) or len(artifacts) != expected_count:
         errors.append("model preflight lock artifact set is incomplete")
         return errors
     if payload.get("artifact_manifest_sha256") != hashlib.sha256(_published(artifacts)).hexdigest():

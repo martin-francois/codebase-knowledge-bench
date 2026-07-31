@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Exact Codex CLI executable and app-server protocol lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lock_id",
+    "version",
+    "version_output",
+    "platform",
+    "source",
+    "installation",
+    "npm_artifacts",
+    "schema_exports",
+    "telemetry_contract"
+  ],
+  "properties": {
+    "$schema": {"const": "../../schemas/codex-cli-lock.schema.json"},
+    "lock_id": {"const": "codex-cli-0.146.0-linux-x64"},
+    "version": {"const": "0.146.0"},
+    "version_output": {"const": "codex-cli 0.146.0"},
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "architecture", "rust_target"],
+      "properties": {
+        "os": {"const": "linux"},
+        "architecture": {"const": "x86_64"},
+        "rust_target": {"const": "x86_64-unknown-linux-musl"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "tag", "commit", "release_url"],
+      "properties": {
+        "repository": {"const": "https://github.com/openai/codex"},
+        "tag": {"const": "rust-v0.146.0"},
+        "commit": {
+          "const": "be449751a978f02e5bbba886999662956c7f38f5"
+        },
+        "release_url": {
+          "const": "https://github.com/openai/codex/releases/tag/rust-v0.146.0"
+        }
+      }
+    },
+    "installation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_path",
+        "launcher_path",
+        "launcher_sha256",
+        "package_json_path",
+        "package_json_sha256",
+        "platform_package_json_path",
+        "platform_package_json_sha256",
+        "native_executable_path",
+        "native_executable_sha256",
+        "package_name",
+        "package_version",
+        "platform_package_name",
+        "platform_package_version"
+      ],
+      "properties": {
+        "command_path": {"const": "/usr/bin/codex"},
+        "launcher_path": {
+          "const": "/usr/lib/node_modules/@openai/codex/bin/codex.js"
+        },
+        "launcher_sha256": {
+          "const": "134063e133f0b4244fa3b251acf973d4fe4b4aeeacbdc135211bf480f59f1477"
+        },
+        "package_json_path": {
+          "const": "/usr/lib/node_modules/@openai/codex/package.json"
+        },
+        "package_json_sha256": {
+          "const": "24dd8c63a4d2b7bc2ded86c887974f842093ce4f2ed8473267a91e036c38da20"
+        },
+        "platform_package_json_path": {
+          "const": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/package.json"
+        },
+        "platform_package_json_sha256": {
+          "const": "80945638c409d98e79226aa40ff774011cfad5cf17694247353a1af4f32579a1"
+        },
+        "native_executable_path": {
+          "const": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex"
+        },
+        "native_executable_sha256": {
+          "const": "2e863156ed35ecc5253b1e2f907a9143077b9f7cb51942070c61996471ff6e04"
+        },
+        "package_name": {"const": "@openai/codex"},
+        "package_version": {"const": "0.146.0"},
+        "platform_package_name": {"const": "@openai/codex"},
+        "platform_package_version": {"const": "0.146.0-linux-x64"}
+      }
+    },
+    "npm_artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["launcher_tarball_sha256", "platform_tarball_sha256"],
+      "properties": {
+        "launcher_tarball_sha256": {
+          "const": "8050af14387e23b8d46026f023f0c1d33a2eefb39267bf36abe8cec2cec17b49"
+        },
+        "platform_tarball_sha256": {
+          "const": "91a32565acb7fef5d300294577092a121503406e34ce7e992af8bdf1998b65fb"
+        }
+      }
+    },
+    "schema_exports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "experimental",
+        "json_file_count",
+        "json_canonical_tree_sha256",
+        "json_raw_reference_tree_sha256",
+        "typescript_file_count",
+        "typescript_tree_sha256",
+        "required_json_files"
+      ],
+      "properties": {
+        "experimental": {"const": true},
+        "json_file_count": {"const": 349},
+        "json_canonical_tree_sha256": {
+          "const": "82dbdbb341140eef97d2a9d4e76e549ca4ba8a35ce716d9ab12d0c156030a7bf"
+        },
+        "json_raw_reference_tree_sha256": {
+          "const": "e1120b9f8e7df37cfe352e71cb30eb8767fff1a460dc2dad12cea2fb994be10b"
+        },
+        "typescript_file_count": {"const": 701},
+        "typescript_tree_sha256": {
+          "const": "399eacddb8bc12a9c8a838acee816e48b2b76f49a7f0eba52b6155aa7eee6f69"
+        },
+        "required_json_files": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ServerNotification.json",
+            "v2/ThreadStartParams.json",
+            "v2/RawResponseCompletedNotification.json",
+            "v2/ModelReroutedNotification.json",
+            "v2/ModelVerificationNotification.json",
+            "v2/ModelSafetyBufferingUpdatedNotification.json"
+          ],
+          "properties": {
+            "ServerNotification.json": {
+              "const": "89608a4d65d713a85940f8eefb9bf2e87a94cbf2abac3ed069fad7cb6f078872"
+            },
+            "v2/ThreadStartParams.json": {
+              "const": "b3685411ceb8ad264a1920e8facd66301e5280948ef9c2a6871b95d4c19da639"
+            },
+            "v2/RawResponseCompletedNotification.json": {
+              "const": "d330286f1d9abc273837091a9a4e7b4b2454721f4f3bc3a01386c2145105b4e7"
+            },
+            "v2/ModelReroutedNotification.json": {
+              "const": "56fafba427da6c01ac5b27be97386edcede595ae2ee83273ade01ef9931c6ff4"
+            },
+            "v2/ModelVerificationNotification.json": {
+              "const": "6f099d71955d14b8b48083c7dea35f55da3f09a6a5290acbe9374d74a3fa80fd"
+            },
+            "v2/ModelSafetyBufferingUpdatedNotification.json": {
+              "const": "b4e77abcee6de1c88b3e2408240f0376ba34da81d1ee2183499b8bd13e785c65"
+            }
+          }
+        }
+      }
+    },
+    "telemetry_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_response_method",
+        "cache_write_omission_policy",
+        "invalidating_notification_methods"
+      ],
+      "properties": {
+        "raw_response_method": {"const": "rawResponse/completed"},
+        "cache_write_omission_policy": {"const": "reject-as-malformed"},
+        "invalidating_notification_methods": {
+          "const": [
+            "model/rerouted",
+            "model/verification",
+            "model/safetyBuffering/updated"
+          ]
+        }
+      }
+    }
+  }
+}

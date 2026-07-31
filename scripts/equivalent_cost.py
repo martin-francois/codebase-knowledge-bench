@@ -20,7 +20,7 @@ CONTRACT_ID = "equivalent-codex-api-cost-current"
 PRICING_SCHEMA_ID = "equivalent-model-pricing-descriptor-current"
 REQUEST_USAGE_SCHEMA_ID = "request-usage-current"
 PRICING_DESCRIPTOR_RELATIVE_PATH = (
-    "configs/pricing/gpt-5.6-sol-standard-global-2026-07-20.json"
+    "configs/pricing/gpt-5.6-sol-standard-global-2026-07-30.json"
 )
 USD_NANOS_PER_USD = 1_000_000_000
 

@@ -12,9 +12,9 @@ The executable installer resolves the releases that were current on that date:
 | Sverklo | `sverklo@0.29.3` |
 | code-review-graph | `code-review-graph==2.3.7` |
 | GitNexus | `gitnexus@1.6.9` |
-| jcodemunch-mcp | `jcodemunch-mcp==1.108.200` |
+| jcodemunch-mcp | `jcodemunch-mcp==1.108.204` |
 | Serena | `serena-agent==1.6.1` |
-| Graphify | `graphifyy==0.9.30` |
+| Graphify | `graphifyy==0.9.31` |
 
 Each release uses its own immutable installation directory. Updating a package pin therefore cannot
 silently reuse or overwrite another release's installation.

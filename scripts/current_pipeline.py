@@ -547,6 +547,17 @@ def _derive_current_row_from_verified_inputs(
         capability_receipt.get("passed") is True
         and capability_receipt.get("experimental_raw_events") is True
         and capability_receipt.get("raw_response_completed") is True
+        and capability_receipt.get("cache_write_omission_policy")
+        == "reject-as-malformed"
+        and capability_receipt.get(
+            "invalidating_notification_schemas_present"
+        ) is True
+        and isinstance(
+            capability_receipt.get("json_schema_canonical_tree_sha256"), str
+        )
+        and isinstance(
+            capability_receipt.get("typescript_schema_tree_sha256"), str
+        )
         and {
             "inputTokens",
             "cachedInputTokens",
@@ -563,7 +574,9 @@ def _derive_current_row_from_verified_inputs(
     )
     if app_server_control.get("failure") or app_server_control.get(
         "returncode"
-    ) != 0 or app_server_control.get("timed_out") is not False:
+    ) != 0 or app_server_control.get("timed_out") is not False or (
+        app_server_control.get("invalidating_notifications") != []
+    ):
         raise RuntimeError("stored app-server control receipt is not successful")
     normalized_bytes = "".join(
         json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n"

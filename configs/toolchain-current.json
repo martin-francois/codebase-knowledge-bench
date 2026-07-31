@@ -1,0 +1,66 @@
+{
+  "schema_version": "toolchain-source-lock-v1",
+  "retrieved_at": "2026-07-31T06:34:17+02:00",
+  "tools": {
+    "code-review-graph": {
+      "package": "code-review-graph",
+      "version": "2.3.7",
+      "registry": "pypi",
+      "registry_url": "https://pypi.org/pypi/code-review-graph/2.3.7/json",
+      "artifact": "code_review_graph-2.3.7-py3-none-any.whl",
+      "artifact_sha256": "12196dce3e673bdec7fba97ae5c4dff7589adee73a721374f62efae76e0fdd88",
+      "published_at": "2026-07-18T00:34:11.050823Z",
+      "integration": "mcp"
+    },
+    "gitnexus": {
+      "package": "gitnexus",
+      "version": "1.6.9",
+      "registry": "npm",
+      "registry_url": "https://registry.npmjs.org/gitnexus/-/gitnexus-1.6.9.tgz",
+      "artifact": "gitnexus-1.6.9.tgz",
+      "artifact_sha256": "43292fbeedd5b57b6259a03ac1ec24d672b5ccfeb94558ed02aec874aa825db3",
+      "published_at": "2026-07-04T07:13:01.960Z",
+      "integration": "cli"
+    },
+    "graphify": {
+      "package": "graphifyy",
+      "version": "0.9.31",
+      "registry": "pypi",
+      "registry_url": "https://pypi.org/pypi/graphifyy/0.9.31/json",
+      "artifact": "graphifyy-0.9.31-py3-none-any.whl",
+      "artifact_sha256": "b0d47f823f924e7f89acfee390b9f18dc3410917617c5f6f2731bd2642abf16f",
+      "published_at": "2026-07-30T18:16:17.944032Z",
+      "integration": "mcp"
+    },
+    "jcodemunch-mcp": {
+      "package": "jcodemunch-mcp",
+      "version": "1.108.204",
+      "registry": "pypi",
+      "registry_url": "https://pypi.org/pypi/jcodemunch-mcp/1.108.204/json",
+      "artifact": "jcodemunch_mcp-1.108.204-py3-none-any.whl",
+      "artifact_sha256": "08d2062b0877208357c51741aa7a7f4dbc1b808377336ff082df4f0ffb76389a",
+      "published_at": "2026-07-31T01:06:10.260137Z",
+      "integration": "mcp"
+    },
+    "serena": {
+      "package": "serena-agent",
+      "version": "1.6.1",
+      "registry": "pypi",
+      "registry_url": "https://pypi.org/pypi/serena-agent/1.6.1/json",
+      "artifact": "serena_agent-1.6.1-py3-none-any.whl",
+      "artifact_sha256": "04ddd985bd3feb25598ab8732bf3a998f961d5b46dce271b816126c0a68a91e1",
+      "published_at": "2026-07-21T15:41:09.268053Z",
+      "integration": "mcp"
+    },
+    "sverklo": {
+      "package": "sverklo",
+      "version": "0.29.3",
+      "registry": "npm",
+      "registry_url": "https://registry.npmjs.org/sverklo/-/sverklo-0.29.3.tgz",
+      "artifact": "sverklo-0.29.3.tgz",
+      "artifact_sha256": "cceeb00c6321b972c8d795eb04fbd7ca37e130ff361701d814459fe2da596d66",
+      "published_at": "2026-07-26T19:56:49.245Z",
+      "integration": "mcp"
+    }
+  }
+}
