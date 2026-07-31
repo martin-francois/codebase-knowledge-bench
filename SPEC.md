@@ -648,7 +648,12 @@ survive the otherwise strict ambient `BENCH_*` scrub without changing the effect
 identity. `BENCH_ADOPT_COMPLETED_ONLY=true` is likewise an explicit no-child resume checkpoint
 control. These are the only operator resume controls preserved across TOML normalization;
 an empty proof path, a relative proof path, a non-Boolean checkpoint value, or a value conflicting
-with an explicitly configured TOML value MUST fail closed.
+with an explicitly configured TOML value MUST fail closed. When this checkpoint has zero completed
+comparisons, the coordinator MUST validate and publish a deterministic transition receipt binding
+the preserved qualification archive, exact model-preflight lock, frozen source and plan, and
+zero-activity execution ledger. It MUST NOT construct, validate, or publish an incomplete
+`suite-results.json`; fixed-matrix result validation remains reserved for a complete published
+matrix. Existing completed-comparison checkpoint behavior remains unchanged.
 
 ## 15. Replayable target evidence
 
