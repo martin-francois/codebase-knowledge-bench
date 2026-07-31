@@ -172,6 +172,7 @@ SEMANTICALLY_EMPTY_ARTIFACT_NAMES = frozenset({
     "run.stderr",
     "test.log",
     "tool-smoke-anti-leak-blocked.log",
+    "tool-smoke-mcp-server.stderr",
     "tool-smoke.stderr",
 })
 

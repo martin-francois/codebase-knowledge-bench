@@ -157,6 +157,9 @@ class ReferenceAndManifestTest(unittest.TestCase):
         self.assertTrue(artifact_may_be_empty("runs/run-001/deleted-files.txt", {}))
         self.assertTrue(artifact_may_be_empty("runs/run-001/diff-check.log", {}))
         self.assertTrue(artifact_may_be_empty("runs/run-001/stage-diagnostics/stderr.log", {}))
+        self.assertTrue(artifact_may_be_empty(
+            "runs/run-001/tool-smoke-mcp-server.stderr", {}
+        ))
 
     def test_smoke_checkpoint_rebuilds_a_subset_local_manifest(self):
         source = (ROOT / "scripts/run_benchmark.py").read_text()

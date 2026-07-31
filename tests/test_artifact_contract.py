@@ -150,6 +150,43 @@ class ArtifactContractTest(unittest.TestCase):
             "preflight/issue-486/implementation-patches/base.patch", {}
         ))
 
+    def test_empty_clean_mcp_smoke_stderr_is_semantically_valid(self) -> None:
+        relative = "runs/run-004/tool-smoke-mcp-server.stderr"
+        contexts = self.context(baseline_slot=1)
+        self.assertTrue(artifact_may_be_empty(relative, contexts))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b"")
+            manifest = build_manifest(
+                [path], root, optional_empty={relative}
+            )
+            self.assertEqual([], validate_manifest(manifest, root))
+            self.assertEqual(
+                {
+                    "bytes": 0,
+                    "may_be_empty": True,
+                    "path": relative,
+                    "required": True,
+                },
+                {
+                    key: manifest["entries"][0][key]
+                    for key in ("bytes", "may_be_empty", "path", "required")
+                },
+            )
+
+    def test_other_empty_diagnostic_remains_invalid(self) -> None:
+        relative = "runs/run-004/unexpected.stderr"
+        self.assertFalse(artifact_may_be_empty(relative, self.context(baseline_slot=1)))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b"")
+            with self.assertRaisesRegex(ValueError, "unexpectedly empty"):
+                build_manifest([path], root)
+
 
 if __name__ == "__main__":
     unittest.main()

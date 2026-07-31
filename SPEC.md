@@ -902,6 +902,9 @@ timing-lock receipt, failure checkpoint, child artifacts, and other attempt evid
 stabilized. A completed-children derivation checkpoint requires non-empty solve evidence for every
 mapped child, and the suite-level equivalent requires zero execution and validation exit codes.
 Smoke-only files, stale results, or a merely present `results.json` never satisfy completion.
+Required diagnostic stderr captures MAY be empty after a clean subprocess exit and MUST then remain
+manifested with `may_be_empty=true`; they are not the non-empty solve evidence required for child
+completion.
 
 ## 18. Verification registry and semantic review
 
