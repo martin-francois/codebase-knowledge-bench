@@ -4621,7 +4621,8 @@ def record_children_complete_derivation_failure(suite_dir: Path, exc: BaseExcept
 
     records = read_jsonl_records(suite_dir / "comparisons.jsonl")
     children_complete = bool(records) and all(
-        record.get("returncode") is not None
+        record.get("returncode") == 0
+        and record.get("validation_returncode") == 0
         and Path(str(record.get("results_json") or "")).is_file()
         for record in records
     )
