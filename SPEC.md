@@ -633,6 +633,17 @@ sibling releases MUST NOT be included or used as selected identity evidence. A s
 `latest` receipt or contradictory resolved version invalidates qualification even when the direct
 smoke behavior passed.
 
+`QUA-005` A full published suite MAY transition from its successful qualification-only execution
+only after the paid exact-model proof exists. Before attaching that proof, the coordinator MUST
+validate the qualification-only control, source/cohort/execution identity, zero model turns, zero
+implementation child launches, exact cell count, toolchain lock, and published archive validation.
+It MUST preserve the exact qualification-only bundle and its validation sidecars under a
+content-addressed history path before changing resume metadata. The transition then copies and locks
+the exact reusable model-preflight artifacts, updates only the plan's model-preflight source, and
+revalidates the resulting lock. Partial, conflicting, changed-source, failed, or manually assembled
+transition state MUST fail closed. This transition launches neither a model request nor an
+implementation child.
+
 ## 15. Replayable target evidence
 
 `RPL-001` The external-review handoff contains a Git bundle holding every exact target base and
