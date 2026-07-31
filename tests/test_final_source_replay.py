@@ -54,10 +54,118 @@ from target_replay import (
     _package_rows,
     _replay_script,
     _stage_python,
+    build_target_package,
     embedded_python_blocks,
+    validate_host_preflight_source_binding,
     validate_generated_script,
     write_replay_evidence_manifest,
 )
+
+
+class HostPreflightSourceBindingTest(unittest.TestCase):
+    @staticmethod
+    def _write_json(path: Path, value: dict) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(value, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+    def _fixture(self, root: Path) -> tuple[Path, Path]:
+        benchmark = root / "benchmark"
+        preflight = root / "preflight"
+        methodology = benchmark / "verification/methodology-current"
+        for issue in ("issue-487", "issue-488", "issue-498"):
+            contract = {
+                "issue_id": issue,
+                "target_base_commit": "1" * 40,
+                "reference_implementation_commit": "2" * 40,
+            }
+            contract_path = methodology / "contracts" / f"{issue}.json"
+            plan_path = methodology / "channel-plans" / f"{issue}.json"
+            snapshot_path = (
+                methodology / "issue-snapshots" / f"{issue}.json"
+            )
+            self._write_json(contract_path, contract)
+            self._write_json(plan_path, {"issue_id": issue})
+            self._write_json(snapshot_path, {"issue_id": issue})
+            self._write_json(
+                preflight
+                / issue
+                / "current-correctness-preflight.json",
+                {
+                    "schema_id": "current-correctness-preflight",
+                    "issue_id": issue,
+                    "base_commit": "1" * 40,
+                    "reference_commit": "2" * 40,
+                    "contract_sha256": hashlib.sha256(
+                        contract_path.read_bytes()
+                    ).hexdigest(),
+                    "channel_plan_sha256": hashlib.sha256(
+                        plan_path.read_bytes()
+                    ).hexdigest(),
+                    "issue_snapshot_sha256": hashlib.sha256(
+                        snapshot_path.read_bytes()
+                    ).hexdigest(),
+                    "selectors": [],
+                    "contract_selector_equality": {},
+                    "base_reference_outcome_audit": {},
+                    "common_suite_audit": {},
+                    "selector_overlap_audit": {},
+                    "passed": True,
+                },
+            )
+        return benchmark, preflight
+
+    def test_accepts_host_preflight_bound_to_current_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            benchmark, preflight = self._fixture(Path(temporary))
+            receipt = validate_host_preflight_source_binding(
+                benchmark,
+                preflight,
+            )
+        self.assertEqual("passed", receipt["status"])
+        self.assertEqual(3, len(receipt["issues"]))
+
+    def test_rejects_stale_host_preflight_before_package_build(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            benchmark, preflight = self._fixture(root)
+            stale = (
+                preflight
+                / "issue-487/current-correctness-preflight.json"
+            )
+            artifact = json.loads(stale.read_text(encoding="utf-8"))
+            artifact["contract_sha256"] = "0" * 64
+            self._write_json(stale, artifact)
+            with self.assertRaisesRegex(
+                ValueError,
+                "host preflight is not bound to current benchmark source",
+            ):
+                validate_host_preflight_source_binding(
+                    benchmark,
+                    preflight,
+                )
+            output = root / "output"
+            with self.assertRaisesRegex(
+                ValueError,
+                "host preflight is not bound to current benchmark source",
+            ):
+                build_target_package(
+                    root / "unused-target",
+                    benchmark,
+                    root / "unused-maven",
+                    output,
+                    jdk=root / "unused-jdk",
+                    node=root / "unused-node",
+                    npm_root=root / "unused-npm",
+                    chromium_root=root / "unused-chromium",
+                    python_runtime=root / "unused-python",
+                    host_preflight=preflight,
+                    replay_rootfs=root / "unused-rootfs",
+                    replay_rootfs_receipt=root / "unused-receipt.json",
+                )
+            self.assertFalse(output.exists())
 
 
 class ExactPreflightStatusTest(unittest.TestCase):
