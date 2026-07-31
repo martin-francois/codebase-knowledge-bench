@@ -626,7 +626,12 @@ issue. The baseline records an explicit zero-event pass. Every cell writes a con
 receipt that reconciles the direct-call journal, intended invocation, issue relevance, state
 restoration, zero model turns, and absence of a Codex app-server. Published qualification requires all
 twenty-one cells to pass and independently validates every receipt before any implementation child
-may launch.
+may launch. Its sealed toolchain lock MUST fingerprint only the exact versioned installation root
+selected by the frozen toolchain source lock, bind that source lock by SHA-256, and reconcile the
+versioned install receipt's package request and resolved version. Unversioned parent directories and
+sibling releases MUST NOT be included or used as selected identity evidence. A selected legacy
+`latest` receipt or contradictory resolved version invalidates qualification even when the direct
+smoke behavior passed.
 
 ## 15. Replayable target evidence
 

@@ -387,7 +387,56 @@ def _path_manifest(paths: Iterable[Path], root: Path) -> list[dict[str, Any]]:
     ]
 
 
-def _tree_fingerprint(root: Path) -> dict[str, Any]:
+def _expected_install_receipt(
+    tool: str, source: Mapping[str, Any]
+) -> tuple[str, str | list[str]]:
+    package = str(source.get("package") or "")
+    version = str(source.get("version") or "")
+    registry = str(source.get("registry") or "")
+    if not package or not version:
+        raise SystemExit(f"Frozen toolchain source identity is incomplete for {tool}")
+    request = f"{package}{'@' if registry == 'npm' else '=='}{version}"
+    if registry == "npm":
+        return "npm-global", request
+    if registry == "pypi" and tool == "serena":
+        return "uv-tool", request
+    if registry == "pypi":
+        return "python-venv", [request]
+    raise SystemExit(f"Unsupported frozen tool registry for {tool}: {registry}")
+
+
+def _resolved_install_matches(
+    manifest: Mapping[str, Any],
+    *,
+    package: str,
+    version: str,
+    kind: str,
+) -> bool:
+    resolved = manifest.get("resolved")
+    if kind == "npm-global":
+        package_data = (
+            resolved.get(package)
+            if isinstance(resolved, Mapping)
+            else None
+        )
+        return (
+            isinstance(package_data, Mapping)
+            and package_data.get("version") == version
+        )
+    if kind == "python-venv":
+        return (
+            isinstance(resolved, list)
+            and f"{package}=={version}" in resolved
+        )
+    return isinstance(resolved, str) and version in resolved
+
+
+def _tree_fingerprint(
+    root: Path,
+    *,
+    tool: str,
+    source: Mapping[str, Any],
+) -> dict[str, Any]:
     digest = hashlib.sha256()
     files = 0
     total_bytes = 0
@@ -411,8 +460,30 @@ def _tree_fingerprint(root: Path) -> dict[str, Any]:
             install_manifest = json.loads(manifest_path.read_text())
         except json.JSONDecodeError:
             install_manifest = {"invalid": True, "sha256": sha256_file(manifest_path)}
+    expected_kind, expected_request = _expected_install_receipt(tool, source)
+    if (
+        not isinstance(install_manifest, Mapping)
+        or install_manifest.get("kind") != expected_kind
+        or install_manifest.get("requested") != expected_request
+        or not _resolved_install_matches(
+            install_manifest,
+            package=str(source["package"]),
+            version=str(source["version"]),
+            kind=expected_kind,
+        )
+    ):
+        raise SystemExit(
+            f"Versioned installation receipt does not reconcile for {tool}: "
+            f"root={root} expected={expected_kind}/{expected_request!r}"
+        )
     return {
         "root": str(root),
+        "package": source["package"],
+        "version": source["version"],
+        "registry": source["registry"],
+        "source_artifact_sha256": source["artifact_sha256"],
+        "expected_install_kind": expected_kind,
+        "expected_package_request": expected_request,
         "file_count": files,
         "bytes": total_bytes,
         "install_tree_manifest_root_sha256": digest.hexdigest(),
@@ -423,9 +494,24 @@ def _tree_fingerprint(root: Path) -> dict[str, Any]:
 
 def write_toolchain_lock(
     suite_dir: Path, qualification_records: list[dict[str, Any]], tools: Iterable[str],
-    *, install_root: Path,
+    *, install_root: Path, toolchain_source_lock: Mapping[str, Any],
+    toolchain_source_lock_sha256: str,
 ) -> dict[str, Any]:
     tools = tuple(tools)
+    source_tools = toolchain_source_lock.get("tools")
+    if (
+        toolchain_source_lock.get("schema_version")
+        != "toolchain-source-lock-v1"
+        or not isinstance(source_tools, Mapping)
+        or not re.fullmatch(r"[0-9a-f]{64}", toolchain_source_lock_sha256)
+    ):
+        raise SystemExit("Frozen toolchain source lock is invalid")
+    missing_source_tools = set(tools) - {"baseline-none"} - set(source_tools)
+    if missing_source_tools:
+        raise SystemExit(
+            "Frozen toolchain source lock omits configured tools: "
+            + ", ".join(sorted(missing_source_tools))
+        )
     records = []
     for source in sorted(qualification_records, key=lambda row: str(row.get("issue_id"))):
         root = Path(str(source["execution_root"]))
@@ -441,13 +527,18 @@ def write_toolchain_lock(
             "runs": sorted(source.get("qualification_runs") or [], key=lambda row: str(row.get("tool"))),
         })
     installations = {
-        tool: _tree_fingerprint(install_root / tool)
+        tool: _tree_fingerprint(
+            install_root / tool / str(source_tools[tool]["version"]),
+            tool=tool,
+            source=source_tools[tool],
+        )
         for tool in tools if tool != "baseline-none"
     }
     payload = {
         "schema_version": TOOLCHAIN_VERSION,
         "sealed": True,
         "tools": list(tools),
+        "toolchain_source_lock_sha256": toolchain_source_lock_sha256,
         "qualification_records": records,
         "installations": installations,
         "mutation_policy": "qualification artifacts and resolved tool versions are immutable after sealing",
@@ -476,7 +567,16 @@ def validate_toolchain_lock(payload: dict[str, Any]) -> None:
             if not path.is_file() or path.stat().st_size != item["bytes"] or sha256_file(path) != item["sha256"]:
                 raise SystemExit(f"Frozen qualification artifact changed: {path}")
     for tool, recorded in payload.get("installations", {}).items():
-        current = _tree_fingerprint(Path(recorded["root"]))
+        current = _tree_fingerprint(
+            Path(recorded["root"]),
+            tool=tool,
+            source={
+                "package": recorded["package"],
+                "version": recorded["version"],
+                "registry": recorded["registry"],
+                "artifact_sha256": recorded["source_artifact_sha256"],
+            },
+        )
         if current != recorded:
             raise SystemExit(f"Frozen installation tree changed: {tool}")
 
