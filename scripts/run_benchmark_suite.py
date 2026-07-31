@@ -1049,6 +1049,11 @@ def attach_model_preflight_to_qualified_suite(
         suite_dir / "qualification-only-history" / archive_sha256
     )
     history_dir.mkdir(parents=True, exist_ok=True)
+    configured_source = MODEL_PREFLIGHT_REUSE_FROM or None
+    if configured_source is None:
+        raise SystemExit(
+            "Qualification-only transition requires an exact model preflight source"
+        )
     preserved_names = (
         "qualification-only.json",
         "qualification-control.json",
@@ -1074,9 +1079,33 @@ def attach_model_preflight_to_qualified_suite(
         destination = history_dir / name
         if destination.exists():
             if sha256_file(destination) != sha256_file(source_path):
-                raise SystemExit(
-                    f"Changed qualification-only preservation artifact: {name}"
+                if name != "suite-plan.json":
+                    raise SystemExit(
+                        f"Changed qualification-only preservation artifact: {name}"
+                    )
+                preserved_plan = json.loads(
+                    destination.read_text(encoding="utf-8")
                 )
+                transitioned_plan = json.loads(
+                    source_path.read_text(encoding="utf-8")
+                )
+                if (
+                    preserved_plan.get("model_preflight_reuse_from")
+                    is not None
+                ):
+                    raise SystemExit(
+                        "Qualification-only preserved plan already contains "
+                        "a model preflight source"
+                    )
+                expected_transitioned_plan = dict(preserved_plan)
+                expected_transitioned_plan[
+                    "model_preflight_reuse_from"
+                ] = configured_source
+                if transitioned_plan != expected_transitioned_plan:
+                    raise SystemExit(
+                        "Changed qualification-only preservation artifact: "
+                        f"{name}"
+                    )
         else:
             shutil.copy2(source_path, destination)
         preserved.append(
@@ -1110,11 +1139,6 @@ def attach_model_preflight_to_qualified_suite(
     preservation_path.write_bytes(preservation_bytes)
 
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
-    configured_source = MODEL_PREFLIGHT_REUSE_FROM or None
-    if configured_source is None:
-        raise SystemExit(
-            "Qualification-only transition requires an exact model preflight source"
-        )
     recorded_source = plan.get("model_preflight_reuse_from")
     if recorded_source not in (None, configured_source):
         raise SystemExit(

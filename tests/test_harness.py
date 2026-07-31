@@ -255,6 +255,36 @@ class RetryPolicyTest(unittest.TestCase):
                 suite.attach_model_preflight_to_qualified_suite(
                     suite_dir, profile
                 )
+                (suite_dir / "model-preflight").mkdir()
+                (suite_dir / "model-preflight.json").write_text(
+                    json.dumps(model_record), encoding="utf-8"
+                )
+                (suite_dir / "model-preflight-lock.json").write_text(
+                    json.dumps(model_lock), encoding="utf-8"
+                )
+                (suite_dir / "model-preflight-lock.md").write_text(
+                    "# Model preflight lock\n", encoding="utf-8"
+                )
+                suite.attach_model_preflight_to_qualified_suite(
+                    suite_dir, profile
+                )
+                changed_plan = json.loads(
+                    (suite_dir / "suite-plan.json").read_text(
+                        encoding="utf-8"
+                    )
+                )
+                changed_plan["unexpected_transition_change"] = True
+                (suite_dir / "suite-plan.json").write_text(
+                    json.dumps(changed_plan), encoding="utf-8"
+                )
+                with self.assertRaisesRegex(
+                    SystemExit,
+                    "Changed qualification-only preservation artifact: "
+                    "suite-plan.json",
+                ):
+                    suite.attach_model_preflight_to_qualified_suite(
+                        suite_dir, profile
+                    )
             history = (
                 suite_dir
                 / "qualification-only-history"
