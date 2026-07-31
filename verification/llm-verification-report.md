@@ -1,7 +1,7 @@
 # Semantic maintenance self-review
 
 Overall: **passed** for the exact Codex and cost-readiness source commit
-`216d472777378e8ef9be6470f9b6dec78a849fab`.
+`dd1f19b8e3e3d8fd6cfc5cdccccb20bd0de3c546`.
 
 - `LLM-001` preflight contract fidelity: **passed**
 - `LLM-002` base/reference outcome plausibility: **passed**
@@ -23,9 +23,13 @@ telemetry, invalid process evidence, and model-control notifications remain
 fail-closed. Behavioral failures remain terminal and are not retryable.
 
 Historical qualification, failed-attempt, replay, and benchmark evidence remains
-immutable. The prior issue-20 qualification and replay proved the preceding
-source package; the current committed tree still requires its own final 21-cell
-no-model qualification and replay before the paid readiness request.
+immutable. The source-`4c9059f` qualification passed all 21 direct behavior
+cells but remains sealed `NO_GO`: its toolchain lock fingerprinted an
+unversioned Sverklo parent containing both the selected 0.29.3 tree and a stale
+`latest` receipt resolving 0.29.2. The current source fingerprints only the
+selected version directory and rejects mismatched package requests or resolved
+versions. It requires a fresh source-bound 21-cell qualification before the paid
+readiness request.
 
 This is implementing-agent self-review. It used no additional model call and is
 not independent verification. No paid model request or measured child had
