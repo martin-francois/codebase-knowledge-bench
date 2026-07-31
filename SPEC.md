@@ -642,7 +642,13 @@ content-addressed history path before changing resume metadata. The transition t
 the exact reusable model-preflight artifacts, updates only the plan's model-preflight source, and
 revalidates the resulting lock. Partial, conflicting, changed-source, failed, or manually assembled
 transition state MUST fail closed. This transition launches neither a model request nor an
-implementation child.
+implementation child. Because the exact proof path cannot exist when the qualification configuration
+is frozen, `BENCH_MODEL_PREFLIGHT_REUSE_FROM` is an explicit operator resume control that MUST
+survive the otherwise strict ambient `BENCH_*` scrub without changing the effective configuration
+identity. `BENCH_ADOPT_COMPLETED_ONLY=true` is likewise an explicit no-child resume checkpoint
+control. These are the only operator resume controls preserved across TOML normalization;
+an empty proof path, a relative proof path, a non-Boolean checkpoint value, or a value conflicting
+with an explicitly configured TOML value MUST fail closed.
 
 ## 15. Replayable target evidence
 
