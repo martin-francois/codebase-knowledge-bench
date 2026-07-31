@@ -753,6 +753,9 @@ class NamespaceAndNetworkReceiptTests(unittest.TestCase):
         self.assertEqual("passed", positive["status"], positive["errors"])
         self.assertTrue(positive["pivot_root"])
         self.assertTrue(positive["old_root_detached"])
+        self.assertTrue(positive["rootfs_read_only"])
+        self.assertTrue(positive["package_read_only"])
+        self.assertTrue(positive["inherited_environment_cleared"])
 
         missing_pivot = source.replace(
             "SYS_pivot_root", "SYS_pivot_root_removed"
@@ -770,6 +773,18 @@ class NamespaceAndNetworkReceiptTests(unittest.TestCase):
         self.assertEqual("failed", negative["status"])
         self.assertIn(
             "chroot-only namespace root boundary is forbidden",
+            negative["errors"],
+        )
+
+        inherited_environment = source.replace(
+            "clearenv()", "clearenv_removed()"
+        )
+        negative = validate_namespace_root_boundary(
+            inherited_environment
+        )
+        self.assertEqual("failed", negative["status"])
+        self.assertIn(
+            "inherited environment clearing is missing",
             negative["errors"],
         )
 

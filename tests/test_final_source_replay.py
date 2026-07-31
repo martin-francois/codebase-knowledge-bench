@@ -742,7 +742,10 @@ class NetworkNamespaceLauncherTest(unittest.TestCase):
             "CLONE_NEWNS | CLONE_NEWNET | CLONE_NEWPID",
             "enable_loopback();",
             'bind_mount(package, destination, "mount-package")',
+            'make_bind_read_only(rootfs, "mount-rootfs-read-only")',
+            'make_bind_read_only(destination, "mount-package-read-only")',
             'bind_mount(resolver_source, destination, "mount-resolver")',
+            "clearenv()",
         ):
             self.assertIn(token, launcher)
 
