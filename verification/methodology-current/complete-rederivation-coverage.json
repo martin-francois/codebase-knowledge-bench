@@ -1,13 +1,13 @@
 {
   "all_correctness_fields_independently_derived_or_receipt_backed": true,
   "all_token_fields_independently_derived": true,
-  "execution_field_count": 96,
+  "execution_field_count": 116,
   "human_review_count": 0,
-  "independently_derived_count": 63,
+  "independently_derived_count": 68,
   "policy_input_count": 1,
-  "raw_metadata_count": 21,
+  "raw_metadata_count": 20,
   "raw_metadata_explicitly_not_rederived": true,
-  "receipt_backed_measurement_count": 11,
+  "receipt_backed_measurement_count": 27,
   "schema_id": "complete-rederivation-coverage-current",
   "status": "passed",
   "suite_projection_count": 0

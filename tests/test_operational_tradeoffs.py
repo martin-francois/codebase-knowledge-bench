@@ -75,6 +75,7 @@ def row(
         "observed_non_cached_input_tokens": tokens * 0.8,
         "output_tokens_including_reasoning": tokens * 0.1,
         "reasoning_output_tokens": tokens * 0.05,
+        "active_solve_seconds": seconds,
         "solve_wall_seconds": seconds,
         "warm_end_to_end_seconds": warm if warm is not None else seconds + 10,
         "tool_calls": calls,
@@ -361,8 +362,8 @@ class DashboardDataTest(unittest.TestCase):
         data = dashboard_data(self.suite_result())
         descriptors = data["metric_descriptors"]
         self.assertEqual(
-            "solve_wall_seconds_change_percent",
-            descriptors["solve_wall_seconds"]["relative_field"],
+            "active_solve_seconds_change_percent",
+            descriptors["active_solve_seconds"]["relative_field"],
         )
         self.assertEqual(
             "tool_calls_change_percent",

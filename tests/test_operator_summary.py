@@ -98,13 +98,34 @@ class ArchiveBoundOperatorSummaryTest(unittest.TestCase):
                 "request-usage.json": "{}\n",
                 "equivalent-cost.json": "{}\n",
                 "pricing-descriptor.json": "{}\n",
+                "approval-reviewer/app-server.jsonl": "{}\n",
+                "approval-reviewer/normalized.jsonl": "{}\n",
+                "approval-reviewer/stderr.log": "",
+                "approval-reviewer/final.txt": '{"decision":"accept","rationale":"fixture"}\n',
+                "approval-reviewer/control.json": "{}\n",
+                "approval-reviewer/request-usage.json": "{}\n",
+                "approval-reviewer/equivalent-cost.json": "{}\n",
             }.items():
-                (evidence / name).write_text(value)
+                path = evidence / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(value)
             lock = write_model_preflight_lock(
                 suite,
                 {
                     "model": "gpt-5.6-sol", "reasoning_effort": "high", "yolo": True,
                     "preflight_codex_version": "codex fixture", "source": "model-preflight-fixture",
+                    "approval_reviewer_readiness": {
+                        "passed": True,
+                        "decision": "accept",
+                        "evidence": {
+                            "model": "gpt-5.6-sol",
+                            "reasoning_effort": "high",
+                            "tool_activity_absent": True,
+                        },
+                        "request_usage": {"request_aggregate_reconciled": True},
+                        "equivalent_cost": {"exact_usd_nanos": 1},
+                        "excluded_from_primary_solver_cost": True,
+                    },
                 },
                 harness_commit="a" * 40,
                 harness_tree="b" * 40,

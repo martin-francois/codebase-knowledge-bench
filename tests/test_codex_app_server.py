@@ -144,6 +144,19 @@ class CodexAppServerClientTest(unittest.TestCase):
             normalized = root / "run.jsonl"
             stderr = root / "run.stderr"
             final = root / "final.txt"
+            checkpoints = []
+
+            def terminal_checkpoint(result):
+                self.assertTrue(normalized.is_file())
+                self.assertTrue(final.is_file())
+                checkpoint_events = [
+                    json.loads(line)
+                    for line in normalized.read_text(encoding="utf-8").splitlines()
+                ]
+                self.assertEqual("turn.completed", checkpoint_events[-1]["type"])
+                self.assertEqual("MODEL_READY", final.read_text(encoding="utf-8"))
+                checkpoints.append(dict(result))
+
             result = run_app_server(
                 [sys.executable, str(server)],
                 cwd=root,
@@ -158,6 +171,7 @@ class CodexAppServerClientTest(unittest.TestCase):
                 stderr_path=stderr,
                 final_path=final,
                 timeout_seconds=10,
+                terminal_checkpoint_handler=terminal_checkpoint,
             )
 
             self.assertEqual(0, result["returncode"], result)
@@ -165,6 +179,9 @@ class CodexAppServerClientTest(unittest.TestCase):
             self.assertFalse(result["timed_out"])
             self.assertEqual("", result["failure"])
             self.assertEqual("MODEL_READY", final.read_text(encoding="utf-8"))
+            self.assertEqual(1, len(checkpoints))
+            self.assertTrue(checkpoints[0]["terminal_checkpoint"])
+            self.assertEqual(0, checkpoints[0]["returncode"])
             evidence = extract_app_server_usage(journal)
             self.assertEqual(1, len(evidence["raw_responses"]))
             self.assertEqual(

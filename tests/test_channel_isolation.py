@@ -107,7 +107,7 @@ class ProtectedChannelPlanTests(unittest.TestCase):
 
 class CompleteRederivationTests(unittest.TestCase):
     def test_RDR_001_descriptor_is_complete_and_raw_metadata_excludes_derived_fields(self):
-        self.assertEqual(96, len(EXECUTION_FIELDS))
+        self.assertEqual(116, len(EXECUTION_FIELDS))
         self.assertTrue(set(RAW_METADATA_FIELDS) < set(EXECUTION_FIELDS))
         source = (ROOT / "scripts/validate_benchmark_run.py").read_text()
         self.assertIn("validate_rederived_row", source)

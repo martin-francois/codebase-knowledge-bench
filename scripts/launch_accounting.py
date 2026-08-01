@@ -31,15 +31,23 @@ def sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
-def new_attempt(run_key: str, sequence: int, *, started_at: str | None = None) -> dict[str, Any]:
+def new_attempt(
+    run_key: str,
+    sequence: int,
+    *,
+    invocation_id: str,
+    started_at: str | None = None,
+) -> dict[str, Any]:
     started = started_at or utc_now()
     attempt_id = sha256_bytes(normalized_bytes({
         "run_key": run_key,
         "orchestration_sequence": sequence,
+        "invocation_id": invocation_id,
         "started_at": started,
     }))
     return {
         "attempt_id": attempt_id,
+        "invocation_id": invocation_id,
         "started_at": started,
         "finished_at": None,
         "orchestration_attempt": True,
@@ -60,7 +68,15 @@ def new_attempt(run_key: str, sequence: int, *, started_at: str | None = None) -
 def reserve_attempt(ledger: dict[str, Any], run_key: str, *, started_at: str | None = None) -> dict[str, Any]:
     run = ledger["runs"][run_key]
     attempts = run.setdefault("attempts", [])
-    attempt = new_attempt(run_key, len(attempts) + 1, started_at=started_at)
+    invocation_id = str(ledger.get("current_invocation_id") or "")
+    if not invocation_id:
+        raise ValueError("published-suite ledger has no current invocation")
+    attempt = new_attempt(
+        run_key,
+        len(attempts) + 1,
+        invocation_id=invocation_id,
+        started_at=started_at,
+    )
     attempt["pre_spawn_validation_started"] = True
     attempt["status"] = "pre_spawn_validation_started"
     attempts.append(attempt)
@@ -112,10 +128,26 @@ def record_child_spawn(
         if attempt["child_spawn_receipt"] != receipt["receipt_sha256"]:
             raise ValueError("attempt has conflicting child-spawn receipts")
         return
-    if int(ledger.get("actual_implementation_child_spawns") or 0) >= int(ledger["maximum_launches"]):
-        raise ValueError("published-suite child-spawn budget exhausted")
-    if int(run.get("actual_child_spawn_count") or 0) >= int(ledger["maximum_launches_per_run"]):
-        raise ValueError("per-run actual child-spawn budget exhausted")
+    invocation_id = str(ledger.get("current_invocation_id") or "")
+    invocation = next(
+        (
+            item
+            for item in ledger.get("invocations", [])
+            if item.get("invocation_id") == invocation_id
+        ),
+        None,
+    )
+    if invocation is None:
+        raise ValueError("published-suite current invocation is missing")
+    if int(invocation.get("actual_child_spawns") or 0) >= int(ledger["maximum_launches"]):
+        raise ValueError("published-suite per-invocation child-spawn budget exhausted")
+    invocation_run_spawns = sum(
+        bool(item.get("counts_as_implementation_child_launch"))
+        and item.get("invocation_id") == invocation_id
+        for item in run.get("attempts", [])
+    )
+    if invocation_run_spawns >= int(ledger["maximum_launches_per_run"]):
+        raise ValueError("per-invocation per-run child-spawn budget exhausted")
     attempt.update({
         "child_process_spawned": True,
         "child_pid": int(receipt["child_pid"]),
@@ -126,6 +158,9 @@ def record_child_spawn(
     run["actual_child_spawn_count"] = int(run.get("actual_child_spawn_count") or 0) + 1
     ledger["actual_implementation_child_spawns"] = int(
         ledger.get("actual_implementation_child_spawns") or 0
+    ) + 1
+    invocation["actual_child_spawns"] = int(
+        invocation.get("actual_child_spawns") or 0
     ) + 1
 
 
@@ -169,6 +204,28 @@ def validate_ledger_accounting(ledger: dict[str, Any]) -> list[str]:
         )
         if counted != int(run.get("actual_child_spawn_count") or 0):
             errors.append(f"actual child-spawn count does not reconcile for {key}")
-        if counted > int(ledger["maximum_launches_per_run"]):
-            errors.append(f"per-run actual child-spawn budget exceeded for {key}")
+        per_invocation: dict[str, int] = {}
+        for attempt in run.get("attempts") or []:
+            if not attempt.get("counts_as_implementation_child_launch"):
+                continue
+            invocation_id = str(attempt.get("invocation_id") or "")
+            per_invocation[invocation_id] = per_invocation.get(invocation_id, 0) + 1
+        if any(
+            value > int(ledger["maximum_launches_per_run"])
+            for value in per_invocation.values()
+        ):
+            errors.append(
+                f"per-invocation per-run child-spawn budget exceeded for {key}"
+            )
+    invocation_total = sum(
+        int(item.get("actual_child_spawns") or 0)
+        for item in ledger.get("invocations") or []
+    )
+    if invocation_total != actual:
+        errors.append("per-invocation child-spawn totals do not reconcile")
+    if any(
+        int(item.get("actual_child_spawns") or 0) > int(ledger["maximum_launches"])
+        for item in ledger.get("invocations") or []
+    ):
+        errors.append("per-invocation child-spawn budget exceeded")
     return errors

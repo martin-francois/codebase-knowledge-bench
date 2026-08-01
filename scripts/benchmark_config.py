@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import os
 import sys
@@ -113,7 +114,7 @@ POSITIVE_NUMBER_FIELDS = {
 }
 DERIVED_ENV = {
     "BENCH_CONFIG_SOURCE", "BENCH_ISSUE_MATRIX_JSON", "BENCH_ISSUE_MATRIX_BASE_DIR",
-    "BENCH_ISSUE_MATRIX_SOURCE",
+    "BENCH_ISSUE_MATRIX_SOURCE", "BENCH_APPROVALS_JSON",
 }
 CONTROL_ENV = {
     "BENCH_ALLOW_DIRTY_HARNESS_DIAGNOSTIC",
@@ -132,6 +133,208 @@ CURRENT_ISSUE_FIELDS = frozenset({
     "protected_channel_plan_path", "preflight_timeout_seconds",
 })
 CURRENT_ISSUE_REQUIRED = CURRENT_ISSUE_FIELDS
+
+APPROVAL_FIELDS = frozenset({
+    "decider", "reviewer_backend", "reviewer_model", "reviewer_reasoning_effort",
+    "decision_cache", "allow_cached_web_search", "allow_live_web_search",
+    "allow_command_network", "writable_root_capabilities", "loopback_hosts",
+    "decisions",
+})
+APPROVAL_DECIDERS = frozenset({"human", "ai"})
+APPROVAL_REVIEWER_BACKENDS = frozenset({"benchmark_managed"})
+APPROVAL_WRITABLE_ROOT_CAPABILITIES = frozenset({
+    "sealed_repository", "private_run_cache", "dependency_cache", "private_temporary",
+})
+APPROVAL_DECISION_FIELDS = frozenset({
+    "fingerprint", "decision", "scope", "command", "cwd_scope", "permission",
+    "request_parameters_sha256",
+    "executable_sha256", "environment_sha256", "writable_roots_sha256",
+    "network_scope", "policy_sha256", "decider", "rationale", "created_at",
+})
+APPROVAL_DECISIONS = frozenset({"accept", "reject"})
+APPROVAL_SCOPES = frozenset({"once"})
+
+
+def _persist_interactive_decider(path: Path, approvals: dict[str, Any]) -> None:
+    """Choose and persist the only user-facing approval mode before freezing."""
+
+    if approvals.get("decider") not in (None, ""):
+        return
+    if not sys.stdin.isatty():
+        raise ValueError(
+            "approvals is missing required field decider in a non-interactive environment"
+        )
+    answer = input("Approval decider [human/ai] (human): ").strip().lower()
+    decider = answer or "human"
+    if decider not in APPROVAL_DECIDERS:
+        raise ValueError("approvals decider must be human or ai")
+    original = path.read_text(encoding="utf-8")
+    marker = "[approvals]\n"
+    if original.count(marker) != 1:
+        raise ValueError("configuration requires exactly one [approvals] table")
+    updated = original.replace(marker, marker + f'decider = "{decider}"\n', 1)
+    temporary = path.with_name(f".{path.name}.approval-choice-{os.getpid()}")
+    with temporary.open("x", encoding="utf-8") as handle:
+        handle.write(updated)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+    directory = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+    approvals["decider"] = decider
+
+
+def _validate_approvals(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ValueError("configuration requires one [approvals] table")
+    unknown = sorted(set(value) - APPROVAL_FIELDS)
+    if unknown:
+        raise ValueError(f"unknown approvals configuration fields: {', '.join(unknown)}")
+    missing = sorted(
+        field for field in ("decider", "reviewer_backend")
+        if value.get(field) in (None, "")
+    )
+    if missing:
+        raise ValueError("approvals is missing required fields: " + ", ".join(missing))
+    if value["decider"] not in APPROVAL_DECIDERS:
+        raise ValueError("approvals decider must be human or ai")
+    if value["reviewer_backend"] not in APPROVAL_REVIEWER_BACKENDS:
+        raise ValueError(
+            "approvals reviewer_backend must be benchmark_managed; native_auto_review "
+            "has not qualified for the bounded reviewer-context contract"
+        )
+    if value["decider"] == "ai" and (
+        value.get("reviewer_model") in (None, "")
+        or value.get("reviewer_reasoning_effort") in (None, "")
+    ):
+        raise ValueError(
+            "AI approvals require reviewer_model and reviewer_reasoning_effort"
+        )
+    for field in (
+        "decision_cache", "allow_cached_web_search", "allow_live_web_search",
+        "allow_command_network",
+    ):
+        if not isinstance(value.get(field), bool):
+            raise ValueError(f"approvals {field} must be a boolean")
+    if value["allow_live_web_search"]:
+        raise ValueError("approvals allow_live_web_search must remain false")
+    if value["allow_command_network"]:
+        raise ValueError("approvals allow_command_network must remain false")
+    roots = value.get("writable_root_capabilities")
+    if not isinstance(roots, list) or not roots or not all(isinstance(item, str) for item in roots):
+        raise ValueError("approvals writable_root_capabilities must be a non-empty string array")
+    unknown_roots = sorted(set(roots) - APPROVAL_WRITABLE_ROOT_CAPABILITIES)
+    if unknown_roots:
+        raise ValueError(
+            "unknown approvals writable root capabilities: " + ", ".join(unknown_roots)
+        )
+    if len(set(roots)) != len(roots):
+        raise ValueError("approvals writable_root_capabilities must not contain duplicates")
+    required_roots = {
+        "sealed_repository", "private_run_cache", "private_temporary"
+    }
+    if not required_roots <= set(roots):
+        raise ValueError(
+            "approvals writable_root_capabilities must include sealed_repository, "
+            "private_run_cache, and private_temporary"
+        )
+    hosts = value.get("loopback_hosts")
+    allowed_hosts = {"localhost", "127.0.0.1", "::1"}
+    if (
+        not isinstance(hosts, list)
+        or not all(isinstance(item, str) for item in hosts)
+        or set(hosts) - allowed_hosts
+    ):
+        raise ValueError("approvals loopback_hosts may contain only localhost, 127.0.0.1, and ::1")
+    decisions = value.get("decisions", [])
+    if not isinstance(decisions, list):
+        raise ValueError("approvals decisions must be an array of tables")
+    seen: set[str] = set()
+    for index, decision in enumerate(decisions, 1):
+        if not isinstance(decision, dict):
+            raise ValueError(f"approval decision {index} must be a table")
+        unknown_decision = sorted(set(decision) - APPROVAL_DECISION_FIELDS)
+        if unknown_decision:
+            raise ValueError(
+                f"unknown approval decision {index} fields: "
+                + ", ".join(unknown_decision)
+            )
+        missing_decision = sorted(
+            field for field in APPROVAL_DECISION_FIELDS
+            if decision.get(field) in (None, "")
+        )
+        if missing_decision:
+            raise ValueError(
+                f"approval decision {index} is missing fields: "
+                + ", ".join(missing_decision)
+            )
+        fingerprint = str(decision["fingerprint"])
+        if len(fingerprint) != 64 or any(char not in "0123456789abcdef" for char in fingerprint):
+            raise ValueError(f"approval decision {index} fingerprint must be lowercase SHA-256")
+        if fingerprint in seen:
+            raise ValueError("approval decision fingerprints must be unique")
+        seen.add(fingerprint)
+        if decision["decision"] not in APPROVAL_DECISIONS:
+            raise ValueError(f"approval decision {index} decision must be accept or reject")
+        if decision["scope"] not in APPROVAL_SCOPES:
+            raise ValueError(f"approval decision {index} scope must be once")
+        if decision["decider"] not in APPROVAL_DECIDERS:
+            raise ValueError(f"approval decision {index} decider must be human or ai")
+        if decision["network_scope"] not in {"none", "loopback", "external"}:
+            raise ValueError(
+                f"approval decision {index} network_scope must be none, loopback, or external"
+            )
+        if decision["network_scope"] == "external" and decision["decision"] != "reject":
+            raise ValueError(
+                f"approval decision {index} external network scope must be rejected"
+            )
+        for field in (
+            "executable_sha256", "environment_sha256", "writable_roots_sha256",
+            "policy_sha256", "request_parameters_sha256",
+        ):
+            digest = str(decision[field])
+            if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+                raise ValueError(
+                    f"approval decision {index} {field} must be lowercase SHA-256"
+                )
+        method_by_permission = {
+            "command_execution": "item/commandExecution/requestApproval",
+            "file_change": "item/fileChange/requestApproval",
+            "permission_profile": "item/permissions/requestApproval",
+        }
+        method = method_by_permission.get(str(decision["permission"]))
+        if method is None:
+            raise ValueError(
+                f"approval decision {index} permission must be command_execution, "
+                "file_change, or permission_profile"
+            )
+        fingerprint_payload = {
+            "method": method,
+            "command": str(decision["command"]),
+            "cwd_scope": str(decision["cwd_scope"]),
+            "permission": str(decision["permission"]),
+            "request_parameters_sha256": str(
+                decision["request_parameters_sha256"]
+            ),
+            "executable_sha256": str(decision["executable_sha256"]),
+            "environment_sha256": str(decision["environment_sha256"]),
+            "writable_roots_sha256": str(decision["writable_roots_sha256"]),
+            "network_scope": str(decision["network_scope"]),
+            "policy_sha256": str(decision["policy_sha256"]),
+        }
+        expected_fingerprint = hashlib.sha256(
+            json.dumps(
+                fingerprint_payload, sort_keys=True, separators=(",", ":")
+            ).encode("utf-8")
+        ).hexdigest()
+        if fingerprint != expected_fingerprint:
+            raise ValueError(
+                f"approval decision {index} fingerprint does not match its exact capability payload"
+            )
+    return dict(value)
 
 
 def scalar(value: Any) -> str:
@@ -167,10 +370,12 @@ def read_config(path: Path) -> dict[str, Any]:
         raise ValueError(f"benchmark configuration file does not exist: {path}")
     if path.suffix.lower() != ".toml":
         raise ValueError("benchmark configuration must be a .toml file")
-    with path.open("rb") as handle:
-        data = tomllib.load(handle)
-    if set(data) - {"benchmark", "issues"}:
-        raise ValueError("configuration root supports only [benchmark] and [[issues]]")
+    source_text = path.read_text(encoding="utf-8")
+    data = tomllib.loads(source_text)
+    if set(data) - {"benchmark", "approvals", "issues"}:
+        raise ValueError(
+            "configuration root supports only [benchmark], [approvals], and [[issues]]"
+        )
     if not isinstance(data.get("benchmark"), dict):
         raise ValueError("configuration requires one [benchmark] table")
     issues = data.get("issues")
@@ -192,6 +397,26 @@ def read_config(path: Path) -> dict[str, Any]:
             raise ValueError(
                 f"issue {index} is missing current fields: " + ", ".join(missing_issue_fields)
             )
+    approval_table = data.get("approvals")
+    if isinstance(approval_table, dict):
+        _persist_interactive_decider(path, approval_table)
+        if approval_table.get("decisions"):
+            begin_marker = "# BEGIN BENCHMARK APPROVAL DECISIONS"
+            end_marker = "# END BENCHMARK APPROVAL DECISIONS"
+            begin = source_text.find(begin_marker)
+            end = source_text.find(end_marker)
+            marked = source_text[begin:end] if 0 <= begin < end else ""
+            if (
+                source_text.count(begin_marker) != 1
+                or source_text.count(end_marker) != 1
+                or source_text.count("[[approvals.decisions]]")
+                != marked.count("[[approvals.decisions]]")
+            ):
+                raise ValueError(
+                    "preexisting approvals decisions must be enclosed by the exact "
+                    "benchmark-generated decision markers"
+                )
+    approvals = _validate_approvals(approval_table)
     section = dict(data["benchmark"])
     unknown = sorted(set(section) - set(FIELDS))
     if unknown:
@@ -253,6 +478,7 @@ def read_config(path: Path) -> dict[str, Any]:
                 "use a Git credential helper"
             )
     section["issue_matrix"] = issues
+    section["approvals"] = approvals
     return section
 
 
@@ -338,5 +564,8 @@ def apply_configuration(
     )
     os.environ["BENCH_ISSUE_MATRIX_BASE_DIR"] = str(resolved.parent)
     os.environ["BENCH_ISSUE_MATRIX_SOURCE"] = str(resolved)
+    os.environ["BENCH_APPROVALS_JSON"] = json.dumps(
+        config["approvals"], sort_keys=True, separators=(",", ":")
+    )
     os.environ["BENCH_CONFIG_SOURCE"] = str(resolved)
     return resolved_config

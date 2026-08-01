@@ -723,6 +723,11 @@ def _approval_response(message: Mapping[str, Any]) -> dict[str, Any] | None:
         "item/fileChange/requestApproval",
     }:
         return {"id": request_id, "result": {"decision": "decline"}}
+    if method == "item/permissions/requestApproval":
+        return {
+            "id": request_id,
+            "result": {"permissions": {}, "scope": "turn"},
+        }
     if method in {"execCommandApproval", "applyPatchApproval"}:
         return {
             "id": request_id,
@@ -766,6 +771,8 @@ def run_app_server(
     stderr_path: Path,
     final_path: Path,
     timeout_seconds: int,
+    approval_handler: Callable[[Mapping[str, Any]], dict[str, Any] | None] | None = None,
+    terminal_checkpoint_handler: Callable[[Mapping[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     """Run one fresh app-server thread and retain every bidirectional message."""
 
@@ -774,8 +781,10 @@ def run_app_server(
     journal_lock = threading.Lock()
     ordinal = 0
     approval_requests = 0
+    approval_decision_wait_seconds = 0.0
     invalidating_notifications: list[dict[str, Any]] = []
     started = time.monotonic()
+    solve_elapsed: float | None = None
 
     with (
         journal_path.open("w", encoding="utf-8") as journal,
@@ -861,7 +870,7 @@ def run_app_server(
         def receive(
             predicate: Callable[[dict[str, Any]], bool],
         ) -> dict[str, Any]:
-            nonlocal approval_requests
+            nonlocal approval_requests, approval_decision_wait_seconds
             while True:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
@@ -893,9 +902,17 @@ def run_app_server(
                     message.get("id") is not None
                     and method is not None
                 ):
-                    response = _approval_response(message)
+                    decision_started = time.monotonic()
+                    response = (
+                        approval_handler(message)
+                        if approval_handler is not None
+                        else _approval_response(message)
+                    )
                     if response is not None:
                         approval_requests += 1
+                        approval_decision_wait_seconds += max(
+                            0.0, time.monotonic() - decision_started
+                        )
                         send(response)
                         continue
                 if predicate(message):
@@ -1006,6 +1023,36 @@ def run_app_server(
                     raise RuntimeError(
                         f"app-server turn/start failed: {response['error']}"
                     )
+            # The measured solve ends when both the terminal notification and
+            # successful turn/start response exist. Persist a recoverable
+            # normalized checkpoint before process teardown; the final pass
+            # below incorporates any trailing usage notification.
+            solve_elapsed = max(0.0, time.monotonic() - started)
+            with journal_lock:
+                journal.flush()
+                os.fsync(journal.fileno())
+                write_normalized_events(journal_path, normalized_path, final_path)
+            if terminal_checkpoint_handler is not None:
+                terminal_checkpoint_handler(
+                    {
+                        "returncode": 0,
+                        "timed_out": False,
+                        "wall_seconds": solve_elapsed,
+                        "active_wall_seconds": max(
+                            0.0,
+                            solve_elapsed - approval_decision_wait_seconds,
+                        ),
+                        "approval_requests": approval_requests,
+                        "approval_decision_wait_seconds": (
+                            approval_decision_wait_seconds
+                        ),
+                        "invalidating_notifications": list(
+                            invalidating_notifications
+                        ),
+                        "failure": "",
+                        "terminal_checkpoint": True,
+                    }
+                )
         except TimeoutError as exc:
             timed_out = True
             failure = exc
@@ -1037,12 +1084,19 @@ def run_app_server(
                 process.stdout.close()
 
     write_normalized_events(journal_path, normalized_path, final_path)
-    elapsed = time.monotonic() - started
+    elapsed = (
+        solve_elapsed
+        if solve_elapsed is not None
+        else max(0.0, time.monotonic() - started)
+    )
+    active_elapsed = max(0.0, elapsed - approval_decision_wait_seconds)
     return {
         "returncode": 0 if turn_completed and failure is None else 124 if timed_out else 1,
         "timed_out": timed_out,
         "wall_seconds": elapsed,
+        "active_wall_seconds": active_elapsed,
         "approval_requests": approval_requests,
+        "approval_decision_wait_seconds": approval_decision_wait_seconds,
         "invalidating_notifications": invalidating_notifications,
         "failure": "" if failure is None else str(failure),
     }

@@ -7,8 +7,7 @@ from pathlib import Path
 from typing import Any
 
 
-SCHEMA_VERSION = "model-preflight-lock-v2"
-LEGACY_SCHEMA_VERSION = "model-preflight-lock-v1"
+SCHEMA_VERSION = "model-preflight-lock-v3"
 
 
 def _published(value: Any) -> bytes:
@@ -38,6 +37,13 @@ def write_model_preflight_lock(
         "model-preflight/request-usage.json",
         "model-preflight/equivalent-cost.json",
         "model-preflight/pricing-descriptor.json",
+        "model-preflight/approval-reviewer/app-server.jsonl",
+        "model-preflight/approval-reviewer/normalized.jsonl",
+        "model-preflight/approval-reviewer/stderr.log",
+        "model-preflight/approval-reviewer/final.txt",
+        "model-preflight/approval-reviewer/control.json",
+        "model-preflight/approval-reviewer/request-usage.json",
+        "model-preflight/approval-reviewer/equivalent-cost.json",
     ):
         path = suite_dir / relative
         if not path.is_file():
@@ -52,6 +58,26 @@ def write_model_preflight_lock(
         "harness_commit": harness_commit,
         "harness_tree": harness_tree,
         "source_execution": record["source"],
+        "approval_reviewer_readiness": {
+            "passed": record["approval_reviewer_readiness"]["passed"],
+            "decision": record["approval_reviewer_readiness"]["decision"],
+            "model": record["approval_reviewer_readiness"]["evidence"]["model"],
+            "reasoning_effort": record["approval_reviewer_readiness"]["evidence"][
+                "reasoning_effort"
+            ],
+            "tool_activity_absent": record["approval_reviewer_readiness"][
+                "evidence"
+            ]["tool_activity_absent"],
+            "request_aggregate_reconciled": record[
+                "approval_reviewer_readiness"
+            ]["request_usage"]["request_aggregate_reconciled"],
+            "exact_usd_nanos": record["approval_reviewer_readiness"][
+                "equivalent_cost"
+            ]["exact_usd_nanos"],
+            "excluded_from_primary_solver_cost": record[
+                "approval_reviewer_readiness"
+            ]["excluded_from_primary_solver_cost"],
+        },
         "artifacts": files,
         "artifact_manifest_sha256": hashlib.sha256(_published(files)).hexdigest(),
     }
@@ -74,7 +100,7 @@ def write_model_preflight_lock(
 def validate_model_preflight_lock(payload: dict[str, Any], root: Path) -> list[str]:
     errors: list[str] = []
     schema_version = payload.get("schema_version")
-    if schema_version not in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}:
+    if schema_version != SCHEMA_VERSION:
         errors.append("model preflight lock schema mismatch")
         return errors
     source = dict(payload)
@@ -82,7 +108,7 @@ def validate_model_preflight_lock(payload: dict[str, Any], root: Path) -> list[s
     if expected != hashlib.sha256(_published(source)).hexdigest():
         errors.append("model preflight lock metadata hash mismatch")
     artifacts = payload.get("artifacts")
-    expected_count = 7 if schema_version == LEGACY_SCHEMA_VERSION else 10
+    expected_count = 17
     if not isinstance(artifacts, list) or len(artifacts) != expected_count:
         errors.append("model preflight lock artifact set is incomplete")
         return errors

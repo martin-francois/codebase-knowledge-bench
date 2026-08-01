@@ -24,7 +24,7 @@ const publishedDescriptors = Object.fromEntries(Object.entries(descriptorSource)
 const metricValues = (tokens: number, time: number, calls: number) => ({
   total_reported_tokens: tokens, observed_non_cached_input_tokens: tokens * .8,
   output_tokens_including_reasoning: tokens * .1, reasoning_output_tokens: tokens * .05,
-  solve_wall_seconds: time, warm_end_to_end_seconds: time + 10,
+  active_solve_seconds: time, warm_end_to_end_seconds: time + 10,
   tool_calls: calls, intended_tool_successful_calls: 2,
 });
 const equivalentCost = {
@@ -104,7 +104,7 @@ test("offline dashboard controls and table remain synchronized", async ({page}) 
   await expect(page.locator('tr[data-tool="tool"] td').nth(1)).toHaveAttribute("aria-label", /Observed range equivalent Codex API cost/);
   await expect(page.locator('tr[data-tool="tool"]')).toContainText("460.00");
   await page.getByRole("button", {name: "Relative to baseline"}).click();
-  await page.getByLabel("X-axis metric").selectOption("solve_wall_seconds");
+  await page.getByLabel("X-axis metric").selectOption("active_solve_seconds");
   await expect(page.locator('tr[data-tool="tool"]')).toContainText("-35.07");
   await page.getByLabel("X-axis metric").selectOption("tool_calls");
   await expect(page.locator('tr[data-tool="tool"]')).toContainText("-38.40");
