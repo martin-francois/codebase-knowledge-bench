@@ -68,6 +68,12 @@ class PublishedSuiteControlTest(unittest.TestCase):
                 r"^symphony-trello-cohort-[0-9a-f]{12}$",
             )
             self.assertEqual(
+                published_suite.sha256_file(
+                    ROOT / "configs" / "methodology-policy.json"
+                ),
+                result["methodology_policy_sha256"],
+            )
+            self.assertEqual(
                 f"{result['cohort_id']}-source-{'a' * 12}",
                 result["execution_id"],
             )
@@ -89,6 +95,45 @@ class PublishedSuiteControlTest(unittest.TestCase):
                     issue_ids=[row["issue_id"] for row in config["issue_matrix"]],
                     tools=config["tools"], repetitions=config["repetitions"],
                 )
+
+    def test_methodology_policy_changes_effective_cohort_identity(self) -> None:
+        config = self.current_config()
+        identity = {
+            "commit": "a" * 40,
+            "tree": "b" * 40,
+            "origin_main": "a" * 40,
+            "clean": True,
+            "pushed": True,
+            "status": "",
+        }
+        policy_path = ROOT / "configs" / "methodology-policy.json"
+        actual_policy_sha256 = published_suite.sha256_file(policy_path)
+
+        def validate() -> dict:
+            return published_suite.validate_execution_profile(
+                config["execution_profile"], root=ROOT,
+                resolved_configuration=config,
+                issue_ids=[row["issue_id"] for row in config["issue_matrix"]],
+                tools=config["tools"], repetitions=config["repetitions"],
+            )
+
+        with mock.patch.object(published_suite, "git_identity", return_value=identity):
+            original = validate()
+            with mock.patch.object(
+                published_suite,
+                "sha256_file",
+                side_effect=lambda path: (
+                    "f" * 64 if path == policy_path else actual_policy_sha256
+                ),
+            ):
+                changed = validate()
+
+        self.assertNotEqual(
+            original["effective_configuration_sha256"],
+            changed["effective_configuration_sha256"],
+        )
+        self.assertNotEqual(original["cohort_id"], changed["cohort_id"])
+        self.assertEqual("f" * 64, changed["methodology_policy_sha256"])
 
     def test_no_model_qualification_control_is_source_bound(self) -> None:
         profile = {

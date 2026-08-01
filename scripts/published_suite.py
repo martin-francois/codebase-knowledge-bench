@@ -183,6 +183,9 @@ def validate_execution_profile(
         mismatches.append("allow_code_upload must be false")
     if mismatches:
         raise SystemExit("Resolved execution profile does not match the published profile:\n- " + "\n- ".join(mismatches))
+    methodology_policy_sha256 = sha256_file(
+        root / "configs" / "methodology-policy.json"
+    )
     payload = {
         "schema_version": SCHEMA_VERSION,
         "profile": profile,
@@ -190,10 +193,14 @@ def validate_execution_profile(
         "resolved": actual,
         "required_true": list(required_true),
         "allow_code_upload": False,
+        "methodology_policy_sha256": methodology_policy_sha256,
         "source": identity,
     }
     payload["effective_configuration_sha256"] = sha256_bytes(
-        normalized_bytes(resolved_configuration)
+        normalized_bytes({
+            "methodology_policy_sha256": methodology_policy_sha256,
+            "resolved_configuration": resolved_configuration,
+        })
     )
     if profile == "symphony_trello":
         logical_suite_id = str(actual["suite_id"])
