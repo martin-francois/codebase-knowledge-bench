@@ -1,7 +1,7 @@
 # Semantic maintenance self-review
 
 Overall: **passed** for the owner-authorized source-bound replacement policy at commit
-`a93eb9ffaeb4f50938b5e872646659fc1e3ed839`.
+`1c1c9c59755741439bafde9dde168ecc8c75dfb5`.
 
 - `LLM-001` preflight contract fidelity: **passed**
 - `LLM-002` base/reference outcome plausibility: **passed**
