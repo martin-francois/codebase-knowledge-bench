@@ -16,6 +16,8 @@
     "tool_smoke_invoked",
     "tool_smoke_issue_relevance_passed",
     "tool_smoke_state_restored",
+    "codex_config_sha256",
+    "trusted_project",
     "journal_sha256",
     "receipt_sha256"
   ],
@@ -31,6 +33,8 @@
     "tool_smoke_invoked": {"type": "boolean"},
     "tool_smoke_issue_relevance_passed": {"type": "boolean"},
     "tool_smoke_state_restored": {"type": "boolean"},
+    "codex_config_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "trusted_project": {"type": "string", "minLength": 1},
     "journal_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
   }

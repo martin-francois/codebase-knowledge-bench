@@ -67,6 +67,7 @@ from operator_summary import write_operator_summary, validate_operator_summary
 from finalize_readiness import finalize_canary_readiness
 from equivalent_cost import aggregate_equivalent_cost, load_pricing_descriptor
 from codex_app_server import probe_raw_usage_capability
+from codex_project_trust import exact_project_trust
 
 
 ACTIVE_PROGRESS_REPORTER: ProgressReporter | None = None
@@ -1903,6 +1904,10 @@ def qualification_run_record(execution_root: Path, row: dict[str, Any]) -> dict[
         smoke_invoked = str(checkpoint.get("state") or "").startswith("smoke_")
     no_model_receipt_path = execution_root / "runs" / run_id / "no-model-tool-smoke.json"
     smoke_journal_path = execution_root / "runs" / run_id / "tool-smoke.jsonl"
+    codex_config_path = (
+        execution_root / "tool-cache" / run_id / "home" / ".codex" / "config.toml"
+    )
+    expected_trusted_project = execution_root / "sealed-repos" / run_id / "repo"
     no_model_receipt: dict[str, Any] = {}
     no_model_receipt_valid = False
     if no_model_receipt_path.is_file():
@@ -1937,6 +1942,14 @@ def qualification_run_record(execution_root: Path, row: dict[str, Any]) -> dict[
                 )
                 is True
                 and no_model_receipt.get("tool_smoke_state_restored") is True
+                and codex_config_path.is_file()
+                and no_model_receipt.get("codex_config_sha256")
+                == sha256_file(codex_config_path)
+                and no_model_receipt.get("trusted_project")
+                == str(expected_trusted_project.resolve())
+                and exact_project_trust(
+                    codex_config_path, expected_trusted_project
+                )
                 and no_model_receipt.get("event_count")
                 == (0 if tool == "baseline-none" else 1)
                 and smoke_journal_path.is_file()
