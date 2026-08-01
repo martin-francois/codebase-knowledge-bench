@@ -4535,6 +4535,10 @@ def run_no_model_tool_smoke(v: Tool) -> None:
     run_jsonl = v.run_dir / "tool-smoke.jsonl"
     stderr_path = v.run_dir / "tool-smoke.stderr"
     final_path = v.run_dir / "tool-smoke-final-message.txt"
+    # Baseline has no setup handler, while every configured tool prepares this
+    # home as part of setup. Establish the same frozen child-config boundary for
+    # every cell before the pre-smoke snapshot is taken.
+    prepare_child_codex_home(v)
     isolation_started = time.monotonic()
     before_digest = smoke_state_digest(v)
     snapshot = snapshot_smoke_state(v)

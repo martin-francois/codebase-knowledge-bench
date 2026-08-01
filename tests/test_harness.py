@@ -511,8 +511,8 @@ class RetryPolicyTest(unittest.TestCase):
             ), mock.patch.object(
                 runner, "SHARED_INSTALL_ROOT", root / "shared-installs"
             ), mock.patch.object(runner, "NODE24_BIN", root / "node24/bin"):
-                codex_home = runner.prepare_child_codex_home(tool)
                 runner.run_no_model_tool_smoke(tool)
+                codex_home = runner.child_codex_home(tool)
             receipt = json.loads(
                 (run_dir / "no-model-tool-smoke.json").read_text(encoding="utf-8")
             )
