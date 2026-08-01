@@ -1,7 +1,7 @@
 # Semantic maintenance self-review
 
 Overall: **passed** for the owner-authorized source-bound replacement policy at commit
-`1c1c9c59755741439bafde9dde168ecc8c75dfb5`.
+`a09bc9655c922b7ed667a5910a5ea9046fd922a3`.
 
 - `LLM-001` preflight contract fidelity: **passed**
 - `LLM-002` base/reference outcome plausibility: **passed**
@@ -24,11 +24,14 @@ the frozen stop rule.
 
 Issue meaning, target commits, protected contracts and selectors, prompts, scoring, exact cost,
 timing, matching, interpretation, toolchain, schedule, approval, anti-leak, replay, and publication
-rules are unchanged. The repaired child boundary remains frozen and stops on approval, model, or
-control-telemetry invalidation before another model child.
+rules are unchanged. The effective configuration now binds the authoritative methodology-policy
+SHA-256 alongside the resolved TOML, so a replacement policy receives a new cohort namespace. The
+repaired child boundary remains frozen and stops on approval, model, or control-telemetry
+invalidation before another model child.
 
 Deterministic review evidence included independent reconciliation of 17 preserved source-`2c27`
-artifact hashes, 575 passing Python tests, and a passing verification registry.
+artifact hashes, a mutation regression proving policy-bound cohort identity, 576 passing Python
+tests, and a passing verification registry.
 
 This is implementing-agent self-review. It used no additional model call and is not independent
 verification. Before measured execution, the exact final review source still requires all 21
