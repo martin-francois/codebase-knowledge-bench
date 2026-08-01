@@ -907,6 +907,74 @@ def finish_block(suite_dir: Path, ledger: dict[str, Any], keys: Iterable[str], r
     _write_ledger(suite_dir, ledger)
 
 
+def finish_frozen_invalidation_block(
+    suite_dir: Path,
+    ledger: dict[str, Any],
+    keys: Iterable[str],
+    marker: dict[str, Any],
+) -> None:
+    """Close every reservation without inventing a child launch or a valid result row."""
+    keys = list(keys)
+    invalid_tool = str(marker.get("tool") or "")
+    timestamp = datetime.now(timezone.utc).isoformat()
+    for key in keys:
+        run = ledger["runs"][key]
+        attempt = run["attempts"][-1]
+        if attempt.get("child_process_spawned"):
+            status = (
+                str(marker.get("status") or "invalid_leakage")
+                if key.rsplit("::", 1)[1] == invalid_tool
+                else "diagnostic_child_completed_before_frozen_invalidation"
+            )
+            finish_attempt(
+                ledger,
+                key,
+                terminal=True,
+                status=status,
+                finished_at=timestamp,
+            )
+        elif key.rsplit("::", 1)[1] == invalid_tool:
+            finish_attempt(
+                ledger,
+                key,
+                terminal=False,
+                status="invalidating_child_spawn_accounting_inconsistent",
+                finished_at=timestamp,
+            )
+        else:
+            mark_pre_spawn_rejected(
+                ledger,
+                key,
+                "frozen invalidation stopped the block before this child spawned",
+                finished_at=timestamp,
+            )
+            run["terminal"] = False
+            run["status"] = "frozen_invalidation_not_started"
+    ledger["events"].append(
+        {
+            "event": "block_stopped_on_frozen_invalidation",
+            "run_keys": keys,
+            "invalid_tool": invalid_tool,
+            "invalidating_child_spawn_observed": any(
+                key.rsplit("::", 1)[1] == invalid_tool
+                and ledger["runs"][key]["attempts"][-1].get(
+                    "child_process_spawned"
+                )
+                for key in keys
+            ),
+            "marker_content_sha256": marker.get("content_sha256"),
+            "at": timestamp,
+        }
+    )
+    errors = validate_ledger_accounting(ledger)
+    if errors:
+        raise ValueError(
+            "published-suite ledger failed after frozen invalidation: "
+            + "; ".join(errors)
+        )
+    _write_ledger(suite_dir, ledger)
+
+
 def write_full_suite_readiness(
     destination: Path, ledger: dict[str, Any], *, suite_dir: Path,
     validator_exit_zero: bool,

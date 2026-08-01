@@ -212,6 +212,92 @@ class PublishedSuiteControlTest(unittest.TestCase):
                 published_suite.finish_block(root, ledger, keys, results)
             self.assertEqual(before, ledger)
 
+    def test_frozen_invalidation_closes_reservations_without_inventing_spawns(self) -> None:
+        schedule = published_suite.balanced_schedule(
+            ["issue-486"], 1, ["graphify", "gitnexus"], 7
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ledger = published_suite.initialize_ledger(
+                root,
+                {"profile": "fixture"},
+                schedule,
+                maximum_unique_runs=2,
+                maximum_launches=2,
+                maximum_launches_per_run=1,
+            )
+            order = published_suite.schedule_order(schedule, "issue-486", 1)
+            keys = published_suite.begin_block(
+                root, ledger, "issue-486", 1, order, output_root=root
+            )
+            invalid_key = next(key for key in keys if key.endswith("::graphify"))
+            published_suite.record_implementation_child_spawn(
+                root, ledger, invalid_key, 1234
+            )
+            published_suite.finish_frozen_invalidation_block(
+                root,
+                ledger,
+                keys,
+                {
+                    "tool": "graphify",
+                    "status": "invalid_leakage",
+                    "content_sha256": "a" * 64,
+                },
+            )
+
+        self.assertEqual(1, ledger["actual_implementation_child_spawns"])
+        self.assertTrue(ledger["runs"][invalid_key]["terminal"])
+        self.assertEqual("invalid_leakage", ledger["runs"][invalid_key]["status"])
+        unstarted_key = next(key for key in keys if key != invalid_key)
+        self.assertEqual(0, ledger["runs"][unstarted_key]["actual_child_spawn_count"])
+        self.assertFalse(ledger["runs"][unstarted_key]["terminal"])
+        self.assertEqual(
+            "frozen_invalidation_not_started", ledger["runs"][unstarted_key]["status"]
+        )
+        self.assertEqual([], published_suite.validate_ledger_accounting(ledger))
+
+    def test_frozen_invalidation_flags_a_missing_spawn_observation(self) -> None:
+        schedule = published_suite.balanced_schedule(
+            ["issue-486"], 1, ["graphify"], 7
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ledger = published_suite.initialize_ledger(
+                root,
+                {"profile": "fixture"},
+                schedule,
+                maximum_unique_runs=1,
+                maximum_launches=1,
+                maximum_launches_per_run=1,
+            )
+            keys = published_suite.begin_block(
+                root,
+                ledger,
+                "issue-486",
+                1,
+                ["graphify"],
+                output_root=root,
+            )
+            published_suite.finish_frozen_invalidation_block(
+                root,
+                ledger,
+                keys,
+                {
+                    "tool": "graphify",
+                    "status": "invalid_leakage",
+                    "content_sha256": "b" * 64,
+                },
+            )
+
+        run = ledger["runs"][keys[0]]
+        self.assertEqual(0, run["actual_child_spawn_count"])
+        self.assertFalse(run["terminal"])
+        self.assertEqual(
+            "invalidating_child_spawn_accounting_inconsistent", run["status"]
+        )
+        self.assertFalse(run["attempts"][-1]["pre_spawn_rejected"])
+        self.assertFalse(ledger["events"][-1]["invalidating_child_spawn_observed"])
+
     def test_ledger_partial_resume_skips_completed_runs(self) -> None:
         schedule = published_suite.balanced_schedule(
             ["issue-486"], 1, ["baseline-none", "graphify", "sverklo"], 7
