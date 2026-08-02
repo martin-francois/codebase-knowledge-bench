@@ -4719,6 +4719,14 @@ class ResumeAndValidatorTest(unittest.TestCase):
                 },
             ),
             mock.patch.object(suite, "ISSUES", (issue,)),
+            mock.patch.object(
+                suite,
+                "RESOLVED_CONFIGURATION",
+                {
+                    "tool_download_cache_root": "/operator/cache/downloads",
+                    "chromium_executable": "/operator/runtime/chromium",
+                },
+            ),
         ):
             replacements = suite.publication_path_replacements(
                 Path("/output/suites/example")
@@ -4729,10 +4737,19 @@ class ResumeAndValidatorTest(unittest.TestCase):
             replacements[issue.requirement_contract_path],
         )
         self.assertNotIn("/operator/private", replacements)
+        self.assertEqual(
+            "$CONFIGURED_TOOL_DOWNLOAD_CACHE_ROOT",
+            replacements["/operator/cache/downloads"],
+        )
+        self.assertEqual(
+            "$CONFIGURED_CHROMIUM_EXECUTABLE",
+            replacements["/operator/runtime/chromium"],
+        )
         sanitized = sys.modules["publication_safety"].sanitize_value(
             {
                 "config": str(config),
                 "contract": issue.requirement_contract_path,
+                "download_cache": "/operator/cache/downloads",
                 "unrelated": "/operator/private/unrelated.txt",
             },
             replacements,
@@ -4741,6 +4758,10 @@ class ResumeAndValidatorTest(unittest.TestCase):
         self.assertEqual(
             "$METHODOLOGY_INPUT_001_REQUIREMENT_CONTRACT_PATH",
             sanitized["contract"],
+        )
+        self.assertEqual(
+            "$CONFIGURED_TOOL_DOWNLOAD_CACHE_ROOT",
+            sanitized["download_cache"],
         )
         self.assertEqual("/operator/private/unrelated.txt", sanitized["unrelated"])
 
@@ -4766,6 +4787,24 @@ class ResumeAndValidatorTest(unittest.TestCase):
             self.assertEqual(
                 "RuntimeError: portable archive failed\n",
                 (suite_dir / "suite-publication-failure.log").read_text(encoding="utf-8"),
+            )
+
+    def test_every_resolved_operator_path_field_has_an_exact_publication_mapping(self) -> None:
+        configured = {
+            field: f"/operator/paths/{field}"
+            for field in suite.PATH_FIELDS
+        }
+        with (
+            mock.patch.object(suite, "RESOLVED_CONFIGURATION", configured),
+            mock.patch.object(suite, "ISSUES", ()),
+        ):
+            replacements = suite.publication_path_replacements(
+                Path("/output/suites/example")
+            )
+        for field, path in configured.items():
+            self.assertEqual(
+                f"$CONFIGURED_{field.upper()}",
+                replacements[path],
             )
 
     def test_completed_derivation_resume_skips_every_solve_child(self) -> None:

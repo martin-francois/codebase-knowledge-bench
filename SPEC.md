@@ -701,7 +701,8 @@ runtime provisioning MUST use one cross-tool lock. A missing compiler or pinned 
 before a model child. When qualification aborts, its original gate reason and raw evidence remain
 authoritative; diagnostic report or archive failure MUST be recorded separately and MUST NOT mask
 that reason. Structured diagnostic publication MUST replace every explicit external operator-input
-path without broad host-prefix substitution.
+path—including configured cache, install, lock, history, reuse, target, and runtime paths—without
+broad host-prefix substitution.
 
 ## 15. Replayable target evidence
 
