@@ -424,15 +424,17 @@ For every requested behavior change, update `SPEC.md` and the machine-readable p
   `BENCH_QUALIFICATION_ONLY=true`, require all 21 qualification cells and extracted publication to
   pass, seal the model/toolchain/schedule locks, then require a fresh canary GO from the identical
   clean pushed source commit.
-- The current owner authorization permits exactly one new source-bound replacement after invalid
-  execution `symphony-trello-cohort-f7e5eab44ca9-source-c095b013591f`. Preserve that execution,
-  source-`2c27df3ee8aa`, source-`4013c7808267`, source-`0508da3a0b71`, and every earlier attempt;
-  never resume one, reuse or combine a prior row, or relaunch a prior child. Bind the current
-  authorization into the methodology-policy hash, use new cohort/execution/evidence roots, repeat
-  all 21 no-model cells, a fresh exact-model cost-and-reviewer-readiness request, zero-child
-  transition, source-bound target package, and one fresh replay, and retain every existing stop
-  condition and the no-behavioral-retry rule. A recurring frozen invalidation stops work until
-  another explicit owner amendment exists.
+- The current owner authorization permits exactly one new source-bound replacement after stopped
+  execution `symphony-trello-cohort-4af8b37a29da-source-eea5e4b61764`. Preserve its seven-child
+  comparison, source-`265137151cb7`, source-`c095b013591f`, source-`2c27df3ee8aa`,
+  source-`4013c7808267`, source-`0508da3a0b71`, and every earlier attempt; never resume one, reuse
+  or combine a prior row, or relaunch a prior child. Bind the current authorization into the
+  methodology-policy hash, use new cohort/execution/evidence roots, repeat all 21 no-model cells,
+  a fresh exact-model cost-and-reviewer-readiness request, zero-child transition, source-bound
+  target package, and one fresh replay, and retain every existing stop condition and the
+  no-behavioral-retry rule. Independently audit every terminal seven-child comparison before the
+  next one launches. A recurring frozen invalidation stops work until another explicit owner
+  amendment exists.
 - When changing dashboard dependencies, update `dashboard/package-lock.json`, run `npm ci --prefix
   dashboard`, build it, and verify that generated HTML contains no external network dependency.
 # Protected verification maintenance

@@ -33,7 +33,11 @@ try:
         validate_request_usage,
     )
     from codex_app_server import extract_app_server_usage, normalized_events_from_app_server
-    from approval_policy import sha256_value, validate_journal_snapshot
+    from approval_policy import (
+        approval_reviewer_tool_events,
+        sha256_value,
+        validate_journal_snapshot,
+    )
     from current_row import EXECUTION_FIELDS, TOKEN_FIELDS, project_execution_row
     from requirement_evidence import derive_requirement_evidence
     from current_preflight import validate_current_preflight
@@ -61,7 +65,11 @@ except ModuleNotFoundError:  # pragma: no cover - imported as scripts.current_pi
         extract_app_server_usage,
         normalized_events_from_app_server,
     )
-    from scripts.approval_policy import sha256_value, validate_journal_snapshot
+    from scripts.approval_policy import (
+        approval_reviewer_tool_events,
+        sha256_value,
+        validate_journal_snapshot,
+    )
     from scripts.current_row import EXECUTION_FIELDS, TOKEN_FIELDS, project_execution_row
     from scripts.requirement_evidence import derive_requirement_evidence
     from scripts.current_preflight import validate_current_preflight
@@ -970,22 +978,7 @@ def _derive_current_row_from_verified_inputs(
                 != _sha256_bytes(reviewer_journal.read_bytes())
             ):
                 raise RuntimeError("approval reviewer control does not reconcile")
-            tool_items = []
-            for line_number, raw in enumerate(
-                reviewer_normalized.read_text(encoding="utf-8").splitlines(), 1
-            ):
-                if not raw:
-                    continue
-                normalized_event = json.loads(raw)
-                if not str(normalized_event.get("type") or "").startswith("item."):
-                    continue
-                item = normalized_event.get("item")
-                item_type = (
-                    str(item.get("type") or "")
-                    if isinstance(item, Mapping) else ""
-                )
-                if item_type not in {"agent_message", "reasoning"}:
-                    tool_items.append((line_number, item_type))
+            tool_items = approval_reviewer_tool_events(reviewer_normalized)
             usage = extract_app_server_usage(reviewer_journal)
             reviewer_aggregate = (
                 usage["aggregate_updates"][-1]["usage"]
