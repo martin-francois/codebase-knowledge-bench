@@ -275,7 +275,8 @@
         "content_addressed_cell_receipt_required",
         "model_turns_allowed",
         "codex_app_server_allowed",
-        "implementation_child_launches_allowed"
+        "implementation_child_launches_allowed",
+        "tool_download_cache"
       ],
       "properties": {
         "mode": {"const": "direct_integration_without_codex"},
@@ -289,7 +290,10 @@
         "content_addressed_cell_receipt_required": {"const": true},
         "model_turns_allowed": {"const": 0},
         "codex_app_server_allowed": {"const": false},
-        "implementation_child_launches_allowed": {"const": 0}
+        "implementation_child_launches_allowed": {"const": 0},
+        "tool_download_cache": {
+          "const": "toml_configured_installation_only_not_solver_visible_or_tool_identity"
+        }
       }
     },
     "analysis": {

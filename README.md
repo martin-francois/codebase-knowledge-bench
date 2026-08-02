@@ -347,6 +347,11 @@ unless the target is public and the TOML explicitly enables it. `chromium_execut
 path because publication validation launches Chromium outside the benchmark child sandbox; it does
 not grant Chromium or the coding agent access to additional repository paths.
 
+If `output_root` is on NFS or another filesystem that cannot support package-manager locks, set
+`tool_download_cache_root` to a local filesystem. This moves only disposable download caches and
+installer temporary files; pinned tool installs, receipts, and benchmark evidence stay in their
+configured retained locations and the solver never sees the local download cache.
+
 ## Troubleshooting
 
 ### The model preflight fails

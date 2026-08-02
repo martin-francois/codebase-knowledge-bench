@@ -128,6 +128,9 @@ allow_foreign_issue = false
 issue_cutoff_time = ""
 # optional: Shared pinned tool installation directory; empty uses output_root/tool-cache.
 shared_tool_install_root = ""
+# optional: Lock-sensitive package downloads and installer temp files; empty uses output_root/tool-cache.
+# Put this on a local filesystem when output_root is an NFS or other remote evidence volume.
+tool_download_cache_root = ""
 
 [approvals]
 # Required: `human` asks on uncached requests; `ai` uses the isolated reviewer below.

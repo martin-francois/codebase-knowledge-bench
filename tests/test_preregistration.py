@@ -287,6 +287,10 @@ class PreregistrationContractTests(unittest.TestCase):
         self.assertEqual(21, policy["cell_count"])
         self.assertEqual(0, policy["model_turns_allowed"])
         self.assertEqual(0, policy["implementation_child_launches_allowed"])
+        self.assertEqual(
+            "toml_configured_installation_only_not_solver_visible_or_tool_identity",
+            policy["tool_download_cache"],
+        )
         self.assertFalse(policy["reference_inputs_allowed"])
         self.assertFalse(policy["codex_app_server_allowed"])
 
