@@ -694,6 +694,15 @@ repository and no other project. The no-model receipt records the configuration 
 trusted repository, and qualification independently parses the configuration and rejects a missing,
 foreign, additional, or non-`trusted` project entry before any paid child may launch.
 
+`QUA-007` Qualification and setup MUST be independent of the scheduled tool order. Every npm-based
+adapter MUST provision and use the frozen pinned Node runtime before package installation, including
+when that adapter appears before the tool that first required the runtime historically. Shared
+runtime provisioning MUST use one cross-tool lock. A missing compiler or pinned runtime fails closed
+before a model child. When qualification aborts, its original gate reason and raw evidence remain
+authoritative; diagnostic report or archive failure MUST be recorded separately and MUST NOT mask
+that reason. Structured diagnostic publication MUST replace every explicit external operator-input
+path without broad host-prefix substitution.
+
 ## 15. Replayable target evidence
 
 `RPL-001` The external-review handoff contains a Git bundle holding every exact target base and

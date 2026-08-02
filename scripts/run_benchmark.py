@@ -118,7 +118,7 @@ TOOL_PACKAGE_REQUESTS = {
     "serena": f"serena-agent=={TOOL_PACKAGE_VERSIONS['serena']}",
     "sverklo": f"sverklo@{TOOL_PACKAGE_VERSIONS['sverklo']}",
 }
-SVERKLO_NODE_VERSION = "24.18.1"
+PINNED_NODE_VERSION = "24.18.1"
 RESUME_AFTER_SMOKE = os.environ.get("BENCH_RESUME_AFTER_SMOKE") == "true"
 NO_MODEL_QUALIFICATION = (
     os.environ.get("BENCH_NO_MODEL_QUALIFICATION") == "true"
@@ -153,7 +153,7 @@ SMOKE_STATE = COMPARISON_ROOT / "smoke-state"
 PRE_SOLVE_STATE = COMPARISON_ROOT / "pre-solve-state"
 NODE24_BIN = (
     GLOBAL_TOOL_CACHE
-    / f"node-{SVERKLO_NODE_VERSION}"
+    / f"node-{PINNED_NODE_VERSION}"
     / "node_modules"
     / ".bin"
 )
@@ -1945,11 +1945,17 @@ def shared_tool_install_root(v: Tool) -> Path:
 
 
 @contextmanager
-def shared_install_lock(v: Tool):
+def shared_named_install_lock(name: str):
     SHARED_INSTALL_ROOT.mkdir(parents=True, exist_ok=True)
-    lock_path = SHARED_INSTALL_ROOT / f".{v.name}.lock"
+    lock_path = SHARED_INSTALL_ROOT / f".{name}.lock"
     with lock_path.open("a+", encoding="utf-8") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        yield
+
+
+@contextmanager
+def shared_install_lock(v: Tool):
+    with shared_named_install_lock(v.name):
         yield
 
 
@@ -2029,6 +2035,7 @@ def npm_install_global(
     setup_log: Path,
     extra_env: dict[str, str] | None = None,
 ) -> Path:
+    ensure_pinned_node_runtime(v, setup_log)
     root = shared_tool_install_root(v)
     prefix = root / "prefix"
     with shared_install_lock(v):
@@ -2270,27 +2277,14 @@ def codex_config_snapshot(v: Tool, note: str = "") -> str:
     return redact("\n\n".join(parts).rstrip() + "\n")
 
 
-def node_runtime_major(env: dict[str, str]) -> int:
-    result = run(
-        ["node", "-p", "process.versions.node.split('.')[0]"],
-        timeout=20,
-        env=env,
-    )
-    try:
-        return int((result.stdout or "0").strip()) if result.returncode == 0 else 0
-    except ValueError:
-        return 0
-
-
-def ensure_sverklo_node_runtime(v: Tool, setup_log: Path) -> dict[str, str]:
-    env = setup_environment(v)
-    if node_runtime_major(env) >= 24:
-        return env
-
+def ensure_pinned_node_runtime(v: Tool, setup_log: Path) -> dict[str, str]:
     node_root = NODE24_BIN.parent.parent
-    with shared_install_lock(v):
+    expected_version = f"v{PINNED_NODE_VERSION}"
+    with shared_named_install_lock(f"node-{PINNED_NODE_VERSION}"):
         env = package_install_environment(v)
-        if node_runtime_major(env) < 24:
+        version = run(["node", "--version"], timeout=20, env=env)
+        if version.returncode != 0 or version.stdout.strip() != expected_version:
+            shutil.rmtree(node_root, ignore_errors=True)
             node_root.mkdir(parents=True, exist_ok=True)
             started = time.monotonic()
             result = run(
@@ -2299,7 +2293,7 @@ def ensure_sverklo_node_runtime(v: Tool, setup_log: Path) -> dict[str, str]:
                     "install",
                     "--prefix",
                     str(node_root),
-                    f"node@{SVERKLO_NODE_VERSION}",
+                    f"node@{PINNED_NODE_VERSION}",
                 ],
                 timeout=STAGE_POLICY.timeout_for("installation"),
                 env=env,
@@ -2310,13 +2304,15 @@ def ensure_sverklo_node_runtime(v: Tool, setup_log: Path) -> dict[str, str]:
             log_command(setup_log, result)
             if result.returncode != 0:
                 shutil.rmtree(node_root, ignore_errors=True)
-                raise RuntimeError("unable to install the Node.js 24 runtime required by sverklo")
+                raise RuntimeError(
+                    f"unable to install the pinned Node.js {PINNED_NODE_VERSION} runtime"
+                )
 
     env = setup_environment(v)
-    major = node_runtime_major(env)
-    if major < 24:
+    version = run(["node", "--version"], timeout=20, env=env)
+    if version.returncode != 0 or version.stdout.strip() != expected_version:
         raise RuntimeError(
-            "sverklo requires Node.js 24 or newer, but the configured benchmark runtime is older"
+            f"npm tools require the exact pinned Node.js {PINNED_NODE_VERSION} runtime"
         )
     return env
 
@@ -2445,7 +2441,7 @@ def publish_sverklo_model_cache(v: Tool, setup_log: Path, prefix: Path) -> dict[
 
 
 def setup_sverklo(v: Tool, setup_log: Path, version_file: Path, config_file: Path) -> None:
-    env = ensure_sverklo_node_runtime(v, setup_log)
+    env = ensure_pinned_node_runtime(v, setup_log)
     if shutil.which("node", path=env.get("PATH")):
         node_version = run(["node", "--version"], env=env).stdout.strip()
         version_file.write_text(f"node {node_version}\n", encoding="utf-8")
