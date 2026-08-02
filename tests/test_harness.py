@@ -547,9 +547,13 @@ class RetryPolicyTest(unittest.TestCase):
                 json.dumps(preservation), encoding="utf-8"
             )
             run_key = "issue-1::1::baseline-none"
+            invocation_id = "3" * 64
+            started_at = "2026-08-02T00:00:00+00:00"
             ledger = {
                 "profile": {"source": source},
                 "maximum_unique_runs": 1,
+                "maximum_launches": 2,
+                "maximum_launches_per_run": 2,
                 "planned_run_keys": [run_key],
                 "runs": {
                     run_key: {
@@ -561,7 +565,25 @@ class RetryPolicyTest(unittest.TestCase):
                 },
                 "orchestration_attempts": 0,
                 "actual_implementation_child_spawns": 0,
-                "events": [],
+                "current_invocation_id": invocation_id,
+                "invocations": [
+                    {
+                        "invocation_id": invocation_id,
+                        "sequence": 1,
+                        "started_at": started_at,
+                        "actual_child_spawns": 0,
+                        "maximum_child_spawns": 2,
+                        "maximum_child_spawns_per_run": 2,
+                        "limit_scope": "this_coordinator_invocation_only",
+                    }
+                ],
+                "events": [
+                    {
+                        "event": "coordinator_invocation_started",
+                        "invocation_id": invocation_id,
+                        "at": started_at,
+                    }
+                ],
             }
             ledger_path = suite_dir / "execution-ledger.json"
             ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
@@ -583,8 +605,29 @@ class RetryPolicyTest(unittest.TestCase):
                     suite.write_zero_completion_transition_checkpoint(
                         suite_dir, suite_dir, profile
                     )
+                ledger["orchestration_attempts"] = 0
+                ledger["events"].append(
+                    {
+                        "event": "unexpected_event",
+                        "invocation_id": invocation_id,
+                        "at": started_at,
+                    }
+                )
+                ledger_path.write_text(
+                    json.dumps(ledger), encoding="utf-8"
+                )
+                with self.assertRaisesRegex(
+                    SystemExit, "non-coordinator or inconsistent event"
+                ):
+                    suite.write_zero_completion_transition_checkpoint(
+                        suite_dir, suite_dir, profile
+                    )
             self.assertEqual("passed", receipt["status"])
             self.assertEqual(0, receipt["completed_comparison_records"])
+            self.assertEqual(1, receipt["execution_ledger"]["events"])
+            self.assertEqual(
+                1, receipt["execution_ledger"]["coordinator_invocations"]
+            )
             self.assertTrue(
                 (suite_dir / "qualified-suite-transition.json").is_file()
             )

@@ -1337,6 +1337,70 @@ def attach_model_preflight_to_qualified_suite(
         )
 
 
+def zero_completion_ledger_errors(ledger: dict[str, Any]) -> list[str]:
+    """Require zero run activity while permitting authenticated coordinator starts."""
+    errors: list[str] = []
+    runs = ledger.get("runs")
+    if ledger.get("orchestration_attempts") != 0:
+        errors.append("orchestration attempts are nonzero")
+    if ledger.get("actual_implementation_child_spawns") != 0:
+        errors.append("implementation child spawns are nonzero")
+    if not isinstance(runs, dict) or not runs:
+        errors.append("planned runs are missing")
+    elif any(
+        run.get("orchestration_attempt_count") != 0
+        or run.get("actual_child_spawn_count") != 0
+        or run.get("terminal") is not False
+        or run.get("attempts") != []
+        for run in runs.values()
+    ):
+        errors.append("a planned run contains activity")
+
+    invocations = ledger.get("invocations")
+    events = ledger.get("events")
+    if not isinstance(invocations, list) or not invocations:
+        errors.append("coordinator invocation evidence is missing")
+        return errors
+    if not isinstance(events, list):
+        errors.append("coordinator event evidence is malformed")
+        return errors
+
+    expected_events: list[dict[str, Any]] = []
+    for sequence, invocation in enumerate(invocations, start=1):
+        invocation_id = invocation.get("invocation_id")
+        started_at = invocation.get("started_at")
+        if (
+            not isinstance(invocation_id, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", invocation_id)
+            or not isinstance(started_at, str)
+            or not started_at
+            or invocation.get("sequence") != sequence
+            or invocation.get("actual_child_spawns") != 0
+            or invocation.get("maximum_child_spawns")
+            != ledger.get("maximum_launches")
+            or invocation.get("maximum_child_spawns_per_run")
+            != ledger.get("maximum_launches_per_run")
+            or invocation.get("limit_scope")
+            != "this_coordinator_invocation_only"
+        ):
+            errors.append("coordinator invocation evidence is inconsistent")
+            break
+        expected_events.append(
+            {
+                "event": "coordinator_invocation_started",
+                "invocation_id": invocation_id,
+                "at": started_at,
+            }
+        )
+    if events != expected_events:
+        errors.append("ledger contains a non-coordinator or inconsistent event")
+    if ledger.get("current_invocation_id") != invocations[-1].get(
+        "invocation_id"
+    ):
+        errors.append("current coordinator invocation identity differs")
+    return errors
+
+
 def write_zero_completion_transition_checkpoint(
     suite_dir: Path,
     ledger_dir: Path,
@@ -1501,22 +1565,11 @@ def write_zero_completion_transition_checkpoint(
             )
         ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
         runs = ledger.get("runs")
-        if (
-            ledger.get("orchestration_attempts") != 0
-            or ledger.get("actual_implementation_child_spawns") != 0
-            or ledger.get("events") != []
-            or not isinstance(runs, dict)
-            or not runs
-            or any(
-                run.get("orchestration_attempt_count") != 0
-                or run.get("actual_child_spawn_count") != 0
-                or run.get("terminal") is not False
-                or run.get("attempts") != []
-                for run in runs.values()
-            )
-        ):
+        activity_errors = zero_completion_ledger_errors(ledger)
+        if activity_errors:
             raise SystemExit(
-                "Zero-completion transition execution ledger contains activity"
+                "Zero-completion transition execution ledger contains activity: "
+                + "; ".join(activity_errors)
             )
         ledger_source = (ledger.get("profile") or {}).get("source") or {}
         if (
@@ -1566,7 +1619,8 @@ def write_zero_completion_transition_checkpoint(
             "sha256": sha256_file(ledger_paths[0]),
             "copies_validated": len(ledger_paths),
             "planned_run_count": len(ledgers[0]["runs"]),
-            "events": 0,
+            "events": len(ledgers[0]["events"]),
+            "coordinator_invocations": len(ledgers[0]["invocations"]),
             "orchestration_attempts": 0,
             "actual_implementation_child_spawns": 0,
         },
