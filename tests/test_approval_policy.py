@@ -34,7 +34,9 @@ def configuration(decider: str = "ai") -> dict:
 class ApprovalPolicyTest(unittest.TestCase):
     def fixture(self, root: Path, *, reviewer=None, decider: str = "ai") -> ApprovalController:
         repo = root / "repo"
+        private_temporary = root / "tmp"
         repo.mkdir(exist_ok=True)
+        private_temporary.mkdir(exist_ok=True)
         environment = {
             "PATH": "/usr/bin:/bin",
             "HOME": str(root / "home"),
@@ -55,7 +57,7 @@ class ApprovalPolicyTest(unittest.TestCase):
                 "SEALED_REPOSITORY": repo,
                 "PRIVATE_RUN_CACHE": root / "cache",
                 "DEPENDENCY_CACHE": root / "maven",
-                "PRIVATE_TEMPORARY": Path("/tmp"),
+                "PRIVATE_TEMPORARY": private_temporary,
             },
             environment=environment,
             journal=AuthenticatedJournal(root / "decisions.jsonl", root / "key"),

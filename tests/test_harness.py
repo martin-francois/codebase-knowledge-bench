@@ -2929,6 +2929,34 @@ class ModelPreflightTest(unittest.TestCase):
         self.assertEqual(1, len(events))
         self.assertEqual("command_execution", events[0]["item_type"])
 
+    def test_approval_reviewer_no_tool_contract_allows_prompt_echo(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            normalized = Path(temporary) / "normalized.jsonl"
+            normalized.write_text(
+                "\n".join(
+                    json.dumps(event)
+                    for event in (
+                        {
+                            "type": "item.started",
+                            "item": {"type": "user_message", "text": "request"},
+                        },
+                        {
+                            "type": "item.completed",
+                            "item": {"type": "user_message", "text": "request"},
+                        },
+                        {
+                            "type": "item.completed",
+                            "item": {"type": "agent_message", "text": "decision"},
+                        },
+                    )
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            events = runner.approval_reviewer_tool_events(normalized)
+
+        self.assertEqual([], events)
+
     def test_reconciled_solve_approval_request_does_not_invalidate_child(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
