@@ -80,6 +80,19 @@ class ApprovalPolicyTest(unittest.TestCase):
             },
         }
 
+    def test_authenticated_journal_persists_empty_state_on_initialization(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            journal_path = root / "decisions.jsonl"
+            journal = AuthenticatedJournal(journal_path, root / "key")
+
+            self.assertTrue(journal_path.is_file())
+            self.assertEqual(b"", journal_path.read_bytes())
+            self.assertEqual([], journal.events())
+            self.assertEqual(
+                [], validate_journal_snapshot(journal_path, (root / "key").read_bytes())
+            )
+
     def test_ai_decision_is_fsynced_then_reused_only_by_exact_fingerprint(self) -> None:
         calls = []
 

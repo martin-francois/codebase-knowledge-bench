@@ -261,6 +261,19 @@ class AuthenticatedJournal:
         self.key = key_path.read_bytes()
         if len(self.key) != 32:
             raise ValueError("approval journal key must contain exactly 32 bytes")
+        # An empty journal is still durable state: it proves that no approval
+        # events have occurred yet and lets a qualification-only suite resume
+        # without treating the absence of decisions as missing evidence.
+        descriptor = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+        directory = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
         self.ordinal = 0
         self.previous_hmac = "0" * 64
         self._validate_existing()
