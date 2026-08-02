@@ -1,7 +1,7 @@
 # Semantic maintenance self-review
 
 Overall: **passed** for pre-run approval, timing, exact-cost, access, and recovery behavior at
-commit `065611a3f98cf92fb4829759416eab9e9e1377ae`.
+commit `95bc8896047d2d684e28f6a27600e3f83d92ac6a`.
 
 - `LLM-001` preflight contract fidelity: **passed**
 - `LLM-002` base/reference outcome plausibility: **passed**
@@ -58,12 +58,15 @@ from solver children, and excluded from tool identity and evidence. Real Serena 
 1.6.9 installs succeeded with retained NFS installs and local caches, directly exercising the two
 failure modes observed in the stopped no-model qualification.
 
-Abort diagnostics now replace only the explicit external operator configuration and methodology
-input files, leaving unrelated host paths visible to the portability validator. If diagnostic
-publication itself fails, its exception is retained separately and cannot mask the original
-qualification gate reason.
+Portable diagnostics now replace the explicit external operator configuration and methodology
+input files plus every supported configured filesystem field, leaving unrelated host paths visible
+to the portability validator. This closes the configured SSD download-cache path found after all 21
+source-`52ff9b45` no-model cells passed but their suite archive failed closed. A copied 1,209-entry
+archive then passed extracted validation and source reconstruction without modifying the preserved
+failed suite. If diagnostic publication itself fails, its exception is retained separately and
+cannot mask the original qualification gate reason.
 
-Deterministic review evidence comprised 623 passing Python tests, focused runtime/cache-reuse,
+Deterministic review evidence comprised 624 passing Python tests, focused runtime/cache-reuse,
 exact-path publication, and abort-reason regression tests, plus direct inspection of the preserved
 qualification setup logs. Existing registry, command-guard, provenance, diagnostic-cohort, and
 preregistration findings remain unchanged by this pre-model setup repair.
