@@ -119,8 +119,82 @@ for line in sys.stdin:
         })
 '''
 
+FAKE_MCP_APPROVAL_SERVER = r'''
+import json
+import sys
+
+def send(message):
+    print(json.dumps(message, separators=(",", ":")), flush=True)
+
+for line in sys.stdin:
+    message = json.loads(line)
+    method = message.get("method")
+    if method == "initialize":
+        send({"id": message["id"], "result": {}})
+    elif method == "initialized":
+        pass
+    elif method == "thread/start":
+        send({"id": message["id"], "result": {"thread": {"id": "thread-1"}}})
+    elif method == "turn/start":
+        send({
+            "id": 91,
+            "method": "mcpServer/elicitation/request",
+            "params": {
+                "_meta": {"codex_approval_kind": "mcp_tool_call"},
+                "message": "fixture",
+                "mode": "form",
+                "requestedSchema": {"properties": {}, "type": "object"},
+                "serverName": "fixture",
+                "threadId": "thread-1",
+                "turnId": "turn-1",
+            },
+        })
+        approval = json.loads(next(sys.stdin))
+        if approval != {"id": 91, "result": {"action": "decline"}}:
+            raise SystemExit(9)
+        send({"id": message["id"], "result": {"turn": {"id": "turn-1"}}})
+        send({
+            "method": "item/completed",
+            "params": {
+                "threadId": "thread-1", "turnId": "turn-1",
+                "item": {"id": "item-1", "type": "agentMessage", "text": "DONE"},
+            },
+        })
+        send({
+            "method": "turn/completed",
+            "params": {
+                "threadId": "thread-1",
+                "turn": {"id": "turn-1", "status": "completed"},
+            },
+        })
+'''
+
 
 class CodexAppServerClientTest(unittest.TestCase):
+    def test_default_client_declines_mcp_elicitation_without_waiting(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            server = root / "fake_mcp_server.py"
+            server.write_text(FAKE_MCP_APPROVAL_SERVER, encoding="utf-8")
+            result = run_app_server(
+                [sys.executable, str(server)],
+                cwd=root,
+                environment=os.environ,
+                prompt="Reply DONE",
+                model="gpt-5.6-sol",
+                reasoning_effort="high",
+                yolo=False,
+                writable_roots=[str(root)],
+                journal_path=root / "app-server.jsonl",
+                normalized_path=root / "run.jsonl",
+                stderr_path=root / "run.stderr",
+                final_path=root / "final.txt",
+                timeout_seconds=10,
+            )
+
+        self.assertEqual(0, result["returncode"], result)
+        self.assertEqual(1, result["approval_requests"])
+        self.assertFalse(result["timed_out"])
     def test_missing_cache_write_usage_is_rejected_not_defaulted_to_zero(self) -> None:
         with self.assertRaisesRegex(
             ValueError, "cacheWriteInputTokens"

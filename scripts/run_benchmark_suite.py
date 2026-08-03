@@ -77,11 +77,13 @@ from approval_policy import (
     redact_text as redact_approval_text,
     sha256_value as approval_fingerprint,
     validate_journal_snapshot,
+    write_no_model_approval_protocol_qualification,
 )
 
 
 ACTIVE_PROGRESS_REPORTER: ProgressReporter | None = None
 ACTIVE_APPROVAL_PERSISTENCE_CONTEXT: tuple[Path, Path, dict[str, Any]] | None = None
+ACTIVE_LEDGER_COPY_CONTEXT: tuple[Path, Path] | None = None
 
 RECOVERY_CONTROL_ENV_KEYS = (
     "BENCH_FROZEN_EXECUTION_LEDGER",
@@ -1111,6 +1113,8 @@ def attach_model_preflight_to_qualified_suite(
         errors.append("qualification-only result contains model turns")
     if qualification.get("actual_implementation_child_spawns") != 0:
         errors.append("qualification-only result contains implementation child launches")
+    if qualification.get("approval_protocol_qualification_passed") is not True:
+        errors.append("qualification-only approval protocol did not pass")
     if qualification.get("qualification_cell_count") != expected_cells:
         errors.append("qualification-only cell count differs")
     if len(qualification.get("cells") or []) != expected_cells:
@@ -1133,6 +1137,7 @@ def attach_model_preflight_to_qualified_suite(
         if qualification.get(field) != profile.get(field):
             errors.append(f"qualification-only {field} differs")
     control_path = suite_dir / "qualification-control.json"
+    approval_protocol_path = suite_dir / "approval-protocol-qualification.json"
     toolchain_path = suite_dir / "toolchain-lock.json"
     plan_path = suite_dir / "suite-plan.json"
     archive_path = suite_dir / "suite-bundle.zip"
@@ -1143,6 +1148,7 @@ def attach_model_preflight_to_qualified_suite(
     )
     required = (
         control_path,
+        approval_protocol_path,
         toolchain_path,
         plan_path,
         archive_path,
@@ -1156,6 +1162,21 @@ def attach_model_preflight_to_qualified_suite(
             "qualification-only transition artifacts are missing: "
             + ", ".join(missing)
         )
+    if approval_protocol_path.is_file():
+        approval_protocol = json.loads(
+            approval_protocol_path.read_text(encoding="utf-8")
+        )
+        unhashed_protocol = dict(approval_protocol)
+        protocol_sha256 = unhashed_protocol.pop("content_sha256", None)
+        if (
+            approval_protocol.get("passed") is not True
+            or approval_protocol.get("model_turn_events") != 0
+            or approval_protocol.get("implementation_child_spawns") != 0
+            or protocol_sha256 != approval_fingerprint(unhashed_protocol)
+            or qualification.get("approval_protocol_qualification_sha256")
+            != protocol_sha256
+        ):
+            errors.append("qualification-only approval protocol evidence differs")
     if errors:
         raise SystemExit(
             "Invalid qualification-only transition: " + "; ".join(errors)
@@ -1232,6 +1253,7 @@ def attach_model_preflight_to_qualified_suite(
     preserved_names = (
         "qualification-only.json",
         "qualification-control.json",
+        "approval-protocol-qualification.json",
         "qualification-results.json",
         "qualification-comparisons.jsonl",
         "issue-preflight.json",
@@ -1530,6 +1552,7 @@ def write_zero_completion_transition_checkpoint(
     required_preserved_names = {
         "qualification-only.json",
         "qualification-control.json",
+        "approval-protocol-qualification.json",
         "qualification-results.json",
         "qualification-comparisons.jsonl",
         "issue-preflight.json",
@@ -4179,6 +4202,8 @@ def abort_suite(
     report: str,
     error: str,
 ) -> None:
+    if ACTIVE_LEDGER_COPY_CONTEXT is not None:
+        synchronize_live_execution_ledger(*ACTIVE_LEDGER_COPY_CONTEXT)
     (suite_dir / "suite-aborted.md").write_text(report, encoding="utf-8")
     try:
         write_suite_outputs(suite_dir, suite_id, issue_preflights, comparison_records)
@@ -4188,6 +4213,17 @@ def abort_suite(
             encoding="utf-8",
         )
     raise SystemExit(error)
+
+
+def synchronize_live_execution_ledger(ledger_dir: Path, suite_dir: Path) -> None:
+    """Copy the authoritative live ledger into the suite's durable checkpoint."""
+
+    if ledger_dir.resolve() == suite_dir.resolve():
+        return
+    for name in ("execution-ledger.json", "execution-ledger.md"):
+        source = ledger_dir / name
+        if source.is_file():
+            shutil.copy2(source, suite_dir / name)
 
 
 def resume_trust_error(record: dict[str, Any]) -> str | None:
@@ -4681,6 +4717,7 @@ def persist_approval_decisions(
             "item/commandExecution/requestApproval": "command_execution",
             "item/fileChange/requestApproval": "file_change",
             "item/permissions/requestApproval": "permission_profile",
+            "mcpServer/elicitation/request": "mcp_tool_call",
         }.get(str(request.get("method") or "")) if isinstance(request, dict) else None
         if (
             not isinstance(request, dict)
@@ -4695,9 +4732,12 @@ def persist_approval_decisions(
                 "item/commandExecution/requestApproval",
                 "item/fileChange/requestApproval",
                 "item/permissions/requestApproval",
+                "mcpServer/elicitation/request",
             }
             or request.get("permission")
-            not in {"command_execution", "file_change", "permission_profile"}
+            not in {
+                "command_execution", "file_change", "permission_profile", "mcp_tool_call"
+            }
             or request.get("permission") != expected_permission
             or not isinstance(request.get("command"), str)
             or not isinstance(request.get("cwd_scope"), str)
@@ -4765,6 +4805,7 @@ def persist_approval_decisions(
                     "command_execution": "command_permitted_once",
                     "file_change": "file_change_permitted_once",
                     "permission_profile": "permission_profile_granted_for_turn",
+                    "mcp_tool_call": "mcp_tool_call_permitted_once",
                 }.get(str(request.get("permission") or ""))
                 if event.get("decision") == "accept"
                 else "request_declined"
@@ -5036,6 +5077,8 @@ def _main() -> None:
     global RESUME_SUITE
     global ACTIVE_PROGRESS_REPORTER
     global ACTIVE_APPROVAL_PERSISTENCE_CONTEXT
+    global ACTIVE_LEDGER_COPY_CONTEXT
+    ACTIVE_LEDGER_COPY_CONTEXT = None
     if not RUNNER.exists():
         raise SystemExit(f"Missing runner: {RUNNER}")
     configuration_source = Path(os.environ["BENCH_CONFIG_SOURCE"])
@@ -5270,6 +5313,7 @@ def _main() -> None:
                 ledger,
                 interrupted_ledger_run_statuses(suite_dir),
             )
+        ACTIVE_LEDGER_COPY_CONTEXT = (ledger_dir, suite_dir)
     (suite_dir / "logs").mkdir(parents=True, exist_ok=True)
     tool_guide = BENCH / "tool-guides" / "quickstart-sources.md"
     if not tool_guide.is_file():
@@ -5422,12 +5466,24 @@ def _main() -> None:
             ),
         )
         validate_toolchain_lock(toolchain_lock)
+        approval_protocol_qualification = None
+        if EXECUTION_PROFILE == "symphony_trello":
+            approval_protocol_qualification = (
+                write_no_model_approval_protocol_qualification(
+                    suite_dir / "approval-protocol-qualification.json",
+                    configuration=RESOLVED_CONFIGURATION["approvals"],
+                    policy_sha256=str(profile["methodology_policy_sha256"]),
+                    frozen_configuration_sha256=str(
+                        profile["effective_configuration_sha256"]
+                    ),
+                )
+            )
         if QUALIFICATION_ONLY:
             if EXECUTION_PROFILE != "symphony_trello":
                 raise SystemExit("Qualification-only mode is restricted to the published profile")
             write_qualification_only_result(
                 suite_dir, qualification_records, toolchain_lock, schedule, profile,
-                qualification_control,
+                qualification_control, approval_protocol_qualification,
             )
             for name in ("execution-ledger.json", "execution-ledger.md"):
                 shutil.copy2(ledger_dir / name, suite_dir / name)
@@ -5561,8 +5617,7 @@ def _main() -> None:
             if frozen_invalidation:
                 stop_path = write_frozen_suite_stop(suite_dir, suite_id, record)
                 if EXECUTION_PROFILE == "symphony_trello":
-                    for name in ("execution-ledger.json", "execution-ledger.md"):
-                        shutil.copy2(ledger_dir / name, suite_dir / name)
+                    synchronize_live_execution_ledger(ledger_dir, suite_dir)
                 raise SystemExit(
                     "Frozen invalidation stopped the suite before another model child and "
                     f"before post-run derivation; see {stop_path}"
@@ -5695,8 +5750,7 @@ def _main() -> None:
                     f"No non-baseline tool implementation remained eligible in {record['comparison_id']}",
                 )
     if EXECUTION_PROFILE == "symphony_trello":
-        for name in ("execution-ledger.json", "execution-ledger.md"):
-            shutil.copy2(ledger_dir / name, suite_dir / name)
+        synchronize_live_execution_ledger(ledger_dir, suite_dir)
     persist_approval_decisions(suite_dir, configuration_source, profile)
     validation_returncode = write_suite_outputs(suite_dir, suite_id, issue_preflights, comparison_records)
     if validation_returncode != 0:
@@ -5844,6 +5898,16 @@ def main() -> None:
         try:
             _main()
         except BaseException as exc:
+            if ACTIVE_LEDGER_COPY_CONTEXT is not None:
+                try:
+                    synchronize_live_execution_ledger(
+                        *ACTIVE_LEDGER_COPY_CONTEXT
+                    )
+                except BaseException as ledger_error:
+                    exc.add_note(
+                        "Live execution-ledger checkpoint also failed: "
+                        f"{ledger_error}"
+                    )
             if ACTIVE_APPROVAL_PERSISTENCE_CONTEXT is not None:
                 try:
                     persist_approval_decisions(

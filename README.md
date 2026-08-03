@@ -186,7 +186,12 @@ target_repo_path = "/absolute/path/to/your-repository"
 Bubblewrap and Codex `workspace-write` active. For non-YOLO runs, adapters whose upstream MCP tools
 lack reliable read-only annotations expose only an audited knowledge-tool allowlist. Other requests
 go through the TOML-selected human or isolated AI decider under the same capability policy. A
-decision is always one-time at the Codex boundary, but an exact security-complete fingerprint lets
+Codex 0.146.0 MCP tool approval elicitation uses that same path: the unredacted parameters are
+fingerprinted but not persisted or shown to the reviewer, and only a contained form-mode tool call
+can be approved. Unknown, URL-mode, or broader elicitations are journaled and declined immediately.
+A no-model protocol check proves the exact request and response shape alongside the 21 tool/issue
+qualification cells before measured execution. The decision is always one-time at the Codex
+boundary, but an exact security-complete fingerprint lets
 later children reuse the recorded answer without asking again. Redacted display text is paired with
 a digest of the capability-relevant original parameters, so secret-different requests cannot collide
 without persisting the secret bytes. The authenticated journal is fsynced

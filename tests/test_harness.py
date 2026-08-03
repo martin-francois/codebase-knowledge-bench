@@ -269,10 +269,24 @@ class RetryPolicyTest(unittest.TestCase):
                     "pushed": True,
                 },
             }
+            approval_protocol = {
+                "passed": True,
+                "model_turn_events": 0,
+                "implementation_child_spawns": 0,
+            }
+            approval_protocol["content_sha256"] = hashlib.sha256(
+                json.dumps(
+                    approval_protocol, sort_keys=True, separators=(",", ":")
+                ).encode()
+            ).hexdigest()
             qualification = {
                 "passed": True,
                 "model_turn_events": 0,
                 "actual_implementation_child_spawns": 0,
+                "approval_protocol_qualification_passed": True,
+                "approval_protocol_qualification_sha256": approval_protocol[
+                    "content_sha256"
+                ],
                 "qualification_cell_count": 1,
                 "cells": [
                     {
@@ -295,6 +309,7 @@ class RetryPolicyTest(unittest.TestCase):
                 "qualification-control.json": {
                     "qualification_control_sha256": "control"
                 },
+                "approval-protocol-qualification.json": approval_protocol,
                 "qualification-results.json": {},
                 "issue-preflight.json": [],
                 "suite-plan.json": {
@@ -500,6 +515,7 @@ class RetryPolicyTest(unittest.TestCase):
             preserved_names = (
                 "qualification-only.json",
                 "qualification-control.json",
+                "approval-protocol-qualification.json",
                 "qualification-results.json",
                 "qualification-comparisons.jsonl",
                 "issue-preflight.json",
@@ -4847,6 +4863,45 @@ class ResumeAndValidatorTest(unittest.TestCase):
             self.assertEqual(
                 "RuntimeError: portable archive failed\n",
                 (suite_dir / "suite-publication-failure.log").read_text(encoding="utf-8"),
+            )
+
+    def test_abort_copies_authoritative_live_ledger_into_suite_checkpoint(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ledger_dir = root / "coordinator"
+            suite_dir = root / "suite"
+            ledger_dir.mkdir()
+            suite_dir.mkdir()
+            live = {"terminal_run_keys": 7, "actual_implementation_child_spawns": 7}
+            (ledger_dir / "execution-ledger.json").write_text(
+                json.dumps(live), encoding="utf-8"
+            )
+            (ledger_dir / "execution-ledger.md").write_text(
+                "# Live ledger\n\nSeven terminal children.\n", encoding="utf-8"
+            )
+            (suite_dir / "execution-ledger.json").write_text(
+                json.dumps({"terminal_run_keys": 0}), encoding="utf-8"
+            )
+            with mock.patch.object(
+                suite, "ACTIVE_LEDGER_COPY_CONTEXT", (ledger_dir, suite_dir)
+            ), mock.patch.object(suite, "write_suite_outputs", return_value=1):
+                with self.assertRaisesRegex(SystemExit, "run validation failed"):
+                    suite.abort_suite(
+                        suite_dir,
+                        "suite-id",
+                        [],
+                        [],
+                        "# Run validation failed\n",
+                        "run validation failed",
+                    )
+
+            self.assertEqual(
+                live,
+                json.loads((suite_dir / "execution-ledger.json").read_text()),
+            )
+            self.assertIn(
+                "Seven terminal children",
+                (suite_dir / "execution-ledger.md").read_text(),
             )
 
     def test_every_resolved_operator_path_field_has_an_exact_publication_mapping(self) -> None:

@@ -306,12 +306,13 @@ def _validate_approvals(value: Any) -> dict[str, Any]:
             "command_execution": "item/commandExecution/requestApproval",
             "file_change": "item/fileChange/requestApproval",
             "permission_profile": "item/permissions/requestApproval",
+            "mcp_tool_call": "mcpServer/elicitation/request",
         }
         method = method_by_permission.get(str(decision["permission"]))
         if method is None:
             raise ValueError(
                 f"approval decision {index} permission must be command_execution, "
-                "file_change, or permission_profile"
+                "file_change, permission_profile, or mcp_tool_call"
             )
         fingerprint_payload = {
             "method": method,

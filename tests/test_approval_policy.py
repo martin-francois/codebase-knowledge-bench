@@ -11,6 +11,7 @@ from scripts.approval_policy import (
     AuthenticatedJournal,
     merge_decisions_into_toml,
     validate_journal_snapshot,
+    write_no_model_approval_protocol_qualification,
 )
 
 
@@ -32,6 +33,30 @@ def configuration(decider: str = "ai") -> dict:
 
 
 class ApprovalPolicyTest(unittest.TestCase):
+    def test_no_model_protocol_qualification_exercises_mcp_accept_and_decline(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "qualification.json"
+            result = write_no_model_approval_protocol_qualification(
+                path,
+                configuration=configuration(),
+                policy_sha256="1" * 64,
+                frozen_configuration_sha256="2" * 64,
+            )
+            stored = json.loads(path.read_text())
+
+        self.assertTrue(result["passed"])
+        self.assertEqual(result, stored)
+        self.assertEqual(0, result["model_turn_events"])
+        self.assertTrue(all(result["checks"].values()))
+        self.assertEqual(
+            {"id": 1, "result": {"action": "accept", "content": {}}},
+            result["accepted_response"],
+        )
+        self.assertEqual(
+            {"id": 2, "result": {"action": "decline"}},
+            result["rejected_response"],
+        )
+
     def fixture(self, root: Path, *, reviewer=None, decider: str = "ai") -> ApprovalController:
         repo = root / "repo"
         private_temporary = root / "tmp"
@@ -79,6 +104,111 @@ class ApprovalPolicyTest(unittest.TestCase):
                 "availableDecisions": ["accept", "cancel"],
             },
         }
+
+    @staticmethod
+    def mcp_request(root: Path, *, tool_params: dict | None = None) -> dict:
+        return {
+            "id": 12,
+            "method": "mcpServer/elicitation/request",
+            "params": {
+                "_meta": {
+                    "codex_approval_kind": "mcp_tool_call",
+                    "persist": ["session", "always"],
+                    "tool_description": "Replaces the body of the given symbol.",
+                    "tool_params": tool_params or {
+                        "relative_path": "src/main/java/example/Client.java",
+                        "name_path": "Client",
+                        "body": "public interface Client {}",
+                    },
+                    "tool_params_display": [],
+                    "tool_title": "Replace Symbol Body",
+                },
+                "message": 'Allow the serena MCP server to run tool "replace_symbol_body"?',
+                "mode": "form",
+                "requestedSchema": {"properties": {}, "type": "object"},
+                "serverName": "serena",
+                "threadId": "thread-fixture",
+                "turnId": "turn-fixture",
+            },
+        }
+
+    def test_real_0146_mcp_tool_approval_uses_exact_wire_contract(self) -> None:
+        reviewer_calls: list[dict] = []
+
+        def reviewer(request):
+            reviewer_calls.append(dict(request))
+            return "accept", "contained repository edit", {"source": "fixture"}
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            controller = self.fixture(root, reviewer=reviewer)
+            response = controller.respond(self.mcp_request(root))
+            events = controller.journal.events()
+
+        self.assertEqual(
+            {"id": 12, "result": {"action": "accept", "content": {}}},
+            response,
+        )
+        self.assertEqual(1, len(reviewer_calls))
+        request = reviewer_calls[0]
+        self.assertEqual("mcp_tool_call", request["permission"])
+        self.assertEqual("$SEALED_REPOSITORY", request["cwd_scope"])
+        self.assertRegex(
+            request["command"],
+            r"^mcp-tool server=serena tool=replace_symbol_body params-sha256=[0-9a-f]{64}$",
+        )
+        self.assertNotIn("public interface Client", json.dumps(request))
+        self.assertEqual(
+            "mcp_tool_call_permitted_once",
+            events[-1]["effect"],
+        )
+
+    def test_unknown_or_external_mcp_elicitation_is_recorded_and_declined(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            controller = self.fixture(
+                root,
+                reviewer=lambda _request: (_ for _ in ()).throw(
+                    AssertionError("rejected MCP elicitation invoked reviewer")
+                ),
+            )
+            external = self.mcp_request(
+                root, tool_params={"url": "https://github.com/owner/repository"}
+            )
+            self.assertEqual(
+                {"id": 12, "result": {"action": "decline"}},
+                controller.respond(external),
+            )
+            arbitrary = self.mcp_request(root)
+            arbitrary["id"] = 13
+            arbitrary["params"]["mode"] = "url"
+            self.assertEqual(
+                {"id": 13, "result": {"action": "decline"}},
+                controller.respond(arbitrary),
+            )
+            malformed = self.mcp_request(root)
+            malformed["id"] = 14
+            malformed["params"]["serverName"] = "secret-bearing\nserver"
+            self.assertEqual(
+                {"id": 14, "result": {"action": "decline"}},
+                controller.respond(malformed),
+            )
+            decisions = [
+                event for event in controller.journal.events()
+                if event.get("event") == "approval_decision"
+            ]
+
+        self.assertEqual(3, len(decisions))
+        self.assertEqual("external", decisions[0]["request"]["network_scope"])
+        self.assertIn(
+            "unsupported_mcp_elicitation_mode",
+            decisions[1]["request"]["containment_reasons"],
+        )
+        self.assertNotIn("secret-bearing", json.dumps(decisions[2]["request"]))
+        self.assertIn(
+            "invalid_mcp_server_identity",
+            decisions[2]["request"]["containment_reasons"],
+        )
 
     def test_authenticated_journal_persists_empty_state_on_initialization(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

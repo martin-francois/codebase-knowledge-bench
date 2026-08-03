@@ -728,6 +728,8 @@ def _approval_response(message: Mapping[str, Any]) -> dict[str, Any] | None:
             "id": request_id,
             "result": {"permissions": {}, "scope": "turn"},
         }
+    if method == "mcpServer/elicitation/request":
+        return {"id": request_id, "result": {"action": "decline"}}
     if method in {"execCommandApproval", "applyPatchApproval"}:
         return {
             "id": request_id,

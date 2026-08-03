@@ -844,6 +844,7 @@ def _derive_current_row_from_verified_inputs(
             "item/commandExecution/requestApproval": "command_execution",
             "item/fileChange/requestApproval": "file_change",
             "item/permissions/requestApproval": "permission_profile",
+            "mcpServer/elicitation/request": "mcp_tool_call",
         }.get(str(request.get("method") or ""))
         if (
             any(value in (None, "") for value in fingerprint_payload.values())
