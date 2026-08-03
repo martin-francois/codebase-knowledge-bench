@@ -160,6 +160,9 @@ starter example. Copy it and every referenced methodology file into an external 
 directory, preserving their relative paths, then replace its example values. This mutable working
 TOML receives authenticated cached approval decisions at safe boundaries. You can also use
 [`configs/default.toml`](configs/default.toml) as a complete reference.
+Accumulated decisions remain file-backed: internal workers receive the frozen TOML path rather than
+copying the cache into every process environment, so a long-running benchmark does not eventually
+hit operating-system argument/environment limits.
 
 Run your suite. The path may be absolute or relative to your current directory:
 

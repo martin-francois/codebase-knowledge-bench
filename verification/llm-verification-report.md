@@ -27,7 +27,13 @@ still complete before solves, but any genuinely non-runnable row makes every row
 pre-solve gate, so the comparison cannot launch a partial implementation matrix. Custom repository,
 stack, and issue profiles retain the generic TOML switch.
 
-The deterministic review used Python 3.14.3, 633 passing repository tests, the passing automated
+The first source-`2e8c1a0029c8` no-model command stopped before suite creation, model use, or child
+launch because the accumulated approval cache exceeded Linux's process-environment limit. Internal
+workers now receive only the suite-start frozen TOML path and use the authenticated journal for
+later decisions. A 300 KB configuration fixture proves subprocess launch without truncating or
+discarding any approval, while the operator TOML remains the only public configuration surface.
+
+The deterministic review used Python 3.14.3, 634 passing repository tests, the passing automated
 verification registry, strict replacement-policy validation, and focused, broad-relevant, and
 irrelevant smoke fixtures. No additional model call was used. The final source still needs the
 complete 21-cell no-model qualification, fresh exact-model cost-and-reviewer readiness, zero-child

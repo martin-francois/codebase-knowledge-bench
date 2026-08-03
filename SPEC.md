@@ -170,6 +170,14 @@ The seven setups are Native Codex (`baseline-none`), Sverklo, code-review-graph,
 jCodeMunch, and Serena. The cohort uses model `gpt-5.6-sol`, high reasoning, Codex CLI `0.146.0`,
 and `yolo=false`. These dimensions describe the current evidence and do not narrow `PUR-003`.
 
+`CFG-010` Approval decisions remain in the strict operator TOML and authenticated journal, but their
+potentially unbounded cache MUST NOT be copied into a process-environment value. Internal workers
+receive only an absolute path to the suite-start frozen TOML and revalidate its approval table;
+decisions made after that snapshot are available only through the authenticated journal until the
+next operator invocation. This transport MUST support accumulated approval configurations larger
+than Linux argument/environment limits without truncation, cache loss, or changed decision
+semantics.
+
 ## 5. Requirement contracts
 
 `CON-001` The only live correctness scopes are `requested_behavior`, `required_regression`, and
@@ -1221,6 +1229,12 @@ zero-child transition, source-bound target package, and sole fresh replay MUST p
 clean pushed source under new policy, cohort, execution, and SSD evidence identities. All prior
 attempts remain immutable. Behavioral retries remain prohibited, every seven-child release audit
 remains mandatory, and another frozen invalidation again requires explicit owner authorization.
+
+Before a suite namespace, model turn, or implementation child existed for the replacement, the
+source-`2e8c1a0029c8` no-model gate failed while starting dashboard installation because the
+accumulated operator approval cache had been serialized into one oversized process-environment
+value. This is pre-measurement configuration-transport work under `CFG-010`, not a measured matrix
+launch or behavioral retry. The corrected source MUST repeat every gate from the beginning.
 
 ## 18. Verification registry and semantic review
 

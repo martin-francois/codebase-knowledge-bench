@@ -431,6 +431,8 @@ For every requested behavior change, update `SPEC.md` and the machine-readable p
   reclassify evidence in place, or relaunch a prior child. Broad but issue-anchored tool output passes
   availability smoke while remaining nonfocused attribution evidence. The published profile must
   abort its whole comparison before implementation when any row genuinely fails setup or smoke.
+  Keep accumulated approvals file-backed through the suite-start frozen TOML and authenticated
+  journal; never serialize the unbounded decision cache into a subprocess environment value.
   Bind the current authorization into the methodology-policy hash, use new cohort/execution/evidence
   roots, repeat all 21 no-model cells, a fresh exact-model cost-and-reviewer-readiness request,
   zero-child transition, source-bound target package, and one fresh replay, and retain every existing

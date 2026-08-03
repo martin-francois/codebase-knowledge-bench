@@ -6089,6 +6089,26 @@ class ComplianceRegressionTest(unittest.TestCase):
             self.assertEqual(expected_cache, cache_resolved["tool_download_cache_root"])
             self.assertEqual(expected_cache, os.environ["BENCH_TOOL_DOWNLOAD_CACHE_ROOT"])
 
+    def test_large_approval_cache_is_file_backed_not_process_environment(self) -> None:
+        import benchmark_config
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config = Path(tmp) / "large-approvals.toml"
+            large_model_identity = "m" * 300_000
+            approvals = approvals_table().replace("gpt-5.6-sol", large_model_identity)
+            config.write_text(
+                "[benchmark]\n"
+                + approvals
+                + issue_table(issue_id="i", issue_number=1),
+                encoding="utf-8",
+            )
+            with mock.patch.dict(os.environ, {}, clear=True):
+                resolved = benchmark_config.apply_configuration([str(config)])
+                self.assertEqual(large_model_identity, resolved["approvals"]["reviewer_model"])
+                self.assertEqual(str(config), os.environ["BENCH_APPROVALS_PATH"])
+                self.assertNotIn("BENCH_APPROVALS_JSON", os.environ)
+                subprocess.run(["/bin/true"], env=dict(os.environ), check=True)
+
     def test_dirty_harness_diagnostic_control_survives_toml_normalization(self) -> None:
         import benchmark_config
 
@@ -6557,6 +6577,7 @@ with mock.patch.object(module, 'run', return_value=result):
         outputs = []
         for seed in ("1", "2", "3"):
             environment = dict(os.environ, PYTHONHASHSEED=seed, BENCH_COMPARISON_ID="seed-fixture")
+            environment.pop("BENCH_APPROVALS_PATH", None)
             completed = subprocess.run(
                 [sys.executable, "-c", script],
                 cwd=ROOT,

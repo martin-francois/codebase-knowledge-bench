@@ -5279,6 +5279,10 @@ def _main() -> None:
     frozen_configuration_source = suite_dir / "frozen-configuration-source.toml"
     if not frozen_configuration_source.is_file():
         shutil.copy2(configuration_source, frozen_configuration_source)
+    # Internal workers read the exact suite-start approval configuration by
+    # path. Later decisions remain available from the authenticated journal and
+    # are merged into the operator TOML only at safe boundaries.
+    os.environ["BENCH_APPROVALS_PATH"] = str(frozen_configuration_source)
     ACTIVE_APPROVAL_PERSISTENCE_CONTEXT = (
         suite_dir,
         configuration_source,
