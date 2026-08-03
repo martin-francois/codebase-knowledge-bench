@@ -65,35 +65,36 @@ class PreregistrationContractTests(unittest.TestCase):
     def test_owner_authorizes_one_further_source_bound_replacement_only(self) -> None:
         authorization = METHODOLOGY_POLICY["replacement_authorization"]
         expected = {
-            "schema_id": "owner-authorized-source-bound-replacement-v9",
-            "authorization_id": "source-2d0260dd8ecf-semantic-scoring-followup-2026-08-03",
-            "prior_execution_id": "symphony-trello-cohort-5143e77410c0-source-2d0260dd8ecf",
-            "prior_source_commit": "2d0260dd8ecfe872fc329f6fdb0965687754b82a",
-            "prior_source_tree": "ed68bf9efea3258da2d62943f5e5ccfa2f062a9a",
-            "prior_cohort_configuration_sha256": "5143e77410c036ffdf15d2b1438cfedd362a9aee0ac9374fef35964b283fbdcb",
-            "prior_completed_comparison_count": 2,
-            "prior_validated_row_count": 14,
-            "prior_release_audited_row_count": 7,
+            "schema_id": "owner-authorized-source-bound-replacement-v10",
+            "authorization_id": "source-68eff8e11d7a-loopback-guard-followup-2026-08-03",
+            "prior_execution_id": "symphony-trello-cohort-96f438751468-source-68eff8e11d7a",
+            "prior_source_commit": "68eff8e11d7a202d8547966a195af9c29634ba97",
+            "prior_source_tree": "8cfc904f832854ac99bf250e5d038d7e5a24203d",
+            "prior_cohort_configuration_sha256": "96f4387514687b537850b035989db57a7fcfddafc30068ce5f7137c3d0eeb33e",
+            "prior_completed_comparison_count": 0,
+            "prior_validated_row_count": 0,
+            "prior_release_audited_row_count": 0,
             "prior_publishable_row_count": 0,
-            "prior_implementation_child_spawn_count": 14,
-            "prior_terminal_model_turn_count": 14,
+            "prior_implementation_child_spawn_count": 1,
+            "prior_terminal_model_turn_count": 0,
             "prior_pre_solve_rejected_run_count": 0,
-            "prior_incomplete_model_turn_count": 0,
-            "prior_reconciled_request_count": 854,
-            "prior_exact_cost_row_count": 14,
-            "prior_reconciled_exact_cost_usd_nanos": 54839733000,
-            "prior_approval_request_count": 96,
-            "prior_blocked_prohibited_attempt_count": 2476,
+            "prior_incomplete_model_turn_count": 1,
+            "prior_reconciled_request_count": 0,
+            "prior_exact_cost_row_count": 0,
+            "prior_reconciled_exact_cost_usd_nanos": 0,
+            "prior_approval_request_count": 1,
+            "prior_blocked_prohibited_attempt_count": 14,
             "prior_invalidating_access_count": 0,
-            "prior_execution_ledger_sha256": "dfd4694f0162da67eae67b498d0fcca7947a14f39637392be1827debf4ed06d0",
+            "prior_execution_ledger_sha256": "37943124ef03b807293878689a2e9ad2e34d2cf4d24bd53f46d11837dec921e3",
         }
         for field, value in expected.items():
             with self.subTest(field=field):
                 self.assertEqual(value, authorization[field])
-        self.assertEqual(2, len(authorization["prior_completed_comparison_ids"]))
-        self.assertEqual(2, len(authorization["prior_results_sha256"]))
-        self.assertEqual(1, len(authorization["prior_release_audit_sha256"]))
-        self.assertEqual(2, len(authorization["prior_validation_log_sha256"]))
+        self.assertEqual(0, len(authorization["prior_completed_comparison_ids"]))
+        self.assertEqual(0, len(authorization["prior_results_sha256"]))
+        self.assertEqual(0, len(authorization["prior_release_audit_sha256"]))
+        self.assertEqual(0, len(authorization["prior_validation_log_sha256"]))
+        self.assertEqual(6, len(authorization["prior_partial_artifacts_sha256"]))
         self.assertEqual(1, authorization["authorized_matrix_launches"])
         self.assertTrue(authorization["preserve_prior_evidence"])
         self.assertTrue(authorization["stop_on_frozen_invalidation"])
@@ -113,17 +114,17 @@ class PreregistrationContractTests(unittest.TestCase):
             ("resume_prior_execution", True),
             ("relaunch_prior_children", True),
             ("authorized_matrix_launches", 2),
-            ("prior_terminal_model_turn_count", 0),
-            ("prior_release_audited_row_count", 0),
+            ("prior_terminal_model_turn_count", 1),
+            ("prior_release_audited_row_count", 7),
             ("prior_publishable_row_count", 1),
-            ("prior_approval_request_count", 1),
-            ("prior_implementation_child_spawn_count", 21),
-            ("prior_incomplete_model_turn_count", 1),
+            ("prior_approval_request_count", 0),
+            ("prior_implementation_child_spawn_count", 2),
+            ("prior_incomplete_model_turn_count", 0),
             ("prior_reconciled_request_count", 27),
             ("prior_blocked_prohibited_attempt_count", 0),
             ("prior_invalidating_access_count", 1),
-            ("prior_exact_cost_row_count", 0),
-            ("prior_reconciled_exact_cost_usd_nanos", 0),
+            ("prior_exact_cost_row_count", 1),
+            ("prior_reconciled_exact_cost_usd_nanos", 1),
             ("behavioral_retry_within_replacement_allowed", True),
             ("stop_on_frozen_invalidation", False),
         ):
@@ -144,7 +145,7 @@ class PreregistrationContractTests(unittest.TestCase):
                 text = (ROOT / relative_path).read_text(encoding="utf-8")
                 self.assertIn(execution_id, text)
         self.assertIn(
-            "`LIF-017`",
+            "`LIF-018`",
             (ROOT / "SPEC.md").read_text(encoding="utf-8"),
         )
 
