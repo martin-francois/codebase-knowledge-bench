@@ -135,6 +135,19 @@ class PreregistrationContractTests(unittest.TestCase):
                 ):
                     validate_methodology_policy(mutated)
 
+    def test_current_replacement_identity_is_consistent_in_normative_docs(self) -> None:
+        execution_id = METHODOLOGY_POLICY["replacement_authorization"][
+            "prior_execution_id"
+        ]
+        for relative_path in ("SPEC.md", "docs/methodology.md", "AGENTS.md"):
+            with self.subTest(path=relative_path):
+                text = (ROOT / relative_path).read_text(encoding="utf-8")
+                self.assertIn(execution_id, text)
+        self.assertIn(
+            "`LIF-017`",
+            (ROOT / "SPEC.md").read_text(encoding="utf-8"),
+        )
+
     def test_toolchain_source_lock_freezes_all_six_integrations(self) -> None:
         cohort = METHODOLOGY_POLICY["current_cohort"]
         lock = json.loads(
