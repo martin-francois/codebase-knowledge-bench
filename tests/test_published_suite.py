@@ -51,6 +51,7 @@ class PublishedSuiteControlTest(unittest.TestCase):
             "symphony-trello",
             config["suite_id"],
         )
+        self.assertTrue(config["abort_execution_on_smoke_failure"])
         with mock.patch.object(published_suite, "git_identity", return_value={
             "commit": "a" * 40, "tree": "b" * 40, "origin_main": "a" * 40,
             "clean": True, "pushed": True, "status": "",
