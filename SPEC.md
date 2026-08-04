@@ -699,7 +699,13 @@ comparisons, the coordinator MUST validate and publish a deterministic transitio
 the preserved qualification archive, exact model-preflight lock, frozen source and plan, and
 zero-activity execution ledger. It MUST NOT construct, validate, or publish an incomplete
 `suite-results.json`; fixed-matrix result validation remains reserved for a complete published
-matrix. Existing completed-comparison checkpoint behavior remains unchanged.
+matrix. Existing completed-comparison checkpoint behavior remains unchanged. After the transition
+has preserved the original qualification bundle, every later resume MUST validate the
+qualification-only approval-protocol hash against that content-addressed preserved copy. A live
+approval-protocol qualification regenerated during normal coordinator setup is separate operational
+evidence: it MUST be internally valid, no-model, and zero-child, but its ephemeral paths,
+timestamps, and authenticated journal MUST NOT be required to reproduce the original content hash.
+The preserved copy and preservation manifest remain immutable and authoritative.
 
 `QUA-006` Every qualification cell MUST bind the exact isolated Codex configuration that a later
 smoke or solve child will receive. That configuration MUST trust exactly the cell's sealed
@@ -1346,6 +1352,39 @@ the replacement's first implementation child, commit and push this rule, policy/
 coverage, traceability, and semantic review, then repeat the full harness suite, all 21 no-model
 qualification cells, fresh exact-model cost-and-reviewer readiness, zero-child transition,
 source-bound target package, and sole fresh replay from the exact clean source. Behavioral retries
+remain prohibited, every terminal seven-child comparison still requires independent release audit
+before the next comparison, and another frozen invalidation requires explicit owner authorization.
+
+`LIF-020` Execution
+`symphony-trello-cohort-47256aafb090-source-59d354a76b0e` MUST remain immutable diagnostic
+evidence after the required comparison-boundary stop and resume check found that the qualification
+transition was not idempotent. The initial paid transition correctly preserved the original
+no-model approval-protocol qualification. Normal setup then regenerated the live protocol evidence
+with new ephemeral paths, timestamps, and an authenticated journal. A later safe-boundary resume
+incorrectly compared that regenerated content hash with the original qualification-only hash and
+failed closed before a coordinator ledger invocation or measured child launched.
+
+The stopped execution contains three independently release-audited comparisons, 21 diagnostically
+trust-valid exact-cost rows, 21 implementation launches and terminal model turns, 1,083 reconciled
+solve requests, 141 approval requests, 1,131 fully blocked prohibited attempts, zero invalidating
+accesses, and 77,879,563,000 USD nanos of diagnostic-only solve cost. It is bound to source commit
+`59d354a76b0eba8e699b00da714dbf9abceef264`, tree
+`f1c184ea9c26e74a336ec0cf9ace2372b03a3e0b`, effective configuration SHA-256
+`47256aafb09015bf55ea3c202dc2b7472d3cd5374d884bfaa03bf991e9ebd7b1`, comparisons SHA-256
+`14bc73fa150132e03c2d0e9bd2899f2d96383db8f467a5fbff8d3c68333f1b59`, authoritative-ledger
+SHA-256 `2dae5ab150beb7e5984ebe4ee1073d83975a99ef22960bba571df72c984f2344`, and coordinator-defect
+receipt SHA-256 `2a4e03dc918372c4bb0434fb448443a7e8b9645c790407f1ad3ac3d752dc4a77`.
+None of its rows may be resumed, reused, combined, reclassified, or published.
+
+The owner's standing instruction to inspect each completed block and make every necessary
+trustworthiness repair authorizes exactly one additional independently identified, source-bound
+84-key cohort after idempotent transition validation is fixed. Re-entry MUST validate the original
+hash against the immutable history copy and separately fail closed if regenerated live protocol
+evidence is invalid. Before the new cohort's first measured child, commit and push the fix, strict
+policy/schema, regression coverage, traceability, and semantic review; then repeat the full harness
+suite, all 21 no-model qualification cells, fresh exact-model cost-and-reviewer readiness,
+zero-child transition, source-bound target package, sole fresh replay, and an explicit second
+zero-child resume proving transition idempotence from the exact clean source. Behavioral retries
 remain prohibited, every terminal seven-child comparison still requires independent release audit
 before the next comparison, and another frozen invalidation requires explicit owner authorization.
 

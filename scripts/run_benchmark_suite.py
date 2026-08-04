@@ -1162,10 +1162,35 @@ def attach_model_preflight_to_qualified_suite(
             "qualification-only transition artifacts are missing: "
             + ", ".join(missing)
         )
-    if approval_protocol_path.is_file():
-        approval_protocol = json.loads(
-            approval_protocol_path.read_text(encoding="utf-8")
+    archive_sha256 = sha256_file(archive_path) if archive_path.is_file() else ""
+    history_dir = (
+        suite_dir / "qualification-only-history" / archive_sha256
+    )
+    complete_model_state = all(
+        path.is_file()
+        for path in (
+            suite_dir / "model-preflight.json",
+            suite_dir / "model-preflight-lock.json",
+            suite_dir / "model-preflight-lock.md",
         )
+    ) and (suite_dir / "model-preflight").is_dir()
+    preserved_approval_protocol_path = (
+        history_dir / "approval-protocol-qualification.json"
+    )
+    authoritative_approval_protocol_path = (
+        preserved_approval_protocol_path
+        if complete_model_state and preserved_approval_protocol_path.is_file()
+        else approval_protocol_path
+    )
+
+    def validate_approval_protocol(
+        path: Path, *, require_qualification_hash: bool
+    ) -> list[str]:
+        protocol_errors: list[str] = []
+        try:
+            approval_protocol = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            return [f"approval protocol evidence is unreadable: {exc}"]
         unhashed_protocol = dict(approval_protocol)
         protocol_sha256 = unhashed_protocol.pop("content_sha256", None)
         if (
@@ -1173,10 +1198,34 @@ def attach_model_preflight_to_qualified_suite(
             or approval_protocol.get("model_turn_events") != 0
             or approval_protocol.get("implementation_child_spawns") != 0
             or protocol_sha256 != approval_fingerprint(unhashed_protocol)
-            or qualification.get("approval_protocol_qualification_sha256")
+        ):
+            protocol_errors.append("approval protocol evidence is invalid")
+        if (
+            require_qualification_hash
+            and qualification.get("approval_protocol_qualification_sha256")
             != protocol_sha256
         ):
-            errors.append("qualification-only approval protocol evidence differs")
+            protocol_errors.append("approval protocol evidence differs")
+        return protocol_errors
+
+    if authoritative_approval_protocol_path.is_file():
+        errors.extend(
+            validate_approval_protocol(
+                authoritative_approval_protocol_path,
+                require_qualification_hash=True,
+            )
+        )
+    if (
+        approval_protocol_path.is_file()
+        and authoritative_approval_protocol_path != approval_protocol_path
+    ):
+        errors.extend(
+            "current regenerated " + error
+            for error in validate_approval_protocol(
+                approval_protocol_path,
+                require_qualification_hash=False,
+            )
+        )
     if errors:
         raise SystemExit(
             "Invalid qualification-only transition: " + "; ".join(errors)
@@ -1223,7 +1272,6 @@ def attach_model_preflight_to_qualified_suite(
     semantic_validation = json.loads(
         semantic_validation_path.read_text(encoding="utf-8")
     )
-    archive_sha256 = sha256_file(archive_path)
     checksum_fields = archive_checksum_path.read_text(
         encoding="utf-8"
     ).strip().split()
@@ -1241,9 +1289,6 @@ def attach_model_preflight_to_qualified_suite(
             "Invalid qualification-only transition: " + "; ".join(errors)
         )
 
-    history_dir = (
-        suite_dir / "qualification-only-history" / archive_sha256
-    )
     history_dir.mkdir(parents=True, exist_ok=True)
     configured_source = MODEL_PREFLIGHT_REUSE_FROM or None
     if configured_source is None:
@@ -1276,33 +1321,40 @@ def attach_model_preflight_to_qualified_suite(
         destination = history_dir / name
         if destination.exists():
             if sha256_file(destination) != sha256_file(source_path):
-                if name != "suite-plan.json":
+                if (
+                    name == "approval-protocol-qualification.json"
+                    and complete_model_state
+                    and authoritative_approval_protocol_path == destination
+                ):
+                    pass
+                elif name != "suite-plan.json":
                     raise SystemExit(
                         f"Changed qualification-only preservation artifact: {name}"
                     )
-                preserved_plan = json.loads(
-                    destination.read_text(encoding="utf-8")
-                )
-                transitioned_plan = json.loads(
-                    source_path.read_text(encoding="utf-8")
-                )
-                if (
-                    preserved_plan.get("model_preflight_reuse_from")
-                    is not None
-                ):
-                    raise SystemExit(
-                        "Qualification-only preserved plan already contains "
-                        "a model preflight source"
+                else:
+                    preserved_plan = json.loads(
+                        destination.read_text(encoding="utf-8")
                     )
-                expected_transitioned_plan = dict(preserved_plan)
-                expected_transitioned_plan[
-                    "model_preflight_reuse_from"
-                ] = configured_source
-                if transitioned_plan != expected_transitioned_plan:
-                    raise SystemExit(
-                        "Changed qualification-only preservation artifact: "
-                        f"{name}"
+                    transitioned_plan = json.loads(
+                        source_path.read_text(encoding="utf-8")
                     )
+                    if (
+                        preserved_plan.get("model_preflight_reuse_from")
+                        is not None
+                    ):
+                        raise SystemExit(
+                            "Qualification-only preserved plan already contains "
+                            "a model preflight source"
+                        )
+                    expected_transitioned_plan = dict(preserved_plan)
+                    expected_transitioned_plan[
+                        "model_preflight_reuse_from"
+                    ] = configured_source
+                    if transitioned_plan != expected_transitioned_plan:
+                        raise SystemExit(
+                            "Changed qualification-only preservation artifact: "
+                            f"{name}"
+                        )
         else:
             shutil.copy2(source_path, destination)
         preserved.append(
@@ -1341,14 +1393,6 @@ def attach_model_preflight_to_qualified_suite(
         raise SystemExit(
             "Qualification-only plan contains a conflicting model preflight source"
         )
-    complete_model_state = all(
-        path.is_file()
-        for path in (
-            suite_dir / "model-preflight.json",
-            suite_dir / "model-preflight-lock.json",
-            suite_dir / "model-preflight-lock.md",
-        )
-    ) and (suite_dir / "model-preflight").is_dir()
     any_model_state = any(
         path.exists()
         for path in (

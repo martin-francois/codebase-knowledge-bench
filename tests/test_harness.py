@@ -380,8 +380,41 @@ class RetryPolicyTest(unittest.TestCase):
                 (suite_dir / "model-preflight-lock.md").write_text(
                     "# Model preflight lock\n", encoding="utf-8"
                 )
+                regenerated_approval_protocol = dict(approval_protocol)
+                regenerated_approval_protocol["ephemeral_environment"] = (
+                    "a later no-model qualification invocation"
+                )
+                regenerated_approval_protocol.pop("content_sha256")
+                regenerated_approval_protocol["content_sha256"] = (
+                    hashlib.sha256(
+                        json.dumps(
+                            regenerated_approval_protocol,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ).encode()
+                    ).hexdigest()
+                )
+                (suite_dir / "approval-protocol-qualification.json").write_text(
+                    json.dumps(regenerated_approval_protocol), encoding="utf-8"
+                )
                 suite.attach_model_preflight_to_qualified_suite(
                     suite_dir, profile
+                )
+                invalid_regenerated_protocol = dict(
+                    regenerated_approval_protocol
+                )
+                invalid_regenerated_protocol["passed"] = False
+                (suite_dir / "approval-protocol-qualification.json").write_text(
+                    json.dumps(invalid_regenerated_protocol), encoding="utf-8"
+                )
+                with self.assertRaisesRegex(
+                    SystemExit, "current regenerated approval protocol evidence is invalid"
+                ):
+                    suite.attach_model_preflight_to_qualified_suite(
+                        suite_dir, profile
+                    )
+                (suite_dir / "approval-protocol-qualification.json").write_text(
+                    json.dumps(regenerated_approval_protocol), encoding="utf-8"
                 )
                 changed_plan = json.loads(
                     (suite_dir / "suite-plan.json").read_text(
