@@ -5018,21 +5018,53 @@ class ResumeAndValidatorTest(unittest.TestCase):
             )
 
     def test_abort_copies_authoritative_live_ledger_into_suite_checkpoint(self) -> None:
+        import published_suite
+
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             ledger_dir = root / "coordinator"
             suite_dir = root / "suite"
-            ledger_dir.mkdir()
             suite_dir.mkdir()
-            live = {"terminal_run_keys": 7, "actual_implementation_child_spawns": 7}
-            (ledger_dir / "execution-ledger.json").write_text(
-                json.dumps(live), encoding="utf-8"
+            schedule = published_suite.balanced_schedule(
+                ["issue-7"], 1, ["baseline-none"], 7
             )
-            (ledger_dir / "execution-ledger.md").write_text(
-                "# Live ledger\n\nSeven terminal children.\n", encoding="utf-8"
+            live = published_suite.initialize_ledger(
+                ledger_dir,
+                {"profile": "abort-copy-fixture"},
+                schedule,
+                maximum_unique_runs=1,
+                maximum_launches=2,
+                maximum_launches_per_run=2,
             )
+            key = published_suite.begin_block(
+                ledger_dir,
+                live,
+                "issue-7",
+                1,
+                ["baseline-none"],
+                output_root=ledger_dir,
+            )[0]
+            receipt = published_suite.record_implementation_child_spawn(
+                ledger_dir, live, key, 1234
+            )
+            result = root / "results.json"
+            result.write_text(
+                json.dumps(
+                    {
+                        "runs": [
+                            {
+                                "tool": "baseline-none",
+                                "status": "solve_completed",
+                                "intended_tool_successful_solve_invocation_count": 0,
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            published_suite.finish_block(ledger_dir, live, [key], result)
             (suite_dir / "execution-ledger.json").write_text(
-                json.dumps({"terminal_run_keys": 0}), encoding="utf-8"
+                json.dumps({"stale": True}), encoding="utf-8"
             )
             with mock.patch.object(
                 suite, "ACTIVE_LEDGER_COPY_CONTEXT", (ledger_dir, suite_dir)
@@ -5052,8 +5084,12 @@ class ResumeAndValidatorTest(unittest.TestCase):
                 json.loads((suite_dir / "execution-ledger.json").read_text()),
             )
             self.assertIn(
-                "Seven terminal children",
+                "Completed benchmark runs: `1/1`",
                 (suite_dir / "execution-ledger.md").read_text(),
+            )
+            self.assertEqual(
+                (ledger_dir / "child-spawn-receipts" / f"{receipt['receipt_sha256']}.json").read_bytes(),
+                (suite_dir / "child-spawn-receipts" / f"{receipt['receipt_sha256']}.json").read_bytes(),
             )
 
     def test_every_resolved_operator_path_field_has_an_exact_publication_mapping(self) -> None:

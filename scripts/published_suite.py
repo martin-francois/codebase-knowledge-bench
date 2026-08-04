@@ -618,6 +618,8 @@ def initialize_ledger(
         for field, value in expected.items():
             if not json_semantically_equal(ledger.get(field), value):
                 raise SystemExit(f"Published-suite ledger {field} does not match the resumed suite")
+        reconcile_persisted_spawn_receipts(suite_dir, ledger)
+        require_valid_persisted_ledger(suite_dir, ledger)
         contract_path = os.environ.get("BENCH_CHILD_EXECUTION_CONTRACT")
         if os.environ.get("BENCH_FROZEN_EXECUTION_LEDGER"):
             if not contract_path:
@@ -659,6 +661,7 @@ def initialize_ledger(
         "events": [],
     }
     _start_ledger_invocation(ledger)
+    require_valid_persisted_ledger(suite_dir, ledger)
     _write_ledger(suite_dir, ledger)
     return ledger
 
@@ -714,6 +717,147 @@ def _write_ledger(suite_dir: Path, ledger: dict[str, Any]) -> None:
         for key, item in sorted(ledger["runs"].items())
     )
     (suite_dir / "execution-ledger.md").write_text("\n".join(lines) + "\n")
+
+
+def _spawn_receipt_errors(
+    suite_dir: Path, ledger: dict[str, Any]
+) -> list[str]:
+    errors: list[str] = []
+    receipt_dir = suite_dir / "child-spawn-receipts"
+    receipt_by_sha: dict[str, dict[str, Any]] = {}
+    if receipt_dir.exists() and not receipt_dir.is_dir():
+        return ["child-spawn receipt path is not a directory"]
+    for path in sorted(receipt_dir.glob("*.json")) if receipt_dir.is_dir() else []:
+        try:
+            receipt = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            errors.append(f"child-spawn receipt is unreadable: {path.name}")
+            continue
+        expected_fields = {
+            "schema_version", "run_key", "attempt_id", "child_pid",
+            "observed_at", "event", "receipt_sha256",
+        }
+        digest = receipt.get("receipt_sha256") if isinstance(receipt, dict) else None
+        unhashed = dict(receipt) if isinstance(receipt, dict) else {}
+        unhashed.pop("receipt_sha256", None)
+        expected_digest = sha256_bytes(normalized_bytes(unhashed))
+        if (
+            not isinstance(receipt, dict)
+            or set(receipt) != expected_fields
+            or receipt.get("schema_version") != "published-launch-accounting-current"
+            or receipt.get("event") != "child_process_spawned"
+            or not isinstance(digest, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", digest)
+            or path.name != f"{digest}.json"
+            or digest != expected_digest
+            or digest in receipt_by_sha
+        ):
+            errors.append(f"child-spawn receipt content identity is invalid: {path.name}")
+            continue
+        receipt_by_sha[digest] = receipt
+    referenced: set[str] = set()
+    for run_key, run in sorted((ledger.get("runs") or {}).items()):
+        for attempt in run.get("attempts") or []:
+            if not isinstance(attempt, dict) or not attempt.get("child_process_spawned"):
+                continue
+            digest = str(attempt.get("child_spawn_receipt") or "")
+            referenced.add(digest)
+            receipt = receipt_by_sha.get(digest)
+            if (
+                receipt is None
+                or receipt.get("run_key") != run_key
+                or receipt.get("attempt_id") != attempt.get("attempt_id")
+                or receipt.get("child_pid") != attempt.get("child_pid")
+            ):
+                errors.append(f"persisted child-spawn receipt does not reconcile for {run_key}")
+    unreferenced = sorted(set(receipt_by_sha) - referenced)
+    if unreferenced:
+        errors.append(
+            "unreconciled child-spawn receipts remain: " + ", ".join(unreferenced)
+        )
+    return errors
+
+
+def persisted_ledger_errors(
+    suite_dir: Path, ledger: dict[str, Any]
+) -> list[str]:
+    return validate_ledger_accounting(ledger) + _spawn_receipt_errors(
+        suite_dir, ledger
+    )
+
+
+def require_valid_persisted_ledger(
+    suite_dir: Path, ledger: dict[str, Any]
+) -> None:
+    errors = persisted_ledger_errors(suite_dir, ledger)
+    if errors:
+        raise SystemExit(
+            "Published-suite ledger lifecycle validation failed: "
+            + "; ".join(errors)
+        )
+
+
+def reconcile_persisted_spawn_receipts(
+    suite_dir: Path, ledger: dict[str, Any]
+) -> list[str]:
+    """Adopt a durable spawn receipt written just before a coordinator crash."""
+
+    receipt_dir = suite_dir / "child-spawn-receipts"
+    if not receipt_dir.is_dir():
+        return []
+    attempts: dict[str, tuple[str, dict[str, Any], bool]] = {}
+    for run_key, run in sorted((ledger.get("runs") or {}).items()):
+        run_attempts = run.get("attempts") if isinstance(run, dict) else None
+        if not isinstance(run_attempts, list):
+            continue
+        for index, attempt in enumerate(run_attempts):
+            if isinstance(attempt, dict) and isinstance(attempt.get("attempt_id"), str):
+                attempts[str(attempt["attempt_id"])] = (
+                    run_key, attempt, index == len(run_attempts) - 1
+                )
+    recovered: list[str] = []
+    for path in sorted(receipt_dir.glob("*.json")):
+        try:
+            receipt = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(receipt, dict):
+            continue
+        match = attempts.get(str(receipt.get("attempt_id") or ""))
+        if match is None:
+            continue
+        run_key, attempt, latest = match
+        if attempt.get("child_process_spawned"):
+            continue
+        digest = receipt.get("receipt_sha256")
+        unhashed = dict(receipt)
+        unhashed.pop("receipt_sha256", None)
+        valid = (
+            latest
+            and receipt.get("schema_version")
+            == "published-launch-accounting-current"
+            and receipt.get("event") == "child_process_spawned"
+            and receipt.get("run_key") == run_key
+            and isinstance(digest, str)
+            and re.fullmatch(r"[0-9a-f]{64}", digest) is not None
+            and path.name == f"{digest}.json"
+            and digest == sha256_bytes(normalized_bytes(unhashed))
+            and not attempt.get("pre_spawn_rejected")
+            and not attempt.get("terminal")
+        )
+        if not valid:
+            continue
+        record_child_spawn(ledger, run_key, receipt)
+        ledger.setdefault("events", []).append(
+            {
+                "event": "child_spawn_receipt_reconciled_after_interruption",
+                "run_key": run_key,
+                "receipt_sha256": digest,
+                "at": receipt["observed_at"],
+            }
+        )
+        recovered.append(run_key)
+    return recovered
 
 
 def check_kill_switches(output_root: Path, suite_dir: Path) -> None:
@@ -874,6 +1018,7 @@ def begin_block(
     suite_dir: Path, ledger: dict[str, Any], issue_id: str, repetition: int,
     order: Iterable[str], *, output_root: Path,
 ) -> list[str]:
+    require_valid_persisted_ledger(suite_dir, ledger)
     check_kill_switches(output_root, suite_dir)
     scheduled_keys = [f"{issue_id}::{repetition}::{tool}" for tool in order]
     keys = []
@@ -913,6 +1058,7 @@ def begin_block(
     for key in keys:
         reserve_attempt(ledger, key, started_at=timestamp)
     ledger["events"].append({"event": "block_reserved", "issue_id": issue_id, "repetition": repetition, "run_keys": keys, "at": timestamp})
+    require_valid_persisted_ledger(suite_dir, ledger)
     _write_ledger(suite_dir, ledger)
     return keys
 
@@ -920,6 +1066,7 @@ def begin_block(
 def record_implementation_child_spawn(
     suite_dir: Path, ledger: dict[str, Any], run_key: str, pid: int,
 ) -> dict[str, Any]:
+    require_valid_persisted_ledger(suite_dir, ledger)
     attempt = ledger["runs"][run_key]["attempts"][-1]
     receipt = child_spawn_receipt(run_key, attempt, pid)
     receipt_dir = suite_dir / "child-spawn-receipts"
@@ -931,6 +1078,7 @@ def record_implementation_child_spawn(
         "receipt_sha256": receipt["receipt_sha256"],
         "at": receipt["observed_at"],
     })
+    require_valid_persisted_ledger(suite_dir, ledger)
     _write_ledger(suite_dir, ledger)
     return receipt
 
@@ -938,11 +1086,13 @@ def record_implementation_child_spawn(
 def reject_pre_spawn_attempt(
     suite_dir: Path, ledger: dict[str, Any], run_key: str, reason: str,
 ) -> None:
+    require_valid_persisted_ledger(suite_dir, ledger)
     mark_pre_spawn_rejected(ledger, run_key, reason)
     ledger["events"].append({
         "event": "pre_spawn_rejected", "run_key": run_key, "reason": reason,
         "at": datetime.now(timezone.utc).isoformat(),
     })
+    require_valid_persisted_ledger(suite_dir, ledger)
     _write_ledger(suite_dir, ledger)
 
 
@@ -953,6 +1103,7 @@ def reconcile_operator_interruption(
 ) -> None:
     """Close prior-invocation reservations without inventing terminal rows."""
 
+    require_valid_persisted_ledger(suite_dir, ledger)
     timestamp = datetime.now(timezone.utc).isoformat()
     reconciled = []
     for run_key, status in sorted(run_statuses.items()):
@@ -993,16 +1144,12 @@ def reconcile_operator_interruption(
                 "at": timestamp,
             }
         )
-        errors = validate_ledger_accounting(ledger)
-        if errors:
-            raise ValueError(
-                "published-suite ledger failed interruption reconciliation: "
-                + "; ".join(errors)
-            )
+        require_valid_persisted_ledger(suite_dir, ledger)
         _write_ledger(suite_dir, ledger)
 
 
 def finish_block(suite_dir: Path, ledger: dict[str, Any], keys: Iterable[str], result_path: Path) -> None:
+    require_valid_persisted_ledger(suite_dir, ledger)
     keys = list(keys)
     result = json.loads(result_path.read_text()) if result_path.is_file() else {}
     rows = result.get("runs")
@@ -1047,6 +1194,7 @@ def finish_block(suite_dir: Path, ledger: dict[str, Any], keys: Iterable[str], r
         )
         finish_attempt(ledger, key, terminal=terminal, status=run["status"], finished_at=timestamp)
     ledger["events"].append({"event": "block_finished", "run_keys": list(keys), "at": timestamp})
+    require_valid_persisted_ledger(suite_dir, ledger)
     _write_ledger(suite_dir, ledger)
 
 
@@ -1057,6 +1205,7 @@ def finish_frozen_invalidation_block(
     marker: dict[str, Any],
 ) -> None:
     """Close every reservation without inventing a child launch or a valid result row."""
+    require_valid_persisted_ledger(suite_dir, ledger)
     keys = list(keys)
     invalid_tool = str(marker.get("tool") or "")
     timestamp = datetime.now(timezone.utc).isoformat()
@@ -1109,12 +1258,7 @@ def finish_frozen_invalidation_block(
             "at": timestamp,
         }
     )
-    errors = validate_ledger_accounting(ledger)
-    if errors:
-        raise ValueError(
-            "published-suite ledger failed after frozen invalidation: "
-            + "; ".join(errors)
-        )
+    require_valid_persisted_ledger(suite_dir, ledger)
     _write_ledger(suite_dir, ledger)
 
 

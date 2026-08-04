@@ -4260,14 +4260,37 @@ def abort_suite(
 
 
 def synchronize_live_execution_ledger(ledger_dir: Path, suite_dir: Path) -> None:
-    """Copy the authoritative live ledger into the suite's durable checkpoint."""
+    """Copy the validated live ledger and spawn receipts into the suite checkpoint."""
 
     if ledger_dir.resolve() == suite_dir.resolve():
         return
+    live_path = ledger_dir / "execution-ledger.json"
+    if not live_path.is_file():
+        return
+    live = json.loads(live_path.read_text(encoding="utf-8"))
+    from published_suite import require_valid_persisted_ledger
+
+    require_valid_persisted_ledger(ledger_dir, live)
     for name in ("execution-ledger.json", "execution-ledger.md"):
         source = ledger_dir / name
         if source.is_file():
             shutil.copy2(source, suite_dir / name)
+    receipt_source = ledger_dir / "child-spawn-receipts"
+    receipt_target = suite_dir / "child-spawn-receipts"
+    if receipt_source.is_dir():
+        receipt_target.mkdir(exist_ok=True)
+        for source in sorted(receipt_source.glob("*.json")):
+            target = receipt_target / source.name
+            if target.exists() and target.read_bytes() != source.read_bytes():
+                raise RuntimeError(
+                    f"Conflicting content-addressed child-spawn receipt: {source.name}"
+                )
+            if not target.exists():
+                shutil.copy2(source, target)
+    checkpoint = json.loads(
+        (suite_dir / "execution-ledger.json").read_text(encoding="utf-8")
+    )
+    require_valid_persisted_ledger(suite_dir, checkpoint)
 
 
 def resume_trust_error(record: dict[str, Any]) -> str | None:
