@@ -1256,6 +1256,56 @@ def resolve_preserved_qualification_history(
     return matches[0]
 
 
+def regenerated_qualification_summary_errors(
+    current_path: Path, preserved_path: Path
+) -> list[str]:
+    try:
+        current = json.loads(current_path.read_text(encoding="utf-8"))
+        preserved = json.loads(preserved_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"qualification summary is unreadable: {exc}"]
+    if not isinstance(current, dict) or not isinstance(preserved, dict):
+        return ["qualification summary is not an object"]
+    current_records = current.get("records")
+    preserved_records = preserved.get("records")
+    if not isinstance(current_records, list) or not isinstance(
+        preserved_records, list
+    ):
+        return ["qualification summary records are malformed"]
+    stripped_records = []
+    errors: list[str] = []
+    for index, value in enumerate(current_records):
+        if not isinstance(value, dict):
+            errors.append(f"qualification record {index} is malformed")
+            continue
+        record = dict(value)
+        checkpoint = record.pop("checkpoint", None)
+        if checkpoint is not None:
+            execution_root = record.get("execution_root")
+            expected = (
+                Path(execution_root) / "pre-solve-smoke-checkpoint"
+                if isinstance(execution_root, str) and execution_root
+                else None
+            )
+            if (
+                not isinstance(checkpoint, str)
+                or expected is None
+                or Path(checkpoint) != expected
+                or not expected.is_dir()
+            ):
+                errors.append(
+                    f"qualification record {index} checkpoint differs"
+                )
+        stripped_records.append(record)
+    stripped = dict(current)
+    stripped["records"] = stripped_records
+    if not json_semantically_equal(stripped, preserved):
+        errors.append(
+            "qualification summary differs beyond checkpoint enrichment"
+        )
+    return errors
+
+
 def attach_model_preflight_to_qualified_suite(
     suite_dir: Path, profile: dict[str, Any]
 ) -> None:
@@ -1483,6 +1533,16 @@ def attach_model_preflight_to_qualified_suite(
                     and name in REGENERATED_SUITE_ARCHIVE_NAMES
                 ):
                     pass
+                elif name == "qualification-results.json" and complete_model_state:
+                    summary_errors = regenerated_qualification_summary_errors(
+                        source_path, destination
+                    )
+                    if summary_errors:
+                        raise SystemExit(
+                            "Changed qualification-only preservation artifact: "
+                            f"{name}; regenerated qualification summary is invalid: "
+                            + "; ".join(summary_errors)
+                        )
                 elif name != "suite-plan.json":
                     raise SystemExit(
                         f"Changed qualification-only preservation artifact: {name}"
