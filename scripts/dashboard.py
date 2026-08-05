@@ -15,7 +15,7 @@ from jsonschema import Draft202012Validator
 ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD = ROOT / "dashboard"
 SCHEMA = ROOT / "schemas" / "dashboard-data.schema.json"
-VERSION = "operational-dashboard-v7"
+VERSION = "operational-dashboard-v8"
 
 METRIC_DESCRIPTORS: dict[str, dict[str, Any]] = json.loads(
     (DASHBOARD / "src" / "metric-descriptors.json").read_text(encoding="utf-8")
@@ -64,6 +64,9 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
     from benchmark_model import METHODOLOGY_POLICY
 
     analysis = suite_result["aggregates"]["operational_tradeoffs"]
+    publication_findings = suite_result["aggregates"].get("publication_findings")
+    if not isinstance(publication_findings, dict):
+        raise ValueError("suite result lacks primary publication findings")
     runs = []
     for row in sorted(
         suite_result.get("runs", []),
@@ -201,6 +204,7 @@ def dashboard_data(suite_result: dict[str, Any]) -> dict[str, Any]:
         "points": points,
         "individual_runs": runs,
         "published": {
+            "primary_benchmark_findings": publication_findings,
             "comparisons": analysis["matched_comparisons"],
             "coverage": analysis["coverage"],
             "complete_block_frontier": analysis["complete_block_frontier"],

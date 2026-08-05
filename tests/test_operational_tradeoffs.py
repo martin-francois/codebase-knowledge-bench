@@ -16,6 +16,7 @@ from operational_tradeoffs import (
     analyze_operational_tradeoffs,
     matched_operational_decision,
 )
+from publication_findings import derive_publication_findings
 
 POLICY = json.loads((ROOT / "configs" / "methodology-policy.json").read_text())
 
@@ -65,6 +66,7 @@ def row(
         "repetition": repetition,
         "run_id": f"{issue}-{repetition}-{tool}",
         "operational_rank_eligible": eligible,
+        "trust_valid": eligible,
         "implementation_evaluated": True,
         "task_success": task_success,
         "requested_behavior_score": 100.0 if task_success else 0.0,
@@ -355,7 +357,10 @@ class DashboardDataTest(unittest.TestCase):
         return {
             "suite_id": "fixture",
             "runs": rows,
-            "aggregates": {"operational_tradeoffs": analysis},
+            "aggregates": {
+                "operational_tradeoffs": analysis,
+                "publication_findings": derive_publication_findings(rows),
+            },
         }
 
     def test_dashboard_has_metric_specific_fields_and_invalid_evidence(self) -> None:

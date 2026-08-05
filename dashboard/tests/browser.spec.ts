@@ -53,7 +53,7 @@ const makeRun = (tool: string, issue: string, repetition: number, correctness: n
   metrics: metricValues(tokens, time, calls),
 });
 const data = {
-  schema_version: "operational-dashboard-v7", suite_id: "browser-fixture",
+  schema_version: "operational-dashboard-v8", suite_id: "browser-fixture",
   analysis_mode: "repeated_matched", tolerance_grid: [0, 1, 2, 5, 7.5, 10],
   default_tolerance: 2, metric_descriptors: publishedDescriptors,
   run_to_run_correctness: {
@@ -78,7 +78,19 @@ const data = {
     makeRun("tool", "b", 1, 35, 1000, 300, 15),
     makeRun("invalid", "a", 1, 100, 1, 1, 1, false),
   ],
-  published: {comparisons: {}, coverage: {}, complete_block_frontier: {}, exact_pareto_frontier: [], tolerance_aware_pareto_frontiers: {}, preference_profiles: {}, objective_specific_winners: {}, operational_stability: {}, observed_findings: {}, supported_findings: {}, correctness_tolerance_lenses: {}, resource_priority_candidates: {}},
+  published: {
+    primary_benchmark_findings: {
+      question: "Do codebase knowledge tools help Codex produce better results, or achieve similar quality with lower cost or less time?",
+      complete: true,
+      tools_that_helped: ["tool"],
+      findings_by_category: {observed_similar_quality_less_solve_time: ["tool"]},
+      measured_totals: {},
+      approval_burden: {approval_request_count: 4, approval_accept_count: 4, approval_reject_count: 0, approval_cache_hit_count: 2, approve_once_burden_count: 4, approve_for_session_burden_count: 2},
+      anti_leak: {prohibited_attempt_blocked_count: 2, prohibited_access_invalidating_count: 0, incident_run_count: 0, positive_finding_supported: true},
+      comparisons: [{tool: "tool", status: "complete", categories: ["observed_similar_quality_less_solve_time"], helps: true, quality: {baseline_task_successes: 0, tool_task_successes: 0, baseline_correctness_average: 35, tool_correctness_average: 32.5}}],
+    },
+    comparisons: {}, coverage: {}, complete_block_frontier: {}, exact_pareto_frontier: [], tolerance_aware_pareto_frontiers: {}, preference_profiles: {}, objective_specific_winners: {}, operational_stability: {}, observed_findings: {}, supported_findings: {}, correctness_tolerance_lenses: {}, resource_priority_candidates: {},
+  },
 };
 
 test("offline dashboard controls and table remain synchronized", async ({page}) => {
@@ -93,6 +105,7 @@ test("offline dashboard controls and table remain synchronized", async ({page}) 
   fs.writeFileSync(target, template.replace("__DASHBOARD_DATA__", JSON.stringify(data).replaceAll("<", "\\u003c")));
   await page.goto(pathToFileURL(target).href);
   await expect(page.getByTestId("data-table")).toBeVisible();
+  await expect(page.getByTestId("primary-findings")).toContainText("Observed similar quality with less solve time");
   await expect(page.getByLabel("Quality axis")).toBeVisible();
   await expect(page.getByLabel("Token view")).toBeVisible();
   await expect(page.getByLabel("Quality axis").locator('option[value="requested_behavior"]')).toHaveAttribute("disabled", "");
