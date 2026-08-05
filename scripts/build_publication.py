@@ -222,7 +222,28 @@ def build_research_data(suite_dir: Path) -> dict[str, Any]:
     toolchain_path = ROOT / cohort["toolchain_source_lock_path"]
     codex_lock_path = ROOT / cohort["codex_cli_lock_path"]
     pricing_dir = ROOT / "configs" / "pricing"
-    pricing_files = sorted(pricing_dir.glob("*.json"))
+    referenced_descriptor_ids = sorted(
+        {
+            str((row.get("equivalent_cost") or {}).get("pricing_descriptor_id"))
+            for row in rows
+            if (row.get("equivalent_cost") or {}).get("pricing_descriptor_id")
+        }
+    )
+    pricing_files = []
+    pricing_contents = []
+    for path in sorted(pricing_dir.glob("*.json")):
+        content = json.loads(path.read_text(encoding="utf-8"))
+        if content.get("descriptor_id") in referenced_descriptor_ids:
+            pricing_files.append(path)
+            pricing_contents.append(content)
+    missing_descriptors = set(referenced_descriptor_ids) - {
+        content.get("descriptor_id") for content in pricing_contents
+    }
+    if missing_descriptors:
+        raise SystemExit(
+            "runs reference pricing descriptors without a committed file: "
+            + ", ".join(sorted(missing_descriptors))
+        )
 
     profile_source = suite["suite_plan"]["execution_profile"]["source"]
     valid_rows = [
@@ -287,6 +308,13 @@ def build_research_data(suite_dir: Path) -> dict[str, Any]:
             "suiteResults": {
                 "runs": rows,
             },
+            "toolchainSourceLock": json.loads(
+                toolchain_path.read_text(encoding="utf-8")
+            ),
+            "codexCliLock": json.loads(
+                codex_lock_path.read_text(encoding="utf-8")
+            ),
+            "pricingDescriptors": pricing_contents,
         },
     }
 
