@@ -6920,6 +6920,34 @@ with mock.patch.object(module, 'run', return_value=result):
                 )
                 self.assertIn("suite-results.json", archive.namelist())
 
+    def test_suite_archive_uses_bounded_full_cohort_extraction_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            suite_dir = Path(tmp)
+            (suite_dir / "suite-results.json").write_text("{}", encoding="utf-8")
+            observed_limits: list[int] = []
+            production_extract = suite.safe_extract_zip
+
+            def capture_limit(archive, destination, **kwargs):
+                observed_limits.append(kwargs["max_total_bytes"])
+                return production_extract(archive, destination, **kwargs)
+
+            with mock.patch.object(
+                suite, "read_comparison_records", return_value=[]
+            ), mock.patch.object(
+                suite, "read_jsonl_records", return_value=[]
+            ), mock.patch.object(
+                suite, "safe_extract_zip", side_effect=capture_limit
+            ):
+                suite.write_zip(suite_dir)
+
+            self.assertEqual(
+                [suite.PUBLISHED_SUITE_ZIP_MAX_TOTAL_BYTES], observed_limits
+            )
+            self.assertEqual(
+                1_600_000_000,
+                suite.PUBLISHED_SUITE_ZIP_MAX_TOTAL_BYTES,
+            )
+
     def test_issue_488_uses_semantic_direct_channel_overlay(self) -> None:
         issue = next(item for item in suite.ISSUES if item.issue_id == "issue-488")
         plan = json.loads(Path(issue.protected_channel_plan_path).read_text(encoding="utf-8"))

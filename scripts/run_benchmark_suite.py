@@ -163,6 +163,13 @@ os.environ.update(RECOVERY_CONTROL_ENV)
 STAGE_POLICY = StagePolicy.from_environment()
 QUALIFICATION_ONLY = os.environ.get("BENCH_QUALIFICATION_ONLY") == "true"
 
+# The portable suite contains every sanitized execution archive as well as the
+# manifest-selected evidence extracted from those archives.  Keep its
+# self-validation boundary aligned with the independently packaged verifier,
+# review handoff, and delivery limits.  The generic untrusted-archive default
+# in safe_archive intentionally remains stricter.
+PUBLISHED_SUITE_ZIP_MAX_TOTAL_BYTES = 1_600_000_000
+
 
 OUTPUT_ROOT = Path(
     os.environ.get(
@@ -3935,7 +3942,11 @@ def write_zip(suite_dir: Path) -> None:
         extracted = Path(tmp)
         semantic_report_path = extracted.parent / "semantic-validation.json"
         with zipfile.ZipFile(zip_path) as archive:
-            safe_extract_zip(archive, extracted)
+            safe_extract_zip(
+                archive,
+                extracted,
+                max_total_bytes=PUBLISHED_SUITE_ZIP_MAX_TOTAL_BYTES,
+            )
         extracted_manifest = json.loads((extracted / "suite-manifest.json").read_text(encoding="utf-8"))
         validation = subprocess.run(
             [sys.executable, str(BENCH / "scripts" / "validate_published_archive.py"), str(extracted),
