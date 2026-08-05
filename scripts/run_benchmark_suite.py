@@ -5151,6 +5151,37 @@ def write_comparison_release_audit(
     return receipt
 
 
+def completed_derivation_suite(default_suite: Path) -> Path:
+    """Select only an explicitly checkpointed suite for publication repair."""
+    frozen_suite = os.environ.get("BENCH_FROZEN_SUITE_DIR")
+    if not frozen_suite:
+        return default_suite
+    candidate = Path(frozen_suite).expanduser().resolve()
+    suites_root = SUITES.resolve()
+    if candidate.parent != suites_root:
+        raise SystemExit(
+            "Completed-derivation suite must be a direct child of the suites root"
+        )
+    marker_path = candidate / "children_complete_derivation_failed.json"
+    if not marker_path.is_file():
+        raise SystemExit(
+            "Frozen suite selection requires a completed-derivation checkpoint"
+        )
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(
+            f"Completed-derivation checkpoint is unreadable: {exc}"
+        ) from exc
+    if not (
+        marker.get("schema_version") == "derivation-checkpoint-v1"
+        and marker.get("state") == "children_complete_derivation_failed"
+        and marker.get("completed_children_must_not_be_rerun") is True
+    ):
+        raise SystemExit("Completed-derivation checkpoint is invalid")
+    return candidate
+
+
 def _main() -> None:
     global RESUME_SUITE
     global ACTIVE_PROGRESS_REPORTER
@@ -5182,6 +5213,11 @@ def _main() -> None:
     )
     suite_id = str(profile.get("execution_id") or logical_suite_id)
     suite_dir = SUITES / suite_id
+    selected_suite = completed_derivation_suite(suite_dir)
+    if selected_suite != suite_dir:
+        suite_dir = selected_suite
+        suite_id = selected_suite.name
+        RESUME_SUITE = True
     if EXECUTION_PROFILE == "symphony_trello" and suite_dir.exists():
         RESUME_SUITE = True
     schedule = balanced_schedule(
@@ -5244,12 +5280,12 @@ def _main() -> None:
     if RESUME_SUITE and not suite_dir.exists():
         raise SystemExit(f"Suite directory does not exist for resume: {suite_dir}")
     if RESUME_SUITE:
-        if not QUALIFICATION_ONLY:
-            attach_model_preflight_to_qualified_suite(suite_dir, profile)
         issue_preflights, comparison_records = prepare_resumed_suite(suite_dir, suite_id, repetitions)
         profile = resume_profile_for_completed_derivation(
             suite_dir, profile, comparison_records
         )
+        if not QUALIFICATION_ONLY:
+            attach_model_preflight_to_qualified_suite(suite_dir, profile)
         print(f"[suite] resumed {suite_id} with {len(comparison_records)} completed execution(s)", flush=True)
         if os.environ.get("BENCH_ADOPT_COMPLETED_ONLY") == "true":
             if not comparison_records:
@@ -5939,6 +5975,11 @@ def resume_profile_for_completed_derivation(
     frozen_without_source = dict(frozen_profile)
     current_source = current_without_source.pop("source", None)
     execution_source = frozen_without_source.pop("source", None)
+    # execution_id is deterministically derived from the source commit.  A
+    # publication-only source change therefore changes it without changing any
+    # execution semantics; the frozen suite name remains authoritative.
+    current_without_source.pop("execution_id", None)
+    frozen_without_source.pop("execution_id", None)
     if not json_semantically_equal(current_without_source, frozen_without_source):
         raise SystemExit(
             "Completed-derivation resume changed execution semantics, not only source identity"
