@@ -1031,6 +1031,13 @@ or spawn receipt fails closed before a new implementation child can launch.
 checkpoints bind the exact current benchmark execution-source commit. Qualification identity MUST be
 resolved from the benchmark execution source, never from the target repository. A qualification-only
 rehearsal followed by a harness-identical full-suite resume MUST NOT launch a second smoke matrix.
+Once the qualification-only archive and its transition artifacts have been preserved, later
+deterministic suite archives MUST NOT replace their identity. A completed-suite publication resume
+MUST resolve the unique content-addressed qualification preservation whose qualification bytes,
+approval-protocol hash, source commit, source tree, artifact hashes, and preservation self-hash all
+match the frozen evidence. It MUST fail closed when that preserved binding is missing, invalid, or
+ambiguous, while allowing a separately self-valid regenerated no-model approval-protocol record at
+the suite root.
 
 `LIF-007` Remaining-time reporting MUST prefer the stage-specific exact-cohort history estimate in
 `LIF-001`. If any remaining stage lacks compatible history after at least one configured stage unit
