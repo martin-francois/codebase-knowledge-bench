@@ -1037,7 +1037,10 @@ MUST resolve the unique content-addressed qualification preservation whose quali
 approval-protocol hash, source commit, source tree, artifact hashes, and preservation self-hash all
 match the frozen evidence. It MUST fail closed when that preserved binding is missing, invalid, or
 ambiguous, while allowing a separately self-valid regenerated no-model approval-protocol record at
-the suite root.
+the suite root. A regenerated qualification summary MAY enrich a selected record only with the exact
+existing pre-solve smoke-checkpoint directory derived from that record's execution root. Removing
+that field MUST reproduce the preserved qualification summary exactly; another added, removed, or
+changed field, a missing directory, or a different checkpoint path MUST fail closed.
 
 `LIF-007` Remaining-time reporting MUST prefer the stage-specific exact-cohort history estimate in
 `LIF-001`. If any remaining stage lacks compatible history after at least one configured stage unit
