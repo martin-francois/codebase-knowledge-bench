@@ -397,6 +397,25 @@ class RetryPolicyTest(unittest.TestCase):
                 (suite_dir / "approval-protocol-qualification.json").write_text(
                     json.dumps(regenerated_approval_protocol), encoding="utf-8"
                 )
+                derived_archive_bytes = b"completed suite archive"
+                archive.write_bytes(derived_archive_bytes)
+                derived_archive_sha256 = hashlib.sha256(
+                    derived_archive_bytes
+                ).hexdigest()
+                (suite_dir / "suite-bundle.zip.sha256").write_text(
+                    f"{derived_archive_sha256}  suite-bundle.zip\n",
+                    encoding="utf-8",
+                )
+                (suite_dir / "suite-bundle.validation.json").write_text(
+                    json.dumps(
+                        {
+                            "validation_result": "passed",
+                            "source_reconstruction_passed": True,
+                            "archive_sha256": derived_archive_sha256,
+                        }
+                    ),
+                    encoding="utf-8",
+                )
                 suite.attach_model_preflight_to_qualified_suite(
                     suite_dir, profile
                 )
@@ -416,6 +435,23 @@ class RetryPolicyTest(unittest.TestCase):
                 (suite_dir / "approval-protocol-qualification.json").write_text(
                     json.dumps(regenerated_approval_protocol), encoding="utf-8"
                 )
+                preserved_protocol_path = (
+                    suite_dir
+                    / "qualification-only-history"
+                    / archive_sha256
+                    / "approval-protocol-qualification.json"
+                )
+                preserved_protocol_bytes = preserved_protocol_path.read_bytes()
+                preserved_protocol_path.write_text(
+                    json.dumps(invalid_regenerated_protocol), encoding="utf-8"
+                )
+                with self.assertRaisesRegex(
+                    SystemExit, "Invalid preserved qualification history"
+                ):
+                    suite.attach_model_preflight_to_qualified_suite(
+                        suite_dir, profile
+                    )
+                preserved_protocol_path.write_bytes(preserved_protocol_bytes)
                 changed_plan = json.loads(
                     (suite_dir / "suite-plan.json").read_text(
                         encoding="utf-8"

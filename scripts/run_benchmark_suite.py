@@ -1103,6 +1103,159 @@ def reuse_model_preflight(suite_dir: Path) -> dict[str, Any]:
     return record
 
 
+QUALIFICATION_PRESERVED_NAMES = (
+    "qualification-only.json",
+    "qualification-control.json",
+    "approval-protocol-qualification.json",
+    "qualification-results.json",
+    "qualification-comparisons.jsonl",
+    "issue-preflight.json",
+    "suite-plan.json",
+    "effective-configuration.json",
+    "tool-order-schedule.json",
+    "toolchain-lock.json",
+    "suite-bundle.zip",
+    "suite-bundle.zip.sha256",
+    "suite-bundle.validation.json",
+    "suite-bundle.semantic-validation.json",
+)
+REGENERATED_SUITE_ARCHIVE_NAMES = {
+    "suite-bundle.zip",
+    "suite-bundle.zip.sha256",
+    "suite-bundle.validation.json",
+    "suite-bundle.semantic-validation.json",
+}
+
+
+def _qualification_preservation_errors(
+    history_dir: Path,
+    *,
+    qualification_path: Path,
+    qualification: dict[str, Any],
+    source: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    preservation_path = history_dir / "preservation.json"
+    try:
+        preservation = json.loads(preservation_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"preservation record is unreadable: {exc}"]
+    preservation_hash = preservation.get("content_sha256")
+    preservation_body = dict(preservation)
+    preservation_body.pop("content_sha256", None)
+    expected_hash = hashlib.sha256(
+        json.dumps(
+            preservation_body, sort_keys=True, separators=(",", ":")
+        ).encode()
+    ).hexdigest()
+    if (
+        preservation.get("schema_version") != "qualification-only-preservation-v1"
+        or preservation.get("archive_sha256") != history_dir.name
+        or not re.fullmatch(r"[0-9a-f]{64}", history_dir.name)
+        or preservation.get("source_commit") != source.get("commit")
+        or preservation.get("source_tree") != source.get("tree")
+        or preservation_hash != expected_hash
+    ):
+        errors.append("preservation identity or self-hash differs")
+    artifacts = preservation.get("artifacts")
+    if not isinstance(artifacts, list):
+        return errors + ["preservation artifact inventory is malformed"]
+    rows_by_path: dict[str, dict[str, Any]] = {}
+    for row in artifacts:
+        if not isinstance(row, dict) or not isinstance(row.get("path"), str):
+            errors.append("preservation artifact row is malformed")
+            continue
+        name = row["path"]
+        if name in rows_by_path:
+            errors.append(f"preservation artifact is duplicated: {name}")
+            continue
+        rows_by_path[name] = row
+    if set(rows_by_path) != set(QUALIFICATION_PRESERVED_NAMES):
+        errors.append("preservation artifact set differs")
+    for name, row in sorted(rows_by_path.items()):
+        path = history_dir / name
+        if not path.is_file():
+            errors.append(f"preservation artifact is missing: {name}")
+            continue
+        if (
+            row.get("bytes") != path.stat().st_size
+            or row.get("sha256") != sha256_file(path)
+        ):
+            errors.append(f"preservation artifact hash differs: {name}")
+    preserved_qualification_path = history_dir / "qualification-only.json"
+    if (
+        preserved_qualification_path.is_file()
+        and preserved_qualification_path.read_bytes()
+        != qualification_path.read_bytes()
+    ):
+        errors.append("preserved qualification bytes differ")
+    archive_path = history_dir / "suite-bundle.zip"
+    if archive_path.is_file() and sha256_file(archive_path) != history_dir.name:
+        errors.append("preserved qualification archive hash differs")
+    approval_path = history_dir / "approval-protocol-qualification.json"
+    try:
+        approval = json.loads(approval_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"preserved approval protocol is unreadable: {exc}")
+    else:
+        approval_body = dict(approval)
+        approval_hash = approval_body.pop("content_sha256", None)
+        if (
+            approval.get("passed") is not True
+            or approval.get("model_turn_events") != 0
+            or approval.get("implementation_child_spawns") != 0
+            or approval_hash != approval_fingerprint(approval_body)
+            or approval_hash
+            != qualification.get("approval_protocol_qualification_sha256")
+        ):
+            errors.append("preserved approval protocol binding differs")
+    return errors
+
+
+def resolve_preserved_qualification_history(
+    suite_dir: Path,
+    *,
+    qualification_path: Path,
+    qualification: dict[str, Any],
+    source: dict[str, Any],
+) -> Path:
+    """Resolve qualification evidence independently of later derived archives."""
+    history_root = suite_dir / "qualification-only-history"
+    matches: list[Path] = []
+    invalid_matches: list[str] = []
+    if history_root.is_dir():
+        for candidate in sorted(history_root.iterdir()):
+            candidate_qualification = candidate / "qualification-only.json"
+            if (
+                not candidate.is_dir()
+                or not candidate_qualification.is_file()
+                or candidate_qualification.read_bytes() != qualification_path.read_bytes()
+            ):
+                continue
+            candidate_errors = _qualification_preservation_errors(
+                candidate,
+                qualification_path=qualification_path,
+                qualification=qualification,
+                source=source,
+            )
+            if candidate_errors:
+                invalid_matches.extend(
+                    f"{candidate.name}: {error}" for error in candidate_errors
+                )
+            else:
+                matches.append(candidate)
+    if invalid_matches:
+        raise SystemExit(
+            "Invalid preserved qualification history: "
+            + "; ".join(invalid_matches)
+        )
+    if len(matches) != 1:
+        raise SystemExit(
+            "Preserved qualification history is missing or ambiguous"
+        )
+    return matches[0]
+
+
 def attach_model_preflight_to_qualified_suite(
     suite_dir: Path, profile: dict[str, Any]
 ) -> None:
@@ -1170,9 +1323,6 @@ def attach_model_preflight_to_qualified_suite(
             + ", ".join(missing)
         )
     archive_sha256 = sha256_file(archive_path) if archive_path.is_file() else ""
-    history_dir = (
-        suite_dir / "qualification-only-history" / archive_sha256
-    )
     complete_model_state = all(
         path.is_file()
         for path in (
@@ -1181,6 +1331,16 @@ def attach_model_preflight_to_qualified_suite(
             suite_dir / "model-preflight-lock.md",
         )
     ) and (suite_dir / "model-preflight").is_dir()
+    history_dir = (
+        resolve_preserved_qualification_history(
+            suite_dir,
+            qualification_path=qualification_path,
+            qualification=qualification,
+            source=source,
+        )
+        if complete_model_state
+        else suite_dir / "qualification-only-history" / archive_sha256
+    )
     preserved_approval_protocol_path = (
         history_dir / "approval-protocol-qualification.json"
     )
@@ -1302,24 +1462,8 @@ def attach_model_preflight_to_qualified_suite(
         raise SystemExit(
             "Qualification-only transition requires an exact model preflight source"
         )
-    preserved_names = (
-        "qualification-only.json",
-        "qualification-control.json",
-        "approval-protocol-qualification.json",
-        "qualification-results.json",
-        "qualification-comparisons.jsonl",
-        "issue-preflight.json",
-        "suite-plan.json",
-        "effective-configuration.json",
-        "tool-order-schedule.json",
-        "toolchain-lock.json",
-        "suite-bundle.zip",
-        "suite-bundle.zip.sha256",
-        "suite-bundle.validation.json",
-        "suite-bundle.semantic-validation.json",
-    )
     preserved: list[dict[str, Any]] = []
-    for name in preserved_names:
+    for name in QUALIFICATION_PRESERVED_NAMES:
         source_path = suite_dir / name
         if not source_path.is_file():
             raise SystemExit(
@@ -1332,6 +1476,11 @@ def attach_model_preflight_to_qualified_suite(
                     name == "approval-protocol-qualification.json"
                     and complete_model_state
                     and authoritative_approval_protocol_path == destination
+                ):
+                    pass
+                elif (
+                    complete_model_state
+                    and name in REGENERATED_SUITE_ARCHIVE_NAMES
                 ):
                     pass
                 elif name != "suite-plan.json":
@@ -1373,7 +1522,7 @@ def attach_model_preflight_to_qualified_suite(
         )
     preservation = {
         "schema_version": "qualification-only-preservation-v1",
-        "archive_sha256": archive_sha256,
+        "archive_sha256": history_dir.name,
         "source_commit": source["commit"],
         "source_tree": source["tree"],
         "artifacts": preserved,
