@@ -21,9 +21,10 @@ Suite rows are reconstructed from execution results and add only the fields name
 from those reconstructed rows and independently compared during validation.
 
 `aggregates.operational_tradeoffs.run_to_run_correctness` records the fixed issue and repetition
-universe, each tool's repetition averages, mean, observed range, and nullable 95% confidence
-interval. The interval must be null below four complete repetitions and is derived at four or more
-with method `normal-95-sample-stddev-repetition-means-v1`. Dashboard data copies the same object;
+universe, each tool's repetition averages, mean, observed range with method
+`observed-min-max-repetition-means-v1`, and the sample standard deviation as a research-data
+diagnostic. The observed range is the sole reader-facing uncertainty display; no confidence
+interval is derived. Dashboard data copies the same object;
 validators reject stale, incomplete, or recomputation-inconsistent values.
 
 `aggregates.publication_findings` is the sole deterministic projection for the primary benchmark

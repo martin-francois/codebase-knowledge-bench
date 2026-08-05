@@ -15,8 +15,8 @@ display inferential paired intervals; absolute correctness can still show its de
 repetition range.
 
 For absolute correctness with average aggregation, vertical whiskers show the observed repetition
-range below four complete repetitions and the two-sided 95% run-to-run confidence interval at four
-or more. The accessible table renders the latter as `mean ± half-width`. The same lower and upper
+range: the lowest and highest repetition average. The accessible table renders it as
+`mean (range lower–upper)`. The same lower and upper
 bounds drive both table and chart. These bounds cover repetition averages over the fixed selected
 issues and do not describe generalization to new tasks.
 

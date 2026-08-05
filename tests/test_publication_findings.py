@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from publication_findings import derive_publication_findings
+from publication_findings import compare_result, derive_publication_findings
 
 
 def row(
@@ -82,15 +82,20 @@ class PublicationFindingsTest(unittest.TestCase):
                 )
         return rows
 
-    def test_frozen_similar_quality_rule_uses_success_then_two_points(self) -> None:
+    def test_result_rule_compares_full_solves_and_task_score_together(self) -> None:
         result = derive_publication_findings(self.rows())
         comparison = result["comparisons"][0]
+        self.assertEqual("similar", comparison["result"]["classification"])
+        self.assertEqual(0, comparison["result"]["full_solve_difference"])
+        self.assertAlmostEqual(
+            -2.0, comparison["result"]["task_score_difference_points"]
+        )
+        self.assertEqual(2.0, comparison["result"]["tolerance_points"])
         self.assertTrue(comparison["quality"]["similar_quality"])
         self.assertEqual(
             [
                 "observed_similar_quality_lower_exact_cost",
                 "observed_similar_quality_less_solve_time",
-                "mixed_trade_off",
             ],
             comparison["categories"],
         )
@@ -98,6 +103,51 @@ class PublicationFindingsTest(unittest.TestCase):
         self.assertEqual(12, comparison["matched_block_count"])
         self.assertEqual(3, len(comparison["by_issue"]))
         self.assertEqual(12, len(comparison["matched_blocks"]))
+        self.assertEqual(["tool"], result["results_by_classification"]["similar"])
+
+    def test_compare_result_classifies_better_similar_mixed_and_worse(self) -> None:
+        cases = [
+            ((4, 83.0, 4, 83.0), "similar"),
+            ((4, 85.0, 4, 83.0), "similar"),
+            ((4, 85.1, 4, 83.0), "better"),
+            ((4, 80.9, 4, 83.0), "worse"),
+            ((5, 80.0, 4, 83.0), "mixed"),
+            ((5, 81.0, 4, 83.0), "better"),
+            ((3, 86.0, 4, 83.0), "mixed"),
+            ((3, 85.0, 4, 83.0), "worse"),
+            ((3, 83.0, 4, 83.0), "worse"),
+        ]
+        for arguments, expected in cases:
+            with self.subTest(arguments=arguments):
+                self.assertEqual(expected, compare_result(*arguments))
+
+    def test_mixed_result_stays_a_trade_off(self) -> None:
+        rows = self.rows()
+        for row in rows:
+            if row["tool"] == "tool":
+                row["correctness_score"] = 90
+                if row["repetition"] == 1:
+                    row["task_success"] = False
+        comparison = derive_publication_findings(rows)["comparisons"][0]
+        self.assertEqual("mixed", comparison["result"]["classification"])
+        self.assertEqual(["mixed_trade_off"], comparison["categories"])
+        self.assertFalse(comparison["helps"])
+
+    def test_similar_result_without_savings_has_no_observed_advantage(self) -> None:
+        rows = self.rows()
+        for row in rows:
+            if row["tool"] == "tool":
+                row["equivalent_cost"] = {
+                    "status": "exact",
+                    "exact_usd_nanos": 150,
+                    "lower_bound_usd_nanos": 150,
+                    "upper_bound_usd_nanos": 150,
+                }
+                row["active_solve_seconds"] = 120
+        comparison = derive_publication_findings(rows)["comparisons"][0]
+        self.assertEqual("similar", comparison["result"]["classification"])
+        self.assertEqual(["no_observed_advantage"], comparison["categories"])
+        self.assertFalse(comparison["helps"])
 
     def test_one_fewer_task_success_is_not_similar_despite_correctness(self) -> None:
         rows = self.rows()

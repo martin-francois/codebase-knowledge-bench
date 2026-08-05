@@ -144,25 +144,17 @@ export type RunToRunCorrectnessTool = {
     lower: number;
     upper: number;
   } | null;
-  confidence_interval_95: {
-    method_id: "normal-95-sample-stddev-repetition-means-v1";
-    confidence_level: 0.95;
-    z_value: 1.96;
-    sample_stddev: number;
-    half_width: number;
-    lower: number;
-    upper: number;
-  } | null;
-  display_uncertainty: "confidence_interval_95" | "observed_range" | "unavailable";
-  minimum_repetitions_for_confidence_interval: 4;
+  sample_stddev: number | null;
+  display_uncertainty: "observed_range" | "unavailable";
+  display_label: string | null;
   interpretation: string;
 };
 
 export type RunToRunCorrectness = {
   schema_id: "run-to-run-correctness-current";
   range_method_id: "observed-min-max-repetition-means-v1";
-  confidence_interval_method_id: "normal-95-sample-stddev-repetition-means-v1";
-  minimum_repetitions_for_confidence_interval: 4;
+  methodology_revision_id: "post-run-2026-08-observed-range";
+  sample_stddev_role: "research_data_diagnostic_only";
   fixed_issue_ids: string[];
   expected_repetitions: number[];
   expected_tools: string[];
@@ -318,7 +310,6 @@ export type ViewPoint = {
   exclusionReason: string | null;
   intervalStatus:
     | "estimable"
-    | "confidence_interval_95"
     | "observed_range"
     | "not_estimable";
   correctnessLower: number | null;
@@ -384,21 +375,15 @@ function filteredCorrectnessUncertainty(
     lower: Math.min(...values),
     upper: Math.max(...values),
   } : null;
-  let confidenceInterval: RunToRunCorrectnessTool["confidence_interval_95"] = null;
-  if (complete && values.length >= 4 && mean != null) {
+  let sampleStddev: number | null = null;
+  if (values.length >= 2 && mean != null) {
     const squaredDeviations = values.reduce((sum, value) => sum + (value - mean) ** 2, 0);
-    const sampleStddev = Math.sqrt(squaredDeviations / (values.length - 1));
-    const halfWidth = 1.96 * sampleStddev / Math.sqrt(values.length);
-    confidenceInterval = {
-      method_id: "normal-95-sample-stddev-repetition-means-v1",
-      confidence_level: 0.95,
-      z_value: 1.96,
-      sample_stddev: sampleStddev,
-      half_width: halfWidth,
-      lower: mean - halfWidth,
-      upper: mean + halfWidth,
-    };
+    sampleStddev = Math.sqrt(squaredDeviations / (values.length - 1));
   }
+  const countWords: Record<number, string> = { 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve" };
+  const displayLabel = observedRange
+    ? `Observed range across ${countWords[values.length] ?? String(values.length)} ${values.length === 1 ? "repetition" : "repetitions"}`
+    : null;
   return {
     tool,
     complete,
@@ -411,10 +396,10 @@ function filteredCorrectnessUncertainty(
     repetition_averages: repetitionAverages,
     mean,
     observed_range: observedRange,
-    confidence_interval_95: confidenceInterval,
-    display_uncertainty: confidenceInterval ? "confidence_interval_95" : observedRange ? "observed_range" : "unavailable",
-    minimum_repetitions_for_confidence_interval: 4,
-    interpretation: "Run-to-run variability on the fixed selected issues; this interval does not estimate generalization to other repositories or issues.",
+    sample_stddev: sampleStddev,
+    display_uncertainty: observedRange ? "observed_range" : "unavailable",
+    display_label: displayLabel,
+    interpretation: "Observed run-to-run variation across the fixed repetitions of the selected issues in this benchmark run; the range does not estimate generalization to other repositories or issues.",
   };
 }
 
@@ -635,11 +620,7 @@ export function deriveView(
     } else if (qualityAxis === "correctness" && view === "absolute" && filters.statistic === "average") {
       point.correctnessUncertainty = filteredCorrectnessUncertainty(authoritative, tool);
     }
-    if (point.correctnessUncertainty?.confidence_interval_95) {
-      point.intervalStatus = "confidence_interval_95";
-      point.correctnessLower = point.correctnessUncertainty.confidence_interval_95.lower;
-      point.correctnessUpper = point.correctnessUncertainty.confidence_interval_95.upper;
-    } else if (point.correctnessUncertainty?.observed_range) {
+    if (point.correctnessUncertainty?.observed_range) {
       point.intervalStatus = "observed_range";
       point.correctnessLower = point.correctnessUncertainty.observed_range.lower;
       point.correctnessUpper = point.correctnessUncertainty.observed_range.upper;

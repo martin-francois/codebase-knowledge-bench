@@ -47,8 +47,8 @@ const fixture = (): DashboardData => ({
   run_to_run_correctness: {
     schema_id: "run-to-run-correctness-current",
     range_method_id: "observed-min-max-repetition-means-v1",
-    confidence_interval_method_id: "normal-95-sample-stddev-repetition-means-v1",
-    minimum_repetitions_for_confidence_interval: 4,
+    methodology_revision_id: "post-run-2026-08-observed-range",
+    sample_stddev_role: "research_data_diagnostic_only",
     fixed_issue_ids: ["a", "b"], expected_repetitions: [1, 2, 3],
     expected_tools: ["baseline-none", "tool"], unexpected_tools: [], complete: false,
     interpretation: "Run-to-run variability on fixed issues, not generalization.",
@@ -130,7 +130,7 @@ describe("dashboard derivation", () => {
     expect(repeated.points.find(point => point.tool === "tool")?.intervalStatus).toBe("observed_range");
     expect(pilot.points.find(point => point.tool === "tool")?.intervalStatus).toBe("observed_range");
   });
-  it("computes the specified 95% interval at four repetitions", () => {
+  it("shows the observed range with a diagnostic stddev at four repetitions", () => {
     const data = fixture();
     data.individual_runs = [1, 2, 3, 4].flatMap(repetition => [
       run("baseline-none", "a", repetition, 20 + repetition, 100, 100, 10),
@@ -138,9 +138,11 @@ describe("dashboard derivation", () => {
     ]);
     const result = deriveView(data, "total_reported_tokens", {issue: "a", repetition: "all", statistic: "average", tolerance: 0, includeInvalid: false});
     const point = result.points.find(candidate => candidate.tool === "tool")!;
-    expect(point.intervalStatus).toBe("confidence_interval_95");
-    expect(point.correctnessUncertainty?.confidence_interval_95?.sample_stddev).toBeCloseTo(Math.sqrt(20 / 3));
-    expect(point.correctnessUncertainty?.confidence_interval_95?.half_width).toBeCloseTo(1.96 * Math.sqrt(20 / 3) / 2);
+    expect(point.intervalStatus).toBe("observed_range");
+    expect(point.correctnessUncertainty?.observed_range?.lower).toBe(30);
+    expect(point.correctnessUncertainty?.observed_range?.upper).toBe(36);
+    expect(point.correctnessUncertainty?.sample_stddev).toBeCloseTo(Math.sqrt(20 / 3));
+    expect(point.correctnessUncertainty?.display_label).toBe("Observed range across four repetitions");
   });
   it("uses geometric paired resource ratios", () => {
     const data = fixture();

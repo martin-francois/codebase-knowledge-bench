@@ -233,10 +233,14 @@ or receipts that do not all bind the same source commit and tree. Never select r
 
 ## README order and language
 
-Write README for a first-time user who reads from top to bottom and may stop early. Put the most
-widely needed facts first: what the project does, expected cost, prerequisites, the cheapest safe
-first run, custom use, and where to find results. Put interpretation before implementation detail.
-Keep contributor workflow in `CONTRIBUTING.md`.
+Write README for a first-time user who reads from top to bottom and may stop early. Start with the
+plain-English overview: the benchmark question, what the benchmark compares (fully solved runs,
+task score, model cost, and coding time), TOML-based custom configuration, and the real-token cost
+warning. Put Quick start directly after that overview, then custom use and where to find results.
+Put interpretation before implementation detail. Keep detailed Bubblewrap, network, approval,
+protocol, credential, and cache behavior in the security, methodology, and advanced-operation
+sections rather than before the practical workflow. Keep contributor workflow in
+`CONTRIBUTING.md`.
 
 Do not make readers scroll back to complete a step. Define a term, path, or setting before using it.
 After each main run command, state what happens next and which result file to open. Keep one

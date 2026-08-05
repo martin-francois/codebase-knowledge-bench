@@ -6210,7 +6210,6 @@ class ComplianceRegressionTest(unittest.TestCase):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         headings = (
-            "## Before you run it",
             "## Quick start with the included suite",
             "## Benchmark your own repository",
             "## Find your results",
@@ -6224,8 +6223,18 @@ class ComplianceRegressionTest(unittest.TestCase):
         positions = [readme.index(heading) for heading in headings]
         self.assertEqual(positions, sorted(positions))
         early = readme[: readme.index("## Quick start with the included suite")]
-        for warning in ("84 benchmark runs", "YOLO mode is disabled by default", "does not prove"):
-            self.assertIn(warning, early)
+        for overview in (
+            "Do codebase knowledge tools help Codex produce better results, "
+            "or achieve similar quality with lower cost or less time?",
+            "fully solved runs, task score, model cost, and coding time",
+            "You do not need to change the benchmark code.",
+            "real Codex processes and uses model tokens",
+            "full 84-run suite",
+        ):
+            self.assertIn(overview, early)
+        security = readme[readme.index("## Security and privacy"):]
+        for relocated in ("YOLO mode is disabled by default", "does not prove"):
+            self.assertIn(relocated, security)
         self.assertIn("When it finishes, open the path stored in", readme)
         self.assertIn("## README order and language", agents)
         self.assertIn("simple international English", agents)
@@ -6546,7 +6555,6 @@ class ComplianceRegressionTest(unittest.TestCase):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
         user_sections = [
-            "## Before you run it",
             "## Quick start with the included suite",
             "## Benchmark your own repository",
             "## Find your results",

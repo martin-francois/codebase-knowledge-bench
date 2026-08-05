@@ -530,24 +530,22 @@ it names a GitHub Actions workflow or target-project business behavior.
 `RPT-006` Run-to-run correctness uncertainty is computed independently for each tool. First compute
 one arithmetic mean correctness score per repetition over the complete fixed issue set. Always
 publish the ordered repetition means, their count, overall mean, and observed minimum–maximum
-range. With fewer than four complete repetitions, human reports display only that observed range
-and all 95% confidence-interval fields are null. With four or more complete repetitions, also
-publish and display a two-sided 95% run-to-run confidence interval using:
-
-```text
-sample_stddev = sample standard deviation of repetition means
-half_width = 1.96 * sample_stddev / sqrt(repetition_count)
-lower = mean - half_width
-upper = mean + half_width
-```
-
-The method identifier is `normal-95-sample-stddev-repetition-means-v1`. The interval describes
-run-to-run variability on the fixed selected issues; it MUST NOT be described as generalization to
-other repositories or issues. A missing, duplicate, extra, ineligible, or differently scoped
-tool/issue/repetition row makes the summary incomplete and MUST NOT produce a confidence interval.
-Validators MUST rederive all values from detailed rows. A public four-or-more-repetition table uses
-`mean ± half_width`, and its correctness whisker uses the same lower and upper bounds. The observed
-range and repetition values remain in machine-readable and downloadable research data.
+range. The reader-facing uncertainty display is that observed range, labeled
+`Observed range across <count> repetitions` (for the published cohort:
+`Observed range across four repetitions`). The method identifier is
+`observed-min-max-repetition-means-v1`. The sample standard deviation of the repetition means
+remains available, but only as a research-data diagnostic; it MUST NOT drive any reader-facing
+display. A confidence interval MUST NOT be computed, published, or displayed from the repetition
+means: the earlier four-repetition 95% interval
+(`normal-95-sample-stddev-repetition-means-v1`) is a post-run methodology correction recorded in
+`configs/methodology-revisions.json`, and the original preregistered method remains preserved in
+the immutable cohort archive. The observed range describes run-to-run variation in the fixed
+benchmark run; it MUST NOT be described as generalization to other repositories or issues. A
+missing, duplicate, extra, ineligible, or differently scoped tool/issue/repetition row makes the
+summary incomplete. Validators MUST rederive all values from detailed rows. A public table uses
+`mean (observed range lower–upper)`, and its correctness whisker uses the same observed lower and
+upper bounds. The repetition values and sample standard deviation remain in machine-readable and
+downloadable research data.
 
 `RPT-007` Before any implementation child can start, suite execution installs the dashboard's exact
 locked Node dependencies with `npm ci`. Missing local `node_modules` therefore cannot consume paid
@@ -561,19 +559,35 @@ traffic, including cached input as reported. Weighted token count and
 cache-weight sensitivity MUST NOT be computed, accepted, published, or exposed
 as selectable diagnostics.
 
-`RPT-009` The primary operational quality comparison orders outcomes lexicographically. Full task
-success is first; requirement-weighted correctness is second. A setup has observed better quality
-than Native Codex when it has more full task successes, or when the full task-success counts are
-equal and its mean requirement-weighted correctness is higher. Both values MUST always be published.
-Requirement-weighted correctness is partial credit and MUST NOT be described as the percentage of
-tasks fully solved.
+`RPT-009` The primary result comparison uses fully solved runs and task score together. Machine
+evidence keeps `task_success` counts and requirement-weighted correctness field names; public copy
+calls them `Fully solved` and `Task score`, with `Result` as the umbrella term. With the normative
+tolerance from `RPT-010`, the classification against Native Codex is:
 
-`RPT-010` The sole normative correctness-equivalence tolerance is `2.0` correctness points. A setup
-has similar quality to Native Codex only when it has no fewer full task successes and its matched
-mean requirement-weighted correctness is no more than `2.0` points lower. Reports, normative
-matched decisions, the published tolerance-aware Pareto result, finding categories, dashboard
-defaults, and website data MUST use this value. Other tolerance grid values are explicitly
-non-normative sensitivity diagnostics and MUST NOT determine the published finding.
+```text
+full_solve_delta = tool_full_solves - baseline_full_solves
+score_delta = tool_task_score - baseline_task_score
+
+full_solve_delta == 0: better when score_delta > tolerance, worse when
+score_delta < -tolerance, otherwise similar.
+full_solve_delta > 0: mixed when score_delta < -tolerance, otherwise better.
+full_solve_delta < 0: mixed when score_delta > tolerance, otherwise worse.
+```
+
+A mixed result is a trade-off and MUST NOT be forced into better or worse. Both underlying values
+MUST always be published. Requirement-weighted correctness is partial credit and MUST NOT be
+described as the percentage of tasks fully solved. This replaces the earlier lexicographic
+better-quality ordering as a result-neutral post-run methodology correction recorded in
+`configs/methodology-revisions.json`; the original frozen rule remains preserved in the immutable
+cohort archive, and `scripts/methodology_revision.py` MUST prove that the correction leaves the
+published cohort findings unchanged.
+
+`RPT-010` The sole normative task-score equivalence tolerance is `2.0` correctness points. A setup
+has a similar result to Native Codex only when it has the same number of fully solved runs and its
+matched mean task score is within `2.0` points, per the `RPT-009` classification. Reports,
+normative matched decisions, the published tolerance-aware Pareto result, finding categories,
+dashboard defaults, and website data MUST use this value. Other tolerance grid values are
+explicitly non-normative sensitivity diagnostics and MUST NOT determine the published finding.
 
 `RPT-011` Every knowledge-tool setup is compared with Native Codex on the same `issue_id` and
 `repetition`. Correctness, exact equivalent-cost, and active-solve-time differences and ratios use
@@ -596,11 +610,14 @@ Per-run reviewer invocation count, model-request count, total reported tokens, e
 in USD nanos, and wall time MUST be independently rederived from the preserved reviewer journals
 and reported only as separate control-plane diagnostics.
 
-`RPT-013` Each knowledge tool receives one or more evidence-backed categories:
-`observed_better_quality`, `observed_similar_quality_lower_exact_cost`,
-`observed_similar_quality_less_solve_time`, `mixed_trade_off`,
-`no_observed_advantage`, `incomplete_comparison`, or `invalid_comparison`. A tool helps for the
-primary question only when at least one of the first three categories applies. Categories never hide
+`RPT-013` Each knowledge tool receives one or more evidence-backed categories derived from its
+`RPT-009` result classification: `observed_better_quality` for a better result;
+`observed_similar_quality_lower_exact_cost` and `observed_similar_quality_less_solve_time` for a
+similar result with the corresponding resource saving; `mixed_trade_off` for a mixed result;
+`no_observed_advantage` otherwise; and `incomplete_comparison` or `invalid_comparison` when the
+matched blocks are unusable. A tool helps for the primary question only when at least one of the
+first three categories applies: a better result, or a similar result with lower model cost or less
+coding time. Categories never hide
 the underlying full-success, correctness, cost, and time values. Rerouting, model fallback,
 prohibited leakage, contradictory telemetry, or another frozen invalidation condition invalidates
 the affected evidence and stops launches at the safe boundary. Unfavorable valid results remain in
@@ -609,8 +626,8 @@ the population.
 `RPT-014` The four repetitions measure stochastic run-to-run variability on the fixed, equally
 weighted three-issue suite. Each repetition mean first averages the complete issue set with equal
 issue weight. Reports preserve every issue and repetition value, ordered repetition means, overall
-mean, observed range, and sample standard deviation. `RPT-006` supplies the frozen confidence
-interval and its limited interpretation.
+mean, observed range, and sample standard deviation. `RPT-006` supplies the observed-range
+uncertainty display and its limited interpretation.
 
 `RPT-015` `configs/methodology-policy.json` is the content-addressed preregistration descriptor.
 Its benchmark question, cohort, comparison rules, normative tolerance, uncertainty method, finding
