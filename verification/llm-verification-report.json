@@ -73,7 +73,8 @@
       "findings": [
         "Pricing descriptors are matched by descriptor ID with their content SHA-256 verified against configs/pricing, and the manifest publishes those content hashes; toolchain and Codex locks are read with git show from the recorded frozen source commit rather than the working tree.",
         "The reader-facing uncertainty display is the observed repetition range with its exact label; the withdrawn four-repetition 95% interval is recorded as a post-run methodology revision with a findings-unchanged proof, and no confidence interval remains in published data.",
-        "Documentation now states the current combined result rule with the normative 2.0-point tolerance, a test derives that tolerance from publication_findings, and the README claim that the no-argument default is the published configuration is literally true because the runner resolves to configs/symphony-trello.toml."
+        "Documentation now states the current combined result rule with the normative 2.0-point tolerance, a test derives that tolerance from publication_findings, and the README claim that the no-argument default is the published configuration is literally true because the runner resolves to configs/symphony-trello.toml.",
+        "Research provenance now records each pricing descriptor's repository-relative path at the frozen source commit next to its content hash, and a fixture test proves the published path matches the content-hash-verified committed file."
       ],
       "id": "LLM-005",
       "residual_uncertainty": "Equivalent Codex API cost remains a descriptor-bound comparison value, not an invoice or subscription allocation.",
@@ -105,8 +106,8 @@
     "The public website deployment and download hosting are validated by the website repository's own verification, not by this review."
   ],
   "overall_status": "passed",
-  "report_envelope_commit": "c79c8c82928159f821faca4f0540817aae3a04ea",
-  "review_session_description": "The implementing coding agent reviewed the hardened publication derivation, the corrected combined result rule and observed-range documentation, and the unified default configuration at documentation envelope commit c79c8c82928159f821faca4f0540817aae3a04ea. Evidence included 670 passing current Python tests on the pinned Python 3.14 interpreter, the deterministic publication rebuild fixtures, the committed publication artifacts, and green continuous integration on the current benchmark and website main branches. No measured child and no additional semantic-review model call was invoked.",
+  "report_envelope_commit": "41cc95b5e8d7a991b0cd9d61b81b17f2c40a9009",
+  "review_session_description": "The implementing coding agent reviewed the hardened publication derivation, the corrected combined result rule and observed-range documentation, the unified default configuration, and the addition of the pricing descriptor repository path to research provenance at documentation envelope commit 41cc95b5e8d7a991b0cd9d61b81b17f2c40a9009. Evidence included 671 passing current Python tests on the pinned Python 3.14 interpreter, the deterministic publication rebuild from the preserved suite with verified checksums and unchanged findings, and green continuous integration on the current benchmark and website main branches. No measured child and no additional semantic-review model call was invoked.",
   "reviewed_artifacts": [
     "repo://AGENTS.md",
     "repo://README.md",
@@ -132,8 +133,8 @@
     "repo://verification/methodology-current/contracts/issue-487.json",
     "zip://suite-results.json"
   ],
-  "reviewed_subject_tree_sha256": "eb5abbd7c3355da3f9485cf04fac37e7d47c87e71a9df0f83083e09ba6ff2a51",
+  "reviewed_subject_tree_sha256": "07ffeea5efd07e3c8b53e238c49c5d645cce5f14e9ccd1fc31e28ebaa7988ee9",
   "reviewer_kind": "implementing_coding_agent",
   "self_review": true,
-  "source_commit": "c79c8c82928159f821faca4f0540817aae3a04ea"
+  "source_commit": "41cc95b5e8d7a991b0cd9d61b81b17f2c40a9009"
 }
