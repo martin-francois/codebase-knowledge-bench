@@ -105,7 +105,7 @@ Never recursively include an older `suite-bundle.zip` in a new archive.
 - Sort paths, mappings, issues, tools, and report rows before serialization.
 - Never depend on Python hash or set iteration order.
 - Resolve basenames only when uniquely identifiable.
-- Treat schemas and machine-readable field names as private pre-release internal formats.
+- Treat schemas and machine-readable field names as pre-1.0 internal formats.
 - Preserve raw evidence and old derived meaning when changing scoring.
 - Validate deterministic behavior across multiple `PYTHONHASHSEED` values when relevant.
 
@@ -119,11 +119,11 @@ Never recursively include an older `suite-bundle.zip` in a new archive.
 
 ## Publication and release readiness
 
-The repository remains private until its owner changes visibility. Before publication, review
+The repository is public. Before every release-affecting change, review
 [LICENSE](LICENSE), [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md),
 [SUPPORT.md](SUPPORT.md), CI workflows, repository metadata, tracked files, and secret scans. Do not
 invent or change licensing without repository evidence.
 
-## Private pre-release single-current policy
+## Pre-1.0 single-current policy
 
-Until the owner explicitly declares this project public, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration commands, and parallel scoring or token paths are prohibited. A provenance identifier is accepted at exactly one value and never dispatches to another implementation. Immutable experiment ZIPs are opaque external evidence, not supported runtime input. Breaking internal changes replace obsolete behavior in place.
+Until version 1.0, internal compatibility is not a goal. Live code has one current schema, one token formula, and one requirement-based correctness methodology. Runtime schema translation, deprecated aliases, dual readers or writers, fallback parsing, migration commands, and parallel scoring or token paths are prohibited. A provenance identifier is accepted at exactly one value and never dispatches to another implementation. Immutable experiment ZIPs are opaque external evidence, not supported runtime input. Breaking internal changes replace obsolete behavior in place.

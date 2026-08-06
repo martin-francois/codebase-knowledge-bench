@@ -7,14 +7,14 @@ sole live implementation and deterministic evidence. Detailed check records are 
 | Requirements | Implementation | Required evidence |
 | --- | --- | --- |
 | `IDN-*` | project metadata, README, runtime defaults, schemas | repository identity consistency test |
-| `PUR-*`, `SCP-*`, `MOD-*` | `SPEC.md`, current schemas, completed-command tool-invocation parser | private pre-release cleanup, strict-schema checks, and compound-shell command-boundary fixtures |
+| `PUR-*`, `SCP-*`, `MOD-*` | `SPEC.md`, current schemas, completed-command tool-invocation parser | pre-1.0 single-current cleanup, strict-schema checks, and compound-shell command-boundary fixtures |
 | `LAY-*`, `CFG-*` | `scripts/benchmark_config.py`, `scripts/run_benchmark.py`, frozen project/dashboard manifests, digest-pinned source-only CI, current TOML files | old-field rejection, source/output separation, oversized file-backed approval-cache subprocess fixture, configurable solver-invisible installer caches, explicit tool-package versions, version-scoped install roots, order-independent pinned runtime provisioning, frozen dependency sync, and exact CI runtime identity |
 | `CON-*` | current contracts and contract schema | exact selector ownership and declared expectation checks |
 | `CHN-*`, `PRC-*` | current channel plans and `scripts/protected_verifier.py` | source hashes, overlap audit, permitted-architecture counterexample compilation with candidate-test exclusion, JUnit coverage, process truth table |
-| `PRE-*` | `scripts/current_preflight.py` | actual base/reference artifacts for issues 486, 488, and 498 |
+| `PRE-*` | `scripts/current_preflight.py` | actual base/reference artifacts for issues 487, 488, and 498 |
 | `SCR-*` | `scripts/requirement_evidence.py`, `scripts/current_methodology.py` | common skip truth table and requirement fault injections |
 | `ROW-*`, `TOK-*`, `CST-*` | `scripts/codex_app_server.py`, `scripts/current_pipeline.py`, `scripts/equivalent_cost.py`, provenance registry | exact-executable capability probe, completed-response/final-aggregate reconciliation, complete field comparison, pricing/request evidence authentication, and raw-journal/token/correctness/cost tamper rejection |
-| `RPT-*` | suite loader, fixed-issue repetition uncertainty, reports, dashboard, presentation terminology | strict suite schema, confidence-interval/range threshold and formula tests, aggregate tamper, terminology, browser, and accessibility checks |
+| `RPT-*` | suite loader, fixed-issue repetition uncertainty, reports, dashboard, presentation terminology | strict suite schema, observed-range threshold and formula tests, aggregate tamper, terminology, browser, and accessibility checks |
 | `MUT-*` | `scripts/mutation_calibration.py` | actual protected execution and collateral-regression classification |
 | `QUA-*` | `scripts/methodology_fixture.py`, live qualification-only direct integration receipts, exact Codex project-trust parser | no-model future-path production qualification, generic sanitized-issue query derivation, zero-turn receipt/config reconciliation, exact sealed-repository trust, and fault matrix |
 | `RPL-*` | target bundle/replay builder | exact commit/tree validation and offline Maven replay receipt |

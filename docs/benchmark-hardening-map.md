@@ -1,6 +1,6 @@
 # Current methodology implementation map
 
-This private pre-release tree has one executable correctness architecture.
+This pre-1.0 tree has one executable correctness architecture.
 
 | Concern | Authoritative implementation | Focused verification |
 | --- | --- | --- |

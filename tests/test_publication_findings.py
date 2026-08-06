@@ -8,7 +8,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from publication_findings import compare_result, derive_publication_findings
+from publication_findings import (
+    CORRECTNESS_EQUIVALENCE_TOLERANCE_POINTS,
+    compare_result,
+    derive_publication_findings,
+)
 
 
 def row(
@@ -196,6 +200,25 @@ class PublicationFindingsTest(unittest.TestCase):
         self.assertEqual(72, result["anti_leak"]["prohibited_attempt_blocked_count"])
         self.assertEqual(0, result["anti_leak"]["prohibited_access_invalidating_count"])
         self.assertTrue(result["anti_leak"]["positive_finding_supported"])
+
+
+class ReadmeResultRuleDocumentationTest(unittest.TestCase):
+    def test_readme_states_the_current_rule_with_the_normative_tolerance(
+        self,
+    ) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        points = f"{CORRECTNESS_EQUIVALENCE_TOLERANCE_POINTS:.1f}"
+        self.assertIn(
+            "same number of fully solved runs and its task score differs "
+            f"by at most {points} points",
+            readme,
+        )
+        self.assertIn(f"task score more than {points} points higher", readme)
+        self.assertIn(f"task score no more than {points} points lower", readme)
+        for classification in ("similar", "better", "mixed", "worse"):
+            self.assertIn(classification, readme)
+        self.assertNotIn("quality is ordered by", readme)
+        self.assertNotIn("task-success-first", readme)
 
 
 if __name__ == "__main__":

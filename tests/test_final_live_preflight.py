@@ -93,7 +93,7 @@ class ProtectedCommonSkipTruthTableTest(unittest.TestCase):
 
 class CurrentConfigurationRejectionTest(unittest.TestCase):
     def test_every_historical_issue_field_is_rejected_without_translation(self) -> None:
-        source = (ROOT / "configs" / "default.toml").read_text(encoding="utf-8")
+        source = (ROOT / "configs" / "symphony-trello.toml").read_text(encoding="utf-8")
         removed_fields = (
             "test" + "_command",
             "reference" + "_test_command",

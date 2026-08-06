@@ -47,5 +47,5 @@ The live schemas are:
 - `schemas/suite-results.schema.json`
 - `schemas/dashboard-data.schema.json`
 
-Breaking private pre-release changes replace the active format in place. Immutable published ZIPs
+Breaking pre-1.0 changes replace the active format in place. Immutable published ZIPs
 remain opaque external evidence and are never parsed as current runtime input.

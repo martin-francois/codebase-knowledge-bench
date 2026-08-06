@@ -229,7 +229,7 @@ class SourceOnlyStratumTest(unittest.TestCase):
         )
         self.assertIn(
             f'output_root = "../../.{slug}-output"',
-            (ROOT / "configs/default.toml").read_text(encoding="utf-8"),
+            (ROOT / "configs/symphony-trello.toml").read_text(encoding="utf-8"),
         )
         self.assertIn(
             f'"https://example.invalid/{slug}/',

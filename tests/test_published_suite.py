@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import math
+import os
 import sys
 import tempfile
 import unittest
@@ -44,6 +45,35 @@ class PublishedSuiteControlTest(unittest.TestCase):
         self.assertEqual(84, len(keys))
         for counts in first["position_counts"].values():
             self.assertLessEqual(max(counts.values()) - min(counts.values()), 1)
+
+    def test_no_argument_default_is_the_published_configuration(self) -> None:
+        coordinator = (ROOT / "scripts/run_benchmark_suite.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            'DEFAULT_CONFIG = BENCH / "configs" / "symphony-trello.toml"',
+            coordinator,
+        )
+        self.assertFalse((ROOT / "configs" / "default.toml").exists())
+        published = ROOT / "configs" / "symphony-trello.toml"
+        with mock.patch.dict(os.environ, {}, clear=True):
+            no_argument = benchmark_config.apply_configuration(
+                [], default_config=published
+            )
+            no_argument_environment = {
+                name: value
+                for name, value in os.environ.items()
+                if name.startswith("BENCH_")
+            }
+        with mock.patch.dict(os.environ, {}, clear=True):
+            quick_start = benchmark_config.apply_configuration([str(published)])
+            quick_start_environment = {
+                name: value
+                for name, value in os.environ.items()
+                if name.startswith("BENCH_")
+            }
+        self.assertEqual(no_argument, quick_start)
+        self.assertEqual(no_argument_environment, quick_start_environment)
 
     def test_published_profile_is_exact_and_fail_closed(self) -> None:
         config = benchmark_config.read_config(ROOT / "configs" / "symphony-trello.toml")
