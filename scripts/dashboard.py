@@ -271,8 +271,8 @@ def build_dashboard(suite_dir: Path, suite_result: dict[str, Any]) -> Path:
     return output
 
 
-def _schema_check(data: dict[str, Any]) -> list[str]:
-    schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+def _schema_check(data: dict[str, Any], schema_path: Path | None = None) -> list[str]:
+    schema = json.loads((schema_path or SCHEMA).read_text(encoding="utf-8"))
     errors = [
         f"dashboard JSON Schema at /{'/'.join(map(str, error.absolute_path))}: {error.message}"
         for error in sorted(Draft202012Validator(schema).iter_errors(data), key=lambda item: list(item.path))
@@ -403,6 +403,8 @@ def validate_dashboard(
     suite_result: dict[str, Any],
     errors: list[str],
     chromium_executable: str | Path | None = None,
+    *,
+    archived_methodology: bool = False,
 ) -> dict[str, Any]:
     output = suite_dir / "report-assets" / "operational-dashboard"
     required = [
@@ -431,13 +433,22 @@ def validate_dashboard(
         report["errors"] = list(missing)
         return report
     stored = json.loads((output / "dashboard-data.json").read_text(encoding="utf-8"))
-    schema_errors = _schema_check(stored)
+    schema_errors = _schema_check(
+        stored,
+        (output / "dashboard-data.schema.json") if archived_methodology else None,
+    )
     report["data_schema"] = "passed" if not schema_errors else "failed"
-    expected = dashboard_data(suite_result)
-    join_ok = stored == expected
-    report["published_join"] = "passed" if join_ok else "failed"
-    if not join_ok:
-        schema_errors.append("dashboard data differs from published suite analysis")
+    if archived_methodology:
+        # Immutable archives keep the frozen pre-revision analysis; they are
+        # validated against their own embedded schema, not recomputed under
+        # the current methodology.
+        report["published_join"] = "skipped_archived_methodology"
+    else:
+        expected = dashboard_data(suite_result)
+        join_ok = stored == expected
+        report["published_join"] = "passed" if join_ok else "failed"
+        if not join_ok:
+            schema_errors.append("dashboard data differs from published suite analysis")
     page = (output / "index.html").read_text(encoding="utf-8")
     network_tokens = ("src=\"http", "href=\"http", "src='http", "href='http")
     offline_ok = not any(token in page.lower() for token in network_tokens)

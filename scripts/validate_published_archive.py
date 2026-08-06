@@ -122,7 +122,27 @@ def main() -> int:
     if suite_results_path.is_file():
         suite_result = json.loads(suite_results_path.read_text(encoding="utf-8"))
         if suite_result.get("aggregates", {}).get("operational_tradeoffs") is not None:
-            dashboard_report = validate_dashboard(root, suite_result, errors)
+            embedded_schema = (
+                root
+                / "report-assets"
+                / "operational-dashboard"
+                / "dashboard-data.schema.json"
+            )
+            repo_schema = (
+                Path(__file__).resolve().parents[1]
+                / "schemas"
+                / "dashboard-data.schema.json"
+            )
+            archived_methodology = (
+                embedded_schema.is_file()
+                and embedded_schema.read_bytes() != repo_schema.read_bytes()
+            )
+            dashboard_report = validate_dashboard(
+                root,
+                suite_result,
+                errors,
+                archived_methodology=archived_methodology,
+            )
     model_lock_report = {"status": "not_applicable", "errors": []}
     model_lock_path = root / "model-preflight-lock.json"
     if model_lock_path.is_file():

@@ -1,14 +1,64 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import lzma
+import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+
+HEAD_COMMIT = subprocess.run(
+    ["git", "rev-parse", "HEAD"],
+    cwd=ROOT,
+    capture_output=True,
+    text=True,
+    check=True,
+).stdout.strip()
+
+
+def _sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def rebind_archive(suite_dir: Path) -> None:
+    """Zip the loose suite results and refresh the archive bindings."""
+    with zipfile.ZipFile(
+        suite_dir / "suite-bundle.zip", "w", zipfile.ZIP_DEFLATED
+    ) as archive:
+        archive.writestr(
+            "suite-results.json",
+            (suite_dir / "suite-results.json").read_bytes(),
+        )
+    results_sha = _sha256_file(suite_dir / "suite-results.json")
+    bundle_sha = _sha256_file(suite_dir / "suite-bundle.zip")
+    (suite_dir / "operator-summary.json").write_text(
+        json.dumps(
+            {
+                "suite_id": "fixture-suite",
+                "published_result": {
+                    "path": "suite-results.json",
+                    "sha256": results_sha,
+                },
+                "archive": {"archive_sha256": bundle_sha},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (suite_dir / "suite-bundle.validation.json").write_text(
+        json.dumps(
+            {
+                "validation_result": "passed",
+                "archive_sha256": bundle_sha,
+            }
+        ),
+        encoding="utf-8",
+    )
 
 import build_publication
 from publication_findings import derive_publication_findings
@@ -108,7 +158,7 @@ def build_suite_dir(base: Path) -> Path:
                     "tools": ["baseline-none", "tool"],
                 },
                 "source": {
-                    "commit": "0" * 40,
+                    "commit": HEAD_COMMIT,
                     "tree": "1" * 40,
                     "clean": True,
                     "pushed": True,
@@ -124,13 +174,7 @@ def build_suite_dir(base: Path) -> Path:
     (suite_dir / "suite-results.json").write_text(
         json.dumps(suite, sort_keys=True), encoding="utf-8"
     )
-    (suite_dir / "suite-bundle.zip").write_bytes(b"fixture-bundle")
-    (suite_dir / "operator-summary.json").write_text(
-        json.dumps({"suite_id": "fixture-suite"}), encoding="utf-8"
-    )
-    (suite_dir / "suite-bundle.validation.json").write_text(
-        json.dumps({"errors": []}), encoding="utf-8"
-    )
+    rebind_archive(suite_dir)
     return suite_dir
 
 
@@ -201,6 +245,7 @@ class BuildPublicationTest(unittest.TestCase):
             (suite_dir / "suite-results.json").write_text(
                 json.dumps(results, sort_keys=True), encoding="utf-8"
             )
+            rebind_archive(suite_dir)
             with self.assertRaises(SystemExit) as context:
                 build_publication.write_publication(
                     suite_dir, base / "publication"
@@ -218,10 +263,77 @@ class BuildPublicationTest(unittest.TestCase):
             (suite_dir / "suite-results.json").write_text(
                 json.dumps(results, sort_keys=True), encoding="utf-8"
             )
+            rebind_archive(suite_dir)
             with self.assertRaises(SystemExit):
                 build_publication.write_publication(
                     suite_dir, base / "publication"
                 )
+
+
+    def test_failed_validation_receipt_blocks_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as scratch:
+            base = Path(scratch)
+            suite_dir = build_suite_dir(base)
+            receipt = json.loads(
+                (suite_dir / "suite-bundle.validation.json").read_text()
+            )
+            receipt["validation_result"] = "failed"
+            (suite_dir / "suite-bundle.validation.json").write_text(
+                json.dumps(receipt), encoding="utf-8"
+            )
+            with self.assertRaises(SystemExit) as context:
+                build_publication.write_publication(
+                    suite_dir, base / "publication"
+                )
+            self.assertIn("passed result", str(context.exception))
+
+    def test_unbound_operator_summary_blocks_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as scratch:
+            base = Path(scratch)
+            suite_dir = build_suite_dir(base)
+            (suite_dir / "operator-summary.json").write_text(
+                json.dumps(
+                    {
+                        "suite_id": "fixture-suite",
+                        "published_result": {
+                            "path": "suite-results.json",
+                            "sha256": "0" * 64,
+                        },
+                        "archive": {"archive_sha256": "0" * 64},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(SystemExit) as context:
+                build_publication.write_publication(
+                    suite_dir, base / "publication"
+                )
+            self.assertIn("does not bind", str(context.exception))
+
+    def test_selected_issue_subset_defines_the_publication_scope(self) -> None:
+        with tempfile.TemporaryDirectory() as scratch:
+            base = Path(scratch)
+            suite_dir = build_suite_dir(base)
+            results = json.loads(
+                (suite_dir / "suite-results.json").read_text()
+            )
+            plan = results["suite_plan"]
+            plan["issues_selected"] = list(plan["issues"])
+            plan["issues"] = plan["issues"] + [
+                {"issue_id": "issue-3", "issue_number": 3}
+            ]
+            (suite_dir / "suite-results.json").write_text(
+                json.dumps(results, sort_keys=True), encoding="utf-8"
+            )
+            rebind_archive(suite_dir)
+            manifest = build_publication.write_publication(
+                suite_dir, base / "publication"
+            )
+            self.assertEqual(8, manifest["expectedRunCount"])
+            self.assertEqual(
+                ["issue-1", "issue-2"],
+                [issue["id"] for issue in manifest["issues"]],
+            )
 
 
 if __name__ == "__main__":
