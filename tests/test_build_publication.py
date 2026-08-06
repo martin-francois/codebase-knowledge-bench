@@ -234,6 +234,54 @@ class BuildPublicationTest(unittest.TestCase):
                     digest, build_publication.sha256_file(output / name)
                 )
 
+    def test_descriptor_repository_path_is_published(self) -> None:
+        with tempfile.TemporaryDirectory() as scratch:
+            base = Path(scratch)
+            suite_dir = build_suite_dir(base)
+            descriptor_path = (
+                "configs/pricing/gpt-5.6-sol-standard-global-2026-07-30.json"
+            )
+            descriptor = json.loads((ROOT / descriptor_path).read_text())
+            results = json.loads(
+                (suite_dir / "suite-results.json").read_text()
+            )
+            for row in results["runs"]:
+                row["equivalent_cost"]["pricing_descriptor_id"] = descriptor[
+                    "descriptor_id"
+                ]
+                row["equivalent_cost"]["pricing_descriptor_sha256"] = (
+                    descriptor["descriptor_content_sha256"]
+                )
+            (suite_dir / "suite-results.json").write_text(
+                json.dumps(results, sort_keys=True), encoding="utf-8"
+            )
+            rebind_archive(suite_dir)
+            build_publication.write_publication(
+                suite_dir, base / "publication"
+            )
+            compressed = next(
+                (base / "publication").glob("research-data-*.json.xz")
+            )
+            research = json.loads(
+                lzma.decompress(compressed.read_bytes())
+            )
+            self.assertEqual(
+                [
+                    {
+                        "descriptorId": descriptor["descriptor_id"],
+                        "descriptorContentSha256": descriptor[
+                            "descriptor_content_sha256"
+                        ],
+                        "repositoryPath": descriptor_path,
+                    }
+                ],
+                research["provenance"]["pricingDescriptors"],
+            )
+            self.assertIn(
+                "provenance.pricingDescriptors[*].repositoryPath",
+                research["fieldGuide"],
+            )
+
     def test_blocked_access_mismatch_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as scratch:
             base = Path(scratch)

@@ -61,6 +61,12 @@ FIELD_GUIDE = {
         "better, similar, mixed, or worse, under the 2-point task-score "
         "tolerance."
     ),
+    "provenance.pricingDescriptors[*].repositoryPath": (
+        "The repository-relative path of the pricing descriptor file at the "
+        "frozen benchmark source commit. The file's canonical content hash "
+        "must equal `descriptorContentSha256`, so the published costs bind "
+        "to exactly this committed descriptor."
+    ),
     "runToRunCorrectness.by_tool.*.observed_range": (
         "The reader-facing uncertainty display: the lowest and highest "
         "repetition mean. It describes variation in this fixed benchmark "
@@ -396,35 +402,41 @@ def build_research_data(suite_dir: Path) -> dict[str, Any]:
             text=True,
         )
         available = [
-            json.loads(
-                source_commit_file(
-                    source_commit, f"configs/pricing/{name.strip()}"
-                )
+            (
+                f"configs/pricing/{name.strip()}",
+                json.loads(
+                    source_commit_file(
+                        source_commit, f"configs/pricing/{name.strip()}"
+                    )
+                ),
             )
             for name in pricing_listing.stdout.splitlines()
             if name.strip().endswith(".json")
         ]
     else:
         available = []
+    descriptor_paths: dict[str, str] = {}
     for descriptor_id, descriptor_sha in sorted(referenced_descriptors.items()):
-        matched = next(
+        matched_entry = next(
             (
-                content
-                for content in available
+                (path, content)
+                for path, content in available
                 if content.get("descriptor_id") == descriptor_id
             ),
             None,
         )
-        if matched is None:
+        if matched_entry is None:
             raise SystemExit(
                 "runs reference a pricing descriptor absent from the "
                 f"execution source commit: {descriptor_id}"
             )
+        descriptor_path, matched = matched_entry
         if matched.get("descriptor_content_sha256") != descriptor_sha:
             raise SystemExit(
                 f"pricing descriptor {descriptor_id} content hash does not "
                 "match the hash the runs reference; refusing to publish"
             )
+        descriptor_paths[descriptor_id] = descriptor_path
         pricing_contents.append(matched)
     valid_rows = [
         row
@@ -478,6 +490,7 @@ def build_research_data(suite_dir: Path) -> dict[str, Any]:
                 {
                     "descriptorId": descriptor_id,
                     "descriptorContentSha256": descriptor_sha,
+                    "repositoryPath": descriptor_paths[descriptor_id],
                 }
                 for descriptor_id, descriptor_sha in sorted(
                     referenced_descriptors.items()
