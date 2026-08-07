@@ -132,10 +132,10 @@
       }
     },
     "source_only_userspace_image": {
-      "const": "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
+      "const": "mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e"
     },
     "source_only_userspace_image_digest": {
-      "const": "sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
+      "const": "sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e"
     },
     "source_only_distribution": {
       "type": "string",
@@ -146,19 +146,19 @@
       "minLength": 1
     },
     "python_version": {
-      "const": "3.14.6"
+      "const": "3.14.7"
     },
     "python_executable_sha256": {
       "$ref": "#/$defs/sha256"
     },
     "node_version": {
-      "const": "v24.18.1"
+      "const": "v24.19.0"
     },
     "node_executable_sha256": {
       "$ref": "#/$defs/sha256"
     },
     "npm_version": {
-      "const": "11.16.0"
+      "const": "11.17.0"
     },
     "npm_entrypoint_sha256": {
       "$ref": "#/$defs/sha256"
@@ -239,7 +239,7 @@
       "type": "object"
     },
     "source_only_executed_image": {
-      "const": "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
+      "const": "mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e"
     },
     "source_only_distribution_id": {
       "type": "string"

@@ -415,8 +415,8 @@ and original derived output remain unchanged. The expensive matrix remains opt-i
 `RUN_EXPENSIVE_BENCHMARK=true`.
 
 The supported project interpreter is exactly Python `>=3.14,<3.15`. Source-only CI runs in
-`mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07`
-with Python 3.14.6 and Node 24.18.1 selected explicitly. It uses the checked-in synthetic target and
+`mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e`
+with Python 3.14.7 and Node 24.19.0 selected explicitly. It uses the checked-in synthetic target and
 injected external executable paths. It also builds the dashboard and runs the real
 `dashboard/tests/browser.spec.ts` Playwright accessibility/offline test with the Chromium supplied
 by that image. The source-only CI and browser receipts record the exact image, Python, Node, npm,

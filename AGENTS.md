@@ -219,7 +219,7 @@ receipt.
 
 For the `final-source-only-ci-browser-and-image-pin` release, keep the source-only job inside the
 single full-digest Playwright image declared in `.github/workflows/ci.yml`. The executed runner must
-match that source pin, select Python 3.14.6 and Node 24.18.1, set
+match that source pin, select Python 3.14.7 and Node 24.19.0, set
 `BENCH_CHROMIUM_EXECUTABLE`, run `npm run test:browser --prefix dashboard`, and receipt only the
 executed `dashboard/tests/browser.spec.ts`. Source-only evidence must not import the artifact-backed
 target or packaged replay runtime.

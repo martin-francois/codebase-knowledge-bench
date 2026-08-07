@@ -23,7 +23,7 @@ The source-only workflow runs in the full-digest Playwright image declared in
 - `source-only-browser-result.json`;
 - one log pair for every executed command.
 
-The CI receipt must bind the image digest, Python 3.14.6, Node 24.18.1, npm, Chromium, workflow
+The CI receipt must bind the image digest, Python 3.14.7, Node 24.19.0, npm, Chromium, workflow
 SHA-256, command-plan SHA-256, source commit, and source tree. The browser receipt must name only
 `dashboard/tests/browser.spec.ts`, record at least one executed test, and match the same source and
 Chromium identities.

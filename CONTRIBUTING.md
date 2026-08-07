@@ -35,9 +35,9 @@ derived outputs instead of rerunning completed solves for scoring or reporting c
 
 ## Local development checks
 
-Use Python 3.14.6; the declared support policy is exactly `>=3.14,<3.15`. The clean-checkout
+Use Python 3.14.7; the declared support policy is exactly `>=3.14,<3.15`. The clean-checkout
 source-only stratum runs in the full-digest Playwright userspace declared in
-`.github/workflows/ci.yml`, selects Node 24.18.1, uses frozen dependencies and the checked-in
+`.github/workflows/ci.yml`, selects Node 24.19.0, uses frozen dependencies and the checked-in
 synthetic target, and injects external executable paths. It executes Vitest, the dashboard build,
 and the real `dashboard/tests/browser.spec.ts` Playwright test. It deliberately does not require the
 published target checkout or Bubblewrap integration.
