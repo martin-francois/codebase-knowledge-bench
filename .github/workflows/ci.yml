@@ -41,7 +41,7 @@ jobs:
           rm -- "${packages[0]}"
       - uses: astral-sh/setup-uv@v9.0.0
         with:
-          version: "0.12.2"
+          version: "0.12.3"
           enable-cache: false
       - uses: actions/setup-python@v7.0.0
         with:
