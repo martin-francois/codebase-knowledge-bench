@@ -1,6 +1,70 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":rebaseStalePrs"
+  ],
+  "reviewers": [
+    "martinfrancois"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "automergeType": "pr",
+  "ignoreTests": false,
+  "internalChecksFilter": "strict",
+  "minimumReleaseAge": "7 days",
+  "minimumReleaseAgeBehaviour": "timestamp-required",
+  "statusCheckWhen": {
+    "minimumReleaseAge": "never"
+  },
+  "pinDigests": true,
+  "rangeStrategy": "pin",
+  "dependencyDashboardApproval": false,
+  "prConcurrentLimit": 0,
+  "branchConcurrentLimit": 0,
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true,
+  "separateMinorPatch": false,
+  "vulnerabilityAlerts": {
+    "description": "The security label is not decoration: the dependency watchdog identifies a security pull request by this label plus Renovate authorship, and matching on the title instead produced nineteen false positives elsewhere in the fleet. Renovate's own defaults already let a vulnerability fix bypass the release-age gate and the schedule, which is why neither is restated here.",
+    "enabled": true,
+    "labels": [
+      "security"
+    ]
+  },
+  "lockFileMaintenance": {
+    "description": "Rewrite dashboard/package-lock.json from scratch every week so transitive dependencies pick up published fixes. Ordinary updates only touch the entries named in a manifest, so an advisory against a package no manifest names is never resolved until the lockfile itself is refreshed. This is a public repository, so the run costs nothing.",
+    "enabled": true,
+    "schedule": [
+      "* 0-4 * * 5"
+    ],
+    "automerge": true
+  },
+  "packageRules": [
+    {
+      "description": "Group routine updates and merge them once Renovate observes the required checks pass. Majors are excluded so a pending major never blocks the automergeable bundle.",
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "pinDigest",
+        "digest"
+      ],
+      "groupName": "Routine dependency updates",
+      "groupSlug": "routine-dependencies",
+      "automerge": true
+    },
+    {
+      "description": "Majors land one at a time and are merged by a human after reading the migration notes. Public repository, so each major is proposed separately rather than bundled.",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "major update"
+      ]
+    }
   ]
 }
