@@ -44,6 +44,13 @@
   },
   "packageRules": [
     {
+      "description": "requires-python declares which Python versions this project supports, not which version to install, so the repository-wide rangeStrategy pin is wrong for it. Pinning turned >=3.14,<3.15 into ==3.14.7, which would make the project reject CPython 3.14.8 as incompatible the moment it ships, including a 3.14.8 published to fix a vulnerability. replace keeps the declared range and only rewrites it when a release falls outside it.",
+      "matchDepTypes": [
+        "requires-python"
+      ],
+      "rangeStrategy": "replace"
+    },
+    {
       "description": "Group routine updates and merge them once Renovate observes the required checks pass. Majors are excluded so a pending major never blocks the automergeable bundle.",
       "matchUpdateTypes": [
         "minor",
