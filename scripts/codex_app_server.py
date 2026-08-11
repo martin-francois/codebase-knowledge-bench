@@ -83,25 +83,29 @@ def _verify_installed_codex(
     command_path = Path(found).absolute()
     installation = lock["installation"]
     expected_command = Path(str(installation["command_path"]))
-    if command_path != expected_command:
-        errors.append(
-            f"Codex command path is {command_path}, expected {expected_command}"
-        )
     resolved_launcher = command_path.resolve()
     expected_launcher = Path(str(installation["launcher_path"]))
-    if resolved_launcher != expected_launcher:
-        errors.append(
-            f"Codex launcher is {resolved_launcher}, expected {expected_launcher}"
-        )
+    launcher_package_root = resolved_launcher.parent.parent
+    package_json_path = launcher_package_root / "package.json"
+    platform_package_relative = Path("@openai/codex-linux-x64")
+    platform_roots = (
+        launcher_package_root / "node_modules" / platform_package_relative,
+        launcher_package_root.parent / "codex-linux-x64",
+    )
+    platform_root = next(
+        (candidate for candidate in platform_roots if candidate.is_dir()),
+        platform_roots[0],
+    )
+    platform_package_json_path = platform_root / "package.json"
+    native_executable_path = (
+        platform_root
+        / "vendor/x86_64-unknown-linux-musl/bin/codex"
+    )
     file_checks = {
-        "launcher_sha256": expected_launcher,
-        "package_json_sha256": Path(str(installation["package_json_path"])),
-        "platform_package_json_sha256": Path(
-            str(installation["platform_package_json_path"])
-        ),
-        "native_executable_sha256": Path(
-            str(installation["native_executable_path"])
-        ),
+        "launcher_sha256": resolved_launcher,
+        "package_json_sha256": package_json_path,
+        "platform_package_json_sha256": platform_package_json_path,
+        "native_executable_sha256": native_executable_path,
     }
     observed_hashes: dict[str, str | None] = {}
     for field, path in file_checks.items():
@@ -113,13 +117,13 @@ def _verify_installed_codex(
             )
     package_paths = (
         (
-            Path(str(installation["package_json_path"])),
+            package_json_path,
             installation["package_name"],
             installation["package_version"],
             "launcher package",
         ),
         (
-            Path(str(installation["platform_package_json_path"])),
+            platform_package_json_path,
             installation["platform_package_name"],
             installation["platform_package_version"],
             "platform package",
@@ -170,6 +174,13 @@ def _verify_installed_codex(
     identity = {
         "command_path": str(command_path),
         "launcher_path": str(resolved_launcher),
+        "package_json_path": str(package_json_path),
+        "platform_package_json_path": str(platform_package_json_path),
+        "native_executable_path": str(native_executable_path),
+        "relocated_from_frozen_installation_path": (
+            command_path != expected_command
+            or resolved_launcher != expected_launcher
+        ),
         "version_output": version,
         "observed_hashes": observed_hashes,
         "observed_packages": observed_packages,

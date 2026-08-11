@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from scripts.codex_app_server import (
+    _verify_installed_codex,
     _token_usage,
     extract_app_server_usage,
     run_app_server,
@@ -171,6 +172,83 @@ for line in sys.stdin:
 
 
 class CodexAppServerClientTest(unittest.TestCase):
+    def test_exact_codex_package_can_use_a_content_identical_relocated_prefix(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            package_root = root / "node_modules/@openai/codex"
+            platform_root = root / "node_modules/@openai/codex-linux-x64"
+            launcher = package_root / "bin/codex.js"
+            native = (
+                platform_root
+                / "vendor/x86_64-unknown-linux-musl/bin/codex"
+            )
+            command = root / "bin/codex"
+            launcher.parent.mkdir(parents=True)
+            native.parent.mkdir(parents=True)
+            command.parent.mkdir(parents=True)
+            launcher.write_text(
+                "#!/bin/sh\nprintf 'codex-cli 0.146.0\\n'\n",
+                encoding="utf-8",
+            )
+            launcher.chmod(0o755)
+            (package_root / "package.json").write_text(
+                json.dumps({"name": "@openai/codex", "version": "0.146.0"}),
+                encoding="utf-8",
+            )
+            (platform_root / "package.json").write_text(
+                json.dumps(
+                    {
+                        "name": "@openai/codex",
+                        "version": "0.146.0-linux-x64",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            native.write_bytes(b"exact native fixture")
+            command.symlink_to(launcher)
+
+            def digest(path: Path) -> str:
+                import hashlib
+
+                return hashlib.sha256(path.read_bytes()).hexdigest()
+
+            lock = {
+                "platform": {
+                    "os": sys.platform,
+                    "architecture": os.uname().machine,
+                },
+                "version_output": "codex-cli 0.146.0",
+                "installation": {
+                    "command_path": "/usr/bin/codex",
+                    "launcher_path": "/usr/lib/node_modules/@openai/codex/bin/codex.js",
+                    "package_json_path": "/usr/lib/node_modules/@openai/codex/package.json",
+                    "platform_package_json_path": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/package.json",
+                    "native_executable_path": "/usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+                    "package_name": "@openai/codex",
+                    "package_version": "0.146.0",
+                    "platform_package_name": "@openai/codex",
+                    "platform_package_version": "0.146.0-linux-x64",
+                    "launcher_sha256": digest(launcher),
+                    "package_json_sha256": digest(package_root / "package.json"),
+                    "platform_package_json_sha256": digest(
+                        platform_root / "package.json"
+                    ),
+                    "native_executable_sha256": digest(native),
+                },
+            }
+            resolved, identity, errors = _verify_installed_codex(
+                str(command), lock
+            )
+
+        self.assertEqual(str(command), resolved)
+        self.assertEqual([], errors)
+        self.assertTrue(identity["relocated_from_frozen_installation_path"])
+        self.assertEqual(str(platform_root / "package.json"), identity[
+            "platform_package_json_path"
+        ])
+
     def test_default_client_declines_mcp_elicitation_without_waiting(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
