@@ -2920,6 +2920,18 @@ esac
     return wrapper
 
 
+def prethink_cli_command(v: Tool, cli_jar: Path, *arguments: str) -> list[str]:
+    """Run the Java CLI with its actual home bound to the isolated tool home."""
+
+    return [
+        "java",
+        f"-Duser.home={tool_home(v).resolve()}",
+        "-jar",
+        str(cli_jar),
+        *arguments,
+    ]
+
+
 def setup_prethink(v: Tool, setup_log: Path, version_file: Path, config_file: Path) -> None:
     if ALLOW_CODE_UPLOAD:
         raise RuntimeError("Prethink setup requires source upload to remain disabled")
@@ -2943,7 +2955,11 @@ def setup_prethink(v: Tool, setup_log: Path, version_file: Path, config_file: Pa
     group = v.repo.parent
     remote_added = False
     try:
-        version = run(["java", "-jar", str(cli_jar), "--version"], env=env, timeout=60)
+        version = run(
+            prethink_cli_command(v, cli_jar, "--version"),
+            env=env,
+            timeout=60,
+        )
         log_command(setup_log, version)
         if version.returncode != 0 or f"Moderne CLI {source['moderne_cli_version']}" not in (
             version.stdout + version.stderr
@@ -2953,10 +2969,15 @@ def setup_prethink(v: Tool, setup_log: Path, version_file: Path, config_file: Pa
 
         install_started = time.monotonic()
         install = run(
-            [
-                "java", "-jar", str(cli_jar), "config", "recipes", "jar", "install",
+            prethink_cli_command(
+                v,
+                cli_jar,
+                "config",
+                "recipes",
+                "jar",
+                "install",
                 TOOL_PACKAGE_REQUESTS["prethink"],
-            ],
+            ),
             env=env,
             timeout=STAGE_POLICY.timeout_for("installation"),
             stage="installation",
@@ -2967,6 +2988,8 @@ def setup_prethink(v: Tool, setup_log: Path, version_file: Path, config_file: Pa
         log_command(setup_log, install)
         if install.returncode != 0:
             raise RuntimeError("exact released Prethink recipe installation failed")
+        if not (cli_home / "recipes-v5.csv").is_file():
+            raise RuntimeError("Prethink recipe state escaped the isolated CLI home")
 
         if not TARGET_REPO_URL:
             raise RuntimeError("Prethink setup requires the configured public target URL")
@@ -2978,7 +3001,7 @@ def setup_prethink(v: Tool, setup_log: Path, version_file: Path, config_file: Pa
 
         start = time.monotonic()
         build = run(
-            ["java", "-jar", str(cli_jar), "build", str(group)],
+            prethink_cli_command(v, cli_jar, "build", str(group)),
             cwd=group,
             env=env,
             timeout=STAGE_POLICY.timeout_for("indexing"),
@@ -2991,10 +3014,14 @@ def setup_prethink(v: Tool, setup_log: Path, version_file: Path, config_file: Pa
         if build.returncode != 0:
             raise RuntimeError("authenticated local Moderne build failed")
         recipe = run(
-            [
-                "java", "-jar", str(cli_jar), "run", str(group), "--recipe",
+            prethink_cli_command(
+                v,
+                cli_jar,
+                "run",
+                str(group),
+                "--recipe",
                 str(source["recipe"]),
-            ],
+            ),
             cwd=group,
             env=env,
             timeout=STAGE_POLICY.timeout_for("setup"),
@@ -3006,7 +3033,14 @@ def setup_prethink(v: Tool, setup_log: Path, version_file: Path, config_file: Pa
         if recipe.returncode != 0:
             raise RuntimeError("Prethink context recipe failed")
         apply = run(
-            ["java", "-jar", str(cli_jar), "git", "apply", str(group), "--last-recipe-run"],
+            prethink_cli_command(
+                v,
+                cli_jar,
+                "git",
+                "apply",
+                str(group),
+                "--last-recipe-run",
+            ),
             cwd=group,
             env=env,
             timeout=STAGE_POLICY.timeout_for("setup"),

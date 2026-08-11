@@ -6860,6 +6860,27 @@ class ComplianceRegressionTest(unittest.TestCase):
                 (context / "architecture.md").read_text(encoding="utf-8"),
             )
 
+    def test_prethink_java_cli_uses_the_isolated_tool_home(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tool = runner.Tool(
+                "run-001", "prethink", root / "repo", root / "run"
+            )
+            with mock.patch.object(runner, "TOOL_CACHE", root / "tool-cache"):
+                command = runner.prethink_cli_command(
+                    tool, root / "moderne-cli.jar", "--version"
+                )
+
+        self.assertEqual("java", command[0])
+        self.assertEqual(
+            f"-Duser.home={(root / 'tool-cache/run-001/home').resolve()}",
+            command[1],
+        )
+        self.assertEqual(
+            ["-jar", str(root / "moderne-cli.jar"), "--version"],
+            command[2:],
+        )
+
     def test_prethink_access_preserves_focused_empty_error_and_missing_wrapper_states(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
