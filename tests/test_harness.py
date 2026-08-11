@@ -238,6 +238,35 @@ class RetryPolicyTest(unittest.TestCase):
             [command[index : index + 3] for index in range(len(command) - 2)],
         )
 
+    def test_child_sandbox_binds_relocated_npm_command_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tool = runner.Tool("run-001", "prethink", root / "repo", root / "run")
+            tool.repo.mkdir(parents=True)
+            tool.run_dir.mkdir(parents=True)
+            anti_leak = root / "anti-leak-bin"
+            anti_leak.mkdir()
+            node_modules = root / "codex-prefix" / "node_modules"
+            command_path = node_modules / ".bin" / "codex"
+            command_path.parent.mkdir(parents=True)
+            command_path.write_text("fixture", encoding="utf-8")
+            with mock.patch.object(runner, "TOOL_CACHE", root / "tool-cache"), mock.patch.object(
+                runner, "MAVEN_CACHE", root / "maven-cache"
+            ), mock.patch.object(runner, "ANTI_LEAK_BIN", anti_leak), mock.patch.object(
+                runner, "SHARED_INSTALL_ROOT", root / "shared-installs"
+            ), mock.patch.object(runner, "NODE24_BIN", root / "node24/bin"), mock.patch.object(
+                runner, "APPROVALS", approvals_mapping()
+            ):
+                command = runner.external_sandbox_cmd(
+                    tool,
+                    [str(command_path), "app-server"],
+                    bwrap_path="/fixture/bin/bwrap",
+                )
+        self.assertIn(
+            ["--ro-bind", str(node_modules), str(node_modules)],
+            [command[index : index + 3] for index in range(len(command) - 2)],
+        )
+
     def test_no_model_qualification_blocks_every_codex_launch(self) -> None:
         with mock.patch.object(runner, "NO_MODEL_QUALIFICATION", True):
             with self.assertRaisesRegex(RuntimeError, "prohibited"):
@@ -1406,6 +1435,32 @@ class ToolEvidenceTest(unittest.TestCase):
                 command[index : index + 2] == ["--tmpfs", "/tmp"]
                 for index in range(len(command) - 1)
             ),
+        )
+
+    def test_approval_reviewer_sandbox_binds_relocated_npm_command_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            harness = root / "arbitrary" / "harness"
+            target = root / "arbitrary" / "target"
+            output = root / "arbitrary" / "output"
+            reviewer = output / "executions" / "run" / "approval-reviewer" / "one"
+            node_modules = root / "arbitrary" / "codex-prefix" / "node_modules"
+            codex = node_modules / ".bin" / "codex"
+            for path in (harness, target, reviewer, codex.parent):
+                path.mkdir(parents=True)
+            codex.write_text("fixture", encoding="utf-8")
+            with (
+                mock.patch.object(runner, "BENCH", harness),
+                mock.patch.object(runner, "ROOT", target),
+                mock.patch.object(runner, "OUTPUT_ROOT", output),
+                mock.patch.object(runner.shutil, "which", return_value="/usr/bin/bwrap"),
+            ):
+                command = runner.approval_reviewer_sandbox_cmd(
+                    reviewer, [str(codex), "app-server"]
+                )
+        self.assertIn(
+            ["--ro-bind", str(node_modules), str(node_modules)],
+            [command[index : index + 3] for index in range(len(command) - 2)],
         )
 
     def test_clean_cached_run_requires_external_operator_toml(self) -> None:

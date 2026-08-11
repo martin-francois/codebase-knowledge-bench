@@ -60,6 +60,7 @@
       "findings": [
         "Prethink setup, direct no-model smoke, and solve telemetry use the existing setup-failure, command-exit, timeout, focused-context, trust, and protected-process validity semantics.",
         "Focused, empty, command-error, unavailable-wrapper, broad-context, and read-only path-boundary fixtures remain distinguishable.",
+        "Both solver and approval-reviewer sandboxes reconstruct and read-only bind the exact relocated npm runtime beneath an otherwise masked host root, while leaving target, harness, credentials, and other run data hidden.",
         "Only successful nonempty prethink-context output can supply issue-specific tool context; setup success alone cannot establish attributable tool use."
       ],
       "id": "LLM-004",
@@ -111,8 +112,8 @@
     "Live Prethink outcomes and final website bytes do not exist at this pre-execution source-review boundary."
   ],
   "overall_status": "passed",
-  "report_envelope_commit": "61ea22eb2a63e87c7ca18e89b6ca9aa8068cd5e1",
-  "review_session_description": "The implementing coding agent reviewed the owner-authorized Prethink adapter and incremental publication path at documentation envelope commit 61ea22eb2a63e87c7ca18e89b6ca9aa8068cd5e1. Deterministic evidence included 683 passing tests on the pinned Python 3.14 project environment, exact source-lock artifact hashes, a successful relocated Codex 0.146.0 capability probe, authenticated no-model Prethink qualification of all three issues with Java user-home isolation, an exact 37-file inventory match to the owner-provided reference ZIP, and publication-path regression coverage. No benchmark implementation child and no additional semantic-review model call was invoked.",
+  "report_envelope_commit": "7e418638e952eb2821be3e225531e888f4e1439f",
+  "review_session_description": "The implementing coding agent reviewed the owner-authorized Prethink adapter and incremental publication path at documentation envelope commit 7e418638e952eb2821be3e225531e888f4e1439f. Deterministic evidence included 685 passing tests on the pinned Python 3.14 project environment, exact source-lock artifact hashes, a successful relocated Codex 0.146.0 capability probe, authenticated no-model Prethink qualification of all three issues with Java user-home isolation, an exact 37-file inventory match to the owner-provided reference ZIP, publication-path regression coverage, and relocated-runtime sandbox tests for solver and approval-reviewer processes. No benchmark implementation child and no additional semantic-review model call was invoked.",
   "reviewed_artifacts": [
     "repo://AGENTS.md",
     "repo://README.md",
@@ -139,8 +140,8 @@
     "repo://tests/test_release_compliance.py",
     "repo://tool-guides/quickstart-sources.md"
   ],
-  "reviewed_subject_tree_sha256": "c22db9dd9040f8c257beb0a16f0617d438d10e184364021f6de32c35a54219df",
+  "reviewed_subject_tree_sha256": "e04a7b028d4b51578ca156c263c3330abd7149b53a663760450053f2ad494f68",
   "reviewer_kind": "implementing_coding_agent",
   "self_review": true,
-  "source_commit": "61ea22eb2a63e87c7ca18e89b6ca9aa8068cd5e1"
+  "source_commit": "7e418638e952eb2821be3e225531e888f4e1439f"
 }

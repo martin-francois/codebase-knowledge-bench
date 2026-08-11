@@ -3476,6 +3476,23 @@ def sandbox_recreated_directories(
     return sorted(directories, key=lambda path: (len(path.parts), str(path)))
 
 
+def npm_command_runtime_roots(command: Sequence[str]) -> list[Path]:
+    """Return the npm runtime roots needed by an absolute command inside a masked tree."""
+
+    if not command:
+        return []
+    command_path = Path(command[0])
+    if not command_path.is_absolute():
+        return []
+    roots = {
+        parent
+        for candidate in (command_path.absolute(), command_path.resolve())
+        for parent in candidate.parents
+        if parent.name == "node_modules"
+    }
+    return sorted(roots, key=lambda path: (len(path.parts), str(path)))
+
+
 def external_sandbox_cmd(
     v: Tool, command: list[str], *, bwrap_path: str | None = None
 ) -> list[str]:
@@ -3506,6 +3523,7 @@ def external_sandbox_cmd(
     if install_root.exists():
         readonly.append(install_root)
     readonly.extend(pinned_python_runtime_roots(v))
+    readonly.extend(npm_command_runtime_roots(command))
     node24_root = NODE24_BIN.parent.parent
     if node24_root.exists():
         readonly.append(node24_root)
@@ -3666,6 +3684,7 @@ def approval_reviewer_sandbox_cmd(root: Path, command: list[str]) -> list[str]:
     ]
     if not containing:
         raise RuntimeError("approval reviewer root is outside the configured output boundary")
+    readonly = npm_command_runtime_roots(command)
     cmd = [
         bwrap,
         "--die-with-parent",
@@ -3684,8 +3703,12 @@ def approval_reviewer_sandbox_cmd(root: Path, command: list[str]) -> list[str]:
         cmd.extend(["--tmpfs", str(hidden_root)])
         if hidden_root in {Path("/tmp"), Path("/var/tmp")}:
             cmd.extend(["--chmod", "1777", str(hidden_root)])
-    for directory in sandbox_recreated_directories([absolute], hidden_roots):
+    for directory in sandbox_recreated_directories(
+        [absolute, *readonly], hidden_roots
+    ):
         cmd.extend(["--dir", str(directory)])
+    for source in readonly:
+        cmd.extend(["--ro-bind", str(source.resolve()), str(source.absolute())])
     cmd.extend(
         [
             "--bind",
