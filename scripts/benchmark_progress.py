@@ -326,7 +326,7 @@ def format_duration(seconds: float | None) -> str:
 
 
 def display_tool(name: str) -> str:
-    return {"baseline-none": "Baseline", "serena": "Serena", "gitnexus": "GitNexus", "graphify": "Graphify", "sverklo": "Sverklo"}.get(name, name)
+    return {"baseline-none": "Baseline", "serena": "Serena", "gitnexus": "GitNexus", "graphify": "Graphify", "prethink": "Prethink", "sverklo": "Sverklo"}.get(name, name)
 
 
 def render_line(snapshot: dict[str, Any], *, interactive: bool, frame: int = 0) -> str:

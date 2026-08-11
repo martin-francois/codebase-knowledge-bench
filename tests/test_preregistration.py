@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import sys
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -149,7 +150,7 @@ class PreregistrationContractTests(unittest.TestCase):
             (ROOT / "SPEC.md").read_text(encoding="utf-8"),
         )
 
-    def test_toolchain_source_lock_freezes_all_six_integrations(self) -> None:
+    def test_toolchain_source_lock_freezes_all_seven_integrations(self) -> None:
         cohort = METHODOLOGY_POLICY["current_cohort"]
         lock = json.loads(
             (ROOT / cohort["toolchain_source_lock_path"]).read_text(
@@ -163,6 +164,7 @@ class PreregistrationContractTests(unittest.TestCase):
                 "gitnexus": "1.6.9",
                 "graphify": "0.9.31",
                 "jcodemunch-mcp": "1.108.204",
+                "prethink": "0.11.1",
                 "serena": "1.6.1",
                 "sverklo": "0.29.3",
             },
@@ -172,9 +174,42 @@ class PreregistrationContractTests(unittest.TestCase):
             },
         )
         for value in lock["tools"].values():
-            self.assertIn(value["registry"], {"npm", "pypi"})
+            self.assertIn(value["registry"], {"npm", "pypi", "maven"})
             self.assertEqual(64, len(value["artifact_sha256"]))
-            self.assertIn(value["integration"], {"cli", "mcp"})
+            self.assertIn(value["integration"], {"cli", "mcp", "generated-context"})
+
+    def test_prethink_extension_authorization_is_schema_valid(self) -> None:
+        authorization = json.loads(
+            (ROOT / "configs/prethink-publication-extension.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        schema = json.loads(
+            (ROOT / "schemas/prethink-publication-extension.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema).validate(authorization)
+        self.assertFalse(authorization["controls"]["rerun_historical_tools"])
+        self.assertEqual(12, authorization["extension"]["expected_rows"])
+
+    def test_prethink_extension_profile_changes_only_tool_scope_and_budgets(self) -> None:
+        full = tomllib.loads(
+            (ROOT / "configs/symphony-trello.toml").read_text(encoding="utf-8")
+        )
+        extension = tomllib.loads(
+            (ROOT / "configs/symphony-trello-prethink-extension.toml").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(full["issues"], extension["issues"])
+        for field in ("target_repo_url", "model", "reasoning_effort", "yolo", "repetitions"):
+            self.assertEqual(full["benchmark"][field], extension["benchmark"][field])
+        self.assertEqual(["prethink"], extension["benchmark"]["tools"])
+        self.assertEqual(12, extension["benchmark"]["maximum_unique_implementation_runs"])
+        self.assertEqual(15, extension["benchmark"]["maximum_implementation_child_launches"])
+        self.assertFalse(extension["benchmark"]["allow_code_upload"])
 
     def test_one_normative_tolerance_controls_the_dashboard_default(self) -> None:
         comparison = METHODOLOGY_POLICY["operational_comparison"]

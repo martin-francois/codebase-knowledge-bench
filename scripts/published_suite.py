@@ -417,6 +417,8 @@ def _expected_install_receipt(
         return "uv-tool", request
     if registry == "pypi":
         return "python-venv", [request]
+    if registry == "maven" and tool == "prethink":
+        return "moderne-prethink", f"{package}:{version}"
     raise SystemExit(f"Unsupported frozen tool registry for {tool}: {registry}")
 
 
@@ -442,6 +444,16 @@ def _resolved_install_matches(
         return (
             isinstance(resolved, list)
             and f"{package}=={version}" in resolved
+        )
+    if kind == "moderne-prethink":
+        package_data = (
+            resolved.get(package)
+            if isinstance(resolved, Mapping)
+            else None
+        )
+        return (
+            isinstance(package_data, Mapping)
+            and package_data.get("version") == version
         )
     return isinstance(resolved, str) and version in resolved
 
@@ -963,7 +975,21 @@ def write_qualification_only_result(
         and approval_protocol_qualification.get("model_turn_events") == 0
         and approval_protocol_qualification.get("implementation_child_spawns") == 0
     )
-    passed = approval_protocol_passed and len(cells) == 21 and all(
+    profile_tools = profile.get("resolved", {}).get("tools") or []
+    per_issue_count = (
+        len(qualification_records[0].get("qualification_runs") or [])
+        if qualification_records
+        else 0
+    )
+    expected_cell_count = len(qualification_records) * (
+        len(profile_tools) if profile_tools else per_issue_count
+    )
+    qualification_shape_valid = all(
+        len(record.get("qualification_runs") or [])
+        == (len(profile_tools) if profile_tools else per_issue_count)
+        for record in qualification_records
+    )
+    passed = approval_protocol_passed and qualification_shape_valid and len(cells) == expected_cell_count and all(
         cell["setup_status"] == "setup_succeeded"
         and cell["smoke_passed"] is True
         and cell["state_restored"] is True
@@ -1002,7 +1028,7 @@ def write_qualification_only_result(
     (suite_dir / "qualification-only.md").write_text(
         "# Published-suite qualification-only rehearsal\n\n"
         f"- Passed: `{passed}`\n"
-        f"- Qualification cells: `{len(cells)}/21`\n"
+        f"- Qualification cells: `{len(cells)}/{expected_cell_count}`\n"
         f"- Codex 0.146.0 MCP approval protocol: `{approval_protocol_passed}`\n"
         "- Implementation child launches: `0`\n"
         f"- Toolchain lock: `{payload['toolchain_lock_sha256']}`\n"

@@ -938,6 +938,49 @@ class PublishedSuiteControlTest(unittest.TestCase):
                     toolchain_source_lock_sha256="b" * 64,
                 )
 
+    def test_toolchain_lock_accepts_exact_prethink_release_and_cli_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            execution = root / "execution"
+            (execution / "qualification-checkpoints").mkdir(parents=True)
+            selected = root / "installs" / "prethink" / "0.11.1"
+            (selected / "lib").mkdir(parents=True)
+            (selected / "lib" / "moderne-cli.jar").write_text("cli")
+            (selected / "lib" / "rewrite-prethink-0.11.1.jar").write_text("recipe")
+            (selected / "install.json").write_text(json.dumps({
+                "kind": "moderne-prethink",
+                "requested": "io.moderne.recipe:rewrite-prethink:0.11.1",
+                "resolved": {
+                    "io.moderne.recipe:rewrite-prethink": {"version": "0.11.1"},
+                    "moderne-cli": {"version": "4.5.1"},
+                },
+            }))
+            source_lock = {
+                "schema_version": "toolchain-source-lock-v1",
+                "tools": {
+                    "prethink": {
+                        "package": "io.moderne.recipe:rewrite-prethink",
+                        "version": "0.11.1",
+                        "registry": "maven",
+                        "artifact_sha256": "a" * 64,
+                    }
+                },
+            }
+            lock = published_suite.write_toolchain_lock(
+                root,
+                [{"issue_id": "issue-487", "run_id": "q-1",
+                  "execution_root": str(execution), "qualification_runs": []}],
+                ["prethink"],
+                install_root=root / "installs",
+                toolchain_source_lock=source_lock,
+                toolchain_source_lock_sha256="b" * 64,
+            )
+            published_suite.validate_toolchain_lock(lock)
+            self.assertEqual(
+                "moderne-prethink",
+                lock["installations"]["prethink"]["expected_install_kind"],
+            )
+
     def test_explicit_tool_order_is_applied_by_runner(self) -> None:
         source = (ROOT / "scripts" / "run_benchmark.py").read_text()
         self.assertIn("BENCH_TOOL_ORDER_JSON", source)

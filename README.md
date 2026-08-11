@@ -68,6 +68,27 @@ This mode invokes each configured integration directly from sanitized issue term
 implementation paths. It launches no Codex app-server, creates no model turns, and writes a
 content-addressed receipt for every qualification cell.
 
+To extend the last validated 84-row publication with Prethink, use
+[`configs/symphony-trello-prethink-extension.toml`](configs/symphony-trello-prethink-extension.toml).
+That reviewed profile selects only Prethink and has a 12-key execution budget. It must not be used to
+rerun any historical setup. After its archive validates, merge it with the existing compact
+publication rather than editing website data:
+
+```bash
+BENCH_QUALIFICATION_ONLY=true RUN_EXPENSIVE_BENCHMARK=true \
+  python3 scripts/run_benchmark_suite.py \
+  /absolute/path/to/operator-profile/configs/symphony-trello-prethink-extension.toml
+
+RUN_EXPENSIVE_BENCHMARK=true python3 scripts/run_benchmark_suite.py \
+  /absolute/path/to/operator-profile/configs/symphony-trello-prethink-extension.toml
+
+python3 scripts/merge_publication_extension.py \
+  publication/ /absolute/path/to/prethink-suite/ /absolute/path/to/merged-publication/
+```
+
+The merger verifies both evidence chains, exact 84+12 key coverage, shared task/model/pricing
+dimensions, and canonical historical-row preservation before rederiving the 96-row findings.
+
 This uses the same stable suite ID. A later full-suite command resumes its sealed qualification
 state instead of starting another suite.
 Generate the exact-model proof once for that TOML, then pass its generated execution directory as
@@ -338,7 +359,10 @@ independent rederivation rejects an audit that omits it.
 
 Source upload is off by default. A hosted tool may upload code only when the target is public and you
 explicitly enable upload. Graphify does not need an API-key file path for the documented local skill
-workflow. Never put credentials or secrets in a profile.
+workflow. Prethink requires the host's existing authenticated Moderne CLI even for its free public
+open-source repository plan. Setup copies that login into an isolated home, runs locally with upload
+disabled, then deletes only the isolated copy before smoke; the host login is not changed. Never put
+credentials or secrets in a profile.
 
 ## Configuration reference
 

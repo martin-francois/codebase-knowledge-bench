@@ -1,6 +1,6 @@
 {
   "schema_version": "toolchain-source-lock-v1",
-  "retrieved_at": "2026-07-31T06:34:17+02:00",
+  "retrieved_at": "2026-08-11T22:41:49+02:00",
   "tools": {
     "code-review-graph": {
       "package": "code-review-graph",
@@ -41,6 +41,20 @@
       "artifact_sha256": "08d2062b0877208357c51741aa7a7f4dbc1b808377336ff082df4f0ffb76389a",
       "published_at": "2026-07-31T01:06:10.260137Z",
       "integration": "mcp"
+    },
+    "prethink": {
+      "package": "io.moderne.recipe:rewrite-prethink",
+      "version": "0.11.1",
+      "registry": "maven",
+      "registry_url": "https://repo.maven.apache.org/maven2/io/moderne/recipe/rewrite-prethink/0.11.1/rewrite-prethink-0.11.1.jar",
+      "artifact": "rewrite-prethink-0.11.1.jar",
+      "artifact_sha256": "65d27ae428a1e7b6626713fd5ac9ad8d888ba1ba884ef6f12112f35e3a7882b6",
+      "published_at": "2026-07-29T21:39:33.207229523Z",
+      "integration": "generated-context",
+      "recipe": "io.moderne.prethink.UpdatePrethinkContextStarter",
+      "moderne_cli_version": "4.5.1",
+      "moderne_cli_artifact": "moderne-cli.jar",
+      "moderne_cli_artifact_sha256": "6c3c3053c71e5f461b5df38a5417f0c10368af215276b488ccc1922f3c94bf26"
     },
     "serena": {
       "package": "serena-agent",
