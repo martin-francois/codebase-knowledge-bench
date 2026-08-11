@@ -29,6 +29,10 @@ SCHEMA_VERSION = "published-execution-controls-v1"
 SCHEDULE_VERSION = "balanced-rotating-tool-order-v1"
 LEDGER_VERSION = "published-execution-ledger-v3"
 TOOLCHAIN_VERSION = "qualified-toolchain-lock-v1"
+PUBLISHED_EXECUTION_PROFILES = frozenset({
+    "prethink_extension",
+    "symphony_trello",
+})
 
 
 def normalize_json_value(value: Any, *, path: str = "$") -> Any:
@@ -125,9 +129,14 @@ def validate_execution_profile(
                 "Fresh acceptance or published-suite execution requires a clean HEAD pushed to origin/main"
             )
     expected: dict[str, Any]
-    if profile == "symphony_trello":
+    if profile in PUBLISHED_EXECUTION_PROFILES:
+        canonical_name = (
+            "symphony-trello-prethink-extension.toml"
+            if profile == "prethink_extension"
+            else "symphony-trello.toml"
+        )
         canonical = tomllib.loads(
-            (root / "configs/symphony-trello.toml").read_text(
+            (root / "configs" / canonical_name).read_text(
                 encoding="utf-8"
             )
         )
@@ -210,7 +219,7 @@ def validate_execution_profile(
             "resolved_configuration": identity_configuration,
         })
     )
-    if profile == "symphony_trello":
+    if profile in PUBLISHED_EXECUTION_PROFILES:
         logical_suite_id = str(actual["suite_id"])
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", logical_suite_id):
             raise SystemExit("Published logical suite ID is not a safe path component")
@@ -245,7 +254,7 @@ def validate_execution_profile(
         if expected_tree and execution_source.get("tree") != expected_tree:
             raise SystemExit("Frozen execution source tree does not match the authorized resume")
         payload["source"] = execution_source
-    if profile == "symphony_trello":
+    if profile in PUBLISHED_EXECUTION_PROFILES:
         payload["execution_id"] = (
             f"{payload['cohort_id']}-source-{payload['source']['commit'][:12]}"
         )

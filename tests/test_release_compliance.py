@@ -178,11 +178,15 @@ class SourceOnlyStratumTest(unittest.TestCase):
             ROOT / ".github/workflows/ci.yml"
         ).read_text(encoding="utf-8")
         self.assertIn('python-version: "3.14.7"', workflow)
-        self.assertIn("actions/checkout@v7.0.1", workflow)
-        self.assertIn("astral-sh/setup-uv@v9.0.0", workflow)
-        self.assertIn("actions/setup-python@v7.0.0", workflow)
-        self.assertIn("actions/setup-node@v7.0.0", workflow)
-        self.assertIn("actions/upload-artifact@v7.0.1", workflow)
+        for action in (
+            "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1",
+            "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0",
+            "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0",
+            "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0",
+            "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1",
+        ):
+            with self.subTest(action=action):
+                self.assertIn(action, workflow)
         self.assertNotIn('python-version: "3.11"', workflow)
         self.assertNotIn('python-version: "3.13"', workflow)
         self.assertIn("scripts/source_only_ci.py", workflow)

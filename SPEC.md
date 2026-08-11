@@ -200,7 +200,10 @@ before any child starts. Source upload is disabled. The child receives only comm
 Moderne setup CLI, recipe cache, or credential.
 
 `CFG-013` The Prethink extension is authorized by
-`configs/prethink-publication-extension.json`. Qualification MUST cover exactly three issues by one
+`configs/prethink-publication-extension.json` and uses the fail-closed
+`prethink_extension` execution profile. The coordinator MUST bind it to an effective configuration
+hash, cohort ID, execution ID, clean pushed source, and the same qualification transition controls
+as the full published profile. Qualification MUST cover exactly three issues by one
 tool with zero implementation children. Live execution MUST contain exactly 12 unique keys and no
 historical tool key. A merge MUST fail unless the base publication has exactly 84 eligible rows for
 the seven historical setups, the extension has exactly 12 eligible Prethink rows, the two inputs
