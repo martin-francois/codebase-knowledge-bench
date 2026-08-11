@@ -20,6 +20,7 @@ from publication_safety import (
 )
 from operational_tradeoffs import analyze_operational_tradeoffs
 import run_benchmark_suite as suite
+from validate_published_archive import contains_private_host_path
 
 
 POLICY = json.loads((ROOT / "configs" / "methodology-policy.json").read_text())
@@ -55,6 +56,16 @@ def row(issue: str, repetition: int, tool: str, correctness: float, tokens: floa
 
 
 class PublicationSafetyTest(unittest.TestCase):
+    def test_private_host_path_scan_distinguishes_root_from_nested_run_directory(self):
+        self.assertTrue(contains_private_host_path("/run/user/1000/lock"))
+        self.assertTrue(contains_private_host_path("command --output /root/private/result.json"))
+        self.assertTrue(contains_private_host_path("file:///home/server/private/result.json"))
+        self.assertFalse(
+            contains_private_host_path(
+                "$OUTPUT_ROOT/executions/example/.moderne/run/20260812/heartbeat"
+            )
+        )
+
     def test_pre_child_abort_publication_captures_declared_source_roles(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

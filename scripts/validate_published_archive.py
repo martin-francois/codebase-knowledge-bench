@@ -21,6 +21,16 @@ DETACHED_ONLY = {
     "operator-summary.json", "operator-summary.md",
 }
 
+PRIVATE_HOST_PATH = re.compile(
+    r"(?:^|file://|[\s\"'`(=,:])"
+    r"(?:/home/server(?:/|\b)|/root(?:/|\b)|/run(?:/|\b))"
+)
+
+
+def contains_private_host_path(value: str) -> bool:
+    """Detect absolute private roots without treating nested `run/` folders as roots."""
+    return PRIVATE_HOST_PATH.search(value) is not None
+
 
 def validate_detached_publication(zip_path: Path, checksum_path: Path, receipt_path: Path) -> list[str]:
     errors: list[str] = []
@@ -81,7 +91,6 @@ def main() -> int:
         "run.jsonl", "tool-invocations-solve.jsonl", "issue-sanitized.json",
         "issue-sanitized.md", "issue-raw.json", "issue-raw.md",
     }
-    host_path = re.compile(r"(?:/home/server(?:/|\b)|/root(?:/|\b)|/run/)")
     path_key = re.compile(r"(?:path|root|directory|archive|checkpoint|results_json|log)$")
 
     def structured_host_paths(value, key=""):
@@ -91,7 +100,7 @@ def main() -> int:
         elif isinstance(value, list):
             for child in value:
                 yield from structured_host_paths(child, key)
-        elif isinstance(value, str) and path_key.search(key) and host_path.search(value):
+        elif isinstance(value, str) and path_key.search(key) and contains_private_host_path(value):
             yield value
 
     for path in root.rglob("*"):

@@ -5035,6 +5035,26 @@ class ResumeAndValidatorTest(unittest.TestCase):
             )
         self.assertEqual("$TARGET_REPO_ROOT", replacements[str(target)])
 
+    def test_suite_publication_sanitizes_relocated_codex_installation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            prefix = Path(tmp)
+            launcher = prefix / "node_modules" / "@openai" / "codex" / "bin" / "codex.js"
+            launcher.parent.mkdir(parents=True)
+            launcher.write_text("#!/usr/bin/env node\n", encoding="utf-8")
+            command = prefix / "node_modules" / ".bin" / "codex"
+            command.parent.mkdir(parents=True)
+            command.symlink_to(launcher)
+            with mock.patch.object(suite.shutil, "which", return_value=str(command)):
+                replacements = suite.publication_path_replacements(
+                    Path("/output/suites/example")
+                )
+        self.assertEqual("$CODEX_COMMAND", replacements[str(command)])
+        self.assertEqual("$CODEX_LAUNCHER", replacements[str(launcher)])
+        self.assertEqual(
+            "$CODEX_NODE_MODULES_ROOT",
+            replacements[str(prefix / "node_modules")],
+        )
+
     def test_suite_publication_sanitizes_only_explicit_operator_inputs(self) -> None:
         config = Path("/operator/private/config.toml")
         issue = suite.IssueSpec(

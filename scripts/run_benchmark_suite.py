@@ -737,6 +737,18 @@ def publication_path_replacements(
         str(Path.home()): "$HOME",
         str(default_lock_path().parent): "$LOCK_ROOT",
     }
+    codex_command = shutil.which("codex")
+    if codex_command:
+        command_path = Path(codex_command).absolute()
+        replacements[str(command_path)] = "$CODEX_COMMAND"
+        resolved_command = command_path.resolve()
+        replacements[str(resolved_command)] = "$CODEX_LAUNCHER"
+        node_modules_root = next(
+            (parent for parent in resolved_command.parents if parent.name == "node_modules"),
+            None,
+        )
+        if node_modules_root is not None:
+            replacements[str(node_modules_root)] = "$CODEX_NODE_MODULES_ROOT"
     explicit_inputs = {
         os.environ.get("BENCH_CONFIG_SOURCE", ""): "$CONFIG_SOURCE",
     }
