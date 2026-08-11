@@ -606,6 +606,36 @@ class RetryPolicyTest(unittest.TestCase):
                     )
         reuse.assert_not_called()
 
+    def test_full_resume_attaches_model_proof_before_validating_plan(self) -> None:
+        calls: list[str] = []
+        suite_dir = Path("/evidence/suite")
+        profile = {"source": {"commit": "1" * 40, "tree": "2" * 40}}
+
+        def attach(*_args: object) -> None:
+            calls.append("attach")
+
+        def prepare(*_args: object) -> tuple[list[dict], list[dict]]:
+            calls.append("prepare")
+            return ([{"issue_id": "issue"}], [])
+
+        with mock.patch.object(
+            suite, "QUALIFICATION_ONLY", False
+        ), mock.patch.object(
+            suite,
+            "attach_model_preflight_to_qualified_suite",
+            side_effect=attach,
+        ) as attach_mock, mock.patch.object(
+            suite, "prepare_resumed_suite", side_effect=prepare
+        ) as prepare_mock:
+            result = suite.prepare_resumed_suite_for_execution(
+                suite_dir, "suite-id", 4, profile
+            )
+
+        self.assertEqual(["attach", "prepare"], calls)
+        self.assertEqual(([{"issue_id": "issue"}], []), result)
+        attach_mock.assert_called_once_with(suite_dir, profile)
+        prepare_mock.assert_called_once_with(suite_dir, "suite-id", 4)
+
     def test_zero_completion_transition_writes_only_checkpoint_receipt(
         self,
     ) -> None:
