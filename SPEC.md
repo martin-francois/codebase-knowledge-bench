@@ -1470,6 +1470,43 @@ zero-child resume proving transition idempotence from the exact clean source. Be
 remain prohibited, every terminal seven-child comparison still requires independent release audit
 before the next comparison, and another frozen invalidation requires explicit owner authorization.
 
+`LIF-021` Execution
+`symphony-trello-prethink-extension-cohort-8e47485f6c43-source-bd50e682ee75` MUST remain
+immutable diagnostic evidence after issue-487 repetition 2 stopped before its implementation
+child. Prethink setup completed and generated context successfully, but the model-bearing smoke
+prompt instructed Codex to discover `prethink`, even though the registered adapter exposes the
+solver command as `prethink-context`. Codex followed that incorrect discovery instruction, found no
+`prethink` executable or MCP server, and returned without invoking the available integration. The
+pre-solve gate correctly aborted rather than publishing a partial row, but its premise was created
+by the harness's tool-name/command-name mismatch.
+
+The stopped execution contains three completed and independently release-audited Prethink
+comparisons, three diagnostically trust-valid exact-cost rows, three implementation child launches
+and terminal model turns, 156 reconciled solve requests, 18 approval requests, 196 fully blocked
+prohibited attempts, zero invalidating accesses, and 11,106,144,000 USD nanos of diagnostic-only
+solve cost. The fourth comparison contains one successful Prethink setup and one terminal
+model-bearing smoke, zero implementation child launches, and one pre-spawn rejection. It is bound
+to source commit `bd50e682ee759526511db7cab7b16fd944d188f7`, tree
+`f3249949331ac38bb731d768cd6677c7c9d356ab`, effective configuration SHA-256
+`8e47485f6c4350101808ace3a2a45a9f0de9d5d8288b7e584f1b181677d709d2`, comparisons SHA-256
+`45549d8e36843db4dcf262a2fd6ed4f9d425077d2be9b6ec9b313a9f9b4bb0ca`, and authoritative-ledger
+SHA-256 `d010e5c024faed47881ceefcd7928f9149ef527a073159152b72480979e23008`.
+None of its rows or the failed comparison may be resumed, reused, combined, reclassified, or
+published.
+
+The owner's request to add, run, merge, and publish the Prethink-only extension authorizes exactly
+one new independently identified, source-bound 12-key cohort after this general adapter-contract
+defect is corrected. A model-bearing smoke's executable discovery instruction MUST use the exact
+registered adapter command, not the display/tool name. MCP-only adapters MAY retain their closest
+configured server instruction, and a tool with no command MUST NOT receive an empty executable
+discovery instruction. Before the replacement's first implementation child, commit and push the
+fix, machine-readable replacement authorization, regression coverage, traceability, and semantic
+review; then repeat the three-cell no-model qualification, fresh exact-model cost-and-reviewer
+readiness, and zero-child transition from the exact clean source. Historical tools remain excluded.
+Behavioral retries remain prohibited, every terminal Prethink comparison requires independent
+release audit before the next comparison launches, and another frozen invalidation requires
+explicit owner authorization.
+
 ## 18. Verification registry and semantic review
 
 `VER-001` Every automated verification registry entry has a callable checker, positive fixture,

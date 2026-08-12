@@ -140,6 +140,22 @@ class RetryPolicyTest(unittest.TestCase):
             time.sleep(0.01)
         self.assertFalse(path.exists(), f"process {pid} remains under /proc")
 
+    def test_smoke_prompt_discovers_registered_adapter_command(self) -> None:
+        tool = runner.Tool(
+            "run-001",
+            "prethink",
+            Path("/sealed/repo"),
+            Path("/evidence/run-001"),
+        )
+
+        with mock.patch.object(
+            runner, "issue_smoke_query", return_value="issue-specific query"
+        ):
+            prompt = runner.make_smoke_prompt(tool)
+
+        self.assertIn("command -v prethink-context", prompt)
+        self.assertNotIn("command -v prethink`", prompt)
+
     def test_child_sandbox_uses_standard_private_temp_permissions(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

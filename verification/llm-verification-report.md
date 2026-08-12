@@ -26,6 +26,10 @@ relocation does not weaken repository, credential, or cross-run isolation.
 The paid-resume coordinator attaches and validates the exact model-preflight proof before it checks
 the transitioned suite plan, preserving the required zero-child qualification checkpoint instead
 of allowing execution to bypass or manually assemble that transition.
+Model-bearing smoke discovery now names the exact executable registered by each adapter. The stopped
+Prethink cohort is retained as diagnostic evidence because its prompt named `prethink` while the
+adapter exposed `prethink-context`; its three completed rows are forbidden from reuse, and the
+machine-readable authorization permits one clean source-bound Prethink-only replacement cohort.
 
 The combined publication is not assembled in the website. The benchmark merger validates the
 existing compact publication and the new suite archive, proves exact 84+12 key coverage and
@@ -34,6 +38,6 @@ XZ publication for independent website import. This pre-execution review makes n
 Prethink's eventual result. The temporal/source separation between historical baseline rows and the
 new extension remains an explicit limitation.
 
-Deterministic evidence includes 686 passing tests on the pinned Python 3.14 project environment,
+Deterministic evidence includes 687 passing tests on the pinned Python 3.14 project environment,
 including focused adapter, exact-scope, source-lock, publication-merge, schema, archive, and
 semantic-report checks. This is implementing-agent self-review; no additional model call was used.
