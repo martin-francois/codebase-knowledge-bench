@@ -397,6 +397,30 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
         )
 
         identity = valid_environment()
+        identity["uv_executable"] = ""
+        self.assertIn(
+            "uv_executable is missing or not a string",
+            environment_identity_errors(identity),
+        )
+        identity["uv_executable"] = {"path": "/opt/uv/uv"}
+        self.assertIn(
+            "uv_executable is missing or not a string",
+            environment_identity_errors(identity),
+        )
+
+        identity = valid_environment()
+        identity["uv_executable_sha256"] = "not-a-hash"
+        self.assertIn(
+            "uv_executable_sha256 is not a SHA-256 string",
+            environment_identity_errors(identity),
+        )
+        identity["uv_executable_sha256"] = int("3" * 64)
+        self.assertIn(
+            "uv_executable_sha256 is not a SHA-256 string",
+            environment_identity_errors(identity),
+        )
+
+        identity = valid_environment()
         identity["source_only_executed_image"] = (
             "mcr.microsoft.com/playwright:other@sha256:" + "4" * 64
         )

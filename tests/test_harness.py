@@ -6965,6 +6965,12 @@ class ComplianceRegressionTest(unittest.TestCase):
                 "NestedWorker lives in src/main/java/NestedWorker.java\n",
                 encoding="utf-8",
             )
+            hidden = context / ".hidden"
+            hidden.mkdir()
+            (hidden / "worker.md").write_text(
+                "HiddenWorker lives in src/main/java/HiddenWorker.java\n",
+                encoding="utf-8",
+            )
             tool = runner.Tool("run-001", "prethink", repo, run_dir)
             wrapper = runner.write_prethink_query_wrapper(tool)
             fallback_bin = root / "fallback-bin"
@@ -6994,6 +7000,52 @@ class ComplianceRegressionTest(unittest.TestCase):
             )
             self.assertIn("packages/worker.md:", nested_completed.stdout)
             self.assertIn("src/main/java/NestedWorker.java", nested_completed.stdout)
+            hidden_fallback = subprocess.run(
+                [str(wrapper), "HiddenWorker"],
+                cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertIn(".hidden/worker.md:", hidden_fallback.stdout)
+            if shutil.which("rg") is not None:
+                hidden_ripgrep = subprocess.run(
+                    [str(wrapper), "HiddenWorker"],
+                    cwd=repo,
+                    env=os.environ,
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                )
+                self.assertEqual(hidden_fallback.stdout, hidden_ripgrep.stdout)
+
+            bounded = context / "bounded"
+            bounded.mkdir()
+            for index in range(405):
+                (bounded / f"worker-{index:03d}.md").write_text(
+                    f"BoundedWorker {index:03d}\n",
+                    encoding="utf-8",
+                )
+            bounded_fallback = subprocess.run(
+                [str(wrapper), "BoundedWorker"],
+                cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertEqual(400, len(bounded_fallback.stdout.splitlines()))
+            if shutil.which("rg") is not None:
+                bounded_ripgrep = subprocess.run(
+                    [str(wrapper), "BoundedWorker"],
+                    cwd=repo,
+                    env=os.environ,
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                )
+                self.assertEqual(bounded_fallback.stdout, bounded_ripgrep.stdout)
             rejected = subprocess.run(
                 [str(wrapper), "--file", "../outside"],
                 cwd=repo,
