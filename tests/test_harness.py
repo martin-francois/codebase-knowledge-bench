@@ -6961,17 +6961,27 @@ class ComplianceRegressionTest(unittest.TestCase):
             )
             tool = runner.Tool("run-001", "prethink", repo, run_dir)
             wrapper = runner.write_prethink_query_wrapper(tool)
+            fallback_bin = root / "fallback-bin"
+            fallback_bin.mkdir()
+            for command in ("bash", "find", "grep", "head", "sed", "sort"):
+                executable = shutil.which(command)
+                if executable is None:
+                    self.fail(f"required fallback executable is unavailable: {command}")
+                (fallback_bin / command).symlink_to(executable)
             completed = subprocess.run(
                 [str(wrapper), "DispatchCoordinator"],
                 cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
                 text=True,
                 capture_output=True,
                 check=True,
             )
+            self.assertIn("architecture.md:", completed.stdout)
             self.assertIn("src/main/java/DispatchCoordinator.java", completed.stdout)
             rejected = subprocess.run(
                 [str(wrapper), "--file", "../outside"],
                 cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
                 text=True,
                 capture_output=True,
             )
