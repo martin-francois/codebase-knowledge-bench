@@ -178,7 +178,12 @@ class SourceOnlyStratumTest(unittest.TestCase):
             ROOT / ".github/workflows/ci.yml"
         ).read_text(encoding="utf-8")
         self.assertIn('python-version: "3.14.7"', workflow)
-        self.assertIn('version: "0.12.5"', workflow)
+        self.assertIn(
+            "      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1\n"
+            "        with:\n"
+            '          version: "0.12.5"\n',
+            workflow,
+        )
         for action in (
             "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1",
             "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1",

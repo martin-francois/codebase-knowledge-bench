@@ -7000,6 +7000,29 @@ class ComplianceRegressionTest(unittest.TestCase):
             )
             self.assertIn("packages/worker.md:", nested_completed.stdout)
             self.assertIn("src/main/java/NestedWorker.java", nested_completed.stdout)
+            alternation_fallback = subprocess.run(
+                [str(wrapper), "--regex", "NestedWorker|HiddenWorker"],
+                cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertIn("packages/worker.md:", alternation_fallback.stdout)
+            self.assertIn(".hidden/worker.md:", alternation_fallback.stdout)
+            if shutil.which("rg") is not None:
+                alternation_ripgrep = subprocess.run(
+                    [str(wrapper), "--regex", "NestedWorker|HiddenWorker"],
+                    cwd=repo,
+                    env=os.environ,
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                )
+                self.assertEqual(
+                    alternation_fallback.stdout,
+                    alternation_ripgrep.stdout,
+                )
             hidden_fallback = subprocess.run(
                 [str(wrapper), "HiddenWorker"],
                 cwd=repo,

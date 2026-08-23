@@ -2910,7 +2910,7 @@ case "${1:-}" in
     if command -v rg >/dev/null 2>&1; then
       rg --hidden --no-ignore -i --no-heading --line-number --max-count 120 -- "${2}" "$context"
     else
-      grep -r -H -i -n -m 120 -- "${2}" "$context"
+      grep -E -r -H -i -n -m 120 -- "${2}" "$context"
     fi | LC_ALL=C sort | sed -n '1,400p'
     ;;
   *)
