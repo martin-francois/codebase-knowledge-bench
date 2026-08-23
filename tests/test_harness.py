@@ -6959,6 +6959,12 @@ class ComplianceRegressionTest(unittest.TestCase):
                 "DispatchCoordinator lives in src/main/java/DispatchCoordinator.java\n",
                 encoding="utf-8",
             )
+            nested = context / "packages"
+            nested.mkdir()
+            (nested / "worker.md").write_text(
+                "NestedWorker lives in src/main/java/NestedWorker.java\n",
+                encoding="utf-8",
+            )
             tool = runner.Tool("run-001", "prethink", repo, run_dir)
             wrapper = runner.write_prethink_query_wrapper(tool)
             fallback_bin = root / "fallback-bin"
@@ -6978,6 +6984,16 @@ class ComplianceRegressionTest(unittest.TestCase):
             )
             self.assertIn("architecture.md:", completed.stdout)
             self.assertIn("src/main/java/DispatchCoordinator.java", completed.stdout)
+            nested_completed = subprocess.run(
+                [str(wrapper), "--regex", "NestedWorker"],
+                cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertIn("packages/worker.md:", nested_completed.stdout)
+            self.assertIn("src/main/java/NestedWorker.java", nested_completed.stdout)
             rejected = subprocess.run(
                 [str(wrapper), "--file", "../outside"],
                 cwd=repo,
