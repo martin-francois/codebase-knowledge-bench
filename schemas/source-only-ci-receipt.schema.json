@@ -37,6 +37,9 @@
     "source_only_glibc",
     "python_version",
     "python_executable_sha256",
+    "uv_version",
+    "uv_executable",
+    "uv_executable_sha256",
     "node_version",
     "node_executable_sha256",
     "npm_version",
@@ -149,6 +152,16 @@
       "const": "3.14.7"
     },
     "python_executable_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "uv_version": {
+      "const": "0.12.5"
+    },
+    "uv_executable": {
+      "type": "string",
+      "minLength": 1
+    },
+    "uv_executable_sha256": {
       "$ref": "#/$defs/sha256"
     },
     "node_version": {

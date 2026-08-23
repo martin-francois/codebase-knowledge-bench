@@ -34,6 +34,7 @@ from source_only_ci import (  # noqa: E402
     EXPECTED_NODE_VERSION,
     EXPECTED_NPM_VERSION,
     EXPECTED_PYTHON_VERSION,
+    EXPECTED_UV_VERSION,
     REQUIRED_COMMAND_NAMES,
     ROUTING_NONCE,
     SOURCE_ONLY_USERSPACE_IMAGE,
@@ -77,6 +78,9 @@ def valid_environment() -> dict:
         "python_version": EXPECTED_PYTHON_VERSION,
         "python_executable": "/opt/python/bin/python",
         "python_executable_sha256": SHA,
+        "uv_version": EXPECTED_UV_VERSION,
+        "uv_executable": "/opt/uv/bin/uv",
+        "uv_executable_sha256": SHA,
         "node_version": EXPECTED_NODE_VERSION,
         "node_executable": "/opt/node/bin/node",
         "node_executable_sha256": SHA,
@@ -386,6 +390,37 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
 
         identity = valid_environment()
         self.assertEqual([], environment_identity_errors(identity))
+        identity["uv_version"] = "0.12.4"
+        self.assertIn(
+            "source-only uv version differs from exact pin",
+            environment_identity_errors(identity),
+        )
+
+        identity = valid_environment()
+        identity["uv_executable"] = ""
+        self.assertIn(
+            "uv_executable is missing or not a string",
+            environment_identity_errors(identity),
+        )
+        identity["uv_executable"] = {"path": "/opt/uv/uv"}
+        self.assertIn(
+            "uv_executable is missing or not a string",
+            environment_identity_errors(identity),
+        )
+
+        identity = valid_environment()
+        identity["uv_executable_sha256"] = "not-a-hash"
+        self.assertIn(
+            "uv_executable_sha256 is not a SHA-256 string",
+            environment_identity_errors(identity),
+        )
+        identity["uv_executable_sha256"] = int("3" * 64)
+        self.assertIn(
+            "uv_executable_sha256 is not a SHA-256 string",
+            environment_identity_errors(identity),
+        )
+
+        identity = valid_environment()
         identity["source_only_executed_image"] = (
             "mcr.microsoft.com/playwright:other@sha256:" + "4" * 64
         )

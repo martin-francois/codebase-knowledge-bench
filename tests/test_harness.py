@@ -6959,19 +6959,120 @@ class ComplianceRegressionTest(unittest.TestCase):
                 "DispatchCoordinator lives in src/main/java/DispatchCoordinator.java\n",
                 encoding="utf-8",
             )
+            nested = context / "packages"
+            nested.mkdir()
+            (nested / "worker.md").write_text(
+                "NestedWorker lives in src/main/java/NestedWorker.java\n",
+                encoding="utf-8",
+            )
+            hidden = context / ".hidden"
+            hidden.mkdir()
+            (hidden / "worker.md").write_text(
+                "HiddenWorker lives in src/main/java/HiddenWorker.java\n",
+                encoding="utf-8",
+            )
             tool = runner.Tool("run-001", "prethink", repo, run_dir)
             wrapper = runner.write_prethink_query_wrapper(tool)
+            fallback_bin = root / "fallback-bin"
+            fallback_bin.mkdir()
+            for command in ("bash", "find", "grep", "head", "sed", "sort"):
+                executable = shutil.which(command)
+                if executable is None:
+                    self.fail(f"required fallback executable is unavailable: {command}")
+                (fallback_bin / command).symlink_to(executable)
             completed = subprocess.run(
                 [str(wrapper), "DispatchCoordinator"],
                 cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
                 text=True,
                 capture_output=True,
                 check=True,
             )
+            self.assertIn("architecture.md:", completed.stdout)
             self.assertIn("src/main/java/DispatchCoordinator.java", completed.stdout)
+            nested_completed = subprocess.run(
+                [str(wrapper), "--regex", "NestedWorker"],
+                cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertIn("packages/worker.md:", nested_completed.stdout)
+            self.assertIn("src/main/java/NestedWorker.java", nested_completed.stdout)
+            alternation_fallback = subprocess.run(
+                [str(wrapper), "--regex", "NestedWorker|HiddenWorker"],
+                cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertIn("packages/worker.md:", alternation_fallback.stdout)
+            self.assertIn(".hidden/worker.md:", alternation_fallback.stdout)
+            if shutil.which("rg") is not None:
+                alternation_ripgrep = subprocess.run(
+                    [str(wrapper), "--regex", "NestedWorker|HiddenWorker"],
+                    cwd=repo,
+                    env=os.environ,
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                )
+                self.assertEqual(
+                    alternation_fallback.stdout,
+                    alternation_ripgrep.stdout,
+                )
+            hidden_fallback = subprocess.run(
+                [str(wrapper), "HiddenWorker"],
+                cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertIn(".hidden/worker.md:", hidden_fallback.stdout)
+            if shutil.which("rg") is not None:
+                hidden_ripgrep = subprocess.run(
+                    [str(wrapper), "HiddenWorker"],
+                    cwd=repo,
+                    env=os.environ,
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                )
+                self.assertEqual(hidden_fallback.stdout, hidden_ripgrep.stdout)
+
+            bounded = context / "bounded"
+            bounded.mkdir()
+            for index in range(405):
+                (bounded / f"worker-{index:03d}.md").write_text(
+                    f"BoundedWorker {index:03d}\n",
+                    encoding="utf-8",
+                )
+            bounded_fallback = subprocess.run(
+                [str(wrapper), "BoundedWorker"],
+                cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertEqual(400, len(bounded_fallback.stdout.splitlines()))
+            if shutil.which("rg") is not None:
+                bounded_ripgrep = subprocess.run(
+                    [str(wrapper), "BoundedWorker"],
+                    cwd=repo,
+                    env=os.environ,
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                )
+                self.assertEqual(bounded_fallback.stdout, bounded_ripgrep.stdout)
             rejected = subprocess.run(
                 [str(wrapper), "--file", "../outside"],
                 cwd=repo,
+                env={**os.environ, "PATH": str(fallback_bin)},
                 text=True,
                 capture_output=True,
             )

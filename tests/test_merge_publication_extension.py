@@ -12,7 +12,7 @@ from merge_publication_extension import exact_scope, read_compact_publication  #
 
 
 class PublicationExtensionMergeTest(unittest.TestCase):
-    def test_current_compact_publication_has_exact_authorized_historical_scope(self) -> None:
+    def test_current_compact_publication_has_exact_authorized_combined_scope(self) -> None:
         manifest, research = read_compact_publication(ROOT / "publication")
         rows = research["sourceRecords"]["suiteResults"]["runs"]
         exact_scope(
@@ -27,10 +27,11 @@ class PublicationExtensionMergeTest(unittest.TestCase):
                 "jcodemunch-mcp",
                 "serena",
                 "graphify",
+                "prethink",
             ],
-            label="fixture base publication",
+            label="current combined publication",
         )
-        self.assertEqual(84, manifest["expectedRunCount"])
+        self.assertEqual(96, manifest["expectedRunCount"])
 
     def test_scope_rejects_duplicate_or_historical_tool_extension_rows(self) -> None:
         rows = [
