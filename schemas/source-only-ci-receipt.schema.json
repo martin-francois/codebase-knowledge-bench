@@ -155,7 +155,7 @@
       "$ref": "#/$defs/sha256"
     },
     "uv_version": {
-      "const": "0.12.5"
+      "const": "0.12.10"
     },
     "uv_executable": {
       "type": "string",
