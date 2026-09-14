@@ -1145,7 +1145,7 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                     "source_only_glibc": "glibc 2.39",
                     "python_version": "3.14.7",
                     "python_executable_sha256": "3" * 64,
-                    "uv_version": "0.12.5",
+                    "uv_version": "0.12.10",
                     "uv_executable": "/opt/uv/bin/uv",
                     "uv_executable_sha256": "3" * 64,
                     "node_version": "v24.19.0",
