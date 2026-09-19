@@ -51,7 +51,7 @@
       "rangeStrategy": "replace"
     },
     {
-      "description": "Group routine updates and merge them once Renovate observes the required checks pass. Majors are excluded so a pending major never blocks the automergeable bundle.",
+      "description": "Public repository: merge eligible non-major updates after checks pass. Group only dependencies that need coordinated updates; keep unrelated updates separate.",
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -59,8 +59,6 @@
         "pinDigest",
         "digest"
       ],
-      "groupName": "Routine dependency updates",
-      "groupSlug": "routine-dependencies",
       "automerge": true
     },
     {
