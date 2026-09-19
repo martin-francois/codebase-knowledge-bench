@@ -179,14 +179,14 @@ class SourceOnlyStratumTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn('python-version: "3.14.7"', workflow)
         self.assertIn(
-            "      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1\n"
+            "      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0\n"
             "        with:\n"
             '          version: "0.12.12"\n',
             workflow,
         )
         for action in (
             "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1",
-            "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1",
+            "astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0",
             "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0",
             "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0",
             "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1",
