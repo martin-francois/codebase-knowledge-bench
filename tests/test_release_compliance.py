@@ -181,7 +181,7 @@ class SourceOnlyStratumTest(unittest.TestCase):
         self.assertIn(
             "      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0\n"
             "        with:\n"
-            '          version: "0.12.14"\n',
+            '          version: "0.12.15"\n',
             workflow,
         )
         for action in (
