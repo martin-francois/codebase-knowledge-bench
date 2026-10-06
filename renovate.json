@@ -77,12 +77,12 @@
       "versioning": "docker"
     },
     {
-      "description": "setup-uv's version input takes a uv release number such as 0.12.18 and has no place for a commit digest. pinDigests made Renovate propose 'Pin dependency astral-sh/uv to 01cb90c', which fails on every run with 'update failure' and shows up as a repository problem on the dashboard. Version updates of uv are unaffected.",
+      "description": "The version inputs of setup-uv, setup-python and setup-node (depType uses-with) take a release number and have no place for a commit digest. With pinDigests, Renovate proposes 'Pin dependency astral-sh/uv to <digest>', which fails on every run with 'update failure'. For python and node it looks for a git tag named exactly after the release, finds none because actions/python-versions and actions/node-versions add a build number to every tag, logs 'Could not determine new digest for update' and drops the update without telling anyone, so Python and Node would never be updated.",
       "matchManagers": [
         "github-actions"
       ],
-      "matchDepNames": [
-        "astral-sh/uv"
+      "matchDepTypes": [
+        "uses-with"
       ],
       "pinDigests": false
     },
