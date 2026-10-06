@@ -6,6 +6,8 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -28,11 +30,7 @@ from source_only_ci import (  # noqa: E402
     BASE_COMMIT,
     BROWSER_COMMAND,
     BROWSER_SPEC_RELATIVE,
-    EXPECTED_CHROMIUM_EXECUTABLE,
-    EXPECTED_CHROMIUM_SHA256,
-    EXPECTED_CHROMIUM_VERSION,
     EXPECTED_NODE_VERSION,
-    EXPECTED_NPM_VERSION,
     EXPECTED_PYTHON_VERSION,
     EXPECTED_UV_VERSION,
     REQUIRED_COMMAND_NAMES,
@@ -41,16 +39,19 @@ from source_only_ci import (  # noqa: E402
     SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
     TASK_ID,
     browser_receipt_errors,
+    build_browser_receipt,
     normalized_bytes,
     command_plan,
     command_plan_errors,
     command_plan_identity,
     environment_identity_errors,
     git_safe_environment,
+    playwright_chromium_errors,
     playwright_result_summary,
     sha256_file,
     source_only_receipt_errors,
     workflow_image_errors,
+    workflow_pins,
     workflow_userspace_images,
 )
 from target_replay import _runtime_environment  # noqa: E402
@@ -62,6 +63,13 @@ SOURCE = {
     "worktree_clean": True,
 }
 SHA = "3" * 64
+# Synthetic measurements: CI measures these from the image rather than pinning them.
+CHROMIUM_REVISION = "1"
+CHROMIUM_BUILD = "1.0.0.0"
+CHROMIUM_VERSION = "Google Chrome for Testing " + CHROMIUM_BUILD
+CHROMIUM_EXECUTABLE = (
+    f"/ms-playwright/chromium-{CHROMIUM_REVISION}/chrome-linux64/chrome"
+)
 
 
 def valid_environment() -> dict:
@@ -84,12 +92,12 @@ def valid_environment() -> dict:
         "node_version": EXPECTED_NODE_VERSION,
         "node_executable": "/opt/node/bin/node",
         "node_executable_sha256": SHA,
-        "npm_version": EXPECTED_NPM_VERSION,
+        "npm_version": "1.0.0",
         "npm_entrypoint": "/opt/node/lib/node_modules/npm/bin/npm-cli.js",
         "npm_entrypoint_sha256": SHA,
-        "chromium_version": EXPECTED_CHROMIUM_VERSION,
-        "chromium_executable": EXPECTED_CHROMIUM_EXECUTABLE,
-        "chromium_executable_sha256": EXPECTED_CHROMIUM_SHA256,
+        "chromium_version": CHROMIUM_VERSION,
+        "chromium_executable": CHROMIUM_EXECUTABLE,
+        "chromium_executable_sha256": SHA,
     }
 
 
@@ -115,9 +123,9 @@ def valid_browser_receipt() -> dict:
         "source_only_distribution": "Ubuntu 24.04.4 LTS",
         "source_only_glibc":
             "ldd (Ubuntu GLIBC 2.39-0ubuntu8.7) 2.39",
-        "chromium_version": EXPECTED_CHROMIUM_VERSION,
-        "chromium_executable": EXPECTED_CHROMIUM_EXECUTABLE,
-        "chromium_executable_sha256": EXPECTED_CHROMIUM_SHA256,
+        "chromium_version": CHROMIUM_VERSION,
+        "chromium_executable": CHROMIUM_EXECUTABLE,
+        "chromium_executable_sha256": SHA,
         "errors": [],
         "browser_test_count": 1,
         "passed_test_count": 1,
@@ -206,8 +214,8 @@ def valid_descriptor() -> dict:
             "digest": SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
         },
         "chromium_identity": {
-            "version": EXPECTED_CHROMIUM_VERSION,
-            "executable": EXPECTED_CHROMIUM_EXECUTABLE,
+            "version": CHROMIUM_VERSION,
+            "executable": CHROMIUM_EXECUTABLE,
             "sha256": SHA,
         },
         "source_only_ci_status": "passed",
@@ -384,8 +392,7 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
     ) -> None:
         self.assertEqual([], workflow_image_errors())
         images = workflow_userspace_images()
-        self.assertGreaterEqual(len(images), 2)
-        self.assertEqual({SOURCE_ONLY_USERSPACE_IMAGE}, set(images))
+        self.assertEqual([SOURCE_ONLY_USERSPACE_IMAGE], images)
         self.assertIn("@sha256:", SOURCE_ONLY_USERSPACE_IMAGE)
 
         identity = valid_environment()
@@ -435,6 +442,132 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
         )
         self.assertTrue(environment_identity_errors(identity))
 
+    def test_npm_must_come_from_the_pinned_node(self) -> None:
+        identity = valid_environment()
+        identity["npm_entrypoint"] = (
+            "/usr/lib/node_modules/npm/bin/npm-cli.js"
+        )
+        self.assertIn(
+            "source-only npm is not the npm bundled with the pinned Node",
+            environment_identity_errors(identity),
+        )
+        identity = valid_environment()
+        identity["npm_version"] = "latest"
+        self.assertIn(
+            "source-only npm version is not a release number",
+            environment_identity_errors(identity),
+        )
+
+    def test_chromium_must_be_the_image_build_playwright_expects(
+        self,
+    ) -> None:
+        identity = valid_environment()
+        identity["chromium_executable"] = "/usr/bin/chromium"
+        self.assertIn(
+            "source-only Chromium executable is not the image's "
+            "Playwright Chromium",
+            environment_identity_errors(identity),
+        )
+        identity = valid_environment()
+        identity["chromium_version"] = "Chromium 1.0.0.0 snap"
+        self.assertIn(
+            "source-only Chromium version is not a Chrome for Testing build",
+            environment_identity_errors(identity),
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            browsers = Path(temporary) / "browsers.json"
+            self.assertTrue(
+                any(
+                    "browser metadata is missing" in error
+                    for error in playwright_chromium_errors(
+                        valid_environment(), browsers
+                    )
+                )
+            )
+            browsers.write_text(
+                json.dumps(
+                    {
+                        "browsers": [
+                            {
+                                "name": "chromium",
+                                "revision": CHROMIUM_REVISION,
+                                "browserVersion": CHROMIUM_BUILD,
+                            },
+                            {
+                                "name": "chromium-headless-shell",
+                                "revision": "2",
+                                "browserVersion": "2.0.0.0",
+                            },
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                [],
+                playwright_chromium_errors(valid_environment(), browsers),
+            )
+            # An image left behind by a @playwright/test update ships an older Chromium.
+            stale = valid_environment()
+            stale["chromium_executable"] = (
+                "/ms-playwright/chromium-0/chrome-linux64/chrome"
+            )
+            stale["chromium_version"] = "Google Chrome for Testing 0.0.0.0"
+            self.assertEqual(
+                [
+                    "image Chromium revision differs from the installed "
+                    "Playwright package, which expects chromium-1",
+                    "image Chromium version differs from the installed "
+                    "Playwright package, which expects 1.0.0.0",
+                ],
+                playwright_chromium_errors(stale, browsers),
+            )
+
+            result = Path(temporary) / "playwright.json"
+            result.write_text(
+                json.dumps(
+                    {
+                        "stats": {"expected": 1},
+                        "suites": [
+                            {
+                                "specs": [
+                                    {
+                                        "file": "browser.spec.ts",
+                                        "tests": [{"results": []}],
+                                    }
+                                ]
+                            }
+                        ],
+                        "errors": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with patch(
+                "source_only_ci.PLAYWRIGHT_BROWSERS_JSON", browsers
+            ):
+                passed = build_browser_receipt(
+                    result_path=result,
+                    source=SOURCE,
+                    environment=valid_environment(),
+                    command_row={"exit_code": 0},
+                )
+                failed = build_browser_receipt(
+                    result_path=result,
+                    source=SOURCE,
+                    environment=stale,
+                    command_row={"exit_code": 0},
+                )
+            self.assertEqual("passed", passed["status"], passed)
+            self.assertEqual("failed", failed["status"])
+            self.assertTrue(
+                any(
+                    "differs from the installed Playwright" in error
+                    for error in failed["validation_errors"]
+                )
+            )
+
     def test_git_checkout_trust_does_not_require_builder_home(
         self,
     ) -> None:
@@ -474,14 +607,109 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
             )
             workflow.write_text(
                 source.replace(
-                    f'      image: "{SOURCE_ONLY_USERSPACE_IMAGE}"',
-                    f'      image: "{different}"',
+                    f'      image: &source-only-image "{SOURCE_ONLY_USERSPACE_IMAGE}"',
+                    f'      image: &source-only-image "{different}"',
                     1,
                 ),
                 encoding="utf-8",
             )
             with patch("source_only_ci.WORKFLOW_PATH", workflow):
                 self.assertTrue(workflow_image_errors())
+
+            # A receipt variable that restates the image instead of aliasing it is a second copy.
+            workflow.write_text(
+                source.replace(
+                    "      SOURCE_ONLY_EXECUTED_IMAGE: *source-only-image",
+                    "      SOURCE_ONLY_EXECUTED_IMAGE: "
+                    f'"{SOURCE_ONLY_USERSPACE_IMAGE}"',
+                ),
+                encoding="utf-8",
+            )
+            with patch("source_only_ci.WORKFLOW_PATH", workflow):
+                errors = workflow_image_errors()
+            self.assertIn(
+                "workflow SOURCE_ONLY_EXECUTED_IMAGE must alias the job "
+                "container image",
+                errors,
+            )
+            self.assertTrue(
+                any("exactly once" in error for error in errors)
+            )
+
+    def test_every_workflow_pin_is_read_from_its_single_line(
+        self,
+    ) -> None:
+        source = (
+            ROOT / ".github/workflows/ci.yml"
+        ).read_text(encoding="utf-8")
+        pins = workflow_pins(source)
+        self.assertEqual(SOURCE_ONLY_USERSPACE_IMAGE, pins["image"])
+        self.assertEqual(EXPECTED_UV_VERSION, pins["uv"])
+        self.assertEqual(EXPECTED_PYTHON_VERSION, pins["python"])
+        self.assertEqual(EXPECTED_NODE_VERSION, "v" + pins["node"])
+        self.assertEqual(
+            SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
+            SOURCE_ONLY_USERSPACE_IMAGE.rsplit("@", 1)[1],
+        )
+        duplicated = source.replace(
+            '          python-version: "',
+            '          python-version: "3.14.0"\n'
+            '          python-version: "',
+        )
+        with self.assertRaisesRegex(ValueError, "python exactly once"):
+            workflow_pins(duplicated)
+
+    def test_no_other_tracked_file_restates_a_workflow_pin(self) -> None:
+        source = (
+            ROOT / ".github/workflows/ci.yml"
+        ).read_text(encoding="utf-8")
+        pins = workflow_pins(source)
+        values = {
+            "image digest": SOURCE_ONLY_USERSPACE_IMAGE_DIGEST.split(":")[1],
+            "image tag": SOURCE_ONLY_USERSPACE_IMAGE.split("@")[0],
+            "uv": pins["uv"],
+            "python": pins["python"],
+            "node": pins["node"],
+        }
+        values.update(
+            {
+                f"{match.group(1)} commit": match.group(2)
+                for match in re.finditer(
+                    r"uses: ([\w./-]+)@([0-9a-f]{40})", source
+                )
+            }
+        )
+        tracked = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=ROOT,
+            env=git_safe_environment(),
+            stdout=subprocess.PIPE,
+            check=True,
+        ).stdout.split(b"\0")
+        restated = []
+        for name in sorted(
+            name.decode("utf-8") for name in tracked if name
+        ):
+            # Lockfiles list third-party release numbers that may equal a pin by chance.
+            if name in {
+                ".github/workflows/ci.yml",
+                "dashboard/package-lock.json",
+                "uv.lock",
+            }:
+                continue
+            content = (ROOT / name).read_bytes()
+            restated.extend(
+                f"{name}: {label}"
+                for label, value in sorted(values.items())
+                # Whole-token match, so 0.12.2 does not hit 10.12.21.
+                if re.search(
+                    rb"(?<![\w.])"
+                    + re.escape(value.encode("utf-8"))
+                    + rb"(?![\w]|\.[0-9])",
+                    content,
+                )
+            )
+        self.assertEqual([], restated)
 
 
 class SourceOnlyReceiptTest(unittest.TestCase):

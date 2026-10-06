@@ -22,25 +22,65 @@ PYTHON_POLICY = ">=3.14,<3.15"
 TASK_ID = "final-source-only-ci-browser-and-image-pin"
 ROUTING_NONCE = "FMCB-20260719-9D4E2A7B"
 BASE_COMMIT = "86e1658f48539a8cd3e737d740f498ee649d214c"
-EXPECTED_PYTHON_VERSION = "3.14.7"
-EXPECTED_UV_VERSION = "0.12.20"
-EXPECTED_NODE_VERSION = "v24.19.0"
-EXPECTED_NPM_VERSION = "11.17.0"
-EXPECTED_CHROMIUM_VERSION = "Google Chrome for Testing 153.0.8010.12"
-EXPECTED_CHROMIUM_EXECUTABLE = (
-    "/ms-playwright/chromium-1243/chrome-linux64/chrome"
-)
-EXPECTED_CHROMIUM_SHA256 = (
-    "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e"
-)
-SOURCE_ONLY_USERSPACE_IMAGE_DIGEST = (
-    "sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27"
-)
-SOURCE_ONLY_USERSPACE_IMAGE = (
-    "mcr.microsoft.com/playwright:v1.63.0-noble@"
-    + SOURCE_ONLY_USERSPACE_IMAGE_DIGEST
-)
 WORKFLOW_PATH = ROOT / ".github/workflows/ci.yml"
+# Each pin lives only in the workflow line that Renovate updates. A copy here, in a schema, or in a
+# test would need a hand edit on every update, so this module reads the pins from the workflow.
+WORKFLOW_PIN_PATTERNS = {
+    "image": re.compile(
+        r'^    container:\n(?:      #[^\n]*\n)*'
+        r'      image: &source-only-image "([^"\n]+)"$',
+        re.MULTILINE,
+    ),
+    "uv": re.compile(
+        r"^      - uses: astral-sh/setup-uv@[0-9a-f]{40} # [^\n]+\n"
+        r'        with:\n          version: "([^"\n]+)"$',
+        re.MULTILINE,
+    ),
+    "python": re.compile(
+        r'^          python-version: "([^"\n]+)"$', re.MULTILINE
+    ),
+    "node": re.compile(
+        r'^          node-version: "([^"\n]+)"$', re.MULTILINE
+    ),
+}
+
+
+def workflow_pins(source: str) -> dict[str, str]:
+    pins: dict[str, str] = {}
+    for name, pattern in WORKFLOW_PIN_PATTERNS.items():
+        found = pattern.findall(source)
+        if len(found) != 1:
+            raise ValueError(
+                f"source-only workflow must pin {name} exactly once, "
+                f"found {len(found)}"
+            )
+        pins[name] = found[0]
+    return pins
+
+
+_WORKFLOW_PINS = workflow_pins(WORKFLOW_PATH.read_text(encoding="utf-8"))
+EXPECTED_PYTHON_VERSION = _WORKFLOW_PINS["python"]
+EXPECTED_UV_VERSION = _WORKFLOW_PINS["uv"]
+EXPECTED_NODE_VERSION = "v" + _WORKFLOW_PINS["node"]
+SOURCE_ONLY_USERSPACE_IMAGE = _WORKFLOW_PINS["image"]
+SOURCE_ONLY_USERSPACE_IMAGE_DIGEST = (
+    SOURCE_ONLY_USERSPACE_IMAGE.rsplit("@", 1)[-1]
+    if "@" in SOURCE_ONLY_USERSPACE_IMAGE
+    else ""
+)
+# The image's Chromium is a fact of the image digest, so it is measured, never pinned. The
+# Playwright package that npm ci installs names the browser build it was made for, and the
+# measured Chromium must be that build; a stale image or an unpaired @playwright/test fails here.
+PLAYWRIGHT_BROWSERS_JSON = (
+    ROOT / "dashboard/node_modules/playwright-core/browsers.json"
+)
+CHROMIUM_EXECUTABLE_PATTERN = re.compile(
+    r"/ms-playwright/chromium-([0-9]+)/chrome-linux64/chrome"
+)
+CHROMIUM_VERSION_PATTERN = re.compile(
+    r"Google Chrome for Testing ([0-9]+(?:\.[0-9]+){3})"
+)
+VERSION_PATTERN = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+")
 BROWSER_SPEC = ROOT / "dashboard/tests/browser.spec.ts"
 BROWSER_SPEC_RELATIVE = "dashboard/tests/browser.spec.ts"
 BROWSER_COMMAND = [
@@ -286,20 +326,28 @@ def workflow_userspace_images() -> list[str]:
 def workflow_image_errors() -> list[str]:
     images = workflow_userspace_images()
     errors: list[str] = []
-    if len(images) != 3:
+    if len(images) != 1:
         errors.append(
-            "workflow must bind its container and two receipt environment "
-            "values to exactly one full userspace digest"
+            "workflow must write its full-digest userspace image exactly "
+            "once, in the job container"
         )
     if not images or set(images) != {SOURCE_ONLY_USERSPACE_IMAGE}:
         errors.append("workflow and source-only userspace image differ")
     source = WORKFLOW_PATH.read_text(encoding="utf-8")
-    expected_container = (
-        "    container:\n"
-        f'      image: "{SOURCE_ONLY_USERSPACE_IMAGE}"'
-    )
-    if expected_container not in source:
+    try:
+        container = workflow_pins(source)["image"]
+    except ValueError:
+        container = ""
+    if container != SOURCE_ONLY_USERSPACE_IMAGE:
         errors.append("source-only job container differs from source pin")
+    for variable in (
+        "SOURCE_ONLY_USERSPACE_IMAGE",
+        "SOURCE_ONLY_EXECUTED_IMAGE",
+    ):
+        if f"      {variable}: *source-only-image\n" not in source:
+            errors.append(
+                f"workflow {variable} must alias the job container image"
+            )
     if "runs-on: ubuntu-latest" in source:
         errors.append("mutable ubuntu-latest source-only runner")
     return errors
@@ -486,25 +534,30 @@ def environment_identity_errors(identity: Mapping[str, Any]) -> list[str]:
         errors.append("source-only uv version differs from exact pin")
     if identity.get("node_version") != EXPECTED_NODE_VERSION:
         errors.append("source-only Node version differs from exact pin")
-    if identity.get("npm_version") != EXPECTED_NPM_VERSION:
-        errors.append("source-only npm version differs from exact pin")
-    if (
-        identity.get("chromium_version")
-        != EXPECTED_CHROMIUM_VERSION
-    ):
-        errors.append("source-only Chromium version differs from image pin")
-    if (
-        identity.get("chromium_executable")
-        != EXPECTED_CHROMIUM_EXECUTABLE
+    if not VERSION_PATTERN.fullmatch(str(identity.get("npm_version", ""))):
+        errors.append("source-only npm version is not a release number")
+    # The image ships its own npm; the receipt must name the npm bundled with the pinned Node.
+    node_executable = str(identity.get("node_executable", ""))
+    if not node_executable.strip() or identity.get("npm_entrypoint") != str(
+        Path(node_executable).parent.parent
+        / "lib/node_modules/npm/bin/npm-cli.js"
     ):
         errors.append(
-            "source-only Chromium executable differs from image pin"
+            "source-only npm is not the npm bundled with the pinned Node"
         )
-    if (
-        identity.get("chromium_executable_sha256")
-        != EXPECTED_CHROMIUM_SHA256
+    if not CHROMIUM_VERSION_PATTERN.fullmatch(
+        str(identity.get("chromium_version", ""))
     ):
-        errors.append("source-only Chromium SHA-256 differs from image pin")
+        errors.append(
+            "source-only Chromium version is not a Chrome for Testing build"
+        )
+    if not CHROMIUM_EXECUTABLE_PATTERN.fullmatch(
+        str(identity.get("chromium_executable", ""))
+    ):
+        errors.append(
+            "source-only Chromium executable is not the image's Playwright "
+            "Chromium"
+        )
     uv_executable = identity.get("uv_executable")
     if not isinstance(uv_executable, str) or not uv_executable.strip():
         errors.append("uv_executable is missing or not a string")
@@ -529,6 +582,45 @@ def environment_identity_errors(identity: Mapping[str, Any]) -> list[str]:
     ):
         if not str(identity.get(field, "")).strip():
             errors.append(f"{field} is missing")
+    return errors
+
+
+def playwright_chromium_errors(
+    identity: Mapping[str, Any],
+    browsers_json: Path | None = None,
+) -> list[str]:
+    browsers_json = browsers_json or PLAYWRIGHT_BROWSERS_JSON
+    try:
+        browsers = json.loads(browsers_json.read_text(encoding="utf-8"))
+        chromium = [
+            browser
+            for browser in browsers["browsers"]
+            if browser.get("name") == "chromium"
+        ]
+        if len(chromium) != 1:
+            raise ValueError("expected one chromium entry")
+        revision = str(chromium[0]["revision"])
+        browser_version = str(chromium[0]["browserVersion"])
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return [
+            "installed Playwright browser metadata is missing or invalid: "
+            + str(browsers_json)
+        ]
+    errors: list[str] = []
+    if identity.get("chromium_executable") != (
+        f"/ms-playwright/chromium-{revision}/chrome-linux64/chrome"
+    ):
+        errors.append(
+            "image Chromium revision differs from the installed Playwright "
+            f"package, which expects chromium-{revision}"
+        )
+    if identity.get("chromium_version") != (
+        f"Google Chrome for Testing {browser_version}"
+    ):
+        errors.append(
+            "image Chromium version differs from the installed Playwright "
+            f"package, which expects {browser_version}"
+        )
     return errors
 
 
@@ -745,7 +837,9 @@ def build_browser_receipt(
         },
         **summary,
     }
-    validation_errors = browser_receipt_errors(receipt)
+    validation_errors = browser_receipt_errors(
+        receipt
+    ) + playwright_chromium_errors(environment)
     receipt["validation_errors"] = validation_errors
     if validation_errors:
         receipt["status"] = "failed"

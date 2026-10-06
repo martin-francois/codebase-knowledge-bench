@@ -438,9 +438,9 @@ Suite-only rederivation uses `scripts/recompute_suite.py` on a copied, versioned
 and original derived output remain unchanged. The expensive matrix remains opt-in with
 `RUN_EXPENSIVE_BENCHMARK=true`.
 
-The supported project interpreter is exactly Python `>=3.14,<3.15`. Source-only CI runs in
-`mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27`
-with Python 3.14.7 and Node 24.19.0 selected explicitly. It uses the checked-in synthetic target and
+The supported project interpreter is exactly Python `>=3.14,<3.15`. Source-only CI runs in the
+full-digest Playwright image that `.github/workflows/ci.yml` pins, with the Python and Node versions
+pinned in the same file selected explicitly. It uses the checked-in synthetic target and
 injected external executable paths. It also builds the dashboard and runs the real
 `dashboard/tests/browser.spec.ts` Playwright accessibility/offline test with the Chromium supplied
 by that image. The source-only CI and browser receipts record the exact image, Python, Node, npm,

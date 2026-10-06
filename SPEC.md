@@ -114,6 +114,16 @@ vulnerable path is never reached. An allowance MUST stop passing as soon as its 
 appears, its reported package or vulnerable range changes, npm reports a patched release, or a
 locked package version that the proof relies on changes.
 
+`LAY-008` Each source-only CI pin (the job container image digest, the uv, Python, and Node
+versions, and every action commit) MUST be written once, in `.github/workflows/ci.yml`, where the
+dependency bot updates it. Scripts, tests, and schemas MUST read the pin from that file or check only
+its format, and documentation MUST refer to the workflow rather than restate the value, so that a
+bot update that changes only the pinned line passes CI. Facts that follow from the image, such as its
+Chromium revision, Chrome for Testing version, and binary SHA-256, and the npm release bundled with
+the pinned Node, MUST be measured at run time rather than pinned. The source-only run MUST still
+reject a Chromium whose revision or version differs from the build that the installed
+`@playwright/test` package expects, and an npm that is not the one bundled with the pinned Node.
+
 ## 4. Sole current suite configuration
 
 `CFG-001` A suite configuration is one strict TOML document. Ambient `BENCH_*` values are private

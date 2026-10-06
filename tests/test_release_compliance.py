@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import struct
 import subprocess
 import sys
@@ -24,6 +25,7 @@ sys.path.insert(0, str(SCRIPTS))
 from methodology_fixture import run_fixture  # noqa: E402
 from run_final_validation import reconstruct_exact_git_checkout  # noqa: E402
 from safe_archive import safe_extract_tar  # noqa: E402
+from source_only_ci import workflow_pins  # noqa: E402
 
 
 class StaticVerifierBootstrapTest(unittest.TestCase):
@@ -177,22 +179,31 @@ class SourceOnlyStratumTest(unittest.TestCase):
         workflow = (
             ROOT / ".github/workflows/ci.yml"
         ).read_text(encoding="utf-8")
-        self.assertIn('python-version: "3.14.7"', workflow)
-        self.assertIn(
-            "      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0\n"
-            "        with:\n"
-            '          version: "0.12.20"\n',
-            workflow,
+        # Check the shape of each pin, not its value: the value lives only in the workflow, where
+        # Renovate updates it, so a test that restated it would fail every update.
+        pins = workflow_pins(workflow)
+        self.assertRegex(pins["python"], r"^3\.14\.[0-9]+$")
+        self.assertRegex(pins["uv"], r"^[0-9]+\.[0-9]+\.[0-9]+$")
+        self.assertRegex(pins["node"], r"^[0-9]+\.[0-9]+\.[0-9]+$")
+        uses = re.findall(r"^\s*(?:- )?uses: (.+)$", workflow, re.MULTILINE)
+        pinned = [
+            re.fullmatch(
+                r"([\w.-]+/[\w.-]+)@[0-9a-f]{40} # v[0-9]+\.[0-9]+\.[0-9]+",
+                value,
+            )
+            for value in uses
+        ]
+        self.assertTrue(all(pinned), uses)
+        self.assertEqual(
+            [
+                "actions/checkout",
+                "actions/setup-node",
+                "actions/setup-python",
+                "actions/upload-artifact",
+                "astral-sh/setup-uv",
+            ],
+            sorted(match.group(1) for match in pinned if match),
         )
-        for action in (
-            "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1",
-            "astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0",
-            "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0",
-            "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0",
-            "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1",
-        ):
-            with self.subTest(action=action):
-                self.assertIn(action, workflow)
         self.assertNotIn('python-version: "3.11"', workflow)
         self.assertNotIn('python-version: "3.13"', workflow)
         self.assertIn("scripts/source_only_ci.py", workflow)

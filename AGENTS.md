@@ -219,10 +219,17 @@ receipt.
 
 For the `final-source-only-ci-browser-and-image-pin` release, keep the source-only job inside the
 single full-digest Playwright image declared in `.github/workflows/ci.yml`. The executed runner must
-match that source pin, select Python 3.14.7 and Node 24.19.0, set
+match that source pin, select the Python and Node versions pinned in the same workflow, set
 `BENCH_CHROMIUM_EXECUTABLE`, run `npm run test:browser --prefix dashboard`, and receipt only the
 executed `dashboard/tests/browser.spec.ts`. Source-only evidence must not import the artifact-backed
 target or packaged replay runtime.
+
+Write each source-only CI pin once, in `.github/workflows/ci.yml`, where Renovate updates it
+(`LAY-008`). Scripts and tests read it from there, schemas check only its format, and documentation
+names the workflow instead of the value. Measure facts that follow from the image, such as its
+Chromium build and binary hash, at run time instead of pinning them. A Renovate pull request that
+needs a hand edit to pass CI means a copy was reintroduced; remove the copy rather than editing it.
+`tests/test_final_source_only_ci_browser.py` fails when another tracked file repeats a workflow pin.
 
 Final packaging for that task must receive `release-descriptor.json` explicitly. Reject any other
 task ID or routing nonce, the pre-fix base commit, a missing source-only image digest or Chromium

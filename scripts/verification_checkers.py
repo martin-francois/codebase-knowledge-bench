@@ -1140,9 +1140,9 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
     from source_only_ci import (
         BROWSER_COMMAND,
         BROWSER_SPEC_RELATIVE,
-        EXPECTED_CHROMIUM_EXECUTABLE,
-        EXPECTED_CHROMIUM_SHA256,
-        EXPECTED_CHROMIUM_VERSION,
+        EXPECTED_NODE_VERSION,
+        EXPECTED_PYTHON_VERSION,
+        EXPECTED_UV_VERSION,
         INDEPENDENCE_CONTRACT,
         REQUIRED_COMMAND_NAMES,
         SOURCE_ONLY_USERSPACE_IMAGE,
@@ -1152,6 +1152,14 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
         command_plan_identity,
         sha256_file,
     )
+
+    # Synthetic measurements: CI measures these from the image rather than pinning them.
+    fixture_npm_version = "1.0.0"
+    fixture_chromium_version = "Google Chrome for Testing 1.0.0.0"
+    fixture_chromium_executable = (
+        "/ms-playwright/chromium-1/chrome-linux64/chrome"
+    )
+    fixture_chromium_sha256 = "4" * 64
 
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
@@ -1271,9 +1279,9 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
                 SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
             "source_only_distribution": "Ubuntu 24.04.4 LTS",
             "source_only_glibc": "glibc 2.39",
-            "chromium_version": EXPECTED_CHROMIUM_VERSION,
-            "chromium_executable": EXPECTED_CHROMIUM_EXECUTABLE,
-            "chromium_executable_sha256": EXPECTED_CHROMIUM_SHA256,
+            "chromium_version": fixture_chromium_version,
+            "chromium_executable": fixture_chromium_executable,
+            "chromium_executable_sha256": fixture_chromium_sha256,
             "errors": [],
             "validation_errors": [],
         }
@@ -1325,19 +1333,22 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
                     "source_only_distribution":
                         "Ubuntu 24.04.4 LTS",
                     "source_only_glibc": "glibc 2.39",
-                    "python_version": "3.14.7",
+                    "python_version": EXPECTED_PYTHON_VERSION,
                     "python_executable_sha256": "3" * 64,
-                    "uv_version": "0.12.20",
+                    "uv_version": EXPECTED_UV_VERSION,
                     "uv_executable": "/opt/uv/bin/uv",
                     "uv_executable_sha256": "3" * 64,
-                    "node_version": "v24.19.0",
+                    "node_version": EXPECTED_NODE_VERSION,
+                    "node_executable": "/opt/node/bin/node",
                     "node_executable_sha256": "3" * 64,
-                    "npm_version": "11.17.0",
+                    "npm_version": fixture_npm_version,
+                    "npm_entrypoint":
+                        "/opt/node/lib/node_modules/npm/bin/npm-cli.js",
                     "npm_entrypoint_sha256": "3" * 64,
-                    "chromium_version": EXPECTED_CHROMIUM_VERSION,
-                    "chromium_executable": EXPECTED_CHROMIUM_EXECUTABLE,
+                    "chromium_version": fixture_chromium_version,
+                    "chromium_executable": fixture_chromium_executable,
                     "chromium_executable_sha256":
-                        EXPECTED_CHROMIUM_SHA256,
+                        fixture_chromium_sha256,
                     "validation_errors": [],
                 },
                 sort_keys=True,
@@ -1390,9 +1401,9 @@ def split_detached_receipts(repo: Path, fault: bool) -> dict[str, Any]:
                 "digest": SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
             },
             "chromium_identity": {
-                "version": EXPECTED_CHROMIUM_VERSION,
-                "executable": EXPECTED_CHROMIUM_EXECUTABLE,
-                "sha256": EXPECTED_CHROMIUM_SHA256,
+                "version": fixture_chromium_version,
+                "executable": fixture_chromium_executable,
+                "sha256": fixture_chromium_sha256,
             },
             "source_only_ci_status": "passed",
             "source_only_browser_status": "passed",
