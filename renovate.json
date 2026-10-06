@@ -32,7 +32,12 @@
     "enabled": true,
     "labels": [
       "security"
-    ]
+    ],
+    "minimumReleaseAge": null,
+    "schedule": [],
+    "updateNotScheduled": true,
+    "groupName": null,
+    "groupSlug": null
   },
   "lockFileMaintenance": {
     "description": "Rewrite dashboard/package-lock.json from scratch every week so transitive dependencies pick up published fixes. Ordinary updates only touch the entries named in a manifest, so an advisory against a package no manifest names is never resolved until the lockfile itself is refreshed. This is a public repository, so the run costs nothing.",
