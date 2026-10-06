@@ -40,7 +40,7 @@
     "groupSlug": null
   },
   "lockFileMaintenance": {
-    "description": "Rewrite dashboard/package-lock.json from scratch every week so transitive dependencies pick up published fixes. Ordinary updates only touch the entries named in a manifest, so an advisory against a package no manifest names is never resolved until the lockfile itself is refreshed. This is a public repository, so the run costs nothing.",
+    "description": "Rewrite dashboard/package-lock.json and uv.lock from scratch every week so transitive dependencies pick up published fixes. Ordinary updates only touch the entries named in a manifest, so an advisory against a package no manifest names is never resolved until the lockfile itself is refreshed. Renovate's minimumReleaseAge filters the versions Renovate proposes, but here the package manager picks every version. For npm, min-release-age=7 in dashboard/.npmrc makes npm refuse anything younger than seven days, which is what makes automerge safe for the dashboard lockfile. uv.lock gets its own branch and is not automerged, see the rule for it below. This is a public repository, so the run costs nothing.",
     "enabled": true,
     "schedule": [
       "* 0-4 * * 5"
@@ -65,6 +65,18 @@
         "digest"
       ],
       "automerge": true
+    },
+    {
+      "description": "Re-resolves uv.lock so transitive packages pick up upstream fixes that no direct-dependency rule reaches. Not automerged: uv has no package-manager-level release-age gate, so nothing holds back a package published yesterday when the lock file is rebuilt, and a human reads the diff instead. Its own branch keeps the automerged npm refresh from waiting on that review.",
+      "matchManagers": [
+        "pep621"
+      ],
+      "matchUpdateTypes": [
+        "lockFileMaintenance"
+      ],
+      "automerge": false,
+      "branchTopic": "lock-file-maintenance-uv",
+      "commitMessageExtra": "(uv.lock)"
     },
     {
       "description": "Majors land one at a time and are merged by a human after reading the migration notes. Public repository, so each major is proposed separately rather than bundled.",
