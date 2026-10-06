@@ -26,18 +26,18 @@ EXPECTED_PYTHON_VERSION = "3.14.7"
 EXPECTED_UV_VERSION = "0.12.20"
 EXPECTED_NODE_VERSION = "v24.19.0"
 EXPECTED_NPM_VERSION = "11.17.0"
-EXPECTED_CHROMIUM_VERSION = "Google Chrome for Testing 151.0.7922.34"
+EXPECTED_CHROMIUM_VERSION = "Google Chrome for Testing 153.0.8010.12"
 EXPECTED_CHROMIUM_EXECUTABLE = (
-    "/ms-playwright/chromium-1234/chrome-linux64/chrome"
+    "/ms-playwright/chromium-1243/chrome-linux64/chrome"
 )
 EXPECTED_CHROMIUM_SHA256 = (
-    "0b20b130e7edd9dd51873be867761295fe0cfad490c2b9a64f95bd3cfc08fa71"
+    "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e"
 )
 SOURCE_ONLY_USERSPACE_IMAGE_DIGEST = (
-    "sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e"
+    "sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27"
 )
 SOURCE_ONLY_USERSPACE_IMAGE = (
-    "mcr.microsoft.com/playwright:v1.62.1-noble@"
+    "mcr.microsoft.com/playwright:v1.63.0-noble@"
     + SOURCE_ONLY_USERSPACE_IMAGE_DIGEST
 )
 WORKFLOW_PATH = ROOT / ".github/workflows/ci.yml"
