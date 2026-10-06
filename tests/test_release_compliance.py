@@ -179,14 +179,14 @@ class SourceOnlyStratumTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn('python-version: "3.14.7"', workflow)
         self.assertIn(
-            "      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0\n"
+            "      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0\n"
             "        with:\n"
             '          version: "0.12.19"\n',
             workflow,
         )
         for action in (
             "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1",
-            "astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0",
+            "astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0",
             "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0",
             "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0",
             "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1",
@@ -200,7 +200,7 @@ class SourceOnlyStratumTest(unittest.TestCase):
             SCRIPTS / "source_only_ci.py"
         ).read_text(encoding="utf-8")
         self.assertIn('"node_audit"', source_ci)
-        self.assertIn('"--package-lock-only"', source_ci)
+        self.assertIn('"scripts/node_audit.py"', source_ci)
         self.assertIn(
             "source-only CI requires a clean plain Git checkout",
             source_ci,

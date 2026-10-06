@@ -132,7 +132,7 @@ def main() -> int:
             "tests.test_final_source_replay",
         ],
         ["npm", "ci", "--prefix", "dashboard"],
-        ["npm", "audit", "--prefix", "dashboard", "--package-lock-only"],
+        ["uv", "run", "python", "scripts/node_audit.py"],
         ["npm", "test", "--prefix", "dashboard", "--", "--run"],
         ["npm", "run", "build", "--prefix", "dashboard"],
         ["npm", "run", "test:browser", "--prefix", "dashboard"],
