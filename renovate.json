@@ -77,6 +77,16 @@
       "versioning": "docker"
     },
     {
+      "description": "setup-uv's version input takes a uv release number such as 0.12.18 and has no place for a commit digest. pinDigests made Renovate propose 'Pin dependency astral-sh/uv to 01cb90c', which fails on every run with 'update failure' and shows up as a repository problem on the dashboard. Version updates of uv are unaffected.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchDepNames": [
+        "astral-sh/uv"
+      ],
+      "pinDigests": false
+    },
+    {
       "description": "Public repository: merge eligible non-major updates after checks pass. Group only dependencies that need coordinated updates; keep unrelated updates separate.",
       "matchUpdateTypes": [
         "minor",
