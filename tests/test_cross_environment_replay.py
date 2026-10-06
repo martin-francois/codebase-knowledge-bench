@@ -47,9 +47,9 @@ from safe_archive import inspect_tree  # noqa: E402
 from source_only_ci import (  # noqa: E402
     BROWSER_COMMAND,
     BROWSER_SPEC_RELATIVE,
-    EXPECTED_CHROMIUM_EXECUTABLE,
-    EXPECTED_CHROMIUM_SHA256,
-    EXPECTED_CHROMIUM_VERSION,
+    EXPECTED_NODE_VERSION,
+    EXPECTED_PYTHON_VERSION,
+    EXPECTED_UV_VERSION,
     INDEPENDENCE_CONTRACT,
     REQUIRED_COMMAND_NAMES,
     SOURCE_ONLY_USERSPACE_IMAGE,
@@ -74,6 +74,12 @@ from target_replay import (  # noqa: E402
     validate_namespace_root_boundary,
     validate_generated_script,
 )
+
+# Synthetic measurements: CI measures these from the image rather than pinning them.
+FIXTURE_NPM_VERSION = "1.0.0"
+FIXTURE_CHROMIUM_VERSION = "Google Chrome for Testing 1.0.0.0"
+FIXTURE_CHROMIUM_EXECUTABLE = "/ms-playwright/chromium-1/chrome-linux64/chrome"
+FIXTURE_CHROMIUM_SHA256 = "4" * 64
 
 
 def write_json(path: Path, value: dict) -> None:
@@ -1086,10 +1092,10 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                     SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
                 "source_only_distribution": "Ubuntu 24.04.4 LTS",
                 "source_only_glibc": "glibc 2.39",
-                "chromium_version": EXPECTED_CHROMIUM_VERSION,
-                "chromium_executable": EXPECTED_CHROMIUM_EXECUTABLE,
+                "chromium_version": FIXTURE_CHROMIUM_VERSION,
+                "chromium_executable": FIXTURE_CHROMIUM_EXECUTABLE,
                 "chromium_executable_sha256":
-                    EXPECTED_CHROMIUM_SHA256,
+                    FIXTURE_CHROMIUM_SHA256,
                 "errors": [],
                 "validation_errors": [],
             }
@@ -1143,19 +1149,22 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                     "source_only_distribution":
                         "Ubuntu 24.04.4 LTS",
                     "source_only_glibc": "glibc 2.39",
-                    "python_version": "3.14.7",
+                    "python_version": EXPECTED_PYTHON_VERSION,
                     "python_executable_sha256": "3" * 64,
-                    "uv_version": "0.12.20",
+                    "uv_version": EXPECTED_UV_VERSION,
                     "uv_executable": "/opt/uv/bin/uv",
                     "uv_executable_sha256": "3" * 64,
-                    "node_version": "v24.19.0",
+                    "node_version": EXPECTED_NODE_VERSION,
+                    "node_executable": "/opt/node/bin/node",
                     "node_executable_sha256": "3" * 64,
-                    "npm_version": "11.17.0",
+                    "npm_version": FIXTURE_NPM_VERSION,
+                    "npm_entrypoint":
+                        "/opt/node/lib/node_modules/npm/bin/npm-cli.js",
                     "npm_entrypoint_sha256": "3" * 64,
-                    "chromium_version": EXPECTED_CHROMIUM_VERSION,
-                    "chromium_executable": EXPECTED_CHROMIUM_EXECUTABLE,
+                    "chromium_version": FIXTURE_CHROMIUM_VERSION,
+                    "chromium_executable": FIXTURE_CHROMIUM_EXECUTABLE,
                     "chromium_executable_sha256":
-                        EXPECTED_CHROMIUM_SHA256,
+                        FIXTURE_CHROMIUM_SHA256,
                     "validation_errors": [],
                 },
             )
@@ -1201,9 +1210,9 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
                     "digest": SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
                 },
                 "chromium_identity": {
-                    "version": EXPECTED_CHROMIUM_VERSION,
-                    "executable": EXPECTED_CHROMIUM_EXECUTABLE,
-                    "sha256": EXPECTED_CHROMIUM_SHA256,
+                    "version": FIXTURE_CHROMIUM_VERSION,
+                    "executable": FIXTURE_CHROMIUM_EXECUTABLE,
+                    "sha256": FIXTURE_CHROMIUM_SHA256,
                 },
                 "source_only_ci_status": "passed",
                 "source_only_browser_status": "passed",

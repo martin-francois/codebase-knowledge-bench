@@ -135,10 +135,10 @@
       }
     },
     "source_only_userspace_image": {
-      "const": "mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27"
+      "$ref": "#/$defs/source_only_image"
     },
     "source_only_userspace_image_digest": {
-      "const": "sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27"
+      "$ref": "#/$defs/digest"
     },
     "source_only_distribution": {
       "type": "string",
@@ -149,13 +149,14 @@
       "minLength": 1
     },
     "python_version": {
-      "const": "3.14.7"
+      "type": "string",
+      "pattern": "^3\\.14\\.[0-9]+$"
     },
     "python_executable_sha256": {
       "$ref": "#/$defs/sha256"
     },
     "uv_version": {
-      "const": "0.12.20"
+      "$ref": "#/$defs/release"
     },
     "uv_executable": {
       "type": "string",
@@ -165,25 +166,28 @@
       "$ref": "#/$defs/sha256"
     },
     "node_version": {
-      "const": "v24.19.0"
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
     },
     "node_executable_sha256": {
       "$ref": "#/$defs/sha256"
     },
     "npm_version": {
-      "const": "11.17.0"
+      "$ref": "#/$defs/release"
     },
     "npm_entrypoint_sha256": {
       "$ref": "#/$defs/sha256"
     },
     "chromium_version": {
-      "const": "Google Chrome for Testing 153.0.8010.12"
+      "type": "string",
+      "pattern": "^Google Chrome for Testing [0-9]+(\\.[0-9]+){3}$"
     },
     "chromium_executable": {
-      "const": "/ms-playwright/chromium-1243/chrome-linux64/chrome"
+      "type": "string",
+      "pattern": "^/ms-playwright/chromium-[0-9]+/chrome-linux64/chrome$"
     },
     "chromium_executable_sha256": {
-      "const": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e"
+      "$ref": "#/$defs/sha256"
     },
     "source_only_browser_receipt": {
       "type": "object",
@@ -252,7 +256,7 @@
       "type": "object"
     },
     "source_only_executed_image": {
-      "const": "mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27"
+      "$ref": "#/$defs/source_only_image"
     },
     "source_only_distribution_id": {
       "type": "string"
@@ -275,6 +279,15 @@
     }
   },
   "$defs": {
+    "release": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "source_only_image": {
+      "description": "Exact value: the job container image in .github/workflows/ci.yml, which scripts/source_only_ci.py enforces.",
+      "type": "string",
+      "pattern": "^mcr\\.microsoft\\.com/playwright:v[0-9]+\\.[0-9]+\\.[0-9]+-[a-z]+@sha256:[0-9a-f]{64}$"
+    },
     "digest": {
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"
