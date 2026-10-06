@@ -195,13 +195,7 @@ def command_plan(methodology_output: Path) -> list[tuple[str, list[str]]]:
         ),
         (
             "node_audit",
-            [
-                "npm",
-                "audit",
-                "--prefix",
-                "dashboard",
-                "--package-lock-only",
-            ],
+            ["uv", "run", "python", "scripts/node_audit.py"],
         ),
         (
             "dashboard_unit",

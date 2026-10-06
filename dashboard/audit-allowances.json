@@ -1,0 +1,12 @@
+{
+  "allowances": [
+    {
+      "ghsa": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "vulnerable_range": "<=3.0.3",
+      "locked_path": "vite-plugin-singlefile 2.3.3 > micromatch 4.0.8 > braces 3.0.3 (devDependency, build only)",
+      "proof": "The advisory needs an attacker-supplied brace pattern. vite-plugin-singlefile is the only package that loads micromatch, and it calls micromatch.isMatch only when its inlinePattern option is non-empty. dashboard/vite.config.ts calls viteSingleFile() without options, so braces never parses a pattern. The plugin runs only during vite build and is not bundled into dist.",
+      "remove_when": "scripts/node_audit.py fails once the advisory disappears from the lockfile, its range changes, or npm reports an applicable fix. tests/test_node_audit.py fails once dashboard/vite.config.ts passes options to viteSingleFile()."
+    }
+  ]
+}

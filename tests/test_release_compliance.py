@@ -200,7 +200,7 @@ class SourceOnlyStratumTest(unittest.TestCase):
             SCRIPTS / "source_only_ci.py"
         ).read_text(encoding="utf-8")
         self.assertIn('"node_audit"', source_ci)
-        self.assertIn('"--package-lock-only"', source_ci)
+        self.assertIn('"scripts/node_audit.py"', source_ci)
         self.assertIn(
             "source-only CI requires a clean plain Git checkout",
             source_ci,

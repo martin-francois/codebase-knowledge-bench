@@ -50,12 +50,19 @@ uv run python -m py_compile scripts/*.py tests/*.py
 uv run python -m unittest discover -s tests -p 'test_*.py'
 uv run python3 tests/test_harness.py -v
 npm ci --prefix dashboard
-npm audit --prefix dashboard --package-lock-only
+uv run python scripts/node_audit.py
 npm test --prefix dashboard -- --run
 npm run build --prefix dashboard
 BENCH_CHROMIUM_EXECUTABLE=/absolute/path/to/the-pinned-image/chrome npm run test:browser --prefix dashboard
 git diff --check
 ```
+
+`scripts/node_audit.py` fails on every advisory that `npm audit` reports for
+`dashboard/package-lock.json`. When an advisory has a patched release, update to it, even inside the
+seven-day window that `dashboard/.npmrc` sets. That file explains the exclusion. Only an advisory without a fix may go into
+`dashboard/audit-allowances.json`, with a proof from the current code that the vulnerable path is never
+reached. The script fails again once the advisory leaves the lockfile, its vulnerable range changes,
+or npm reports a fix it can apply, so an allowance cannot outlive its reason.
 
 Use fixture-backed tests for scoring, aggregation, reporting, validation, archive, and rederivation
 changes. Run a one-issue, one-repetition TOML only when a real child integration check is
