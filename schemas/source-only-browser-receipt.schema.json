@@ -62,10 +62,10 @@
       "$ref": "#/$defs/file"
     },
     "source_only_userspace_image": {
-      "const": "mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e"
+      "const": "mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27"
     },
     "source_only_userspace_image_digest": {
-      "const": "sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e"
+      "const": "sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27"
     },
     "source_only_distribution": {
       "type": "string",
@@ -76,13 +76,13 @@
       "minLength": 1
     },
     "chromium_version": {
-      "const": "Google Chrome for Testing 151.0.7922.34"
+      "const": "Google Chrome for Testing 153.0.8010.12"
     },
     "chromium_executable": {
-      "const": "/ms-playwright/chromium-1234/chrome-linux64/chrome"
+      "const": "/ms-playwright/chromium-1243/chrome-linux64/chrome"
     },
     "chromium_executable_sha256": {
-      "const": "0b20b130e7edd9dd51873be867761295fe0cfad490c2b9a64f95bd3cfc08fa71"
+      "const": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e"
     },
     "errors": {
       "type": "array",
