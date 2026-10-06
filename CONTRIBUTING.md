@@ -62,7 +62,8 @@ git diff --check
 seven-day window that `dashboard/.npmrc` sets. That file explains the exclusion. Only an advisory without a fix may go into
 `dashboard/audit-allowances.json`, with a proof from the current code that the vulnerable path is never
 reached. The script fails again once the advisory leaves the lockfile, its vulnerable range changes,
-or npm reports a fix it can apply, so an allowance cannot outlive its reason.
+npm reports a patched release, or a package version listed in the allowance's `locked_versions`
+changes, so an allowance cannot outlive its reason.
 
 Use fixture-backed tests for scoring, aggregation, reporting, validation, archive, and rederivation
 changes. Run a one-issue, one-repetition TOML only when a real child integration check is

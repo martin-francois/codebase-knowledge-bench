@@ -13,10 +13,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from node_audit import audit_errors, load_allowances  # noqa: E402
+from node_audit import audit_errors, load_allowances, locked_versions  # noqa: E402
 
 
 BRACES_GHSA = "GHSA-vfj7-8cjw-p6xm"
+LOCKED = {
+    "braces": ["3.0.3"],
+    "micromatch": ["4.0.8"],
+    "vite-plugin-singlefile": ["2.3.3"],
+}
 SINGLEFILE_DOWNGRADE = {
     "name": "vite-plugin-singlefile",
     "version": "0.9.0",
@@ -58,10 +63,15 @@ class NodeAuditTest(unittest.TestCase):
         self.allowances = load_allowances()
 
     def test_allowed_unfixable_advisory_passes(self) -> None:
-        self.assertEqual([], audit_errors(braces_report(), self.allowances))
+        self.assertEqual([], audit_errors(braces_report(), self.allowances, LOCKED))
+
+    def test_allowance_matches_the_checked_in_lockfile(self) -> None:
+        self.assertEqual(
+            [], audit_errors(braces_report(), self.allowances, locked_versions())
+        )
 
     def test_empty_report_without_allowances_passes(self) -> None:
-        self.assertEqual([], audit_errors({"vulnerabilities": {}}, []))
+        self.assertEqual([], audit_errors({"vulnerabilities": {}}, [], LOCKED))
 
     def test_advisory_outside_the_allowances_fails(self) -> None:
         report = braces_report()
@@ -72,13 +82,13 @@ class NodeAuditTest(unittest.TestCase):
             "fixAvailable": True,
         }
 
-        errors = audit_errors(report, self.allowances)
+        errors = audit_errors(report, self.allowances, LOCKED)
 
         self.assertEqual(1, len(errors))
         self.assertIn("GHSA-68fv-2mgg-jv7q", errors[0])
 
     def test_allowance_expires_when_the_advisory_leaves_the_lockfile(self) -> None:
-        errors = audit_errors({"vulnerabilities": {}}, self.allowances)
+        errors = audit_errors({"vulnerabilities": {}}, self.allowances, LOCKED)
 
         self.assertEqual(1, len(errors))
         self.assertIn("no longer matches any advisory", errors[0])
@@ -89,24 +99,40 @@ class NodeAuditTest(unittest.TestCase):
             advisory("braces", BRACES_GHSA, "<3.0.4")
         ]
 
-        errors = audit_errors(report, self.allowances)
+        errors = audit_errors(report, self.allowances, LOCKED)
 
         self.assertEqual(1, len(errors))
         self.assertIn("now reports braces <3.0.4", errors[0])
 
-    def test_allowance_expires_when_npm_can_apply_a_fix(self) -> None:
+    def test_allowance_expires_when_a_patched_release_exists(self) -> None:
         for fix in (
             True,
             {"name": "vite-plugin-singlefile", "version": "2.3.4", "isSemVerMajor": False},
+            {"name": "vite-plugin-singlefile", "version": "3.0.0", "isSemVerMajor": True},
         ):
             with self.subTest(fix=fix):
                 report = copy.deepcopy(braces_report())
                 report["vulnerabilities"]["braces"]["fixAvailable"] = fix
 
-                errors = audit_errors(report, self.allowances)
+                errors = audit_errors(report, self.allowances, LOCKED)
 
                 self.assertEqual(1, len(errors))
-                self.assertIn("has a fix npm can apply", errors[0])
+                self.assertIn("has a patched release", errors[0])
+
+    def test_allowance_expires_when_a_proven_version_changes(self) -> None:
+        for name, version in (
+            ("micromatch", "4.0.9"),
+            ("vite-plugin-singlefile", "2.3.4"),
+            ("braces", "3.0.2"),
+        ):
+            with self.subTest(name=name):
+                locked = dict(LOCKED)
+                locked[name] = [version]
+
+                errors = audit_errors(braces_report(), self.allowances, locked)
+
+                self.assertEqual(1, len(errors))
+                self.assertIn(f"was proven for {name}", errors[0])
 
     def test_braces_proof_holds_for_the_current_vite_config(self) -> None:
         # The braces allowance relies on vite-plugin-singlefile never calling micromatch,

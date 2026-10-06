@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -13,6 +14,7 @@ from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 ALLOWANCES_PATH = ROOT / "dashboard/audit-allowances.json"
+LOCKFILE_PATH = ROOT / "dashboard/package-lock.json"
 AUDIT_COMMAND = [
     "npm",
     "audit",
@@ -26,6 +28,23 @@ AUDIT_COMMAND = [
 def load_allowances(path: Path = ALLOWANCES_PATH) -> list[dict[str, Any]]:
     document = json.loads(path.read_text(encoding="utf-8"))
     return sorted(document["allowances"], key=lambda entry: entry["ghsa"])
+
+
+def locked_versions(path: Path = LOCKFILE_PATH) -> dict[str, list[str]]:
+    """Map each package name in the npm lockfile to every version it resolves to."""
+    lockfile = json.loads(path.read_text(encoding="utf-8"))
+    versions: dict[str, set[str]] = {}
+    for key, entry in lockfile["packages"].items():
+        if "node_modules/" not in key or "version" not in entry:
+            continue
+        name = key.rsplit("node_modules/", 1)[-1]
+        versions.setdefault(name, set()).add(entry["version"])
+    return {name: sorted(found) for name, found in sorted(versions.items())}
+
+
+def release(version: str) -> tuple[int, int, int]:
+    major, minor, patch = re.match(r"(\d+)\.(\d+)\.(\d+)", version).groups()
+    return int(major), int(minor), int(patch)
 
 
 def reported_advisories(
@@ -51,16 +70,23 @@ def reported_advisories(
     return advisories
 
 
-def applicable_fix(fix_available: Any) -> bool:
-    # npm offers a semver-major "fix" that downgrades the dependent package; that is not a fix.
-    if isinstance(fix_available, Mapping):
-        return not fix_available.get("isSemVerMajor", False)
-    return fix_available is True
+def applicable_fix(
+    fix_available: Any, locked: Mapping[str, list[str]]
+) -> bool:
+    if not isinstance(fix_available, Mapping):
+        return fix_available is True
+    # npm also offers a downgrade to a release that predates the vulnerable dependency.
+    # Only an upgrade, semver-major or not, means a patched release exists.
+    current = locked.get(fix_available["name"], [])
+    return any(
+        release(fix_available["version"]) > release(version) for version in current
+    )
 
 
 def audit_errors(
     report: Mapping[str, Any],
     allowances: list[Mapping[str, Any]],
+    locked: Mapping[str, list[str]],
 ) -> list[str]:
     advisories = reported_advisories(report)
     allowed = {entry["ghsa"]: entry for entry in allowances}
@@ -90,10 +116,18 @@ def audit_errors(
                 f"{entry['package']} {entry['vulnerable_range']}: "
                 "check for a patched release before renewing the allowance"
             )
-        if applicable_fix(advisory["fix_available"]):
+        # The proof reads the code of these exact versions, so any other version needs a new proof.
+        for name, version in sorted(entry["locked_versions"].items()):
+            if locked.get(name) != [version]:
+                errors.append(
+                    f"allowance {ghsa} was proven for {name} {version}, the "
+                    f"lockfile has {', '.join(locked.get(name, [])) or 'none'}: "
+                    "re-check the proof and update locked_versions"
+                )
+        if applicable_fix(advisory["fix_available"], locked):
             errors.append(
-                f"advisory {ghsa} has a fix npm can apply: run npm audit fix "
-                "and remove the allowance"
+                f"advisory {ghsa} has a patched release: update to it and "
+                "remove the allowance"
             )
     return errors
 
@@ -116,7 +150,7 @@ def run_audit() -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.parse_args(argv)
-    errors = audit_errors(run_audit(), load_allowances())
+    errors = audit_errors(run_audit(), load_allowances(), locked_versions())
     for error in errors:
         print(error, file=sys.stderr)
     if errors:
