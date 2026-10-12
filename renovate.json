@@ -43,7 +43,7 @@
     "description": "Rewrite dashboard/package-lock.json and uv.lock from scratch every week so transitive dependencies pick up published fixes. Ordinary updates only touch the entries named in a manifest, so an advisory against a package no manifest names is never resolved until the lockfile itself is refreshed. Renovate's minimumReleaseAge filters the versions Renovate proposes, but here the package manager picks every version. For npm, min-release-age=7 in dashboard/.npmrc makes npm refuse anything younger than seven days, which is what makes automerge safe for the dashboard lockfile. uv.lock gets its own branch and is not automerged, see the rule for it below. This is a public repository, so the run costs nothing.",
     "enabled": true,
     "schedule": [
-      "* 0-4 * * 5"
+      "* * * * 5"
     ],
     "automerge": true
   },
