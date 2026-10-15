@@ -13,7 +13,7 @@
     "react-dom": "19.3.0",
     "vega": "6.4.0",
     "vega-embed": "7.3.0",
-    "vega-lite": "6.4.3"
+    "vega-lite": "6.5.0"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
