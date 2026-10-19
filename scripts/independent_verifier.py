@@ -54,6 +54,11 @@ BOOTSTRAP_MEMBER_MANIFEST = "runtime/bootstrap-python-members.txt"
 BOOTSTRAP_MEMBER_HEADER = "bootstrap-python-members-v1"
 BOOTSTRAP_MEMBER_MAX_COUNT = 128
 BOOTSTRAP_MEMBER_MAX_BYTES = 1_000_000_000
+# The packaged CPython names its executable, shared library and zipped standard library after its
+# minor version. Any one minor is accepted, so packages built on each supported Python verify.
+BOOTSTRAP_PYTHON_EXECUTABLE = re.compile(
+    r"runtime/bootstrap-python/bin/python3\.([0-9]+)"
+)
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -325,6 +330,27 @@ def _zip_permissions(info: zipfile.ZipInfo) -> int:
     return (info.external_attr >> 16) & 0o7777
 
 
+def _bootstrap_python_members(paths: Any) -> dict[str, str]:
+    """The required members of the one packaged CPython 3.N named among paths."""
+    minors = {
+        match.group(1)
+        for path in paths
+        if (match := BOOTSTRAP_PYTHON_EXECUTABLE.fullmatch(path))
+    }
+    if len(minors) != 1:
+        raise ValueError(
+            "bootstrap member manifest lacks a required runtime member"
+        )
+    minor = minors.pop()
+    return {
+        "executable": f"runtime/bootstrap-python/bin/python3.{minor}",
+        "library": (
+            f"runtime/bootstrap-python/lib/libpython3.{minor}.so.1.0"
+        ),
+        "stdlib_zip": f"runtime/bootstrap-python/lib/python3{minor}.zip",
+    }
+
+
 def _parse_bootstrap_member_manifest(
     data: bytes,
 ) -> list[dict[str, Any]]:
@@ -387,9 +413,7 @@ def _parse_bootstrap_member_manifest(
             }
         )
     required = {
-        "runtime/bootstrap-python/bin/python3.14",
-        "runtime/bootstrap-python/lib/libpython3.14.so.1.0",
-        "runtime/bootstrap-python/lib/python314.zip",
+        *_bootstrap_python_members(seen).values(),
         (
             "runtime/bootstrap-python/system-libs/"
             "ld-linux-x86-64.so.2"
@@ -409,11 +433,9 @@ def _validate_bootstrap_member_contract(
         manifest = archive.read(BOOTSTRAP_MEMBER_MANIFEST)
         rows = _parse_bootstrap_member_manifest(manifest)
         infos = {info.filename: info for info in archive.infolist()}
-        expected = {
-            "runtime/bootstrap-python/bin/python3.14",
-            "runtime/bootstrap-python/lib/libpython3.14.so.1.0",
-            "runtime/bootstrap-python/lib/python314.zip",
-        } | {
+        expected = set(
+            _bootstrap_python_members(row["path"] for row in rows).values()
+        ) | {
             name
             for name in infos
             if name.startswith(
@@ -1175,7 +1197,9 @@ def verify(outer: Path, output: Path) -> dict[str, Any]:
     loader = (
         bootstrap_root / "system-libs/ld-linux-x86-64.so.2"
     )
-    bootstrap = bootstrap_root / "bin/python3.14"
+    bootstrap = inner_root / _bootstrap_python_members(
+        row["path"] for row in bootstrap_members["members"]
+    )["executable"]
     libraries = (
         f"{bootstrap_root / 'system-libs'}:{bootstrap_root / 'lib'}"
     )

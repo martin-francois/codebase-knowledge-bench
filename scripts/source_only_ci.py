@@ -13,12 +13,15 @@ import shutil
 import subprocess
 import sys
 import time
+import tomllib
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON_POLICY = ">=3.14,<3.15"
+PYTHON_POLICY = tomllib.loads(
+    (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+)["project"]["requires-python"]
 TASK_ID = "final-source-only-ci-browser-and-image-pin"
 ROUTING_NONCE = "FMCB-20260719-9D4E2A7B"
 BASE_COMMIT = "86e1658f48539a8cd3e737d740f498ee649d214c"
@@ -35,9 +38,6 @@ WORKFLOW_PIN_PATTERNS = {
         r"^      - uses: astral-sh/setup-uv@[0-9a-f]{40} # [^\n]+\n"
         r'        with:\n          version: "([^"\n]+)"$',
         re.MULTILINE,
-    ),
-    "python": re.compile(
-        r'^          python-version: "([^"\n]+)"$', re.MULTILINE
     ),
     "node": re.compile(
         r'^          node-version: "([^"\n]+)"$', re.MULTILINE
@@ -58,8 +58,45 @@ def workflow_pins(source: str) -> dict[str, str]:
     return pins
 
 
-_WORKFLOW_PINS = workflow_pins(WORKFLOW_PATH.read_text(encoding="utf-8"))
-EXPECTED_PYTHON_VERSION = _WORKFLOW_PINS["python"]
+# The job matrix lists one Python release per supported minor, each on its own line.
+WORKFLOW_PYTHON_MATRIX = re.compile(
+    r'^        python-version:\n((?:          - "[^"\n]+"\n)+)', re.MULTILINE
+)
+WORKFLOW_PYTHON_PIN = re.compile(r'^          - "([^"\n]+)"$', re.MULTILINE)
+
+
+def workflow_python_versions(source: str) -> tuple[str, ...]:
+    blocks = WORKFLOW_PYTHON_MATRIX.findall(source)
+    if len(blocks) != 1:
+        raise ValueError(
+            "source-only workflow must list its python matrix exactly once, "
+            f"found {len(blocks)}"
+        )
+    versions = tuple(WORKFLOW_PYTHON_PIN.findall(blocks[0]))
+    minors = [version.rsplit(".", 1)[0] for version in versions]
+    if len(set(minors)) != len(minors):
+        raise ValueError(
+            "source-only workflow must pin each python minor exactly once"
+        )
+    return versions
+
+
+def python_pin_for(version: str, pins: Sequence[str]) -> str | None:
+    """The workflow pin for the minor of a running Python version, if the matrix has one."""
+    minor = version.rsplit(".", 1)[0]
+    matches = [pin for pin in pins if pin.rsplit(".", 1)[0] == minor]
+    return matches[0] if matches else None
+
+
+_WORKFLOW_SOURCE = WORKFLOW_PATH.read_text(encoding="utf-8")
+_WORKFLOW_PINS = workflow_pins(_WORKFLOW_SOURCE)
+EXPECTED_PYTHON_VERSIONS = workflow_python_versions(_WORKFLOW_SOURCE)
+# Each matrix leg runs under one pinned release; this is the pin for the running interpreter's
+# minor, or the first pin when the matrix does not cover it, which then fails the identity check.
+EXPECTED_PYTHON_VERSION = (
+    python_pin_for(platform.python_version(), EXPECTED_PYTHON_VERSIONS)
+    or EXPECTED_PYTHON_VERSIONS[0]
+)
 EXPECTED_UV_VERSION = _WORKFLOW_PINS["uv"]
 EXPECTED_NODE_VERSION = "v" + _WORKFLOW_PINS["node"]
 SOURCE_ONLY_USERSPACE_IMAGE = _WORKFLOW_PINS["image"]
@@ -528,7 +565,7 @@ def environment_identity_errors(identity: Mapping[str, Any]) -> list[str]:
         != SOURCE_ONLY_USERSPACE_IMAGE_DIGEST
     ):
         errors.append("source-only userspace image digest is missing or stale")
-    if identity.get("python_version") != EXPECTED_PYTHON_VERSION:
+    if identity.get("python_version") not in EXPECTED_PYTHON_VERSIONS:
         errors.append("source-only Python version differs from exact pin")
     if identity.get("uv_version") != EXPECTED_UV_VERSION:
         errors.append("source-only uv version differs from exact pin")
@@ -1016,6 +1053,9 @@ def _isolated_environment(
             # The uv cache under the output root and the checkout's .venv sit on different
             # mounts in the CI container, so uv cannot hardlink and warns before copying anyway.
             "UV_LINK_MODE": "copy",
+            # Each matrix leg must build its environment with the interpreter it receipts, not
+            # whichever supported Python uv would discover first.
+            "UV_PYTHON": sys.executable,
             "npm_config_cache": str(cache / "npm"),
             "BENCH_PLAYWRIGHT_JSON_OUTPUT": str(browser_result),
             "CI": "1",
@@ -1025,10 +1065,10 @@ def _isolated_environment(
 
 
 def run(output: Path, browser_output: Path | None = None) -> dict[str, Any]:
-    if platform.python_version() != EXPECTED_PYTHON_VERSION:
+    if platform.python_version() not in EXPECTED_PYTHON_VERSIONS:
         raise RuntimeError(
-            "source-only CI requires exactly Python "
-            + EXPECTED_PYTHON_VERSION
+            "source-only CI requires exactly one of Python "
+            + ", ".join(EXPECTED_PYTHON_VERSIONS)
         )
     if os.environ.get("BENCH_TARGET_REPO_PATH"):
         raise RuntimeError(

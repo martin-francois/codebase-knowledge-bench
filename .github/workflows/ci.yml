@@ -13,8 +13,16 @@ env:
   SOURCE_ONLY_UNZIP_PACKAGE_SHA256: "a505b9d491386167bd8e14e3383315a4a7d6539e4406745901ccf009a7988271"
 
 jobs:
-  source-only:
+  source-only-python:
+    name: source-only (Python ${{ matrix.python-version }})
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # One release per supported Python minor; the legs run in parallel.
+        python-version:
+          - "3.14.8"
+          - "3.15.0"
     container:
       # The one copy of the image pin. The env aliases below and scripts/source_only_ci.py
       # read it from here, so an image update changes only this line.
@@ -48,7 +56,7 @@ jobs:
           enable-cache: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.14.8"
+          python-version: ${{ matrix.python-version }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24.21.0"
@@ -74,7 +82,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: source-only-ci-browser-receipts
+          name: source-only-ci-browser-receipts-python-${{ matrix.python-version }}
           path: |
             ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/source-only-ci-receipt.json
             ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/source-only-browser-receipt.json
@@ -82,3 +90,15 @@ jobs:
             ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/source-only-ci-receipt-logs
             ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/source-only-methodology.json
             ${{ env.SOURCE_ONLY_OUTPUT_ROOT }}/private-prerelease-audit
+
+  # The ruleset requires one check named source-only. It passes only when every Python leg passed,
+  # so the required check does not change when a leg is added or its pin moves.
+  source-only:
+    needs: source-only-python
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require every Python leg to pass
+        env:
+          LEGS_RESULT: ${{ needs.source-only-python.result }}
+        run: test "$LEGS_RESULT" = success
