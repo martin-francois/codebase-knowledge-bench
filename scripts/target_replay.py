@@ -678,7 +678,9 @@ def _stage_python(
     return closure
 
 
-def _stage_environment(source: Path, destination: Path) -> None:
+def _stage_environment(
+    source: Path, destination: Path, packaged_minor: int
+) -> None:
     version_info = [
         line
         for line in (source / "pyvenv.cfg").read_text(encoding="utf-8").splitlines()
@@ -686,6 +688,16 @@ def _stage_environment(source: Path, destination: Path) -> None:
     ]
     if len(version_info) != 1:
         raise ValueError("benchmark virtual environment has no single version_info")
+    # The replay puts the venv's lib/python3.N/site-packages on PYTHONPATH for the packaged
+    # interpreter, so a venv built by another minor would fail only once replay runs.
+    if version_info[0].removeprefix("version_info = ").split(".")[:2] != [
+        "3",
+        str(packaged_minor),
+    ]:
+        raise ValueError(
+            "benchmark virtual environment minor differs from the packaged "
+            f"CPython 3.{packaged_minor}"
+        )
     destination.mkdir(parents=True)
     for name in ("lib", "lib64"):
         path = source / name
@@ -1633,7 +1645,9 @@ def build_target_package(
             ),
         )
         _stage_environment(
-            benchmark_repo / ".venv", staging / ".venv"
+            benchmark_repo / ".venv",
+            staging / ".venv",
+            packaged_python_minor,
         )
         _copytree(maven_home, staging / "maven-home")
         _copytree(

@@ -53,6 +53,7 @@ from target_replay import (
     _evidence_entries,
     _package_rows,
     _replay_script,
+    _stage_environment,
     _stage_python,
     build_target_package,
     embedded_python_blocks,
@@ -1187,6 +1188,23 @@ class NetworkNamespaceLauncherTest(unittest.TestCase):
                     sorted(self._python_layout_members(minor)),
                     sorted(row["path"] for row in rows),
                 )
+
+    def test_staged_venv_must_match_the_packaged_python_minor(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "venv"
+            source.mkdir()
+            (source / "pyvenv.cfg").write_text(
+                "home = /usr/bin\nversion_info = 3.15.0\n", encoding="utf-8"
+            )
+            _stage_environment(source, Path(temporary) / "same", 15)
+            self.assertIn(
+                "version_info = 3.15.0\n",
+                (Path(temporary) / "same/pyvenv.cfg").read_text(
+                    encoding="utf-8"
+                ),
+            )
+            with self.assertRaisesRegex(ValueError, "minor differs"):
+                _stage_environment(source, Path(temporary) / "other", 14)
 
     def test_shell_verifier_runs_the_python_each_layout_packages(
         self,
