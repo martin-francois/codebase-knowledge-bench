@@ -1194,11 +1194,11 @@ class NetworkNamespaceLauncherTest(unittest.TestCase):
             source = Path(temporary) / "venv"
             source.mkdir()
             (source / "pyvenv.cfg").write_text(
-                "home = /usr/bin\nversion_info = 3.15.0\n", encoding="utf-8"
+                "home = /usr/bin\nversion_info = 3.15.99\n", encoding="utf-8"
             )
             _stage_environment(source, Path(temporary) / "same", 15)
             self.assertIn(
-                "version_info = 3.15.0\n",
+                "version_info = 3.15.99\n",
                 (Path(temporary) / "same/pyvenv.cfg").read_text(
                     encoding="utf-8"
                 ),
