@@ -355,10 +355,17 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
                 {"PATH": str(binary_root)},
                 clear=False,
             ):
-                result = validate_generated_script(_replay_script())
+                result = validate_generated_script(
+                    _replay_script(sys.version_info.minor)
+                )
         self.assertEqual("passed", result["status"], result["errors"])
 
-    def _lock(self, root: Path) -> dict:
+    def _lock(
+        self,
+        root: Path,
+        python_minor: int = 14,
+        requires_python: str = ">=3.14,<3.15",
+    ) -> dict:
         tools = {}
         for name in (
             "posix_sh",
@@ -400,7 +407,11 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
             "maven",
             "maven_wrapper",
         ):
-            path = root / f"runtime/{name}"
+            path = root / (
+                f"runtime/python-runtime/bin/python3.{python_minor}"
+                if name == "python"
+                else f"runtime/{name}"
+            )
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(f"packaged-{name}\n".encode())
             tools[name] = {
@@ -413,8 +424,8 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
         return {
             "schema_id": "offline-runtime-lock-current",
             "python_support": {
-                "requires_python": ">=3.14,<3.15",
-                "runtime": "CPython 3.14",
+                "requires_python": requires_python,
+                "runtime": f"CPython 3.{python_minor}",
             },
             "platform": {"system": "Linux", "architecture": "x86_64"},
             "host_bootstrap_prerequisites": [
@@ -504,6 +515,29 @@ class PackagedRuntimeBoundaryTests(unittest.TestCase):
                 "runtime boundary entry classification is incomplete: bash",
                 _validate_runtime_lock_shape(lock),
             )
+
+    def test_runtime_lock_python_support_follows_the_packaged_minor(
+        self,
+    ) -> None:
+        invalid = "runtime lock Python support policy is invalid"
+        for minor, policy, valid in (
+            # A package published under the 3.14-only policy still validates.
+            (14, ">=3.14,<3.15", True),
+            (14, ">=3.14,<3.16", True),
+            (15, ">=3.14,<3.16", True),
+            (15, ">=3.14,<3.15", False),
+            (13, ">=3.14,<3.16", False),
+            (15, ">=3.14", False),
+        ):
+            with self.subTest(minor=minor, policy=policy), tempfile.TemporaryDirectory() as temporary:
+                lock = self._lock(Path(temporary), minor, policy)
+                self.assertEqual(
+                    not valid, invalid in _validate_runtime_lock_shape(lock)
+                )
+        with tempfile.TemporaryDirectory() as temporary:
+            lock = self._lock(Path(temporary), 15, ">=3.14,<3.16")
+            lock["python_support"]["runtime"] = "CPython 3.14"
+            self.assertIn(invalid, _validate_runtime_lock_shape(lock))
 
     def test_rootfs_contract_contains_every_semantic_generic_tool(self) -> None:
         required = required_rootfs_paths()
@@ -1450,7 +1484,7 @@ class FailureAndFinalDeliveryTests(unittest.TestCase):
             )
 
     def test_source_generated_replay_has_one_packaged_boundary(self) -> None:
-        source = _replay_script()
+        source = _replay_script(sys.version_info.minor)
         self.assertIn("namespace-launcher", source)
         self.assertIn("replay-rootfs", source)
         self.assertNotIn("unshare --net --mount", source)

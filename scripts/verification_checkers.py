@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import os
+import sys
 import tarfile
 import tempfile
 import zipfile
@@ -338,9 +339,14 @@ def preflight_exact_status(repo: Path, fault: bool) -> dict[str, Any]:
 def generated_replay_equality(repo: Path, fault: bool) -> dict[str, Any]:
     from target_replay import _replay_script
 
-    generated = _replay_script().encode("utf-8")
-    packaged = generated + (b"# drift\n" if fault else b"")
+    from target_replay import python_minor
+
     root = _evidence_root()
+    packaged_minor = sys.version_info.minor
+    if root is not None and (root / "runtime/bootstrap-python").is_dir():
+        packaged_minor = python_minor(root / "runtime/bootstrap-python")
+    generated = _replay_script(packaged_minor).encode("utf-8")
+    packaged = generated + (b"# drift\n" if fault else b"")
     if root is not None and (root / "target/replay.sh").is_file():
         packaged = (root / "target/replay.sh").read_bytes()
         if fault:
@@ -356,7 +362,7 @@ def embedded_replay_syntax(repo: Path, fault: bool) -> dict[str, Any]:
     del repo
     from target_replay import _replay_script, validate_generated_script
 
-    source = _replay_script()
+    source = _replay_script(sys.version_info.minor)
     if fault:
         source = source.replace(
             "import pathlib\n",
@@ -678,7 +684,7 @@ def no_finalize(repo: Path, fault: bool) -> dict[str, Any]:
     from target_replay import _replay_script
 
     value = {
-        "script": _replay_script(),
+        "script": _replay_script(sys.version_info.minor),
         "receipt": {"qualifying_mode": "fresh"},
     }
     if fault:

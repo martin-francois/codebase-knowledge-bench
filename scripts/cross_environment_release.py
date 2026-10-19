@@ -12,6 +12,7 @@ import re
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import zipfile
 from pathlib import Path
@@ -191,7 +192,7 @@ def validate_bootstrap_launcher(source: str) -> dict[str, Any]:
     loader_invocation = (
         "ld-linux-x86-64.so.2" in source
         and "--library-path" in source
-        and "python3.14" in source
+        and re.search(r"/bin/python3\.", source) is not None
     )
     if not loader_invocation:
         errors.append("packaged Python loader invocation is missing")
@@ -2607,7 +2608,7 @@ def fault_matrix(repo: Path) -> dict[str, Any]:
         "package source equality",
         evidence=verifier_equality,
     )
-    replay_source = _replay_script().encode()
+    replay_source = _replay_script(sys.version_info.minor).encode()
     replay_equality = validate_source_generated_equality(
         replay_source,
         replay_source + b"# drift\n",

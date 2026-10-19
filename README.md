@@ -12,7 +12,7 @@ The benchmark starts real Codex processes and uses model tokens. Start with the 
 
 You need:
 
-- Linux with `bash`, Python 3.14.x, Git, a C compiler (`cc`), and Bubblewrap (`bwrap`) for
+- Linux with `bash`, Python 3.14.x or 3.15.x, Git, a C compiler (`cc`), and Bubblewrap (`bwrap`) for
   artifact-backed benchmark and release qualification.
 - Node.js and npm. Before any npm-based context tool is installed, the suite provisions and uses
   its exact pinned Node runtime under one cross-tool lock, independent of scheduled tool order. It
@@ -438,9 +438,10 @@ Suite-only rederivation uses `scripts/recompute_suite.py` on a copied, versioned
 and original derived output remain unchanged. The expensive matrix remains opt-in with
 `RUN_EXPENSIVE_BENCHMARK=true`.
 
-The supported project interpreter is exactly Python `>=3.14,<3.15`. Source-only CI runs in the
-full-digest Playwright image that `.github/workflows/ci.yml` pins, with the Python and Node versions
-pinned in the same file selected explicitly. It uses the checked-in synthetic target and
+The supported project interpreter is Python `>=3.14,<3.16`, that is Python 3.14 and 3.15. Source-only
+CI runs one job per supported Python minor, in parallel, in the full-digest Playwright image that
+`.github/workflows/ci.yml` pins, with the Python and Node versions pinned in the same file selected
+explicitly. It uses the checked-in synthetic target and
 injected external executable paths. It also builds the dashboard and runs the real
 `dashboard/tests/browser.spec.ts` Playwright accessibility/offline test with the Chromium supplied
 by that image. The source-only CI and browser receipts record the exact image, Python, Node, npm,

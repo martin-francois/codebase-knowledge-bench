@@ -25,7 +25,10 @@ sys.path.insert(0, str(SCRIPTS))
 from methodology_fixture import run_fixture  # noqa: E402
 from run_final_validation import reconstruct_exact_git_checkout  # noqa: E402
 from safe_archive import safe_extract_tar  # noqa: E402
-from source_only_ci import workflow_pins  # noqa: E402
+from source_only_ci import (  # noqa: E402
+    workflow_pins,
+    workflow_python_versions,
+)
 
 
 class StaticVerifierBootstrapTest(unittest.TestCase):
@@ -167,22 +170,30 @@ class SourceOnlyStratumTest(unittest.TestCase):
             )
             self.assertEqual("clean", result["status"])
 
-    def test_python_policy_and_workflow_are_314_only(self) -> None:
+    def test_python_policy_matches_the_workflow_matrix(self) -> None:
         project = tomllib.loads(
             (ROOT / "pyproject.toml").read_text(encoding="utf-8")
         )
         self.assertEqual(
-            ">=3.14,<3.15", project["project"]["requires-python"]
+            ">=3.14,<3.16", project["project"]["requires-python"]
         )
         lock = (ROOT / "uv.lock").read_text(encoding="utf-8")
-        self.assertIn('requires-python = "==3.14.*"', lock)
+        self.assertIn('requires-python = ">=3.14, <3.16"', lock)
         workflow = (
             ROOT / ".github/workflows/ci.yml"
         ).read_text(encoding="utf-8")
         # Check the shape of each pin, not its value: the value lives only in the workflow, where
         # Renovate updates it, so a test that restated it would fail every update.
         pins = workflow_pins(workflow)
-        self.assertRegex(pins["python"], r"^3\.14\.[0-9]+$")
+        python_pins = workflow_python_versions(workflow)
+        for pin in python_pins:
+            self.assertRegex(pin, r"^3\.[0-9]+\.[0-9]+$")
+        # Every supported minor runs in CI, and CI runs no unsupported minor. When the range
+        # widens, this fails until the matrix gains a leg for the new minor.
+        self.assertEqual(
+            ["3.14", "3.15"],
+            sorted(pin.rsplit(".", 1)[0] for pin in python_pins),
+        )
         self.assertRegex(pins["uv"], r"^[0-9]+\.[0-9]+\.[0-9]+$")
         self.assertRegex(pins["node"], r"^[0-9]+\.[0-9]+\.[0-9]+$")
         uses = re.findall(r"^\s*(?:- )?uses: (.+)$", workflow, re.MULTILINE)
@@ -204,8 +215,6 @@ class SourceOnlyStratumTest(unittest.TestCase):
             ],
             sorted(match.group(1) for match in pinned if match),
         )
-        self.assertNotIn('python-version: "3.11"', workflow)
-        self.assertNotIn('python-version: "3.13"', workflow)
         self.assertIn("scripts/source_only_ci.py", workflow)
         source_ci = (
             SCRIPTS / "source_only_ci.py"

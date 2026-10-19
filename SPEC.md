@@ -87,10 +87,14 @@ solver child. Its contents MUST NOT be used as selected tool identity or benchma
 absent cache after restart is recreated and may only cause the same pinned installation to be
 downloaded again.
 
-`LAY-003` The sole supported project interpreter policy is Python `>=3.14,<3.15`. Project metadata,
-the frozen dependency lock, source CI, documentation, and packaged runtime receipts MUST declare
-that exact minor-version boundary. Python 3.11 and Python 3.13 are not blocking CI targets, and no
-compatibility implementation is maintained.
+`LAY-003` The supported project interpreter policy is Python `>=3.14,<3.16`, that is Python 3.14 and
+Python 3.15. Project metadata, the frozen dependency lock, documentation, and source CI MUST declare
+that exact minor-version boundary, and source CI MUST run every supported minor as its own job leg.
+A packaged runtime receipt MUST record the policy it was built under and the one CPython minor it
+packages, and validation MUST accept a package whose policy admits its packaged minor, so packages
+built under an earlier policy still verify. Packaged runtime paths that CPython names after its minor
+version MUST be derived from the packaged interpreter, not written as a literal. Python 3.13 and older
+are not CI targets, and no compatibility implementation is maintained for them.
 
 `LAY-004` Source-only CI MUST start from a plain Git checkout and use only frozen Python
 dependencies, frozen Node dependencies, a checked-in small synthetic target fixture, and
@@ -114,8 +118,9 @@ vulnerable path is never reached. An allowance MUST stop passing as soon as its 
 appears, its reported package or vulnerable range changes, npm reports a patched release, or a
 locked package version that the proof relies on changes.
 
-`LAY-008` Each source-only CI pin (the job container image digest, the uv, Python, and Node
-versions, and every action commit) MUST be written once, in `.github/workflows/ci.yml`, where the
+`LAY-008` Each source-only CI pin (the job container image digest, the uv version, one Python release
+per supported minor, the Node version, and every action commit) MUST be written once, in
+`.github/workflows/ci.yml`, where the
 dependency bot updates it. Scripts, tests, and schemas MUST read the pin from that file or check only
 its format, and documentation MUST refer to the workflow rather than restate the value, so that a
 bot update that changes only the pinned line passes CI. Facts that follow from the image, such as its

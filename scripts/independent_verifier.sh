@@ -146,9 +146,7 @@ member_count=0
 total_bytes=0
 seen_members='
 '
-required_python=false
-required_libpython=false
-required_stdlib=false
+python_minor=
 required_loader=false
 while IFS=' ' read -r mode bytes digest member extra <&3
 do
@@ -221,12 +219,20 @@ $member
   }
   stream_member "$member" "${mode#0}"
   case "$member" in
-    runtime/bootstrap-python/bin/python3.14)
-      required_python=true ;;
-    runtime/bootstrap-python/lib/libpython3.14.so.1.0)
-      required_libpython=true ;;
-    runtime/bootstrap-python/lib/python314.zip)
-      required_stdlib=true ;;
+    runtime/bootstrap-python/bin/python3.*)
+      # The packaged CPython is named after its minor version; exactly one may be packaged.
+      minor=${member#runtime/bootstrap-python/bin/python3.}
+      case "$minor" in
+        ''|*[!0-9]*) ;;
+        *)
+          if [ -n "$python_minor" ]; then
+            echo "bootstrap member manifest names more than one Python" >&2
+            exit 65
+          fi
+          python_minor=$minor
+          ;;
+      esac
+      ;;
     runtime/bootstrap-python/system-libs/ld-linux-x86-64.so.2)
       required_loader=true ;;
   esac
@@ -236,7 +242,21 @@ ulimit -S -f unlimited || {
   echo "cannot restore bootstrap stream file limit" >&2
   exit 66
 }
-if [ "$required_python" != true ] || \
+required_libpython=false
+required_stdlib=false
+if [ -n "$python_minor" ]; then
+  case "$seen_members" in
+    *"
+runtime/bootstrap-python/lib/libpython3.$python_minor.so.1.0
+"*) required_libpython=true ;;
+  esac
+  case "$seen_members" in
+    *"
+runtime/bootstrap-python/lib/python3$python_minor.zip
+"*) required_stdlib=true ;;
+  esac
+fi
+if [ -z "$python_minor" ] || \
    [ "$required_libpython" != true ] || \
    [ "$required_stdlib" != true ] || \
    [ "$required_loader" != true ]; then
@@ -249,7 +269,7 @@ stream_member \
 PREFIX="$STAGE/inner/runtime/bootstrap-python"
 LOADER="$PREFIX/system-libs/ld-linux-x86-64.so.2"
 LIBRARIES="$PREFIX/system-libs:$PREFIX/lib"
-PYTHON="$PREFIX/bin/python3.14"
+PYTHON="$PREFIX/bin/python3.$python_minor"
 VERIFIER="$STAGE/inner/verification/independent-verifier/independent_verifier.py"
 
 export INDEPENDENT_VERIFIER_BOOTSTRAP

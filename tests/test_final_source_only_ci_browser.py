@@ -32,7 +32,9 @@ from source_only_ci import (  # noqa: E402
     BROWSER_SPEC_RELATIVE,
     EXPECTED_NODE_VERSION,
     EXPECTED_PYTHON_VERSION,
+    EXPECTED_PYTHON_VERSIONS,
     EXPECTED_UV_VERSION,
+    PYTHON_POLICY,
     REQUIRED_COMMAND_NAMES,
     ROUTING_NONCE,
     SOURCE_ONLY_USERSPACE_IMAGE,
@@ -52,6 +54,7 @@ from source_only_ci import (  # noqa: E402
     source_only_receipt_errors,
     workflow_image_errors,
     workflow_pins,
+    workflow_python_versions,
     workflow_userspace_images,
 )
 from target_replay import _runtime_environment  # noqa: E402
@@ -152,7 +155,7 @@ def valid_source_receipt(browser: dict | None = None) -> dict:
         "routing_nonce": ROUTING_NONCE,
         "status": "passed",
         "execution_stratum": "source-only",
-        "python_support": ">=3.14,<3.15",
+        "python_support": PYTHON_POLICY,
         "plain_git_checkout_compatible": True,
         "published_target_required": False,
         "bench_target_repo_path_present": False,
@@ -645,19 +648,35 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
         pins = workflow_pins(source)
         self.assertEqual(SOURCE_ONLY_USERSPACE_IMAGE, pins["image"])
         self.assertEqual(EXPECTED_UV_VERSION, pins["uv"])
-        self.assertEqual(EXPECTED_PYTHON_VERSION, pins["python"])
+        self.assertEqual(
+            EXPECTED_PYTHON_VERSIONS, workflow_python_versions(source)
+        )
+        self.assertIn(EXPECTED_PYTHON_VERSION, EXPECTED_PYTHON_VERSIONS)
         self.assertEqual(EXPECTED_NODE_VERSION, "v" + pins["node"])
         self.assertEqual(
             SOURCE_ONLY_USERSPACE_IMAGE_DIGEST,
             SOURCE_ONLY_USERSPACE_IMAGE.rsplit("@", 1)[1],
         )
         duplicated = source.replace(
-            '          python-version: "',
-            '          python-version: "3.14.0"\n'
-            '          python-version: "',
+            '          node-version: "',
+            '          node-version: "24.0.0"\n'
+            '          node-version: "',
         )
-        with self.assertRaisesRegex(ValueError, "python exactly once"):
+        with self.assertRaisesRegex(ValueError, "node exactly once"):
             workflow_pins(duplicated)
+        first = EXPECTED_PYTHON_VERSIONS[0]
+        same_minor = source.replace(
+            f'          - "{first}"\n',
+            f'          - "{first}"\n'
+            f'          - "{first.rsplit(".", 1)[0]}.0"\n',
+        )
+        with self.assertRaisesRegex(ValueError, "each python minor exactly once"):
+            workflow_python_versions(same_minor)
+        matrix = re.search(
+            r"^        python-version:\n(?:          - .*\n)+", source, re.MULTILINE
+        ).group(0)
+        with self.assertRaisesRegex(ValueError, "python matrix exactly once"):
+            workflow_python_versions(source + matrix)
 
     def test_no_other_tracked_file_restates_a_workflow_pin(self) -> None:
         source = (
@@ -668,8 +687,11 @@ class PinnedUserspaceWorkflowTest(unittest.TestCase):
             "image digest": SOURCE_ONLY_USERSPACE_IMAGE_DIGEST.split(":")[1],
             "image tag": SOURCE_ONLY_USERSPACE_IMAGE.split("@")[0],
             "uv": pins["uv"],
-            "python": pins["python"],
             "node": pins["node"],
+            **{
+                f"python {version}": version
+                for version in workflow_python_versions(source)
+            },
         }
         values.update(
             {
@@ -825,7 +847,7 @@ class ArtifactBackedBrowserGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             work = Path(temporary)
             environment = _runtime_environment(
-                work, work / "benchmark"
+                work, work / "benchmark", sys.version_info.minor
             )
         self.assertEqual(
             str(work / "runtime/chromium/chromium"),
@@ -842,7 +864,7 @@ class ArtifactBackedBrowserGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             work = Path(temporary)
             environment = _runtime_environment(
-                work, work / "benchmark"
+                work, work / "benchmark", sys.version_info.minor
             )
         self.assertEqual(
             str(work / "home/.cache/npm"),
