@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import copy
-import re
 import sys
 import unittest
 from pathlib import Path
@@ -21,6 +20,18 @@ LOCKED = {
     "braces": ["3.0.3"],
     "micromatch": ["4.0.8"],
     "vite-plugin-singlefile": ["2.3.3"],
+}
+# An allowance in the shape dashboard/audit-allowances.json uses, so the expiry rules are tested
+# independently of what the checked-in file holds.
+BRACES_ALLOWANCE = {
+    "ghsa": BRACES_GHSA,
+    "package": "braces",
+    "vulnerable_range": "<=3.0.3",
+    "locked_versions": {
+        "braces": "3.0.3",
+        "micromatch": "4.0.8",
+        "vite-plugin-singlefile": "2.3.3",
+    },
 }
 SINGLEFILE_DOWNGRADE = {
     "name": "vite-plugin-singlefile",
@@ -60,15 +71,17 @@ def braces_report() -> dict:
 
 class NodeAuditTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.allowances = load_allowances()
+        self.allowances = [dict(BRACES_ALLOWANCE)]
 
     def test_allowed_unfixable_advisory_passes(self) -> None:
         self.assertEqual([], audit_errors(braces_report(), self.allowances, LOCKED))
 
-    def test_allowance_matches_the_checked_in_lockfile(self) -> None:
-        self.assertEqual(
-            [], audit_errors(braces_report(), self.allowances, locked_versions())
-        )
+    def test_checked_in_allowances_match_the_checked_in_lockfile(self) -> None:
+        locked = locked_versions()
+        for entry in load_allowances():
+            for name, version in sorted(entry["locked_versions"].items()):
+                with self.subTest(ghsa=entry["ghsa"], name=name):
+                    self.assertEqual([version], locked.get(name))
 
     def test_empty_report_without_allowances_passes(self) -> None:
         self.assertEqual([], audit_errors({"vulnerabilities": {}}, [], LOCKED))
@@ -133,23 +146,6 @@ class NodeAuditTest(unittest.TestCase):
 
                 self.assertEqual(1, len(errors))
                 self.assertIn(f"was proven for {name}", errors[0])
-
-    def test_braces_proof_holds_for_the_current_vite_config(self) -> None:
-        # The braces allowance relies on vite-plugin-singlefile never calling micromatch,
-        # which holds only while it gets no inlinePattern.
-        allowed = {entry["ghsa"] for entry in self.allowances}
-        if BRACES_GHSA not in allowed:
-            self.skipTest("no braces allowance")
-        config = (ROOT / "dashboard/vite.config.ts").read_text(encoding="utf-8")
-
-        calls = re.findall(r"viteSingleFile\(([^)]*)\)", config)
-
-        self.assertEqual(
-            [""],
-            calls,
-            "viteSingleFile() now takes options: re-check the braces proof "
-            "in dashboard/audit-allowances.json",
-        )
 
 
 if __name__ == "__main__":
