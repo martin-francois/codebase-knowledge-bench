@@ -145,6 +145,51 @@ ROOTFS_TOOL_PATHS = {
 PACKAGE_MAX_MEMBERS = 100_000
 PACKAGE_MAX_TOTAL_BYTES = 5_000_000_000
 PACKAGE_MAX_MEMBER_BYTES = 1_000_000_000
+# CPython names its executable, shared library, standard library and zipped standard library after
+# the minor version, so a package built on any supported minor carries its own layout.
+PYTHON_EXECUTABLE_NAME = re.compile(r"python3\.([0-9]+)")
+PYTHON_POLICY = re.compile(r">=3\.([0-9]+),<3\.([0-9]+)")
+
+
+def python_layout(minor: int) -> dict[str, str]:
+    """Relative member names of a CPython 3.<minor> installation prefix."""
+    return {
+        "executable": f"bin/python3.{minor}",
+        "library": f"lib/libpython3.{minor}.so.1.0",
+        "stdlib": f"lib/python3.{minor}",
+        "stdlib_zip": f"lib/python3{minor}.zip",
+    }
+
+
+def python_minor(prefix: Path) -> int:
+    """The minor version of the one CPython 3 executable in a prefix's bin directory."""
+    bin_dir = prefix / "bin"
+    minors = sorted(
+        int(match.group(1))
+        for path in (bin_dir.iterdir() if bin_dir.is_dir() else ())
+        if (match := PYTHON_EXECUTABLE_NAME.fullmatch(path.name))
+        and path.is_file()
+    )
+    if len(minors) != 1:
+        raise ValueError(
+            f"expected one python3.N executable in {bin_dir}, found {len(minors)}"
+        )
+    return minors[0]
+
+
+def python_policy_admits(policy: Any, minor: int) -> bool:
+    """Whether a requires-python range of the form >=3.A,<3.B includes 3.<minor>."""
+    match = PYTHON_POLICY.fullmatch(policy) if isinstance(policy, str) else None
+    return match is not None and int(match.group(1)) <= minor < int(match.group(2))
+
+
+def project_python_policy(benchmark_repo: Path) -> str:
+    import tomllib
+
+    project = tomllib.loads(
+        (benchmark_repo / "pyproject.toml").read_text(encoding="utf-8")
+    )
+    return project["project"]["requires-python"]
 
 
 def _write_json(path: Path, value: Any) -> None:
@@ -193,9 +238,9 @@ def _command_version(command: Sequence[str]) -> str:
     return process.stdout.strip()
 
 
-def _replay_script() -> str:
-    """Return the only qualifying replay launcher, byte for byte."""
-    return r"""#!/bin/sh
+def _replay_script(python_minor: int) -> str:
+    """Return the only qualifying replay launcher for a packaged CPython 3.<minor>, byte for byte."""
+    return _with_python_minor(r"""#!/bin/sh
 set -eu
 unset LD_LIBRARY_PATH PYTHONPATH JAVA_HOME NODE_PATH
 
@@ -214,7 +259,7 @@ WORK_ROOT=$1
 EVIDENCE_ROOT=$2
 LOADER="$HANDOFF_ROOT/runtime/bootstrap-python/system-libs/ld-linux-x86-64.so.2"
 LIBRARIES="$HANDOFF_ROOT/runtime/bootstrap-python/system-libs"
-PYTHON="$HANDOFF_ROOT/runtime/bootstrap-python/bin/python3.14"
+PYTHON="$HANDOFF_ROOT/runtime/bootstrap-python/bin/python3.@PYTHON_MINOR@"
 LAUNCHER="$TARGET_DIR/namespace-launcher"
 ROOTFS="$HANDOFF_ROOT/runtime/replay-rootfs"
 MODE=${REPLAY_NAMESPACE_MODE:-privileged}
@@ -268,12 +313,12 @@ if [ "$exit_code" -ne 0 ]; then
   echo "fresh offline replay failed with exit code $exit_code" >&2
 fi
 exit "$exit_code"
-"""
+""", python_minor)
 
 
-def _replay_inner_script() -> str:
+def _replay_inner_script(python_minor: int) -> str:
     """Return the only semantic replay body executed inside the rootfs."""
-    return r"""#!/usr/bin/bash
+    return _with_python_minor(r"""#!/usr/bin/bash
 set -euo pipefail
 
 if [[ $# -ne 2 ]]; then
@@ -286,7 +331,7 @@ EVIDENCE_ROOT=$2
 PACKAGE_ROOT=/package
 LOADER=/package/runtime/bootstrap-python/system-libs/ld-linux-x86-64.so.2
 LIBRARIES=/package/runtime/bootstrap-python/system-libs
-PYTHON=/package/runtime/bootstrap-python/bin/python3.14
+PYTHON=/package/runtime/bootstrap-python/bin/python3.@PYTHON_MINOR@
 export HOME=/work/home
 export TMPDIR=/tmp
 export PATH=/usr/sbin:/usr/bin:/sbin:/bin
@@ -324,7 +369,11 @@ exec "$LOADER" --library-path "$LIBRARIES" "$PYTHON" \
   --package-root "$PACKAGE_ROOT" \
   --work-root "$WORK_ROOT" \
   --evidence-root "$EVIDENCE_ROOT"
-"""
+""", python_minor)
+
+
+def _with_python_minor(template: str, python_minor: int) -> str:
+    return template.replace("@PYTHON_MINOR@", str(python_minor))
 
 
 def embedded_python_blocks(script: str) -> list[str]:
@@ -536,10 +585,11 @@ def _copy_library_closure(
 def _bootstrap_member_manifest(
     destination: Path, output: Path
 ) -> list[dict[str, Any]]:
+    layout = python_layout(python_minor(destination))
     required_modes = {
-        "bin/python3.14": 0o755,
-        "lib/libpython3.14.so.1.0": 0o755,
-        "lib/python314.zip": 0o644,
+        layout["executable"]: 0o755,
+        layout["library"]: 0o755,
+        layout["stdlib_zip"]: 0o644,
     }
     loader = "system-libs/ld-linux-x86-64.so.2"
     system_libraries = sorted(
@@ -589,8 +639,9 @@ def _stage_python(
         return set()
 
     _copytree(source, destination, ignore=ignored)
-    stdlib = destination / "lib/python3.14"
-    bootstrap_zip = destination / "lib/python314.zip"
+    layout = python_layout(python_minor(destination))
+    stdlib = destination / layout["stdlib"]
+    bootstrap_zip = destination / layout["stdlib_zip"]
     with zipfile.ZipFile(
         bootstrap_zip,
         "w",
@@ -615,8 +666,8 @@ def _stage_python(
             archive.writestr(info, path.read_bytes())
     closure = _copy_library_closure(
         [
-            destination / "bin/python3.14",
-            destination / "lib/libpython3.14.so.1.0",
+            destination / layout["executable"],
+            destination / layout["library"],
         ],
         destination / "system-libs",
     )
@@ -627,7 +678,26 @@ def _stage_python(
     return closure
 
 
-def _stage_environment(source: Path, destination: Path) -> None:
+def _stage_environment(
+    source: Path, destination: Path, packaged_minor: int
+) -> None:
+    version_info = [
+        line
+        for line in (source / "pyvenv.cfg").read_text(encoding="utf-8").splitlines()
+        if line.startswith("version_info = ")
+    ]
+    if len(version_info) != 1:
+        raise ValueError("benchmark virtual environment has no single version_info")
+    # The replay puts the venv's lib/python3.N/site-packages on PYTHONPATH for the packaged
+    # interpreter, so a venv built by another minor would fail only once replay runs.
+    if version_info[0].removeprefix("version_info = ").split(".")[:2] != [
+        "3",
+        str(packaged_minor),
+    ]:
+        raise ValueError(
+            "benchmark virtual environment minor differs from the packaged "
+            f"CPython 3.{packaged_minor}"
+        )
     destination.mkdir(parents=True)
     for name in ("lib", "lib64"):
         path = source / name
@@ -638,7 +708,7 @@ def _stage_environment(source: Path, destination: Path) -> None:
     (destination / "pyvenv.cfg").write_text(
         "home = ../runtime/python-runtime/bin\n"
         "implementation = CPython\n"
-        "version_info = 3.14.6\n"
+        f"{version_info[0]}\n"
         "include-system-site-packages = false\n"
         "prompt = offline-replay\n",
         encoding="utf-8",
@@ -837,11 +907,14 @@ def _runtime_lock(
     replay_rootfs_lock: Mapping[str, Any],
     replay_rootfs_lock_sha256: str,
     namespace_launcher: Path,
+    requires_python: str,
 ) -> dict[str, Any]:
     jdk = staging / "jdk"
     node = staging / "node"
     chromium = staging / "chromium"
     python = staging / "python-runtime"
+    minor = python_minor(python)
+    python_executable = python_layout(minor)["executable"]
     java_version = _command_version([str(jdk / "bin/java"), "--version"])
     node_version = _command_version([str(node / "bin/node"), "--version"])
     npm_version = _command_version(
@@ -855,7 +928,7 @@ def _runtime_lock(
         [str(chromium / "chromium"), "--version"]
     )
     python_version = _command_version(
-        [str(python / "bin/python3.14"), "--version"]
+        [str(python / python_executable), "--version"]
     )
     wrapper_properties = target_repo / ".mvn/wrapper/maven-wrapper.properties"
     maven_bins = sorted(
@@ -881,8 +954,8 @@ def _runtime_lock(
     return {
         "schema_id": "offline-runtime-lock-current",
         "python_support": {
-            "requires_python": ">=3.14,<3.15",
-            "runtime": "CPython 3.14",
+            "requires_python": requires_python,
+            "runtime": f"CPython 3.{minor}",
         },
         "platform": {
             "os": "packaged replay rootfs",
@@ -966,8 +1039,8 @@ def _runtime_lock(
             ),
             "python": _classified_runtime(
                 name="python",
-                path="runtime/python-runtime/bin/python3.14",
-                digest=sha256_file(python / "bin/python3.14"),
+                path=f"runtime/python-runtime/{python_executable}",
+                digest=sha256_file(python / python_executable),
                 version=python_version,
             ),
             "maven": _classified_runtime(
@@ -1495,8 +1568,9 @@ def build_target_package(
         benchmark_repo / "scripts/replay_namespace_launcher.c",
         target_dir / "namespace-launcher",
     )
-    replay_bytes_one = _replay_script().encode("utf-8")
-    replay_bytes_two = _replay_script().encode("utf-8")
+    packaged_python_minor = python_minor(python_runtime)
+    replay_bytes_one = _replay_script(packaged_python_minor).encode("utf-8")
+    replay_bytes_two = _replay_script(packaged_python_minor).encode("utf-8")
     if replay_bytes_one != replay_bytes_two:
         raise ValueError("replay launcher regeneration is nondeterministic")
     replay = target_dir / "replay.sh"
@@ -1507,8 +1581,12 @@ def build_target_package(
     )
     if script_validation["status"] != "passed":
         raise ValueError(script_validation["errors"])
-    inner_bytes_one = _replay_inner_script().encode("utf-8")
-    inner_bytes_two = _replay_inner_script().encode("utf-8")
+    inner_bytes_one = _replay_inner_script(packaged_python_minor).encode(
+        "utf-8"
+    )
+    inner_bytes_two = _replay_inner_script(packaged_python_minor).encode(
+        "utf-8"
+    )
     if inner_bytes_one != inner_bytes_two:
         raise ValueError("inner replay regeneration is nondeterministic")
     replay_inner = target_dir / "replay-inner.sh"
@@ -1567,7 +1645,9 @@ def build_target_package(
             ),
         )
         _stage_environment(
-            benchmark_repo / ".venv", staging / ".venv"
+            benchmark_repo / ".venv",
+            staging / ".venv",
+            packaged_python_minor,
         )
         _copytree(maven_home, staging / "maven-home")
         _copytree(
@@ -1632,6 +1712,7 @@ def build_target_package(
                 runtime_dir / "replay-rootfs-lock.json"
             ),
             namespace_launcher=target_dir / "namespace-launcher",
+            requires_python=project_python_policy(benchmark_repo),
         )
     _write_json(runtime_dir / "runtime-lock.json", runtime_lock)
     _write_json(
@@ -1860,6 +1941,30 @@ def _validate_archive(
     return validate_exact_tar(archive, manifest_path)
 
 
+def _runtime_lock_python_support_valid(lock: Mapping[str, Any]) -> bool:
+    """The lock names the packaged CPython minor, and its policy admits that minor.
+
+    A package keeps the policy it was built under, so packages built before a newer
+    minor was supported still validate.
+    """
+    support = lock.get("python_support")
+    if not isinstance(support, Mapping) or set(support) != {
+        "requires_python",
+        "runtime",
+    }:
+        return False
+    runtime = re.fullmatch(r"CPython 3\.([0-9]+)", str(support["runtime"]))
+    if runtime is None:
+        return False
+    minor = int(runtime.group(1))
+    packaged = lock.get("packaged_semantic_runtime")
+    python = packaged.get("python") if isinstance(packaged, Mapping) else None
+    path = python.get("path") if isinstance(python, Mapping) else None
+    return path == (
+        f"runtime/python-runtime/{python_layout(minor)['executable']}"
+    ) and python_policy_admits(support["requires_python"], minor)
+
+
 def _validate_runtime_lock_shape(lock: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
     required = {
@@ -1876,10 +1981,7 @@ def _validate_runtime_lock_shape(lock: Mapping[str, Any]) -> list[str]:
     }
     if set(lock) != required:
         errors.append("runtime lock field set mismatch")
-    if lock.get("python_support") != {
-        "requires_python": ">=3.14,<3.15",
-        "runtime": "CPython 3.14",
-    }:
+    if not _runtime_lock_python_support_valid(lock):
         errors.append("runtime lock Python support policy is invalid")
     for section, role, mode, hash_required in (
         (
@@ -1969,6 +2071,11 @@ def inspect_target_package(
     errors: list[str] = []
     target = package_root / "target"
     runtime = package_root / "runtime"
+    try:
+        packaged_minor: int | None = python_minor(runtime / "bootstrap-python")
+    except ValueError as exc:
+        packaged_minor = None
+        errors.append(f"packaged bootstrap Python is not singular: {exc}")
     required = {
         target / "replay.sh",
         target / "replay-inner.sh",
@@ -1988,7 +2095,6 @@ def inspect_target_package(
         target / "generated-artifact-provenance.json",
         target / "package-manifest.json",
         runtime / "runtime-lock.json",
-        runtime / "bootstrap-python/bin/python3.14",
         runtime / BOOTSTRAP_MEMBER_MANIFEST_NAME,
         runtime / "bootstrap-python-manifest.json",
         runtime / "replay-rootfs-manifest.json",
@@ -2001,6 +2107,12 @@ def inspect_target_package(
         for name in ARCHIVE_NAMES
         for suffix in (".tar.zst", "-manifest.json")
     )
+    if packaged_minor is not None:
+        required.add(
+            runtime
+            / "bootstrap-python"
+            / python_layout(packaged_minor)["executable"]
+        )
     missing = sorted(
         path.relative_to(package_root).as_posix()
         for path in required
@@ -2186,16 +2298,17 @@ def inspect_target_package(
         replay_source = (target / "replay.sh").read_text(
             encoding="utf-8"
         )
-        generated = _replay_script()
-        if replay_source.encode("utf-8") != generated.encode("utf-8"):
+        if packaged_minor is None or replay_source.encode("utf-8") != (
+            _replay_script(packaged_minor).encode("utf-8")
+        ):
             errors.append("packaged replay script differs from generator")
         script_validation = validate_generated_script(replay_source)
         errors.extend(script_validation["errors"])
         replay_inner_source = (target / "replay-inner.sh").read_text(
             encoding="utf-8"
         )
-        if replay_inner_source.encode("utf-8") != (
-            _replay_inner_script().encode("utf-8")
+        if packaged_minor is None or replay_inner_source.encode("utf-8") != (
+            _replay_inner_script(packaged_minor).encode("utf-8")
         ):
             errors.append(
                 "packaged inner replay script differs from generator"
@@ -2626,7 +2739,7 @@ def _network_receipt(
 
 
 def _runtime_environment(
-    work_root: Path, benchmark: Path
+    work_root: Path, benchmark: Path, packaged_minor: int
 ) -> dict[str, str]:
     runtime = work_root / "runtime"
     library_paths = [
@@ -2666,7 +2779,7 @@ def _runtime_environment(
                 str(path) for path in library_paths
             ),
             "PYTHONPATH": (
-                f"{benchmark / '.venv/lib/python3.14/site-packages'}:"
+                f"{benchmark / '.venv' / python_layout(packaged_minor)['stdlib'] / 'site-packages'}:"
                 f"{benchmark / 'scripts'}"
             ),
             "PYTHONDONTWRITEBYTECODE": "1",
@@ -2738,7 +2851,9 @@ def _resolve_runtime(
         "node": runtime / "node/bin/node",
         "npm": runtime / "node/lib/node_modules/npm/bin/npm-cli.js",
         "chromium": runtime / "chromium/chromium",
-        "python": runtime / "python-runtime/bin/python3.14",
+        "python": runtime
+        / "python-runtime"
+        / python_layout(python_minor(runtime / "python-runtime"))["executable"],
     }
     expected = {
         name: lock["packaged_semantic_runtime"][name]["sha256"]
@@ -3268,6 +3383,7 @@ def run_replay(
     runtime_resolution = _resolve_runtime(
         package_root, work_root, lock
     )
+    packaged_minor = python_minor(extraction_root / "python-runtime")
     _write_json(
         evidence_root / "runtime-resolution.json",
         runtime_resolution,
@@ -3331,7 +3447,7 @@ def run_replay(
                 == (target_dir / "safe_archive.py").read_bytes()
             ),
             "generated_replay_equal": (
-                _replay_script().encode("utf-8")
+                _replay_script(packaged_minor).encode("utf-8")
                 == (target_dir / "replay.sh").read_bytes()
             ),
         }
@@ -3395,12 +3511,16 @@ def run_replay(
         runtime_dir / "dashboard-node-modules-manifest.json",
         benchmark / "dashboard",
     )
-    environment = _runtime_environment(work_root, benchmark)
+    environment = _runtime_environment(
+        work_root, benchmark, packaged_minor
+    )
     environment["BENCH_CURRENT_PREFLIGHT_CACHE_ROOT"] = str(
         evidence_root / "preflight"
     )
     python = str(
-        extraction_root / "python-runtime/bin/python3.14"
+        extraction_root
+        / "python-runtime"
+        / python_layout(packaged_minor)["executable"]
     )
     records: list[dict[str, Any]] = []
     preflight_root = evidence_root / "preflight"
@@ -4148,7 +4268,7 @@ def main() -> int:
     replay.add_argument("--evidence-root", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "generate-script":
-        text = _replay_script()
+        text = _replay_script(sys.version_info.minor)
         if args.output:
             args.output.write_text(text, encoding="utf-8")
             args.output.chmod(0o755)

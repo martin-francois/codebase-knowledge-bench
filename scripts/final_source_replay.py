@@ -26,6 +26,8 @@ from target_replay import (
     _replay_inner_script,
     _replay_script,
     inspect_target_package,
+    python_layout,
+    python_minor,
     validate_replay_evidence,
     write_replay_evidence_manifest,
 )
@@ -374,8 +376,9 @@ def prepare(
                 "sealed replay artifact differs from packaged source: "
                 f"{replay_name}"
             )
-    generated_replay = _replay_script().encode()
-    generated_inner = _replay_inner_script().encode()
+    packaged_minor = python_minor(output / "runtime/bootstrap-python")
+    generated_replay = _replay_script(packaged_minor).encode()
+    generated_inner = _replay_inner_script(packaged_minor).encode()
     packaged_replay = (output / "target/replay.sh").read_bytes()
     packaged_inner = (output / "target/replay-inner.sh").read_bytes()
     write_json(
@@ -418,7 +421,8 @@ def prepare(
                 "ld-linux-x86-64.so.2 --library-path "
                 "runtime/bootstrap-python/system-libs:"
                 "runtime/bootstrap-python/lib "
-                "runtime/bootstrap-python/bin/python3.14"
+                "runtime/bootstrap-python/"
+                + python_layout(packaged_minor)["executable"]
             ),
             "global_ld_library_path": False,
             "host_semantic_utilities_before_packaged_python": [],

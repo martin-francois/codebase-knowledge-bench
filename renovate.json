@@ -44,6 +44,26 @@
     ],
     "automerge": true
   },
+  "customManagers": [
+    {
+      "description": "The source-only job runs one leg per supported Python minor, listed under strategy.matrix.python-version in .github/workflows/ci.yml. The github-actions manager reads only literal setup-python inputs, so this extracts each matrix entry with the datasource, package and version format that manager uses for setup-python.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/ci\\.yml$/"
+      ],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "\\n {8}python-version:\\n(?: {10}- \"[^\"\\n]+\"\\n)+",
+        " {10}- \"(?<currentValue>[^\"\\n]+)\"\\n"
+      ],
+      "depNameTemplate": "python",
+      "depTypeTemplate": "python-matrix",
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "actions/python-versions",
+      "versioningTemplate": "npm",
+      "extractVersionTemplate": "^(?<version>\\d+\\.\\d+\\.\\d+)(-\\d+)?$"
+    }
+  ],
   "customDatasources": {
     "mcr-playwright": {
       "description": "Microsoft Artifact Registry's tag catalog for mcr.microsoft.com/playwright. Every vX.Y.Z-noble tag, the scheme the CI container pins, becomes a release with the catalog's lastModifiedDate, the time MCR last pushed that tag, as its release timestamp and the tag's current manifest-list digest. Other distributions, architecture tags and the bare vX.Y.Z tags are left out.",
@@ -56,11 +76,36 @@
   },
   "packageRules": [
     {
-      "description": "requires-python declares which Python versions this project supports, not which version to install, so the repository-wide rangeStrategy pin is wrong for it. Pinning turned >=3.14,<3.15 into an exact ==3.14.x release, which would make the project reject the next CPython 3.14 patch release as incompatible the moment it ships, including one published to fix a vulnerability. replace keeps the declared range and only rewrites it when a release falls outside it.",
-      "matchDepTypes": [
-        "requires-python"
+      "description": "setup-python takes its version from the job matrix, which the github-actions manager cannot resolve and would report as an invalid version. The python-matrix custom manager updates the matrix entries instead.",
+      "matchManagers": [
+        "github-actions"
       ],
-      "rangeStrategy": "replace"
+      "matchDepTypes": [
+        "uses-with"
+      ],
+      "matchDepNames": [
+        "python"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Each python-matrix entry is the CI leg of one supported Python minor, so it takes only patch releases of its own minor. separateMinorPatch gives each entry its own patch branch (python-3.14.x, python-3.15.x); without it, the newest minor is the only proposal, an older leg never receives its patch releases, and accepting the proposal would move that leg to a minor it does not represent. A new minor arrives through the requires-python rule instead. The entries hold release numbers with no place for a digest, as with the uses-with inputs below.",
+      "matchDepTypes": [
+        "python-matrix"
+      ],
+      "separateMinorPatch": true,
+      "pinDigests": false
+    },
+    {
+      "description": "Moving a python-matrix entry to another minor would stop testing the minor it represents while requires-python still declares it.",
+      "matchDepTypes": [
+        "python-matrix"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
+      "enabled": false
     },
     {
       "description": "Renovate's docker datasource reads release timestamps only from Docker Hub, so under timestamp-required every update of the Playwright CI container would stay pending. The image is looked up through the mcr-playwright datasource instead, which dates each tag and digest with the time MCR pushed it, so the seven-day wait applies to it too.",
@@ -74,7 +119,7 @@
       "versioning": "docker"
     },
     {
-      "description": "The version inputs of setup-uv, setup-python and setup-node (depType uses-with) take a release number and have no place for a commit digest. With pinDigests, Renovate proposes 'Pin dependency astral-sh/uv to <digest>', which fails on every run with 'update failure'. For python and node it looks for a git tag named exactly after the release, finds none because actions/python-versions and actions/node-versions add a build number to every tag, logs 'Could not determine new digest for update' and drops the update without telling anyone, so Python and Node would never be updated.",
+      "description": "The version inputs of setup-uv and setup-node (depType uses-with) take a release number and have no place for a commit digest. With pinDigests, Renovate proposes 'Pin dependency astral-sh/uv to <digest>', which fails on every run with 'update failure'. For node it looks for a git tag named exactly after the release, finds none because actions/node-versions adds a build number to every tag, logs 'Could not determine new digest for update' and drops the update without telling anyone, so Node would never be updated.",
       "matchManagers": [
         "github-actions"
       ],
@@ -93,6 +138,14 @@
         "digest"
       ],
       "automerge": true
+    },
+    {
+      "description": "requires-python declares which Python minors this project supports, not which version to install, so the repository-wide rangeStrategy pin is wrong for it: an exact ==3.x.y would reject the next patch release, including one that fixes a vulnerability. widen only ever adds the new minor to the upper bound; replace would move the lower bound too and silently drop a supported minor. Supporting a new minor also needs a CI matrix leg and documentation, so the proposal is never automerged, and tests/test_release_compliance.py keeps it red until the matrix covers the new range.",
+      "matchDepTypes": [
+        "requires-python"
+      ],
+      "rangeStrategy": "widen",
+      "automerge": false
     },
     {
       "description": "Re-resolves uv.lock so transitive packages pick up upstream fixes that no direct-dependency rule reaches. Not automerged: uv has no package-manager-level release-age gate, so nothing holds back a package published yesterday when the lock file is rebuilt, and a human reads the diff instead. Its own branch keeps the automerged npm refresh from waiting on that review.",

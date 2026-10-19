@@ -53,6 +53,7 @@ from target_replay import (
     _evidence_entries,
     _package_rows,
     _replay_script,
+    _stage_environment,
     _stage_python,
     build_target_package,
     embedded_python_blocks,
@@ -451,8 +452,8 @@ class SourceGeneratedReplayTest(unittest.TestCase):
             self.assertNotEqual(baseline, _package_rows(package))
 
     def test_generation_is_equal_and_all_embedded_python_compiles(self) -> None:
-        first = _replay_script()
-        second = _replay_script()
+        first = _replay_script(sys.version_info.minor)
+        second = _replay_script(sys.version_info.minor)
         self.assertEqual(first.encode(), second.encode())
         self.assertEqual("passed", validate_generated_script(first)["status"])
         blocks = embedded_python_blocks(first)
@@ -462,7 +463,7 @@ class SourceGeneratedReplayTest(unittest.TestCase):
         self.assertNotIn("--finalize-existing", first)
 
     def test_broken_embedded_python_is_rejected(self) -> None:
-        broken = _replay_script().replace(
+        broken = _replay_script(sys.version_info.minor).replace(
             "import pathlib\n",
             "import pathlib\nbroken = 'newline\nliteral'\n",
             1,
@@ -474,7 +475,7 @@ class SourceGeneratedReplayTest(unittest.TestCase):
         )
 
     def test_replay_script_drift_is_byte_visible(self) -> None:
-        generated = _replay_script().encode()
+        generated = _replay_script(sys.version_info.minor).encode()
         drifted = generated + b"# drift\n"
         self.assertNotEqual(generated, drifted)
 
@@ -836,7 +837,7 @@ class ExactArchiveBoundaryTest(unittest.TestCase):
 
 class NetworkNamespaceLauncherTest(unittest.TestCase):
     def test_launcher_source_enforces_namespace_and_loopback(self) -> None:
-        script = _replay_script()
+        script = _replay_script(sys.version_info.minor)
         launcher = (
             ROOT / "scripts/replay_namespace_launcher.c"
         ).read_text(encoding="utf-8")
@@ -1081,6 +1082,181 @@ class NetworkNamespaceLauncherTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "mode|identity"):
                 _validate_bootstrap_member_contract(
                     stream.getvalue(), stage
+                )
+
+    def _bootstrap_inner_zip(
+        self,
+        members: dict[str, tuple[bytes, int]],
+        stage: Path | None = None,
+        extra: dict[str, bytes] | None = None,
+    ) -> bytes:
+        """An inner review-handoff ZIP holding bootstrap members and their manifest."""
+        lines = [BOOTSTRAP_MEMBER_MANIFEST_HEADER]
+        for name, (data, mode) in sorted(members.items()):
+            lines.append(
+                f"{mode:04o} {len(data)} "
+                f"{hashlib.sha256(data).hexdigest()} {name}"
+            )
+            if stage is not None:
+                staged = stage / "inner" / name
+                staged.parent.mkdir(parents=True, exist_ok=True)
+                staged.write_bytes(data)
+                staged.chmod(mode)
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w") as archive:
+            write_zip(
+                archive,
+                "runtime/bootstrap-python-members.txt",
+                ("\n".join(lines) + "\n").encode(),
+            )
+            for name, (data, mode) in sorted(members.items()):
+                write_zip(archive, name, data, mode=mode)
+            for name, data in sorted((extra or {}).items()):
+                write_zip(archive, name, data)
+        return stream.getvalue()
+
+    @staticmethod
+    def _python_layout_members(
+        executable_minor: int, library_minor: int | None = None
+    ) -> dict[str, tuple[bytes, int]]:
+        library_minor = executable_minor if library_minor is None else library_minor
+        prefix = "runtime/bootstrap-python"
+        return {
+            f"{prefix}/bin/python3.{executable_minor}": (b"python", 0o755),
+            f"{prefix}/lib/libpython3.{library_minor}.so.1.0": (
+                b"libpython",
+                0o755,
+            ),
+            f"{prefix}/lib/python3{library_minor}.zip": (b"stdlib", 0o644),
+            f"{prefix}/system-libs/ld-linux-x86-64.so.2": (b"loader", 0o755),
+        }
+
+    def test_verifier_accepts_the_published_314_and_the_315_layout(
+        self,
+    ) -> None:
+        # Packages published before 3.15 support carry bin/python3.14; both layouts must verify.
+        for minor in (14, 15):
+            with self.subTest(minor=minor), tempfile.TemporaryDirectory() as temporary:
+                stage = Path(temporary)
+                members = self._python_layout_members(minor)
+                inner = self._bootstrap_inner_zip(members, stage)
+                result = _validate_bootstrap_member_contract(inner, stage)
+                self.assertEqual("passed", result["status"])
+                self.assertEqual(
+                    sorted(members),
+                    sorted(row["path"] for row in result["members"]),
+                )
+
+    def test_verifier_rejects_a_mixed_or_doubled_python_layout(self) -> None:
+        mixed = self._python_layout_members(15, library_minor=14)
+        doubled = {
+            **self._python_layout_members(14),
+            **self._python_layout_members(15),
+        }
+        for name, members in (("mixed", mixed), ("doubled", doubled)):
+            with self.subTest(layout=name):
+                lines = [BOOTSTRAP_MEMBER_MANIFEST_HEADER] + [
+                    f"{mode:04o} {len(data)} "
+                    f"{hashlib.sha256(data).hexdigest()} {path}"
+                    for path, (data, mode) in sorted(members.items())
+                ]
+                with self.assertRaisesRegex(
+                    ValueError, "lacks a required runtime member"
+                ):
+                    _parse_bootstrap_member_manifest(
+                        ("\n".join(lines) + "\n").encode()
+                    )
+
+    def test_producer_manifest_follows_the_packaged_python_minor(
+        self,
+    ) -> None:
+        for minor in (14, 15):
+            with self.subTest(minor=minor), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary) / "bootstrap-python"
+                for path, (data, _mode) in self._python_layout_members(
+                    minor
+                ).items():
+                    staged = root / path.removeprefix(
+                        "runtime/bootstrap-python/"
+                    )
+                    staged.parent.mkdir(parents=True, exist_ok=True)
+                    staged.write_bytes(data)
+                rows = _bootstrap_member_manifest(
+                    root, Path(temporary) / "members.txt"
+                )
+                self.assertEqual(
+                    sorted(self._python_layout_members(minor)),
+                    sorted(row["path"] for row in rows),
+                )
+
+    def test_staged_venv_must_match_the_packaged_python_minor(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "venv"
+            source.mkdir()
+            (source / "pyvenv.cfg").write_text(
+                "home = /usr/bin\nversion_info = 3.15.99\n", encoding="utf-8"
+            )
+            _stage_environment(source, Path(temporary) / "same", 15)
+            self.assertIn(
+                "version_info = 3.15.99\n",
+                (Path(temporary) / "same/pyvenv.cfg").read_text(
+                    encoding="utf-8"
+                ),
+            )
+            with self.assertRaisesRegex(ValueError, "minor differs"):
+                _stage_environment(source, Path(temporary) / "other", 14)
+
+    def test_shell_verifier_runs_the_python_each_layout_packages(
+        self,
+    ) -> None:
+        # A stand-in loader prints the Python the launcher hands it, so the selection is visible
+        # without a CPython build of the fixture's minor.
+        launcher = ROOT / "scripts/independent_verifier.sh"
+        bootstrap = ROOT / "scripts/independent-verifier-bootstrap"
+        for minor in (14, 15):
+            with self.subTest(minor=minor), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                members = self._python_layout_members(minor)
+                members[
+                    "runtime/bootstrap-python/system-libs/ld-linux-x86-64.so.2"
+                ] = (b'#!/bin/sh\nprintf "selected %s\\n" "$3"\n', 0o755)
+                inner = self._bootstrap_inner_zip(
+                    members,
+                    extra={
+                        "verification/independent-verifier/"
+                        "independent_verifier.py": b"raise SystemExit(0)\n",
+                    },
+                )
+                digest = hashlib.sha256(inner).hexdigest()
+                outer = root / "outer.zip"
+                with zipfile.ZipFile(outer, "w") as archive:
+                    for name, data in {
+                        "agent-response.md": b"fixture\n",
+                        "delivery-manifest.json": b"{}\n",
+                        "delivery-validation.json": b"{}\n",
+                        "independent-verifier.sh": launcher.read_bytes(),
+                        "review-handoff/review-handoff.zip": inner,
+                        "review-handoff/review-handoff.zip.sha256":
+                            f"{digest}  review-handoff.zip\n".encode(),
+                        "review-handoff/"
+                        "review-handoff.zip.validation.json": b"{}\n",
+                    }.items():
+                        write_zip(archive, name, data)
+                result = subprocess.run(
+                    [
+                        str(bootstrap),
+                        str(launcher),
+                        str(outer),
+                        str(root / "output"),
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertRegex(
+                    result.stdout,
+                    rf"selected \S*/runtime/bootstrap-python/bin/python3\.{minor}\n",
                 )
 
     def test_source_generated_verifier_uses_staged_member_contract(
