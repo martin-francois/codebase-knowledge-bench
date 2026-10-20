@@ -15,7 +15,7 @@ env:
 jobs:
   source-only-python:
     name: source-only (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -96,7 +96,7 @@ jobs:
   source-only:
     needs: source-only-python
     if: always()
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Require every Python leg to pass
         env:
