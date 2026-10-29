@@ -22,7 +22,7 @@ jobs:
         # One release per supported Python minor; the legs run in parallel.
         python-version:
           - "3.14.9"
-          - "3.15.0"
+          - "3.15.1"
     container:
       # The one copy of the image pin. The env aliases below and scripts/source_only_ci.py
       # read it from here, so an image update changes only this line.
