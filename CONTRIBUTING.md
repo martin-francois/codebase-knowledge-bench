@@ -3,6 +3,11 @@
 This guide is for people changing the benchmark harness. If you only want to run a benchmark, start
 with [README.md](README.md).
 
+**Coffee on me.** If you've had a pull request merged here and we meet in person, at a conference or
+anywhere else, tell me your GitHub handle and I'll buy you a coffee or a drink. It's one per person,
+however many pull requests you've made. It's a thank-you, not payment: the project doesn't pay for
+contributions or offer bounties.
+
 ## Source layout
 
 - `scripts/`: configuration, orchestration, adapters, scoring, derivation, and validators.
