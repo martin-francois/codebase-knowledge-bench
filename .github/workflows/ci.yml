@@ -26,7 +26,7 @@ jobs:
     container:
       # The one copy of the image pin. The env aliases below and scripts/source_only_ci.py
       # read it from here, so an image update changes only this line.
-      image: &source-only-image "mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf"
+      image: &source-only-image "mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea"
     env:
       SOURCE_ONLY_USERSPACE_IMAGE: *source-only-image
       SOURCE_ONLY_EXECUTED_IMAGE: *source-only-image
