@@ -496,10 +496,12 @@ with tempfile.TemporaryDirectory() as tmp:
         with tempfile.TemporaryDirectory() as tmp:
             history = DurationHistory(Path(tmp) / "history.json")
             rows = [self.observation("solve", self.context(), 1, suffix=str(i)) for i in range(40)]
-            started = time.perf_counter()
+            # CPU time, not wall time: each append fsyncs on purpose, and how long
+            # fsync waits depends on other disk traffic, not on this code.
+            started = time.process_time()
             for row in rows:
                 history.append(row)
-            elapsed = time.perf_counter() - started
+            elapsed = time.process_time() - started
             self.assertLess(elapsed / len(rows), 0.02)
 
     def test_idle_progress_renderer_uses_negligible_cpu(self):
