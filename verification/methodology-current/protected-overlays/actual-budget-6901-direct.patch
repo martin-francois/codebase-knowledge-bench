@@ -1,0 +1,397 @@
+diff --git a/packages/desktop-client/src/components/transactions/TransactionsTable.ctrlEnter.test.tsx b/packages/desktop-client/src/components/transactions/TransactionsTable.ctrlEnter.test.tsx
+new file mode 100644
+index 000000000..ea530d3df
+--- /dev/null
++++ b/packages/desktop-client/src/components/transactions/TransactionsTable.ctrlEnter.test.tsx
+@@ -0,0 +1,391 @@
++import React, { useEffect, useState } from 'react';
++
++import { render, waitFor } from '@testing-library/react';
++import userEvent from '@testing-library/user-event';
++
++import {
++  generateAccount,
++  generateCategoryGroups,
++  generateTransaction,
++} from 'loot-core/mocks';
++import { initServer } from 'loot-core/platform/client/fetch';
++import {
++  addSplitTransaction,
++  realizeTempTransactions,
++  splitTransaction,
++  updateTransaction,
++} from 'loot-core/shared/transactions';
++import {
++  type AccountEntity,
++  type CategoryEntity,
++  type CategoryGroupEntity,
++  type PayeeEntity,
++  type TransactionEntity,
++} from 'loot-core/types/models';
++
++import { TransactionTable } from './TransactionsTable';
++
++import { AuthProvider } from '@desktop-client/auth/AuthProvider';
++import { SchedulesProvider } from '@desktop-client/hooks/useCachedSchedules';
++import { SelectedProviderWithItems } from '@desktop-client/hooks/useSelected';
++import { SplitsExpandedProvider } from '@desktop-client/hooks/useSplitsExpanded';
++import { SpreadsheetProvider } from '@desktop-client/hooks/useSpreadsheet';
++import { TestProvider } from '@desktop-client/redux/mock';
++
++vi.mock('loot-core/platform/client/fetch');
++vi.mock('../../hooks/useSyncedPref', () => ({
++  useSyncedPref: vi.fn().mockReturnValue([undefined, vi.fn()]),
++}));
++vi.mock('../../hooks/useFeatureFlag', () => ({
++  useFeatureFlag: () => false,
++}));
++
++const accounts = [generateAccount('Bank of America')];
++vi.mock('../../hooks/useAccounts', () => ({
++  useAccounts: () => accounts,
++}));
++
++const payees: PayeeEntity[] = [
++  {
++    id: 'bob-id',
++    name: 'Bob',
++    favorite: true,
++  },
++  {
++    id: 'alice-id',
++    name: 'Alice',
++    favorite: true,
++  },
++  {
++    id: 'guy',
++    favorite: false,
++    name: 'This guy on the side of the road',
++  },
++];
++vi.mock('../../hooks/usePayees', async importOriginal => {
++  const actual =
++    // oxlint-disable-next-line typescript/consistent-type-imports
++    await importOriginal<typeof import('../../hooks/usePayees')>();
++  return {
++    ...actual,
++    usePayees: () => payees,
++    usePayeesById: () => {
++      const payeesById: Record<string, PayeeEntity> = {};
++      payees.forEach(payee => {
++        payeesById[payee.id] = payee;
++      });
++      return payeesById;
++    },
++  };
++});
++
++const categoryGroups = generateCategoryGroups([
++  {
++    name: 'Investments and Savings',
++    categories: [{ name: 'Savings' }],
++  },
++  {
++    name: 'Usual Expenses',
++    categories: [{ name: 'Food' }, { name: 'General' }, { name: 'Home' }],
++  },
++  {
++    name: 'Projects',
++    categories: [{ name: 'Big Projects' }, { name: 'Shed' }],
++  },
++]);
++vi.mock('../../hooks/useCategories', () => ({
++  useCategories: () => ({
++    list: categoryGroups.flatMap(g => g.categories),
++    grouped: categoryGroups,
++  }),
++}));
++
++const usualGroup = categoryGroups[1];
++
++function generateTransactions(
++  count: number,
++  splitAtIndexes: number[] = [],
++  showError: boolean = false,
++) {
++  const transactions: TransactionEntity[] = [];
++
++  for (let i = 0; i < count; i++) {
++    const isSplit = splitAtIndexes.includes(i);
++
++    transactions.push.apply(
++      transactions,
++      generateTransaction(
++        {
++          account: accounts[0].id,
++          payee: 'alice-id',
++          category:
++            i === 0
++              ? undefined
++              : i === 1
++                ? usualGroup.categories?.[1].id
++                : usualGroup.categories?.[0].id,
++          amount: isSplit ? 50 : undefined,
++          sort_order: i,
++        },
++        isSplit ? 30 : undefined,
++        showError,
++      ),
++    );
++  }
++
++  return transactions;
++}
++
++type LiveTransactionTableProps = {
++  transactions: TransactionEntity[];
++  payees: PayeeEntity[];
++  accounts: AccountEntity[];
++  categoryGroups: CategoryGroupEntity[];
++  currentAccountId: string | null;
++  showAccount: boolean;
++  showCategory: boolean;
++  showCleared: boolean;
++  isAdding: boolean;
++  onTransactionsChange?: (newTrans: TransactionEntity[]) => void;
++  onCloseAddTransaction?: () => void;
++  onApplyRules?: (
++    transaction: TransactionEntity,
++    field: string,
++  ) => Promise<TransactionEntity>;
++};
++
++function LiveTransactionTable(props: LiveTransactionTableProps) {
++  const { transactions: transactionsProp, onTransactionsChange } = props;
++
++  const [transactions, setTransactions] = useState(transactionsProp);
++
++  useEffect(() => {
++    if (transactions === transactionsProp) return;
++    onTransactionsChange?.(transactions);
++  }, [transactions, transactionsProp, onTransactionsChange]);
++
++  const onSplit = (id: string) => {
++    const { data, diff } = splitTransaction(transactions, id);
++    setTransactions(data);
++    return diff.added[0].id;
++  };
++
++  const onSave = (transaction: TransactionEntity) => {
++    const { data } = updateTransaction(transactions, transaction);
++    setTransactions(data);
++  };
++
++  const onAdd = (newTransactions: TransactionEntity[]) => {
++    newTransactions = realizeTempTransactions(newTransactions);
++    setTransactions(trans => [...newTransactions, ...trans]);
++  };
++
++  const onAddSplit = (id: string) => {
++    const { data, diff } = addSplitTransaction(transactions, id);
++    setTransactions(data);
++    return diff.added[0].id;
++  };
++
++  const onCreatePayee = async () => 'id';
++
++  // It's important that these functions are they same instances
++  // across renders. Doing so tests that the transaction table
++  // implementation properly uses the right latest state even if the
++  // hook dependencies haven't changed
++  return (
++    <TestProvider>
++      <AuthProvider>
++        <SpreadsheetProvider>
++          <SchedulesProvider>
++            <SelectedProviderWithItems
++              name="transactions"
++              items={transactions}
++              fetchAllIds={() => Promise.resolve(transactions.map(t => t.id))}
++            >
++              <SplitsExpandedProvider>
++                <TransactionTable
++                  {...props}
++                  transactions={transactions}
++                  loadMoreTransactions={vi.fn()}
++                  // @ts-expect-error TODO: fix me
++                  commonPayees={[]}
++                  payees={payees}
++                  addNotification={console.log}
++                  onSave={onSave}
++                  onSplit={onSplit}
++                  onAdd={onAdd}
++                  onAddSplit={onAddSplit}
++                  onCreatePayee={onCreatePayee}
++                  showSelection
++                  allowSplitTransaction
++                />
++              </SplitsExpandedProvider>
++            </SelectedProviderWithItems>
++          </SchedulesProvider>
++        </SpreadsheetProvider>
++      </AuthProvider>
++    </TestProvider>
++  );
++}
++
++function initBasicServer() {
++  initServer({
++    query: async query => {
++      switch (query.table) {
++        case 'payees':
++          return { data: payees, dependencies: [] };
++        case 'accounts':
++          return { data: accounts, dependencies: [] };
++        case 'transactions':
++          return {
++            data: generateTransactions(5, [6]),
++            dependencies: [],
++          };
++        default:
++          throw new Error(`queried unknown table: ${query.table}`);
++      }
++    },
++    'get-cell': async () => ({
++      name: 'test-cell',
++      value: 129_87,
++    }),
++    'get-categories': async () => ({
++      grouped: categoryGroups,
++      list: categories,
++    }),
++  });
++}
++
++beforeEach(() => {
++  initBasicServer();
++});
++
++afterEach(() => {
++  global.__resetWorld();
++});
++
++const categories = categoryGroups.reduce<CategoryEntity[]>(
++  (all, group) => (group.categories ? [...all, ...group.categories] : all),
++  [],
++);
++
++function renderTransactions(extraProps?: Partial<LiveTransactionTableProps>) {
++  let transactions = generateTransactions(5, [6]);
++  // Hardcoding the first value makes it easier for tests to do
++  // various this
++  transactions[0].amount = -2777;
++
++  const defaultProps: LiveTransactionTableProps = {
++    transactions,
++    payees,
++    accounts,
++    categoryGroups,
++    currentAccountId: accounts[0].id,
++    showAccount: true,
++    showCategory: true,
++    showCleared: true,
++    isAdding: false,
++    onTransactionsChange: t => {
++      transactions = t;
++    },
++  };
++
++  const result = render(
++    <LiveTransactionTable {...defaultProps} {...extraProps} />,
++  );
++  return {
++    ...result,
++    getTransactions: () => transactions,
++    updateProps: (props: Partial<LiveTransactionTableProps>) =>
++      render(
++        <LiveTransactionTable {...defaultProps} {...extraProps} {...props} />,
++        { container: result.container },
++      ),
++  };
++}
++
++function queryNewField(
++  container: HTMLElement,
++  name: string,
++  subSelector: string = '',
++  idx: number = 0,
++): HTMLInputElement {
++  const field = container.querySelectorAll(
++    `[data-testid="new-transaction"] [data-testid="${name}"]`,
++  )[idx];
++  if (subSelector !== '') {
++    return field.querySelector(subSelector)!;
++  }
++  return field as HTMLInputElement;
++}
++
++async function _editField(field: Element, container: HTMLElement) {
++  // We only short-circuit this for inputs
++  const input = field.querySelector(`input`);
++  if (input) {
++    expect(container.ownerDocument.activeElement).toBe(input);
++    return input;
++  }
++
++  let element: HTMLInputElement;
++  const buttonQuery = 'button,div[data-testid=cell-button]';
++
++  if (field.querySelector(buttonQuery)) {
++    const btn = field.querySelector(buttonQuery)!;
++    await userEvent.click(btn);
++    element = field.querySelector(':focus')!;
++    expect(element).toBeTruthy();
++  } else {
++    await userEvent.click(field.querySelector('div')!);
++    element = field.querySelector('input')!;
++    expect(element).toBeTruthy();
++    expect(container.ownerDocument.activeElement).toBe(element);
++  }
++
++  return element;
++}
++
++function editNewField(container: HTMLElement, name: string, rowIndex?: number) {
++  const field = queryNewField(container, name, '', rowIndex);
++  return _editField(field, container);
++}
++
++// Rules are applied asynchronously in the app, so a field's save can still be
++// pending when Ctrl+Enter is pressed.
++async function slowRules(transaction: TransactionEntity) {
++  await new Promise(resolve => setTimeout(resolve, 20));
++  return transaction;
++}
++
++describe('Ctrl+Enter on a new transaction', () => {
++  test.each([
++    ['debit', '150.75', -15075],
++    ['credit', '99.99', 9999],
++  ])(
++    'ctrl/cmd+enter keeps the typed %s amount while its save is pending',
++    async (field, typed, amount) => {
++      const { container, getTransactions, updateProps } = renderTransactions({
++        onApplyRules: slowRules,
++        onCloseAddTransaction: () => {
++          updateProps({ isAdding: false });
++        },
++      });
++
++      expect(getTransactions().length).toBe(5);
++      updateProps({ isAdding: true });
++
++      const input = await editNewField(container, field);
++      await userEvent.clear(input);
++      await userEvent.type(input, typed);
++      await userEvent.keyboard('{Control>}{Enter}{/Control}');
++
++      await waitFor(() => expect(getTransactions().length).toBe(6));
++      expect(getTransactions()[0].amount).toBe(amount);
++      await waitFor(() =>
++        expect(
++          container.querySelector('[data-testid="new-transaction"]'),
++        ).toBe(null),
++      );
++    },
++  );
++});

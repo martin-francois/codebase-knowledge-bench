@@ -1,0 +1,51 @@
+diff --git a/packages/desktop-client/src/components/transactions/TransactionsTable.test.tsx b/packages/desktop-client/src/components/transactions/TransactionsTable.test.tsx
+index ac3ea41fb..703807da4 100644
+--- a/packages/desktop-client/src/components/transactions/TransactionsTable.test.tsx
++++ b/packages/desktop-client/src/components/transactions/TransactionsTable.test.tsx
+@@ -781,46 +781,6 @@ describe('Transactions', () => {
+     ]);
+   });
+ 
+-  // TODO: fix this test
+-  test.skip('dropdown invalid value resets correctly', async () => {
+-    const { container, getTransactions } = renderTransactions();
+-
+-    // Invalid values should be rejected and nullified
+-    let input = await editField(container, 'category', 2);
+-    await userEvent.clear(input);
+-    await userEvent.type(input, 'aaabbbccc');
+-
+-    // For this first test case, make sure the tooltip is gone. We
+-    // don't need to check this in all the other cases
+-    const tooltipItems = container.querySelectorAll(
+-      '[data-testid="category-item-group"]',
+-    );
+-    expect(tooltipItems.length).toBe(0);
+-
+-    expect(getTransactions()[2].category).not.toBe(null);
+-    await userEvent.tab();
+-    expect(getTransactions()[2].category).toBe(null);
+-
+-    // Clear out the category value
+-    input = await editField(container, 'category', 3);
+-    await userEvent.clear(input);
+-
+-    // The category should be null when the value is cleared
+-    expect(getTransactions()[3].category).not.toBe(null);
+-    await userEvent.tab();
+-    expect(getTransactions()[3].category).toBe(null);
+-
+-    // Clear out the payee value
+-    input = await editField(container, 'payee', 3);
+-    await new Promise(resolve => setTimeout(resolve, 10));
+-    await userEvent.clear(input);
+-
+-    // The payee should be empty when the value is cleared
+-    expect(getTransactions()[3].payee).not.toBe('');
+-    await userEvent.tab();
+-    expect(getTransactions()[3].payee).toBe(null);
+-  });
+-
+   test('dropdown escape resets the value ', async () => {
+     const { container } = renderTransactions();
+ 
