@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a reproducible harness defect, documentation gap or adapter compatibility problem.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Leave out tokens, credentials, raw private issue data, sealed repositories, private source and personal data, also from logs and attachments. Report security or leakage concerns as [SECURITY.md](https://github.com/martin-francois/codebase-knowledge-bench/blob/main/SECURITY.md) describes, not here.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The commands you ran with a sanitized configuration, their exit codes, and the smallest non-secret fixture that shows the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Harness commit, operating system, Python version, target language, tool under test, and anything else that matters here.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output or logs
+      render: text
