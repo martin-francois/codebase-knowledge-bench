@@ -180,7 +180,9 @@ target_repo_path = "/absolute/path/to/your-repository"
 ```
 
 For a TypeScript target, also set `target_language = "typescript"`, so tools that need the target's
-language, such as Serena, set up for it. The default is `java`.
+language, such as Serena, set up for it. The default is `java`. When the target's source isn't under
+`src`, set `source_root` to the folder that holds it, such as `packages`, for tools that index one
+folder, such as Graphify.
 
 ### Configure YOLO mode
 

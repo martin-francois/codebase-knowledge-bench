@@ -108,6 +108,18 @@ class ProgressTest(unittest.TestCase):
             stage_fingerprint("installation", self.context(target_language="typescript"))[0],
         )
 
+    def test_CFG_017_source_root_invalidates_indexing_and_child_cohorts(self):
+        for stage in ("indexing", "smoke", "solve"):
+            with self.subTest(stage=stage):
+                self.assertNotEqual(
+                    stage_fingerprint(stage, self.context(source_root="src"))[0],
+                    stage_fingerprint(stage, self.context(source_root="packages"))[0],
+                )
+        self.assertEqual(
+            stage_fingerprint("setup", self.context(source_root="src"))[0],
+            stage_fingerprint("setup", self.context(source_root="packages"))[0],
+        )
+
     def test_tool_version_invalidates_index_cohort(self):
         self.assertNotEqual(stage_fingerprint("indexing", self.context(tool_version="1"))[0], stage_fingerprint("indexing", self.context(tool_version="2"))[0])
 
