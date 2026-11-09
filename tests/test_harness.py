@@ -941,6 +941,28 @@ class RetryPolicyTest(unittest.TestCase):
             relevance["relevance"]["anchored_returned_implementation_files"],
         )
 
+    def test_CFG_018_graphify_direct_cell_reads_its_paths_under_the_source_root(self) -> None:
+        source_file = "packages/desktop-client/src/components/transactions/TransactionsTable.tsx"
+        output = "NODE TransactionsTable [src=desktop-client/src/components/transactions/TransactionsTable.tsx loc=L9]"
+        for name, anchored in (("graphify", [source_file]), ("sverklo", [])):
+            with self.subTest(tool=name), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                tool = runner.Tool("run-001", name, root / "repo", root / "run")
+                tool.run_dir.mkdir(parents=True)
+                journal = tool.run_dir / "tool-smoke.jsonl"
+                journal.write_text("", encoding="utf-8")
+                plan = {"verification_policy": {"implementation_paths": ["packages/desktop-client/src"]}}
+                with (
+                    mock.patch.object(runner, "SOURCE_ROOT", "packages"),
+                    mock.patch.object(runner, "successful_tool_output_texts", return_value=[output]),
+                    mock.patch.object(runner, "repo_files", return_value=[source_file]),
+                    mock.patch.object(runner, "current_execution_inputs", return_value=({}, plan, {})),
+                    mock.patch.object(runner, "issue_smoke_text", return_value="# split rows\n\n`TransactionsTable`"),
+                    mock.patch.object(runner, "repo_grep_paths", return_value={source_file}),
+                ):
+                    relevance = runner.direct_no_model_output_relevance(tool, journal)
+                self.assertEqual(anchored, relevance["relevance"]["anchored_returned_implementation_files"])
+
     def test_direct_no_model_query_selects_first_repo_backed_issue_identifier(
         self,
     ) -> None:
@@ -3000,6 +3022,61 @@ class ToolEvidenceTest(unittest.TestCase):
                 )
             )
 
+    def test_CFG_018_relevance_greps_the_channel_plan_code_paths(self) -> None:
+        runner.clear_relevance_caches()
+        plan = {
+            "verification_policy": {
+                "implementation_paths": ["packages/loot-core/src", "packages/desktop-client/src/"],
+                "candidate_test_paths": ["packages/loot-core/test"],
+            }
+        }
+        completed = runner.CommandResult("git grep", "repo", 0, "packages/loot-core/src/a.ts:1:payee\n", "", 0.1)
+        with (
+            mock.patch.object(runner, "current_execution_inputs", return_value=({}, plan, {})),
+            mock.patch.object(runner, "run", return_value=completed) as execute,
+        ):
+            files = runner.repo_grep_files(Path("/tmp/actual-repo"), "payee")
+        runner.clear_relevance_caches()
+        self.assertEqual({"packages/loot-core/src/a.ts"}, files)
+        self.assertEqual(
+            [
+                "git", "grep", "-n", "-F", "payee", "--",
+                "packages/desktop-client/src", "packages/loot-core/src", "packages/loot-core/test",
+            ],
+            execute.call_args.args[0],
+        )
+
+    def test_CFG_018_typescript_files_under_the_source_root_are_code_context(self) -> None:
+        tool = runner.Tool("run-001", "serena", Path("repo"), Path("run"))
+        path = "packages/desktop-client/src/components/transactions/TransactionsTable.tsx"
+        with (
+            mock.patch.object(runner, "SOURCE_ROOT", "packages"),
+            mock.patch.object(runner, "repo_files", return_value=[path, "packages/loot-core/src/shared/util.ts"]),
+            mock.patch.object(runner, "reference_changed_files", return_value={path}),
+            mock.patch.object(runner, "issue_relevance_terms", return_value=[]),
+            mock.patch.object(runner, "smoke_reference_file_terms", return_value=set()),
+        ):
+            self.assertIn(path, runner.extract_repo_code_items(tool, f"See {path}:120 for the split row."))
+            relevance = runner.smoke_issue_item_relevance(tool, [f"{path}:120"], path)
+            self.assertEqual([f"file:{path}"], relevance["matches"])
+            self.assertTrue(runner.is_targeted_repository_read(f"sed -n 1,80p {path}"))
+            self.assertTrue(runner.is_manual_code_search_command("find packages -name '*.tsx'"))
+            with mock.patch.object(runner, "SOURCE_ROOT", "src"):
+                self.assertNotIn(path, runner.extract_repo_code_items(tool, f"See {path}:120 for the split row."))
+                self.assertFalse(runner.is_manual_code_search_command("find packages -name '*.tsx'"))
+
+    def test_CFG_018_graphify_paths_are_read_relative_to_the_source_root(self) -> None:
+        for source_root, text, expected in (
+            ("src", "NODE Fix src=main/java/Fix.java loc=L3", "NODE Fix src/main/java/Fix.java loc=L3"),
+            (
+                "packages",
+                "[src=desktop-client/src/Table.tsx loc=L9] <img src={logo} /> src=\"x.ts\" src='y.ts'",
+                "[packages/desktop-client/src/Table.tsx loc=L9] <img src={logo} /> src=\"x.ts\" src='y.ts'",
+            ),
+        ):
+            with self.subTest(source_root=source_root), mock.patch.object(runner, "SOURCE_ROOT", source_root):
+                self.assertEqual(expected, runner.graphify_repository_paths(text))
+
     def test_duplicate_basename_is_not_issue_specific(self) -> None:
         tool = runner.Tool("run-001", "serena", Path("repo"), Path("run"))
         files = ["src/main/a/Setup.java", "src/main/b/Setup.java"]
@@ -3007,6 +3084,7 @@ class ToolEvidenceTest(unittest.TestCase):
             mock.patch.object(runner, "repo_files", return_value=files),
             mock.patch.object(runner, "reference_changed_files", return_value=set(files)),
             mock.patch.object(runner, "issue_relevance_terms", return_value=[]),
+            mock.patch.object(runner, "relevance_code_paths", return_value=("src/main", "src/test")),
             mock.patch.object(
                 runner,
                 "run",
@@ -5622,7 +5700,10 @@ class ResumeAndValidatorTest(unittest.TestCase):
         runner.clear_relevance_caches()
         completed = mock.Mock(returncode=0, stdout="src/main/One.java:1:One\n")
         repo = Path("/tmp/scored-repo")
-        with mock.patch.object(runner, "run", return_value=completed) as execute:
+        with (
+            mock.patch.object(runner, "run", return_value=completed) as execute,
+            mock.patch.object(runner, "relevance_code_paths", return_value=("src/main", "src/test")),
+        ):
             self.assertEqual(["src/main/One.java:1:One"], runner.repo_files(repo))
             self.assertEqual(["src/main/One.java:1:One"], runner.repo_files(repo))
             self.assertEqual(

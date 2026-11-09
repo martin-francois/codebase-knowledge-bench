@@ -272,6 +272,15 @@ smoke or solve child's `PATH` refuses `extract` and a first argument that names 
 starts like one, which Graphify would build an index from, except its read commands `query`, `path`
 and `explain`, which Graphify runs even when a path of that name exists.
 
+`CFG-018` The relevance classifier decides whether tool output or a shell command touches issue
+context, and it follows the configured layout rather than Maven's. Symbol searches cover the
+channel plan's implementation and candidate test paths. Repository paths count as code context
+under `src`, `test`, `app`, `lib` and the first folder of the suite's `source_root`, plus `docs` for
+returned items. In Graphify's direct qualification cell (`QUA-004`), its `src=` file references are
+relative to `source_root` and are read as repository paths under it. TypeScript and JavaScript
+sources (`.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`) count next to the
+Java-family, build and documentation file types.
+
 ## 5. Requirement contracts
 
 `CON-001` The only live correctness scopes are `requested_behavior`, `required_regression`, and
