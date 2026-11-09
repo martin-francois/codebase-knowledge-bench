@@ -36,6 +36,12 @@ DEFAULT_PROTECTED_PATHS = (
     "mvnw",
     "mvnw.cmd",
 )
+# Maven Surefire and Failsafe write here. A channel whose runner writes JUnit XML elsewhere
+# declares its own repository-relative globs.
+DEFAULT_JUNIT_REPORT_GLOBS = (
+    "**/surefire-reports/*.xml",
+    "**/failsafe-reports/*.xml",
+)
 
 
 def _safe_paths(values: Iterable[str], name: str) -> tuple[str, ...]:
@@ -388,7 +394,10 @@ def load_channel_plan(channel_plan: Mapping[str, Any], contract: Mapping[str, An
         if exact != sorted(set(exact)):
             raise ValueError(f"protected {channel} exact selectors must be sorted and unique")
         if kind == "none":
-            if command is not None or raw.get("overlay") is not None or exact or source_policy != "none":
+            if (
+                command is not None or raw.get("overlay") is not None or exact
+                or source_policy != "none" or "junit_report_globs" in raw
+            ):
                 raise ValueError(f"disabled protected {channel} channel carries live inputs")
             expected = []
             overlay_path = None
@@ -443,6 +452,10 @@ def load_channel_plan(channel_plan: Mapping[str, Any], contract: Mapping[str, An
                 if set(row) not in ({"path", "tree_sha256"}, {"path", "sha256"}):
                     raise ValueError(f"protected {channel} source descriptor is invalid")
         expanded[channel] = {
+            **(
+                {"junit_report_globs": _junit_report_globs(raw["junit_report_globs"], channel)}
+                if "junit_report_globs" in raw else {}
+            ),
             "command_kind": kind,
             "command": command,
             "test_source_policy": source_policy,
@@ -501,14 +514,27 @@ def junit_inventory(directory: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def export_junit_xml(workspace: Path, destination: Path) -> dict[str, Any]:
+def _junit_report_globs(value: Any, channel: str) -> list[str]:
+    name = f"protected {channel} junit_report_globs"
+    if not isinstance(value, list) or not value or not all(isinstance(item, str) for item in value):
+        raise ValueError(f"{name} must be a non-empty string array")
+    if tuple(value) != _safe_paths(value, name):
+        raise ValueError(f"{name} must be sorted, unique, and normalized")
+    return list(value)
+
+
+def export_junit_xml(workspace: Path, destination: Path,
+                     report_globs: Iterable[str]) -> dict[str, Any]:
     if destination.exists():
         shutil.rmtree(destination)
     destination.mkdir(parents=True, exist_ok=True)
+    root = workspace.resolve()
     files = sorted({
-        *workspace.glob("**/surefire-reports/*.xml"),
-        *workspace.glob("**/failsafe-reports/*.xml"),
+        path for pattern in report_globs for path in workspace.glob(pattern) if path.is_file()
     })
+    for source in files:
+        if root not in source.resolve().parents:
+            raise ValueError(f"JUnit report resolves outside the protected workspace: {source}")
     for index, source in enumerate(files, start=1):
         shutil.copy2(source, destination / f"{index:04d}-{source.name}")
     cases = junit_inventory(destination)
@@ -815,7 +841,10 @@ def execute_protected_verification(*, source_repo: Path, benchmark_root: Path,
                 "protected command runner result fields disagree with current process receipt: "
                 f"expected={sorted(required_process_fields)} actual={sorted(result)}"
             )
-        junit = export_junit_xml(workspace, junit_dir)
+        junit = export_junit_xml(
+            workspace, junit_dir,
+            spec.get("junit_report_globs", DEFAULT_JUNIT_REPORT_GLOBS),
+        )
         manifest = finalize_channel_workspace(workspace, manifest, policy)
         rows = junit_inventory(junit_dir)
         observed_rows[channel] = rows
