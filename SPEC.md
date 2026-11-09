@@ -1118,6 +1118,14 @@ may classify a path as blocked only when the immutable command invokes a guarded
 an absolute executable-path bypass remains invalid access evidence. Re-derivation records the
 blocked attempt and MUST NOT relaunch the completed child.
 
+`ISO-009` Every smoke and solve child MUST find the pinned Node.js runtime on `PATH` ahead of the
+system directories, whichever tools run and in whatever order. Runner preflight provisions it before
+the first child and stops the execution when it can't. The shared dependency cache also holds the
+global folder of Yarn 2 and later: protected verification fills it, and children read it with Yarn's
+global cache enabled and offline mode on, so a target's locked Node dependencies install from it
+without network, as Maven dependencies resolve from the cached repository. When base verification is
+skipped, nothing fills either cache.
+
 ## 17. Progress, retry, and lifecycle
 
 `LIF-001` Progress records configured units for preflight, installation, setup, indexing, smoke,

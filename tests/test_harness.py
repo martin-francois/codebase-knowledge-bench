@@ -1878,6 +1878,113 @@ class ToolEvidenceTest(unittest.TestCase):
             )
             self.assertNotIn("LD_PRELOAD", environment)
 
+    def test_ISO_009_children_read_the_yarn_cache_that_verification_warms(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tool = runner.Tool("run-001", "baseline-none", root / "repo", root / "run")
+            tool.repo.mkdir(parents=True)
+            tool.run_dir.mkdir(parents=True)
+            anti_leak = root / "anti-leak-bin"
+            anti_leak.mkdir()
+            with (
+                mock.patch.object(runner, "ANTI_LEAK_BIN", anti_leak),
+                mock.patch.object(runner, "COMPARISON_ROOT", root / "comparison"),
+                mock.patch.object(runner, "TOOL_CACHE", root / "tool-cache"),
+                mock.patch.object(runner, "MAVEN_CACHE", root / "dependency-cache"),
+                mock.patch.object(runner, "SHARED_INSTALL_ROOT", root / "shared-installs"),
+                mock.patch.object(runner, "APPROVALS", approvals_mapping()),
+            ):
+                verification = runner.benchmark_test_env()
+                child = runner.child_env(tool, "solve")
+                rendered = "\n".join(runner.codex_app_server_cmd(tool, "solve"))
+            yarn_global = str(root / "dependency-cache" / "yarn-global")
+            self.assertEqual(yarn_global, verification["YARN_GLOBAL_FOLDER"])
+            self.assertEqual(yarn_global, child["YARN_GLOBAL_FOLDER"])
+            self.assertEqual("true", verification["YARN_ENABLE_GLOBAL_CACHE"])
+            self.assertNotIn("YARN_ENABLE_OFFLINE_MODE", verification)
+            self.assertEqual("1", child["YARN_ENABLE_OFFLINE_MODE"])
+            for key in (
+                "YARN_GLOBAL_FOLDER", "YARN_ENABLE_GLOBAL_CACHE", "YARN_ENABLE_TELEMETRY",
+                "YARN_ENABLE_OFFLINE_MODE", "UV_OFFLINE",
+            ):
+                with self.subTest(key=key):
+                    self.assertIn(
+                        f"shell_environment_policy.set.{key}={json.dumps(child[key])}", rendered
+                    )
+
+    def test_ISO_009_children_get_the_pinned_node_runtime_or_the_run_stops(self) -> None:
+        # (name, version already installed or None, version npm installs, npm exit, expected failure)
+        cases = (
+            ("fresh install", None, runner.PINNED_NODE_VERSION, 0, None),
+            ("pinned version already installed", runner.PINNED_NODE_VERSION, None, 0, None),
+            ("stale version reinstalled", "22.0.0", runner.PINNED_NODE_VERSION, 0, None),
+            ("npm installs the wrong version", None, "22.0.0", 0, "pinned Node.js"),
+            ("install fails", None, None, 1, "unable to install"),
+        )
+        for name, preinstalled, npm_version, npm_exit, failure in cases:
+            with self.subTest(name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                node_bin = root / "node24" / "node_modules" / ".bin"
+                download_cache = root / "download-cache"
+                npm_environment = {}
+                installed = {"version": preinstalled}
+                if preinstalled:
+                    node_bin.mkdir(parents=True)
+                    (node_bin / "node").write_text("#!/bin/sh\n", encoding="utf-8")
+
+                def fake_run(args, **kwargs):
+                    command = [str(part) for part in args]
+                    env = kwargs.get("env", {})
+                    if command[:2] == ["npm", "install"]:
+                        npm_environment.update(env)
+                        self.assertFalse(node_bin.exists(), "a stale runtime is removed first")
+                        node_bin.mkdir(parents=True)
+                        (node_bin / "node").write_text("#!/bin/sh\n", encoding="utf-8")
+                        installed["version"] = npm_version
+                        return runner.CommandResult("npm install", str(root), npm_exit, "", "", 1.0)
+                    if command == [str(node_bin / "node"), "--version"]:
+                        version = f"v{installed['version']}\n"
+                        return runner.CommandResult("node --version", str(root), 0, version, "", 0.1)
+                    raise AssertionError(command)
+
+                with (
+                    mock.patch.object(runner, "NODE24_BIN", node_bin),
+                    mock.patch.object(runner, "COMPARISON_ROOT", root / "comparison"),
+                    mock.patch.object(runner, "TOOL_DOWNLOAD_CACHE_ROOT", download_cache),
+                    mock.patch.object(runner, "SHARED_INSTALL_ROOT", root / "shared-installs"),
+                    mock.patch.object(runner, "run", side_effect=fake_run),
+                ):
+                    (root / "comparison").mkdir()
+                    if failure:
+                        with self.assertRaisesRegex(SystemExit, failure):
+                            runner.ensure_child_node_runtime()
+                    else:
+                        runner.ensure_child_node_runtime()
+                        tool = runner.Tool("run-001", "baseline-none", root / "repo", root / "run")
+                        path = runner.child_path(tool).split(":")
+                        self.assertLess(path.index(str(node_bin)), path.index("/usr/bin"))
+                if preinstalled == runner.PINNED_NODE_VERSION:
+                    self.assertEqual({}, npm_environment, "a pinned runtime in place is reused")
+                else:
+                    self.assertEqual(str(download_cache / "npm-cache"), npm_environment["npm_config_cache"])
+                    self.assertEqual(str(node_bin), npm_environment["PATH"].split(":")[0])
+                self.assertEqual(npm_exit == 0, (node_bin / "node").is_file())
+
+    def test_ISO_009_preflight_provisions_the_child_node_runtime(self) -> None:
+        def fake_run(args, **_kwargs):
+            stdout = str(runner.ROOT) if "--show-toplevel" in args else ""
+            return runner.CommandResult(args, str(runner.ROOT), 0, stdout, "", 0.0)
+
+        with (
+            mock.patch.object(runner.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "", "")),
+            mock.patch.object(runner, "probe_raw_usage_capability"),
+            mock.patch.object(runner, "ensure_target_checkout"),
+            mock.patch.object(runner, "run", side_effect=fake_run),
+            mock.patch.object(runner, "ensure_child_node_runtime") as ensure,
+        ):
+            runner.preflight()
+        ensure.assert_called_once_with()
+
     def test_rejected_prohibited_command_is_proved_blocked_by_approval_evidence(self) -> None:
         approval_policy = sys.modules["approval_policy"]
         with tempfile.TemporaryDirectory() as temporary:
