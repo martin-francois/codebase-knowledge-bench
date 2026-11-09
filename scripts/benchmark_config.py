@@ -7,7 +7,7 @@ import math
 import os
 import sys
 import tomllib
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -16,6 +16,7 @@ FIELDS = {
     "target_repo_url": "BENCH_TARGET_REPO_URL",
     "target_repo_path": "BENCH_TARGET_REPO_PATH",
     "target_language": "BENCH_TARGET_LANGUAGE",
+    "source_root": "BENCH_SOURCE_ROOT",
     "output_root": "BENCH_OUTPUT_ROOT",
     "model": "BENCH_MODEL",
     "reasoning_effort": "BENCH_REASONING_EFFORT",
@@ -130,10 +131,15 @@ OPERATOR_RESUME_ENV = {
 }
 TARGET_LANGUAGES = frozenset({"java", "typescript"})
 DEFAULT_TARGET_LANGUAGE = "java"
+DEFAULT_SOURCE_ROOT = "src"
 
 
 def configured_target_language() -> str:
     return os.environ.get("BENCH_TARGET_LANGUAGE") or DEFAULT_TARGET_LANGUAGE
+
+
+def configured_source_root() -> str:
+    return os.environ.get("BENCH_SOURCE_ROOT") or DEFAULT_SOURCE_ROOT
 
 
 EXECUTION_PROFILES = frozenset({
@@ -382,6 +388,14 @@ def _encode_exclusions(value: Any) -> str:
     return ";;".join(encoded)
 
 
+def _is_repository_relative_folder(value: Any) -> bool:
+    # Only the canonical spelling passes, so one folder never gets two progress fingerprints.
+    if not isinstance(value, str) or value in {"", "."} or value != value.strip() or "\\" in value:
+        return False
+    path = PurePosixPath(value)
+    return path.as_posix() == value and not path.is_absolute() and ".." not in path.parts
+
+
 def read_config(path: Path) -> dict[str, Any]:
     if not path.is_file():
         raise ValueError(f"benchmark configuration file does not exist: {path}")
@@ -450,6 +464,11 @@ def read_config(path: Path) -> dict[str, Any]:
     ):
         raise ValueError(
             "benchmark target_language must be one of: " + ", ".join(sorted(TARGET_LANGUAGES))
+        )
+    if "source_root" in section and not _is_repository_relative_folder(section["source_root"]):
+        raise ValueError(
+            "benchmark source_root must be a plain relative folder path inside the target "
+            "repository, such as packages"
         )
     if (
         "execution_profile" in section

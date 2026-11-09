@@ -262,6 +262,16 @@ about other detected languages, and setup fails when indexing didn't install tha
 which solve needs offline. Serena's language server downloads are cached per Serena version and per
 language server, and every run of that version for the same language reuses them.
 
+`CFG-017` `source_root` names the folder inside the target repository that holds its source, `src`
+by default. The strict parser accepts only a plain relative POSIX path such as `packages` or
+`apps/web`, and rejects empty, absolute, parent-escaping and backslash paths as well as spellings
+with `.` segments, repeated or trailing slashes, or surrounding spaces. Tools that index one folder
+use it: Graphify indexes `source_root` with `--code-only`, so documentation and images next to the
+code never need a model key, and setup fails when the folder is missing. The `graphify` wrapper on a
+smoke or solve child's `PATH` refuses `extract` and a first argument that names an existing path or
+starts like one, which Graphify would build an index from, except its read commands `query`, `path`
+and `explain`, which Graphify runs even when a path of that name exists.
+
 ## 5. Requirement contracts
 
 `CON-001` The only live correctness scopes are `requested_behavior`, `required_regression`, and
