@@ -33,6 +33,8 @@ from protected_verifier import (
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_ID = "current-correctness-preflight"
+# A selector owner with one of these suffixes is a test file named by its path (SPEC CHN-007).
+TEST_FILE_SUFFIXES = (".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx")
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -232,16 +234,24 @@ def _load_observed(output_root: Path) -> dict[str, list[dict[str, Any]]]:
     return {channel: list(rows[channel]) for channel in CHANNELS}
 
 
+def _selector_owns_source(owner: str, path: str) -> bool:
+    if "/" in owner or owner.endswith(TEST_FILE_SUFFIXES):
+        # Runners such as Vitest name a case by its test file, relative to the runner's
+        # working directory rather than the repository root.
+        return path == owner or path.endswith(f"/{owner}")
+    class_name = owner.rsplit(".", 1)[-1].split("$", 1)[0]
+    return path.endswith(f"/{class_name}.java")
+
+
 def _source_for_selector(channel_result: Mapping[str, Any], selector: str) -> tuple[str, str]:
-    class_name = selector.split("#", 1)[0].rsplit(".", 1)[-1].split("$", 1)[0]
-    suffix = f"/{class_name}.java"
+    owner = selector.split("#", 1)[0]
     candidates = [
         row for row in channel_result["protected_tree_before"]["files"]
-        if str(row["path"]).endswith(suffix)
+        if _selector_owns_source(owner, str(row["path"]))
     ]
     if len(candidates) != 1:
         raise ValueError(
-            f"protected selector source resolution is ambiguous: {selector} -> "
+            f"protected selector source resolution is missing or ambiguous: {selector} -> "
             f"{[row['path'] for row in candidates]}"
         )
     return str(candidates[0]["path"]), str(candidates[0]["sha256"])
