@@ -96,6 +96,18 @@ class ProgressTest(unittest.TestCase):
         self.assertEqual(stage_fingerprint("solve", left)[0], stage_fingerprint("solve", right)[0])
         self.assertNotEqual(stage_fingerprint("protected_direct", left)[0], stage_fingerprint("protected_direct", right)[0])
 
+    def test_CFG_016_target_language_invalidates_preparation_and_child_cohorts(self):
+        for stage in ("setup", "indexing", "smoke", "solve"):
+            with self.subTest(stage=stage):
+                self.assertNotEqual(
+                    stage_fingerprint(stage, self.context(target_language="java"))[0],
+                    stage_fingerprint(stage, self.context(target_language="typescript"))[0],
+                )
+        self.assertEqual(
+            stage_fingerprint("installation", self.context(target_language="java"))[0],
+            stage_fingerprint("installation", self.context(target_language="typescript"))[0],
+        )
+
     def test_tool_version_invalidates_index_cohort(self):
         self.assertNotEqual(stage_fingerprint("indexing", self.context(tool_version="1"))[0], stage_fingerprint("indexing", self.context(tool_version="2"))[0])
 

@@ -179,6 +179,9 @@ local checkout instead of a clone URL, set this in your profile:
 target_repo_path = "/absolute/path/to/your-repository"
 ```
 
+For a TypeScript target, also set `target_language = "typescript"`, so tools that need the target's
+language, such as Serena, set up for it. The default is `java`.
+
 ### Configure YOLO mode
 
 `yolo` controls whether child commands include `--yolo`. The default is `false`, which keeps

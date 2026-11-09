@@ -30,7 +30,7 @@ from statistics import median, pstdev, pvariance
 from typing import Any, Mapping, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from benchmark_config import apply_configuration, read_config
+from benchmark_config import apply_configuration, configured_target_language, read_config
 
 
 apply_configuration(internal=True)
@@ -48,6 +48,7 @@ OUTPUT_ROOT = Path(
 ).expanduser().resolve()
 TARGET_REPO_URL = os.environ.get("BENCH_TARGET_REPO_URL", "").strip()
 TARGET_REPO_PATH_RAW = os.environ.get("BENCH_TARGET_REPO_PATH", "").strip()
+TARGET_LANGUAGE = configured_target_language()
 ROOT = (
     Path(TARGET_REPO_PATH_RAW).expanduser().resolve()
     if TARGET_REPO_PATH_RAW
@@ -2723,28 +2724,40 @@ def setup_jcodemunch(v: Tool, setup_log: Path, version_file: Path, config_file: 
 def serena_language_server_cache(v: Tool, version_text: str) -> Path:
     match = re.search(r"Serena\s+([A-Za-z0-9._-]+)", version_text)
     version = match.group(1) if match else "unknown"
-    return (
-        shared_tool_install_root(v)
-        / "language-server-cache"
-        / version
-        / "EclipseJDTLS"
-    )
+    return shared_tool_install_root(v) / "language-server-cache" / version
+
+
+# Serena keeps each language server's downloads in a directory named after its server class.
+SERENA_LANGUAGE_SERVERS = {"java": "EclipseJDTLS", "typescript": "TypeScriptLanguageServer"}
+
+
+def serena_local_language_servers(v: Tool) -> Path:
+    return tool_home(v) / ".serena" / "language_servers" / "static"
+
+
+def serena_language_server_entries(root: Path) -> list[str]:
+    """The target language server's downloaded dependencies as `<server>/<entry>`, without project workspaces."""
+    server = root / SERENA_LANGUAGE_SERVERS[TARGET_LANGUAGE]
+    if not server.is_dir() or server.is_symlink():
+        return []
+    return [
+        f"{server.name}/{entry.name}"
+        for entry in sorted(server.iterdir(), key=lambda path: path.name)
+        if entry.name != "workspaces" and entry.is_dir() and not entry.is_symlink()
+    ]
 
 
 def seed_serena_language_server_cache(v: Tool, shared: Path, setup_log: Path) -> list[str]:
-    if not shared.is_dir():
-        return []
-    local = tool_home(v) / ".serena" / "language_servers" / "static" / "EclipseJDTLS"
-    local.mkdir(parents=True, exist_ok=True)
+    local = serena_local_language_servers(v)
     reused: list[str] = []
-    for source in sorted(shared.iterdir(), key=lambda path: path.name):
-        if source.name == "workspaces" or not source.is_dir():
-            continue
-        target = local / source.name
+    for name in serena_language_server_entries(shared):
+        source = shared / name
+        target = local / name
         if target.exists() or target.is_symlink():
             continue
+        target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(source, target, symlinks=True)
-        reused.append(source.name)
+        reused.append(name)
     if reused:
         with setup_log.open("a", encoding="utf-8") as fh:
             fh.write(f"REUSED_SERENA_LANGUAGE_SERVER_CACHE versioned=true entries={','.join(reused)}\n")
@@ -2752,23 +2765,20 @@ def seed_serena_language_server_cache(v: Tool, shared: Path, setup_log: Path) ->
 
 
 def publish_serena_language_server_cache(v: Tool, shared: Path, setup_log: Path) -> list[str]:
-    local = tool_home(v) / ".serena" / "language_servers" / "static" / "EclipseJDTLS"
-    if not local.is_dir():
-        return []
-    shared.mkdir(parents=True, exist_ok=True)
+    local = serena_local_language_servers(v)
     published: list[str] = []
-    for source in sorted(local.iterdir(), key=lambda path: path.name):
-        if source.name == "workspaces" or source.is_symlink() or not source.is_dir():
-            continue
-        target = shared / source.name
+    for name in serena_language_server_entries(local):
+        source = local / name
+        target = shared / name
         if target.exists():
             continue
-        temporary = shared / f".{source.name}.tmp-{os.getpid()}"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.parent / f".{source.name}.tmp-{os.getpid()}"
         shutil.rmtree(temporary, ignore_errors=True)
         shutil.copytree(source, temporary, symlinks=True)
         try:
             temporary.rename(target)
-            published.append(source.name)
+            published.append(name)
         except FileExistsError:
             shutil.rmtree(temporary, ignore_errors=True)
     if published:
@@ -2816,8 +2826,9 @@ def setup_serena(v: Tool, setup_log: Path, version_file: Path, config_file: Path
             "create",
             "--name",
             f"benchmark-{v.run_id}",
+            # Serena asks interactively about further detected languages unless one is named.
             "--language",
-            "java",
+            TARGET_LANGUAGE,
             str(v.repo),
         ],
         cwd=v.repo,
@@ -2856,13 +2867,17 @@ def setup_serena(v: Tool, setup_log: Path, version_file: Path, config_file: Path
     log_command(setup_log, res)
     if res.returncode != 0:
         raise RuntimeError("serena project creation/indexing failed")
+    if not serena_language_server_entries(serena_local_language_servers(v)):
+        raise RuntimeError(
+            f"serena indexing did not install the {TARGET_LANGUAGE} language server needed offline in solve"
+        )
     published_dependencies = publish_serena_language_server_cache(v, dependency_cache, setup_log)
     removed = sanitize_update_hooks(v, setup_log)
     config_file.write_text(
         codex_config_snapshot(
             v,
             "Official setup: uv tool install -p 3.13; serena init; serena setup codex; project "
-            "create, memory initialization, and retry-safe project index. The documented Codex context/project-from-cwd launch is retained with "
+            f"create for {TARGET_LANGUAGE}, memory initialization, and retry-safe project index. The documented Codex context/project-from-cwd launch is retained with "
             "the preinstalled absolute binary. Version-matched immutable language-server cache "
             f"reused: {reused_dependencies or 'none'}; published: {published_dependencies or 'none'}. "
             f"Safety-only update hooks removed: {len(removed)}.",
