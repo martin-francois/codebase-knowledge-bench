@@ -946,6 +946,7 @@ def preflight() -> None:
     if outside:
         write_blocked_report(outside)
         raise SystemExit("Working tree has changes outside allowed benchmark artifact paths")
+    ensure_child_node_runtime()
 
 
 def write_blocked_report(lines: list[str]) -> None:
@@ -1651,7 +1652,20 @@ def run_base_verification(base_commit: str) -> bool:
     return res.returncode == 0
 
 
-def isolated_maven_env(env: dict[str, str]) -> dict[str, str]:
+# Children resolve packages from local caches only: uv from its own cache, Yarn from the shared one.
+CHILD_OFFLINE_ENV = {"UV_OFFLINE": "1", "YARN_ENABLE_OFFLINE_MODE": "1"}
+
+
+def shared_yarn_cache_env() -> dict[str, str]:
+    """Point Yarn 2 and later at the global folder inside the shared dependency cache."""
+    return {
+        "YARN_GLOBAL_FOLDER": str(MAVEN_CACHE / "yarn-global"),
+        "YARN_ENABLE_GLOBAL_CACHE": "true",
+        "YARN_ENABLE_TELEMETRY": "0",
+    }
+
+
+def isolated_dependency_cache_env(env: dict[str, str]) -> dict[str, str]:
     maven_repo = MAVEN_CACHE / "repository"
     maven_user_home = MAVEN_CACHE / "user-home"
     maven_repo.mkdir(parents=True, exist_ok=True)
@@ -1664,6 +1678,8 @@ def isolated_maven_env(env: dict[str, str]) -> dict[str, str]:
         f"-Duser.home={maven_user_home}",
     ]
     env["MAVEN_OPTS"] = " ".join(required_opts)
+    env.update(shared_yarn_cache_env())
+    Path(env["YARN_GLOBAL_FOLDER"]).mkdir(parents=True, exist_ok=True)
     return env
 
 
@@ -1679,7 +1695,7 @@ def benchmark_test_env() -> dict[str, str]:
     Path(env["HOME"]).mkdir(parents=True, exist_ok=True)
     Path(env["XDG_CACHE_HOME"]).mkdir(parents=True, exist_ok=True)
     Path(env["XDG_CONFIG_HOME"]).mkdir(parents=True, exist_ok=True)
-    return isolated_maven_env(env)
+    return isolated_dependency_cache_env(env)
 
 
 def plausible_unrelated_common_test_flake(result: CommandResult) -> bool:
@@ -1907,9 +1923,13 @@ def tool_home(v: Tool) -> Path:
     return TOOL_CACHE / v.run_id / "home"
 
 
+SETUP_INHERITED_KEYS = frozenset(
+    {"JAVA_HOME", "LANG", "LC_ALL", "PATH", "SHELL", "SSL_CERT_FILE", "SSL_CERT_DIR", "TERM", "TZ"}
+)
+
+
 def setup_environment(v: Tool, extra_path: list[Path] | None = None) -> dict[str, str]:
-    inherited_keys = {"JAVA_HOME", "LANG", "LC_ALL", "PATH", "SHELL", "SSL_CERT_FILE", "SSL_CERT_DIR", "TERM", "TZ"}
-    env = {key: os.environ[key] for key in inherited_keys if key in os.environ}
+    env = {key: os.environ[key] for key in SETUP_INHERITED_KEYS if key in os.environ}
     home = tool_home(v)
     env["HOME"] = str(home)
     env["CODEX_HOME"] = str(prepare_child_codex_home(v))
@@ -1935,24 +1955,28 @@ def package_install_environment(
     """Keep lock-sensitive installer caches separate from retained evidence."""
 
     env = setup_environment(v, extra_path)
-    temporary = (
-        TOOL_DOWNLOAD_CACHE_ROOT
-        / "temporary"
-        / v.name
-        / TOOL_PACKAGE_VERSIONS.get(v.name, "unversioned")
-    )
-    temporary.mkdir(parents=True, exist_ok=True)
     env.update(
-        {
-            "PIP_CACHE_DIR": str(TOOL_DOWNLOAD_CACHE_ROOT / "pip-cache"),
-            "npm_config_cache": str(TOOL_DOWNLOAD_CACHE_ROOT / "npm-cache"),
-            "UV_CACHE_DIR": str(TOOL_DOWNLOAD_CACHE_ROOT / "uv-cache"),
-            "TMPDIR": str(temporary),
-            "TMP": str(temporary),
-            "TEMP": str(temporary),
-        }
+        installer_cache_env(
+            TOOL_DOWNLOAD_CACHE_ROOT
+            / "temporary"
+            / v.name
+            / TOOL_PACKAGE_VERSIONS.get(v.name, "unversioned")
+        )
     )
     return env
+
+
+def installer_cache_env(temporary: Path) -> dict[str, str]:
+    """Installer download caches shared across tools, with a private temporary directory."""
+    temporary.mkdir(parents=True, exist_ok=True)
+    return {
+        "PIP_CACHE_DIR": str(TOOL_DOWNLOAD_CACHE_ROOT / "pip-cache"),
+        "npm_config_cache": str(TOOL_DOWNLOAD_CACHE_ROOT / "npm-cache"),
+        "UV_CACHE_DIR": str(TOOL_DOWNLOAD_CACHE_ROOT / "uv-cache"),
+        "TMPDIR": str(temporary),
+        "TMP": str(temporary),
+        "TEMP": str(temporary),
+    }
 
 
 def shared_tool_install_root(v: Tool) -> Path:
@@ -2295,40 +2319,68 @@ def codex_config_snapshot(v: Tool, note: str = "") -> str:
     return redact("\n\n".join(parts).rstrip() + "\n")
 
 
-def ensure_pinned_node_runtime(v: Tool, setup_log: Path) -> dict[str, str]:
-    node_root = NODE24_BIN.parent.parent
-    expected_version = f"v{PINNED_NODE_VERSION}"
-    with shared_named_install_lock(f"node-{PINNED_NODE_VERSION}"):
-        env = package_install_environment(v)
-        version = run(["node", "--version"], timeout=20, env=env)
-        if version.returncode != 0 or version.stdout.strip() != expected_version:
-            shutil.rmtree(node_root, ignore_errors=True)
-            node_root.mkdir(parents=True, exist_ok=True)
-            started = time.monotonic()
-            result = run(
-                [
-                    "npm",
-                    "install",
-                    "--prefix",
-                    str(node_root),
-                    f"node@{PINNED_NODE_VERSION}",
-                ],
-                timeout=STAGE_POLICY.timeout_for("installation"),
-                env=env,
-                stage="installation",
-                tool=v.name,
-            )
-            v.install_seconds += time.monotonic() - started
-            log_command(setup_log, result)
-            if result.returncode != 0:
-                shutil.rmtree(node_root, ignore_errors=True)
-                raise RuntimeError(
-                    f"unable to install the pinned Node.js {PINNED_NODE_VERSION} runtime"
-                )
+def runs_pinned_node(node: str, env: dict[str, str]) -> bool:
+    version = run([node, "--version"], timeout=20, env=env)
+    return version.returncode == 0 and version.stdout.strip() == f"v{PINNED_NODE_VERSION}"
 
+
+def install_pinned_node_runtime(env: dict[str, str], log: Path, owner: str) -> float:
+    """Install the pinned Node.js runtime unless it is already in place; return the seconds spent installing."""
+    node_root = NODE24_BIN.parent.parent
+    pinned_node = NODE24_BIN / "node"
+    with shared_named_install_lock(f"node-{PINNED_NODE_VERSION}"):
+        # A host Node of the same version must not stand in for the pinned install children use.
+        if pinned_node.is_file() and runs_pinned_node(str(pinned_node), env):
+            return 0.0
+        shutil.rmtree(node_root, ignore_errors=True)
+        node_root.mkdir(parents=True, exist_ok=True)
+        started = time.monotonic()
+        result = run(
+            [
+                "npm",
+                "install",
+                "--prefix",
+                str(node_root),
+                f"node@{PINNED_NODE_VERSION}",
+            ],
+            timeout=STAGE_POLICY.timeout_for("installation"),
+            env=env,
+            stage="installation",
+            tool=owner,
+        )
+        seconds = time.monotonic() - started
+        log_command(log, result)
+        if result.returncode != 0:
+            shutil.rmtree(node_root, ignore_errors=True)
+            raise RuntimeError(
+                f"unable to install the pinned Node.js {PINNED_NODE_VERSION} runtime"
+            )
+        return seconds
+
+
+def ensure_child_node_runtime() -> None:
+    """Give every child the pinned Node.js runtime, whichever tools run and in whatever order."""
+    install_root = TOOL_DOWNLOAD_CACHE_ROOT / "temporary" / "child-node-runtime"
+    env = {key: os.environ[key] for key in SETUP_INHERITED_KEYS if key in os.environ}
+    env.update(installer_cache_env(install_root))
+    env["HOME"] = str(install_root)
+    env["PATH"] = f"{NODE24_BIN}:{env.get('PATH', '')}"
+    try:
+        install_pinned_node_runtime(env, COMPARISON_ROOT / "child-node-runtime.log", "orchestrator")
+    except RuntimeError as error:
+        raise SystemExit(str(error)) from error
+    if not runs_pinned_node(str(NODE24_BIN / "node"), env):
+        raise SystemExit(
+            f"children require the exact pinned Node.js {PINNED_NODE_VERSION} runtime"
+        )
+
+
+def ensure_pinned_node_runtime(v: Tool, setup_log: Path) -> dict[str, str]:
+    v.install_seconds += install_pinned_node_runtime(
+        package_install_environment(v), setup_log, v.name
+    )
     env = setup_environment(v)
-    version = run(["node", "--version"], timeout=20, env=env)
-    if version.returncode != 0 or version.stdout.strip() != expected_version:
+    if not runs_pinned_node("node", env):
         raise RuntimeError(
             f"npm tools require the exact pinned Node.js {PINNED_NODE_VERSION} runtime"
         )
@@ -3336,11 +3388,11 @@ def child_env(v: Tool, phase: str) -> dict[str, str]:
     Path(env["HOME"]).mkdir(parents=True, exist_ok=True)
     env["XDG_CACHE_HOME"] = str(TOOL_CACHE / v.run_id / "xdg-cache")
     env["XDG_CONFIG_HOME"] = str(TOOL_CACHE / v.run_id / "xdg-config")
-    isolated_maven_env(env)
+    isolated_dependency_cache_env(env)
     env["BENCH_COMPARISON_ROOT"] = str(COMPARISON_ROOT)
     env["BENCH_CHILD_PHASE"] = phase
     env["BENCH_ALLOWED_PREFIXES"] = ":".join(child_allowed_prefixes(v))
-    env["UV_OFFLINE"] = "1"
+    env.update(CHILD_OFFLINE_ENV)
     env["GIT_ALLOW_PROTOCOL"] = "file"
     env["GIT_TERMINAL_PROMPT"] = "0"
     env["JAVA_HOME"] = os.environ.get("JAVA_HOME", "")
@@ -3653,8 +3705,11 @@ def codex_app_server_cmd(v: Tool, phase: str) -> list[str]:
         'shell_environment_policy.set.SHELL="/bin/bash"',
         "-c",
         f"shell_environment_policy.set.CODEX_HOME={json.dumps(str(runtime_codex_home(v, phase)))}",
-        "-c",
-        'shell_environment_policy.set.UV_OFFLINE="1"',
+        *[
+            part
+            for key, value in {**shared_yarn_cache_env(), **CHILD_OFFLINE_ENV}.items()
+            for part in ("-c", f"shell_environment_policy.set.{key}={json.dumps(value)}")
+        ],
         "-c",
         'shell_environment_policy.set.GIT_ALLOW_PROTOCOL="file"',
         "-c",
