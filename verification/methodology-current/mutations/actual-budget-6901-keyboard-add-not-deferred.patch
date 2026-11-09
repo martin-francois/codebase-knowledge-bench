@@ -1,0 +1,17 @@
+diff --git a/packages/desktop-client/src/components/transactions/TransactionsTable.tsx b/packages/desktop-client/src/components/transactions/TransactionsTable.tsx
+index 96931ec18..dd1c3d0fa 100644
+--- a/packages/desktop-client/src/components/transactions/TransactionsTable.tsx
++++ b/packages/desktop-client/src/components/transactions/TransactionsTable.tsx
+@@ -2638,10 +2638,8 @@ export const TransactionTable = forwardRef(
+         if (e.metaKey || e.ctrlKey) {
+           e.preventDefault();
+           e.stopPropagation();
+-          afterSave(() => {
+-            shouldAddAndClose.current = true;
+-            forceRerender({});
+-          });
++          shouldAddAndClose.current = true;
++          forceRerender({});
+         } else if (!e.shiftKey) {
+           function getLastTransaction(state: RefObject<TableState>) {
+             const { newTransactions } = state.current;
