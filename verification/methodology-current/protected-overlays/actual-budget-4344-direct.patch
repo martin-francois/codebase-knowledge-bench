@@ -1,0 +1,307 @@
+diff --git a/packages/desktop-client/src/components/transactions/TransactionsTable.splitError.test.tsx b/packages/desktop-client/src/components/transactions/TransactionsTable.splitError.test.tsx
+new file mode 100644
+index 000000000..2eefec449
+--- /dev/null
++++ b/packages/desktop-client/src/components/transactions/TransactionsTable.splitError.test.tsx
+@@ -0,0 +1,301 @@
++import React, { useState, useEffect } from 'react';
++
++import { act, render, screen } from '@testing-library/react';
++
++import { SchedulesProvider } from 'loot-core/client/data-hooks/schedules';
++import { SpreadsheetProvider } from 'loot-core/client/SpreadsheetProvider';
++import {
++  generateTransaction,
++  generateAccount,
++  generateCategoryGroups,
++} from 'loot-core/mocks';
++import { initServer } from 'loot-core/platform/client/fetch';
++import {
++  addSplitTransaction,
++  realizeTempTransactions,
++  splitTransaction,
++  updateTransaction,
++} from 'loot-core/shared/transactions';
++import {
++  type AccountEntity,
++  type CategoryEntity,
++  type CategoryGroupEntity,
++  type PayeeEntity,
++  type TransactionEntity,
++} from 'loot-core/types/models';
++
++import { AuthProvider } from '../../auth/AuthProvider';
++import { SelectedProviderWithItems } from '../../hooks/useSelected';
++import { SplitsExpandedProvider } from '../../hooks/useSplitsExpanded';
++import { TestProvider } from '../../redux/mock';
++import { ResponsiveProvider } from '../responsive/ResponsiveProvider';
++
++import { TransactionTable } from './TransactionsTable';
++
++vi.mock('loot-core/platform/client/fetch');
++vi.mock('../../hooks/useSyncedPref', () => ({
++  useSyncedPref: vi.fn().mockReturnValue([undefined, vi.fn()]),
++}));
++vi.mock('../../hooks/useFeatureFlag', () => ({
++  useFeatureFlag: () => false,
++}));
++
++const accounts = [generateAccount('Bank of America')];
++vi.mock('../../hooks/useAccounts', () => ({
++  useAccounts: () => accounts,
++}));
++
++const payees: PayeeEntity[] = [
++  {
++    id: 'bob-id',
++    name: 'Bob',
++    favorite: 1,
++  },
++  {
++    id: 'alice-id',
++    name: 'Alice',
++    favorite: 1,
++  },
++  {
++    id: 'guy',
++    favorite: 0,
++    name: 'This guy on the side of the road',
++  },
++];
++vi.mock('../../hooks/usePayees', async importOriginal => {
++  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
++  const actual = await importOriginal<typeof import('../../hooks/usePayees')>();
++  return {
++    ...actual,
++    usePayees: () => payees,
++  };
++});
++
++const categoryGroups = generateCategoryGroups([
++  {
++    name: 'Investments and Savings',
++    categories: [{ name: 'Savings' }],
++  },
++  {
++    name: 'Usual Expenses',
++    categories: [{ name: 'Food' }, { name: 'General' }, { name: 'Home' }],
++  },
++  {
++    name: 'Projects',
++    categories: [{ name: 'Big Projects' }, { name: 'Shed' }],
++  },
++]);
++vi.mock('../../hooks/useCategories', () => ({
++  useCategories: () => ({
++    list: categoryGroups.flatMap(g => g.categories),
++    grouped: categoryGroups,
++  }),
++}));
++
++const usualGroup = categoryGroups[1];
++
++function generateTransactions(
++  count: number,
++  splitAtIndexes: number[] = [],
++  showError: boolean = false,
++) {
++  const transactions: TransactionEntity[] = [];
++
++  for (let i = 0; i < count; i++) {
++    const isSplit = splitAtIndexes.includes(i);
++
++    transactions.push.apply(
++      transactions,
++      generateTransaction(
++        {
++          account: accounts[0].id,
++          payee: 'alice-id',
++          category:
++            i === 0
++              ? undefined
++              : i === 1
++                ? usualGroup.categories?.[1].id
++                : usualGroup.categories?.[0].id,
++          amount: isSplit ? 50 : undefined,
++          sort_order: i,
++        },
++        isSplit ? 30 : undefined,
++        showError,
++      ),
++    );
++  }
++
++  return transactions;
++}
++
++type LiveTransactionTableProps = {
++  transactions: TransactionEntity[];
++  payees: PayeeEntity[];
++  accounts: AccountEntity[];
++  categoryGroups: CategoryGroupEntity[];
++  currentAccountId: string | null;
++  showAccount: boolean;
++  showCategory: boolean;
++  showCleared: boolean;
++  isAdding: boolean;
++  onTransactionsChange?: (newTrans: TransactionEntity[]) => void;
++  onCloseAddTransaction?: () => void;
++};
++
++function LiveTransactionTable(props: LiveTransactionTableProps) {
++  const { transactions: transactionsProp, onTransactionsChange } = props;
++
++  const [transactions, setTransactions] = useState(transactionsProp);
++
++  useEffect(() => {
++    if (transactions === transactionsProp) return;
++    onTransactionsChange?.(transactions);
++  }, [transactions, transactionsProp, onTransactionsChange]);
++
++  const onSplit = (id: string) => {
++    const { data, diff } = splitTransaction(transactions, id);
++    setTransactions(data);
++    return diff.added[0].id;
++  };
++
++  const onSave = (transaction: TransactionEntity) => {
++    const { data } = updateTransaction(transactions, transaction);
++    setTransactions(data);
++  };
++
++  const onAdd = (newTransactions: TransactionEntity[]) => {
++    newTransactions = realizeTempTransactions(newTransactions);
++    setTransactions(trans => [...newTransactions, ...trans]);
++  };
++
++  const onAddSplit = (id: string) => {
++    const { data, diff } = addSplitTransaction(transactions, id);
++    setTransactions(data);
++    return diff.added[0].id;
++  };
++
++  const onCreatePayee = () => 'id';
++
++  // It's important that these functions are they same instances
++  // across renders. Doing so tests that the transaction table
++  // implementation properly uses the right latest state even if the
++  // hook dependencies haven't changed
++  return (
++    <TestProvider>
++      <ResponsiveProvider>
++        <AuthProvider>
++          <SpreadsheetProvider>
++            <SchedulesProvider>
++              <SelectedProviderWithItems
++                name="transactions"
++                items={transactions}
++                fetchAllIds={() => Promise.resolve(transactions.map(t => t.id))}
++              >
++                <SplitsExpandedProvider>
++                  <TransactionTable
++                    {...props}
++                    // @ts-expect-error this will be auto-patched once TransactionTable is moved to TS
++                    transactions={transactions}
++                    loadMoreTransactions={() => {}}
++                    commonPayees={[]}
++                    payees={payees}
++                    addNotification={console.log}
++                    onSave={onSave}
++                    onSplit={onSplit}
++                    onAdd={onAdd}
++                    onAddSplit={onAddSplit}
++                    onCreatePayee={onCreatePayee}
++                    showSelection={true}
++                    allowSplitTransaction={true}
++                  />
++                </SplitsExpandedProvider>
++              </SelectedProviderWithItems>
++            </SchedulesProvider>
++          </SpreadsheetProvider>
++        </AuthProvider>
++      </ResponsiveProvider>
++    </TestProvider>
++  );
++}
++
++function initBasicServer() {
++  initServer({
++    query: async query => {
++      switch (query.table) {
++        case 'payees':
++          return { data: payees, dependencies: [] };
++        case 'accounts':
++          return { data: accounts, dependencies: [] };
++        case 'transactions':
++          return {
++            data: generateTransactions(5, [6]),
++            dependencies: [],
++          };
++        default:
++          throw new Error(`queried unknown table: ${query.table}`);
++      }
++    },
++    getCell: () => ({
++      value: 129_87,
++    }),
++    'get-categories': () => ({ grouped: categoryGroups, list: categories }),
++  });
++}
++
++beforeEach(() => {
++  initBasicServer();
++});
++
++afterEach(() => {
++  global.__resetWorld();
++});
++
++const categories = categoryGroups.reduce<CategoryEntity[]>(
++  (all, group) => (group.categories ? [...all, ...group.categories] : all),
++  [],
++);
++
++function renderTransactions(
++  transactions: TransactionEntity[],
++  showAccount: boolean,
++) {
++  return render(
++    <LiveTransactionTable
++      transactions={transactions}
++      payees={payees}
++      accounts={accounts}
++      categoryGroups={categoryGroups}
++      currentAccountId={showAccount ? null : accounts[0].id}
++      showAccount={showAccount}
++      showCategory
++      showCleared
++      isAdding={false}
++    />,
++  );
++}
++
++describe('Split transaction errors', () => {
++  test.each([
++    ['all accounts', true],
++    ['a single account', false],
++  ])(
++    'the transaction list for %s opens with a transaction left over from a deleted split',
++    async (_view, showAccount) => {
++      // After its last child is deleted, a parent is a plain transaction that
++      // can still carry the split's error.
++      const transactions = generateTransactions(5);
++      transactions[0] = {
++        ...transactions[0],
++        notes: 'Former split parent',
++        error: { difference: 500, type: 'SplitTransactionError', version: 1 },
++      };
++
++      renderTransactions(transactions, showAccount);
++      // A row shows its split error marker a timer tick after the first render.
++      await act(() => new Promise(resolve => setTimeout(resolve, 50)));
++
++      expect(screen.getByText('Former split parent')).toBeTruthy();
++      expect(screen.queryAllByTestId('transaction-error')).toHaveLength(0);
++    },
++  );
++});
