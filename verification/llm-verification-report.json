@@ -17,7 +17,7 @@
         "repo://scripts/run_benchmark.py"
       ],
       "findings": [
-        "Base and reference verification don't use Serena or the new setting."
+        "Base and reference verification don't use Graphify or the new setting."
       ],
       "id": "LLM-002",
       "residual_uncertainty": "None identified.",
@@ -42,10 +42,10 @@
         "repo://SPEC.md"
       ],
       "findings": [
-        "Serena's project is created for the configured target_language, java by default, so Symphony setups run the same command as before. Setup fails when indexing didn't install that language's server, so a Serena child can't start a solve whose language server would need a network fetch (CFG-016). Only the target language's server cache is reused or published, in the existing per-version layout."
+        "Graphify setup builds the configured source_root, src by default, with graphify extract and --code-only, so docs and images next to the code never need a model key, and setup fails when the folder is missing (CFG-017). The smoke and solve wrapper refuses extract and any path-shaped first argument, which Graphify would build an index from, except its read commands query, path and explain, and the trace audit counts extract and builds of the configured folder."
       ],
       "id": "LLM-004",
-      "residual_uncertainty": "Checked outside Codex: Serena 1.6.1 created and indexed an Actual Budget checkout for TypeScript in 11 s (1363 files) and installed TypeScriptLanguageServer/ts-lsp. No Serena child ran a solve.",
+      "residual_uncertainty": "Checked outside Codex with Graphify 0.9.31: an Actual Budget packages tree built with --code-only (7841 nodes in about 15 s). On the current Symphony src the old command fails without a key because 19 text snapshots count as docs; without them, the old command, --code-only and the extract form give identical node and edge sets. graphify hook install still passes the wrapper, as before this change.",
       "status": "passed"
     },
     {
@@ -54,7 +54,7 @@
         "repo://tests/test_progress.py"
       ],
       "findings": [
-        "target_language is a progress fingerprint input for setup, indexing, smoke and solve, so timing history doesn't mix languages. Existing history for those stages starts over once because the context now always carries the language."
+        "source_root is a progress fingerprint input for indexing, smoke and solve, and only one spelling per folder passes the parser, so timing history doesn't mix folders. Existing history for those stages starts over once because the context now always carries the folder."
       ],
       "id": "LLM-005",
       "residual_uncertainty": "None identified.",
@@ -79,8 +79,8 @@
     "No live Codex solve was run."
   ],
   "overall_status": "passed",
-  "report_envelope_commit": "38f80801c0fa63cdf0a294ab789365dc3e7fc0a8",
-  "review_session_description": "The implementing coding agent reviewed the CFG-016 Serena target language change at commit 38f80801c0fa63cdf0a294ab789365dc3e7fc0a8, after two rounds of Standards and Spec review. Deterministic evidence: the full unit suite on Python 3.14 (only the same three environment-dependent failures as on main), the CFG-016 tests under two PYTHONHASHSEED values, a Serena 1.6.1 TypeScript create and index of Actual Budget, and the verification registry. No additional model call or model-backed verifier was used.",
+  "report_envelope_commit": "c468892654e431ede7c3471471f4b2684389eadd",
+  "review_session_description": "The implementing coding agent reviewed the CFG-017 Graphify source root change at commit c468892654e431ede7c3471471f4b2684389eadd, after five rounds of Standards and Spec review and CodeRabbit's review. Deterministic evidence: the full unit suite on Python 3.14 (only the same three environment-dependent failures as on main), the CFG-017 tests under two PYTHONHASHSEED values, Graphify 0.9.31 builds of Actual Budget packages and Symphony src, and the verification registry. No additional model call or model-backed verifier was used.",
   "reviewed_artifacts": [
     "repo://README.md",
     "repo://SPEC.md",
@@ -94,8 +94,8 @@
     "repo://tests/test_progress.py",
     "repo://tool-guides/quickstart-sources.md"
   ],
-  "reviewed_subject_tree_sha256": "f1cd4bf733e1b6379450442b57c62ea8c356394ed926c824d5f43a078b51d60d",
+  "reviewed_subject_tree_sha256": "253e5763c4cb5861917980c775f29fd265df23645108a085e23d2f4983cdb05a",
   "reviewer_kind": "implementing_coding_agent",
   "self_review": true,
-  "source_commit": "38f80801c0fa63cdf0a294ab789365dc3e7fc0a8"
+  "source_commit": "c468892654e431ede7c3471471f4b2684389eadd"
 }
