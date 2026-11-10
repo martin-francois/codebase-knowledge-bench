@@ -267,7 +267,7 @@ def scan_source_text(name: str, data: bytes) -> tuple[list[str], list[dict[str, 
                     "replay/production-shadow/preflight/",
                 )
             )
-            and "/maven-logs/" in member
+            and "/verification-logs/" in member
         )
         or member
         in {
