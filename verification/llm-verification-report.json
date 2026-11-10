@@ -17,7 +17,7 @@
         "repo://scripts/run_benchmark.py"
       ],
       "findings": [
-        "Base and reference verification don't use Graphify or the new setting."
+        "Base and reference verification don't use the relevance classifier."
       ],
       "id": "LLM-002",
       "residual_uncertainty": "None identified.",
@@ -37,28 +37,26 @@
     {
       "evidence": [
         "repo://scripts/run_benchmark.py",
-        "repo://scripts/benchmark_config.py",
         "repo://tests/test_harness.py",
         "repo://SPEC.md"
       ],
       "findings": [
-        "Graphify setup builds the configured source_root, src by default, with graphify extract and --code-only, so docs and images next to the code never need a model key, and setup fails when the folder is missing (CFG-017). The smoke and solve wrapper refuses extract and any path-shaped first argument, which Graphify would build an index from, except its read commands query, path and explain, and the trace audit counts extract and builds of the configured folder."
+        "Tool-output relevance, fallback-discovery and targeted-read classification now search the channel plan's implementation and candidate test paths, recognize paths under the source_root's first folder, and accept TypeScript and JavaScript sources (CFG-018). Graphify's direct qualification cell reads its src= references relative to source_root. For the Symphony challenges the search paths, roots and Graphify mapping are unchanged, so their classification is the same except that a file suffix must now end a match."
       ],
       "id": "LLM-004",
-      "residual_uncertainty": "Checked outside Codex with Graphify 0.9.31: an Actual Budget packages tree built with --code-only (7841 nodes in about 15 s). On the current Symphony src the old command fails without a key because 19 text snapshots count as docs; without them, the old command, --code-only and the extract form give identical node and edge sets. graphify hook install still passes the wrapper, as before this change.",
+      "residual_uncertainty": "No live tool output from an Actual Budget run was classified; the tests use synthetic Graphify and tool output in the formats Graphify 0.9.31 prints. tests_changed and autonomous_readiness still assume Maven folders and are tracked on issue #11.",
       "status": "passed"
     },
     {
       "evidence": [
-        "repo://scripts/benchmark_progress.py",
-        "repo://tests/test_progress.py"
+        "repo://scripts/run_benchmark.py"
       ],
       "findings": [
-        "source_root is a progress fingerprint input for indexing, smoke and solve, and only one spelling per folder passes the parser, so timing history doesn't mix folders. Existing history for those stages starts over once because the context now always carries the folder."
+        "No row field's provenance changed; the classifier feeds the same fields."
       ],
       "id": "LLM-005",
       "residual_uncertainty": "None identified.",
-      "status": "passed"
+      "status": "not_applicable"
     },
     {
       "evidence": [
@@ -79,23 +77,17 @@
     "No live Codex solve was run."
   ],
   "overall_status": "passed",
-  "report_envelope_commit": "c468892654e431ede7c3471471f4b2684389eadd",
-  "review_session_description": "The implementing coding agent reviewed the CFG-017 Graphify source root change at commit c468892654e431ede7c3471471f4b2684389eadd, after five rounds of Standards and Spec review and CodeRabbit's review. Deterministic evidence: the full unit suite on Python 3.14 (only the same three environment-dependent failures as on main), the CFG-017 tests under two PYTHONHASHSEED values, Graphify 0.9.31 builds of Actual Budget packages and Symphony src, and the verification registry. No additional model call or model-backed verifier was used.",
+  "report_envelope_commit": "32384d3d1b444c14ac70071c11d7a542bb7fe90f",
+  "review_session_description": "The implementing coding agent reviewed the CFG-018 relevance classifier change at commit 32384d3d1b444c14ac70071c11d7a542bb7fe90f, after four rounds of Standards and Spec review. Deterministic evidence: the full unit suite on Python 3.14 (only the same three environment-dependent failures as on main), the CFG-018 tests under two PYTHONHASHSEED values, each checked to fail without its fix, and the verification registry. No additional model call or model-backed verifier was used.",
   "reviewed_artifacts": [
-    "repo://README.md",
     "repo://SPEC.md",
     "repo://docs/spec-compliance.md",
-    "repo://examples/custom-suite.toml",
-    "repo://scripts/benchmark_config.py",
-    "repo://scripts/benchmark_progress.py",
+    "repo://scripts/protected_verifier.py",
     "repo://scripts/run_benchmark.py",
-    "repo://scripts/run_benchmark_suite.py",
-    "repo://tests/test_harness.py",
-    "repo://tests/test_progress.py",
-    "repo://tool-guides/quickstart-sources.md"
+    "repo://tests/test_harness.py"
   ],
-  "reviewed_subject_tree_sha256": "253e5763c4cb5861917980c775f29fd265df23645108a085e23d2f4983cdb05a",
+  "reviewed_subject_tree_sha256": "6b3ff7b5b33acd33d88df7d0b7076799427455f8fad41535a1559134989fdabb",
   "reviewer_kind": "implementing_coding_agent",
   "self_review": true,
-  "source_commit": "c468892654e431ede7c3471471f4b2684389eadd"
+  "source_commit": "32384d3d1b444c14ac70071c11d7a542bb7fe90f"
 }
