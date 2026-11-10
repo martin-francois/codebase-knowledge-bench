@@ -151,7 +151,7 @@ class ReviewHandoffTest(unittest.TestCase):
         for member in (
             "source/source.tar!/scripts/target_replay.py",
             "replay/command-logs/current-preflight-issue-486.stdout.log",
-            "replay/preflight/issue-486/base/maven-logs/protected-direct.log",
+            "replay/preflight/issue-486/base/verification-logs/protected-direct.log",
             "replay/runtime-resolution.json",
             "target/replay.sh",
             "tests/command-log.txt",
